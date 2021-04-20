@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rubintv
+  labels:
+    app: rubintv
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: rubintv
+  template:
+    metadata:
+      labels:
+        name: rubintv
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: app
+          imagePullPolicy: "Always"
+          # Use images field in a Kustomization to regularly set/update image tag
+          image: "lsstsqre/rubintv"
+          ports:
+            - containerPort: 8080
+              name: app
+          envFrom:
+            - configMapRef:
+                name: rubintv
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - all
+            readOnlyRootFilesystem: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
