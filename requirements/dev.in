@@ -12,3 +12,4 @@ mypy
 pytest
 pytest-aiohttp
 aiohttp-devtools
+jinja2
