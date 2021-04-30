@@ -125,8 +125,13 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     <tr>
       <td><a href="{{ '/rubintv/imevents/' + imimg.cleanDate() + '/' + imimg.seq|string }}">{{imimg.cleanDate()}}</a></td>
       <td>{{imimg.seq}}</td>
-      <td><a href="{{ '/rubintv/specevents/' + specimg.cleanDate() + '/' + specimg.seq|string }}">{{specimg.cleanDate()}}</a></td>
-      <td>{{specimg.seq}}</td>
+      {% if specimg is not none %}
+        <td><a href="{{ '/rubintv/specevents/' + specimg.cleanDate() + '/' + specimg.seq|string }}">{{specimg.cleanDate()}}</a></td>
+        <td>{{specimg.seq}}</td>
+      {% else %}
+        <td></td>
+        <td></td>   
+      {% endif %}
     </tr>
     {% endfor %}
   </tbody>

@@ -76,6 +76,17 @@ def get_formatted_table(
 ) -> str:
     imimgs = timeSort(bucket, "summit_imexam", num)
     specimgs = timeSort(bucket, "summit_specexam", num)
+    trimmed_specims = []
+    for img in imimgs:
+        match = False
+        for simg in specimgs:
+            if img.cleanDate() == simg.cleanDate() and img.seq == simg.seq:
+                trimmed_specims.append(simg)
+                match = True
+                break
+        if not match:
+            trimmed_specims.append(None)
+
     env = Environment(
         loader=PackageLoader("rubintv", "templates"),
         autoescape=select_autoescape(
@@ -88,7 +99,7 @@ def get_formatted_table(
     templ = env.get_template(template)
     return templ.render(
         imimgs=imimgs,
-        specimgs=specimgs,
+        specimgs=trimmed_specims,
         imimg_attr1="date",
         imimg_attr2="seq",
         specimg_attr1="date",
@@ -139,7 +150,7 @@ def timeSort(
     bucket: Bucket, prefix: str, num: Optional[int] = None
 ) -> List[Image]:
     blobs = bucket.list_blobs(prefix=prefix)
-    sblobs = sorted(blobs, key=lambda x: x.time_created)
+    sblobs = sorted(blobs, key=lambda x: x.time_created, reverse=True)
     clean_URLs = [
         el.public_url for el in sblobs if el.public_url.endswith(".png")
     ]
