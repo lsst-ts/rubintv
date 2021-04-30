@@ -1,0 +1,103 @@
+/* body{
+  font:1.2em normal Arial,sans-serif;
+  color:#34495E;
+} */
+
+/* h1{
+  text-align:center;
+  text-transform:uppercase;
+  letter-spacing:-2px;
+  font-size:2.5em;
+  margin:20px 0;
+} */
+
+
+pre code {
+  background-color: #eee;
+  border: 1px solid #999;
+  display: block;
+  /* white-space: pre; */
+  /* -webkit-overflow-scrolling: touch; */
+  overflow-x: scroll;
+  /* white-space: nowrap; */
+  overflow-y: hidden;
+  max-width: 100%;
+  min-width: 100px;
+  padding: 0;
+}
+
+
+.scrolling-wrapper-flexbox {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+
+  .card {
+    flex: 0 0 auto;
+  }
+}
+
+code {
+  font-family: MyFancyCustomFont, monospace;
+  font-size: inherit;
+}
+
+/* Code in text */
+p > code,
+li > code,
+dd > code,
+td > code {
+  background: #eee;
+  word-wrap: break-word;
+  box-decoration-break: clone;
+  padding: .1rem .3rem .2rem;
+  border-radius: .2rem;
+}
+
+
+.container{
+  width:90%;
+  margin:auto;
+}
+
+table{
+  border-collapse:collapse;
+  width:100%;
+  display: table;
+}
+
+.crimson{
+  border:2px solid #A71E30;
+}
+
+.crimson thead{
+  background:#A71E30;
+}
+
+
+
+thead{
+  color:white;
+}
+
+th,td{
+  text-align:center;
+  padding:5px 0;
+}
+
+tbody tr:nth-child(even){
+  background:#ECF0F1;
+}
+
+tbody tr:hover{
+background:#BDC3C7;
+  color:#FFFFFF;
+}
+
+.fixed{
+  top:0;
+  position:fixed;
+  width:auto;
+  display:none;
+  border:none;
+}

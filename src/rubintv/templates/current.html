@@ -1,0 +1,20 @@
+<link rel="stylesheet" href="/rubintv/static/stylesheets/main.css" />
+<head>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type=text/javascript src="/rubintv/static/js/refresh.js"></script>
+</head>
+<body>
+  <div id="refresher">
+  {% for img in imgs %}
+  <div class="responsive">
+    <div class="gallery">
+      <div class="header">Sequence {{img.seq}}</div>
+      <a target="_blank" href="{{img.url}}">
+          <img src="{{img.url}}">
+      </a>
+      <div class="desc">{{img.name}}</div>
+    </div>
+  {% endfor %}
+  </div>
+  </div>
+</body>

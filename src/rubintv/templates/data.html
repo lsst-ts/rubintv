@@ -1,0 +1,15 @@
+<link rel="stylesheet" href="{{ '/rubintv/static/stylesheets/style.css' }}"></link>
+<body>
+  {% for img in imgs %}
+  <div class="responsive">
+    <div class="gallery">
+      <div class="header">Sequence {{img.seq}}</div>
+      <a target="_blank" href="{{img.url}}">
+          <img src="{{img.url}}">
+      </a>
+
+      <div class="desc">{{img.name}}</div>
+    </div>
+  </div>
+  {% endfor %}
+</body>

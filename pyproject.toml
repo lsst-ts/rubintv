@@ -47,7 +47,7 @@ commands = pre-commit run --all-files
 [testenv:run]
 description = Run the development server with auto-reload for code changes.
 usedevelop = true
-commands = adev runserver --app-factory create_app src/rubintv/app.py
+commands = adev runserver -vvvvv --app-factory create_app src/rubintv/app.py
 """
 
 [tool.coverage.run]

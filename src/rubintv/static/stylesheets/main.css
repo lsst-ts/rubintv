@@ -1,0 +1,59 @@
+div.gallery {
+  border: 1px solid #ccc;
+}
+
+div.gallery:hover {
+  border: 1px solid #777;
+}
+
+/* controls the size of the images themselves */
+/* set width to auto to do prevent verticle scrolling on larger screens */
+div.gallery img {
+  width: 100%;
+  height: auto;
+}
+
+div.desc {
+  padding: 15px;
+  text-align: center;
+}
+
+div.header {
+  padding: 15px;
+  text-align: center;
+  font-size: 40;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Controls the box which contains the images */
+/* set width to auto to do prevent verticle scrolling on larger screens */
+/* change width percentage to get more images per line */
+.responsive {
+  padding: 0 6px;
+  float: left;
+  width: 99.99999%;
+}
+
+/* 2 per row for small screens */
+@media only screen and (max-width: 700px) {
+  .responsive {
+    width: 49.99999%;
+    margin: 6px 0;
+  }
+}
+
+/* 1 per row for even smaller screens */
+@media only screen and (max-width: 500px) {
+  .responsive {
+    width: 100%;
+  }
+}
+
+.clearfix:after {
+  content: "";
+  display: table;
+  clear: both;
+}

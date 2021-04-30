@@ -13,3 +13,4 @@ pytest
 pytest-aiohttp
 aiohttp-devtools
 jinja2
+google-cloud-storage

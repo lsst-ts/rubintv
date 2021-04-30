@@ -12,3 +12,4 @@ cchardet
 importlib_metadata
 click
 jinja2
+google-cloud-storage

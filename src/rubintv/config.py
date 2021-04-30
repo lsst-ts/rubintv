@@ -33,3 +33,9 @@ class Configuration:
 
     Set with the ``SAFIR_LOG_LEVEL`` environment variable.
     """
+
+    bucket_name: str = os.getenv("RUBINTV_BUCKET_NAME", "rubintv_data")
+    """The bucket name from which to retriev data.
+
+    Set with the ``RUBINTV_BUCKET_NAME`` environment variable.
+    """
