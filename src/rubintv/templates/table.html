@@ -82,16 +82,18 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .codehilite .vm { color: #B8860B } /* Name.Variable.Magic */
 .codehilite .il { color: #666666 } /* Literal.Number.Integer.Long */</style><h1>Usage</h1>
 <p>To get to events directly, use</p>
-<div class="codehilite"><pre><span></span><code>https://rubinvis.rubinauxtel.org/events/&lt;date&gt;/&lt;seq&gt;
+<div class="codehilite"><pre><span></span><code>https://roundtable.lsst.codes/rubintv/imevents/&lt;date&gt;/&lt;seq&gt;
+<div class="codehilite"><pre><span></span><code>https://roundtable.lsst.codes/rubintv/specevents/&lt;date&gt;/&lt;seq&gt;
 </code></pre></div>
 
 <p>where the date format is <code>%Y-%m%-%d</code>.</p>
 <p>To enlarge the table, use</p>
-<div class="codehilite"><pre><span></span><code> https://rubinvis.rubinauxtel.org/&lt;num&gt;
+<div class="codehilite"><pre><span></span><code> https://roundtable.lsst.codes/rubintv/table/&lt;num&gt;
 </code></pre></div>
 
 <p>To get the most recent events, use</p>
-<div class="codehilite"><pre><span></span><code>https://rubinvis.rubinauxtel.org/current
+<div class="codehilite"><pre><span></span><code><a href="https://roundtable.lsst.codes/rubintv/im_current">https://roundtable.lsst.codes/rubintv/im_current</a>
+<div class="codehilite"><pre><span></span><code><a href="https://roundtable.lsst.codes/rubintv/spec_current">https://roundtable.lsst.codes/rubintv/spec_current</a>
 </code></pre></div>
 
 <p>The table and current event refresh every .5s.</p>
@@ -105,18 +107,26 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
   <thead>
 
     <tr>
-      <th>{{img_attr1}}</th>
-      <th>{{img_attr2}}</th>
+      <th colspan="2"> ImExamine </th>
+      <th colspan="2"> SpecExamine </th>
+    </tr>
+    <tr>
+      <th>{{imimg_attr1}}</th>
+      <th>{{imimg_attr2}}</th>
+      <th>{{specimg_attr1}}</th>
+      <th>{{specimg_attr2}}</th>
     </tr>
 
   </thead>
 
   <tbody>
 
-    {% for img in imgs %}
+    {% for imimg, specimg in zip(imimgs, specimgs) %}
     <tr>
-      <td><a href="{{ img.url }}">{{img.cleanDate()}}</a></td>
-      <td>{{img.seq}}</td>
+      <td><a href="{{ '/rubintv/imevents/' + imimg.cleanDate() + '/' + imimg.seq|string }}">{{imimg.cleanDate()}}</a></td>
+      <td>{{imimg.seq}}</td>
+      <td><a href="{{ '/rubintv/specevents/' + specimg.cleanDate() + '/' + specimg.seq|string }}">{{specimg.cleanDate()}}</a></td>
+      <td>{{specimg.seq}}</td>
     </tr>
     {% endfor %}
   </tbody>

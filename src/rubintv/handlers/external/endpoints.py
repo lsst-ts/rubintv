@@ -3,8 +3,10 @@
 __all__ = [
     "get_default_table",
     "get_table",
-    "events",
-    "current",
+    "imevents",
+    "specevents",
+    "imcurrent",
+    "speccurrent",
 ]
 
 from typing import List, Optional
@@ -21,9 +23,7 @@ from rubintv.models import Image
 async def get_default_table(request: web.Request) -> web.Response:
     """"""
     bucket = request.config_dict["rubintv/gcs_bucket"]
-    page = get_formatted_table(
-        "table.html", bucket, num=10, img_attr1="date", img_attr2="seq"
-    )
+    page = get_formatted_table("table.html", bucket, num=10)
     return web.Response(text=page, content_type="text/html")
 
 
@@ -32,25 +32,40 @@ async def get_table(request: web.Request) -> web.Response:
     """"""
     num = request.match_info["num"]
     bucket = request.config_dict["rubintv/gcs_bucket"]
-    page = get_formatted_table(
-        "table.html", bucket, num=int(num), img_attr1="date", img_attr2="seq"
-    )
+    page = get_formatted_table("table.html", bucket, num=int(num))
     return web.Response(text=page, content_type="text/html")
 
 
-@routes.get("/events/{date}/{seq}")
-async def events(request: web.Request) -> web.Response:
+@routes.get("/imevents/{date}/{seq}")
+async def imevents(request: web.Request) -> web.Response:
+    page = get_event_page(request, "summit_imexam")
+    return web.Response(text=page, content_type="text/html")
+
+
+@routes.get("/specevents/{date}/{seq}")
+async def specevents(request: web.Request) -> web.Response:
+    page = get_event_page(request, "summit_specexam")
+    return web.Response(text=page, content_type="text/html")
+
+
+def get_event_page(request: web.Request, prefix: str) -> str:
     date = request.match_info["date"]
     seq = request.match_info["seq"]
     bucket = request.config_dict["rubintv/gcs_bucket"]
-    page = get_formatted_table("data.html", bucket, date=date, seq=seq)
+    return get_formatted_page("data.html", prefix, bucket, date=date, seq=seq)
+
+
+@routes.get("/im_current")
+async def imcurrent(request: web.Request) -> web.Response:
+    bucket = request.config_dict["rubintv/gcs_bucket"]
+    page = get_formatted_page("current.html", "summit_imexam", bucket, num=1)
     return web.Response(text=page, content_type="text/html")
 
 
-@routes.get("/current")
-async def current(request: web.Request) -> web.Response:
+@routes.get("/spec_current")
+async def speccurrent(request: web.Request) -> web.Response:
     bucket = request.config_dict["rubintv/gcs_bucket"]
-    page = get_formatted_table("current.html", bucket, num=1)
+    page = get_formatted_page("current.html", "summit_specexam", bucket, num=1)
     return web.Response(text=page, content_type="text/html")
 
 
@@ -58,14 +73,42 @@ def get_formatted_table(
     template: str,
     bucket: Bucket,
     num: int = None,
+) -> str:
+    imimgs = timeSort(bucket, "summit_imexam", num)
+    specimgs = timeSort(bucket, "summit_specexam", num)
+    env = Environment(
+        loader=PackageLoader("rubintv", "templates"),
+        autoescape=select_autoescape(
+            [
+                "html",
+            ]
+        ),
+    )
+    env.globals.update(zip=zip)
+    templ = env.get_template(template)
+    return templ.render(
+        imimgs=imimgs,
+        specimgs=specimgs,
+        imimg_attr1="date",
+        imimg_attr2="seq",
+        specimg_attr1="date",
+        specimg_attr2="date",
+    )
+
+
+def get_formatted_page(
+    template: str,
+    prefix: str,
+    bucket: Bucket,
+    num: int = None,
     date: str = None,
     seq: str = None,
     **kwargs: str,
 ) -> str:
     if num:
-        imgs = timeSort(bucket, num)
+        imgs = timeSort(bucket, prefix, num)
     elif date and seq:
-        imgs = find_event(bucket, date, seq)
+        imgs = find_event(bucket, prefix, date, seq)
     else:
         raise ValueError("num or (date and seq) must be profided")
     env = Environment(
@@ -80,8 +123,10 @@ def get_formatted_table(
     return templ.render(imgs=imgs, **kwargs)
 
 
-def find_event(bucket: Bucket, date: str, seq: str) -> List[Image]:
-    imgs = timeSort(bucket)
+def find_event(
+    bucket: Bucket, prefix: str, date: str, seq: str
+) -> List[Image]:
+    imgs = timeSort(bucket, prefix)
     for img in imgs:
         if img.cleanDate() == date and img.seq == int(seq):
             return [
@@ -90,11 +135,15 @@ def find_event(bucket: Bucket, date: str, seq: str) -> List[Image]:
     raise ValueError(f"No event found for date={date} and sequence={seq}")
 
 
-def timeSort(bucket: Bucket, num: Optional[int] = None) -> List[Image]:
-    blobs = bucket.list_blobs(prefix="summit_imexam")
+def timeSort(
+    bucket: Bucket, prefix: str, num: Optional[int] = None
+) -> List[Image]:
+    blobs = bucket.list_blobs(prefix=prefix)
     sblobs = sorted(blobs, key=lambda x: x.time_created)
     clean_URLs = [
         el.public_url for el in sblobs if el.public_url.endswith(".png")
     ]
 
-    return [Image(p) for p in clean_URLs]
+    if num:
+        return [Image(p) for p in clean_URLs][:num]
+    return [Image(p) for p in clean_URLs][:num]

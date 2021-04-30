@@ -26,7 +26,7 @@ def create_app() -> web.Application:
 
     root_app = web.Application()
     root_app["safir/config"] = config
-    root_app["rubintv/gcs_bucket"] = storage.client().get_bucket(
+    root_app["rubintv/gcs_bucket"] = storage.Client().get_bucket(
         config.bucket_name
     )
     setup_metadata(package_name="rubintv", app=root_app)
@@ -41,13 +41,6 @@ def create_app() -> web.Application:
         [
             web.static(
                 "/static", Path(__file__).parent / "static", name="static"
-            ),
-        ]
-    )
-    sub_app.add_routes(
-        [
-            web.static(
-                "/images", Path(__file__).parent / "images", name="images"
             ),
         ]
     )
