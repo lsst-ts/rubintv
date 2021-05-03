@@ -4,8 +4,17 @@
 
 __all__ = [
     "get_index",
-    "get_default_table",
     "get_table",
+    "imevents",
+    "specevents",
+    "imcurrent",
+    "speccurrent",
 ]
-from rubintv.handlers.external.endpoints import get_default_table, get_table
+from rubintv.handlers.external.endpoints import (
+    get_table,
+    imcurrent,
+    imevents,
+    speccurrent,
+    specevents,
+)
 from rubintv.handlers.external.index import get_index

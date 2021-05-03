@@ -1,7 +1,6 @@
 """Handlers for rubintv endpoints."""
 
 __all__ = [
-    "get_default_table",
     "get_table",
     "imevents",
     "specevents",
@@ -19,20 +18,15 @@ from rubintv.handlers import routes
 from rubintv.models import Image
 
 
-@routes.get("/table")
-async def get_default_table(request: web.Request) -> web.Response:
-    """"""
-    bucket = request.config_dict["rubintv/gcs_bucket"]
-    page = get_formatted_table("table.html", bucket, num=10)
-    return web.Response(text=page, content_type="text/html")
-
-
-@routes.get("/table/{num}")
+@routes.get("/")
 async def get_table(request: web.Request) -> web.Response:
     """"""
-    num = request.match_info["num"]
+    if "num" in request.query:
+        num = int(request.query["num"])
+    else:
+        num = 10
     bucket = request.config_dict["rubintv/gcs_bucket"]
-    page = get_formatted_table("table.html", bucket, num=int(num))
+    page = get_formatted_table("table.html", bucket, num=num)
     return web.Response(text=page, content_type="text/html")
 
 
