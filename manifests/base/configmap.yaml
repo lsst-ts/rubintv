@@ -9,3 +9,4 @@ data:
   SAFIR_PROFILE: "production"
   SAFIR_LOGGER: "rubintv"
   SAFIR_LOG_LEVEL: "INFO"
+  GOOGLE_APPLICATION_CREDENTIALS: "/etc/rubintv/google_creds"

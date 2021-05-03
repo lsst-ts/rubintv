@@ -32,7 +32,15 @@ spec:
               drop:
                 - all
             readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: creds
+              mountPath: "/etc/rubintv/google_creds"
+              readOnly: true
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
+      volumes:
+        - name: creds
+          secret:
+            secretName: rubintv
