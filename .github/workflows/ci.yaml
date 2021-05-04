@@ -37,8 +37,16 @@ jobs:
           restore-keys: |
             tox-${{ matrix.python }}-${{ hashFiles('requirements/*.txt') }}-
 
+      - shell: bash
+        env:
+          GOOGLE_CREDS: ${{ secrets.GOOGLE_CREDS }}
+        run:
+          echo $GOOGLE_CREDS > /tmp/google_creds.json
+
       - name: Run tox
-        run: tox -e py,coverage-report,typing
+        env:
+           GOOGLE_APPLICATION_CREDENTIALS: "/tmp/google_creds.json"
+        run: echo $GOOGLE_APPLICATION_CREDENTIALS;tox -e py,coverage-report,typing
 
   build:
     runs-on: ubuntu-latest
