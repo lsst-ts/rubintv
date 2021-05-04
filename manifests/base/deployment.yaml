@@ -34,7 +34,7 @@ spec:
             readOnlyRootFilesystem: true
           volumeMounts:
             - name: creds
-              mountPath: "/etc/rubintv/google_creds"
+              mountPath: "/etc/rubintv"
               readOnly: true
       securityContext:
         runAsNonRoot: true
