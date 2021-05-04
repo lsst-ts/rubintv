@@ -79,7 +79,9 @@ def get_formatted_table(
                 match = True
                 break
         if not match:
-            trimmed_specims.append(None)
+            # Ignore typing here since the template expects None if there
+            # is no spec image for this run
+            trimmed_specims.append(None)  # type: ignore[arg-type]
 
     env = Environment(
         loader=PackageLoader("rubintv", "templates"),
