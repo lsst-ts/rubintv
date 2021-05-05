@@ -3,7 +3,7 @@ kind: Kustomization
 
 images:
   - name: lsstsqre/rubintv
-    newTag: 0.0.4
+    newTag: 0.0.5
 
 resources:
   - configmap.yaml
