@@ -18,6 +18,7 @@ from rubintv.handlers import routes
 from rubintv.models import Image
 
 
+@routes.get("")
 @routes.get("/")
 async def get_table(request: web.Request) -> web.Response:
     """"""

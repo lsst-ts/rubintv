@@ -17,4 +17,3 @@ from rubintv.handlers.external.endpoints import (
     speccurrent,
     specevents,
 )
-from rubintv.handlers.external.index import get_index
