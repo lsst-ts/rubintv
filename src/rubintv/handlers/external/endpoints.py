@@ -147,11 +147,9 @@ def timeSort(
     bucket: Bucket, prefix: str, num: Optional[int] = None
 ) -> List[Image]:
     blobs = bucket.list_blobs(prefix=prefix)
-    sblobs = sorted(blobs, key=lambda x: x.time_created, reverse=True)
-    clean_URLs = [
-        el.public_url for el in sblobs if el.public_url.endswith(".png")
-    ]
+    imgs = [Image(el.public_url) for el in blobs if el.public_url.endswith('.png')]
+    simgs = sorted(imgs, key=lambda x: (x.date, x.seq), reverse=True)
 
     if num:
-        return [Image(p) for p in clean_URLs][:num]
-    return [Image(p) for p in clean_URLs]
+        return simgs[:num]
+    return simgs
