@@ -154,4 +154,4 @@ def timeSort(
 
     if num:
         return [Image(p) for p in clean_URLs][:num]
-    return [Image(p) for p in clean_URLs][:num]
+    return [Image(p) for p in clean_URLs]
