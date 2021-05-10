@@ -85,11 +85,16 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <div class="codehilite"><pre><span></span><code>https://roundtable.lsst.codes/rubintv/imevents/&lt;date&gt;/&lt;seq&gt;
 <div class="codehilite"><pre><span></span><code>https://roundtable.lsst.codes/rubintv/specevents/&lt;date&gt;/&lt;seq&gt;
 </code></pre></div>
-
 <p>where the date format is <code>%Y-%m%-%d</code>.</p>
+
 <p>To enlarge the table, use</p>
 <div class="codehilite"><pre><span></span><code> https://roundtable.lsst.codes/rubintv/?num=&lt;num&gt;
 </code></pre></div>
+
+<p>To search by time window, use</p>
+<div class="codehilite"><pre><span></span><code> https://roundtable.lsst.codes/rubintv/?beg_date=&lt;ISO date&gt;&amp;end_date=&lt;ISO date&gt;
+</code></pre></div>
+<p>The beg_date and end_date parameters must be ISO 8601 compliant time strings: e.g 2021-05-15.  If either is missing they will be treated as lower or upper date limits respectively.</p>
 
 <p>To get the most recent events, use</p>
 <div class="codehilite"><pre><span></span><code><a href="https://roundtable.lsst.codes/rubintv/im_current">https://roundtable.lsst.codes/rubintv/im_current</a>

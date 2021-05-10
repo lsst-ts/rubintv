@@ -8,6 +8,7 @@ __all__ = [
     "speccurrent",
 ]
 
+from datetime import datetime
 from typing import List, Optional
 
 from aiohttp import web
@@ -26,8 +27,18 @@ async def get_table(request: web.Request) -> web.Response:
         num = int(request.query["num"])
     else:
         num = 10
+    if "beg_date" in request.query:
+        beg_date = datetime.fromisoformat(request.query["beg_date"])
+    else:
+        beg_date = None  # type: ignore[assignment]
+    if "end_date" in request.query:
+        end_date = datetime.fromisoformat(request.query["end_date"])
+    else:
+        end_date = None  # type: ignore[assignment]
     bucket = request.config_dict["rubintv/gcs_bucket"]
-    page = get_formatted_table("table.html", bucket, num=num)
+    page = get_formatted_table(
+        "table.html", bucket, num=num, beg_date=beg_date, end_date=end_date
+    )
     return web.Response(text=page, content_type="text/html")
 
 
@@ -68,9 +79,23 @@ def get_formatted_table(
     template: str,
     bucket: Bucket,
     num: int = None,
+    beg_date: datetime = None,
+    end_date: datetime = None,
 ) -> str:
-    imimgs = timeSort(bucket, "summit_imexam", num)
-    specimgs = timeSort(bucket, "summit_specexam", num)
+    if beg_date or end_date:
+        imimgs = timeWindowSort(
+            bucket, "summit_imexam", num, beg_date=beg_date, end_date=end_date
+        )
+        specimgs = timeWindowSort(
+            bucket,
+            "summit_specexam",
+            num,
+            beg_date=beg_date,
+            end_date=end_date,
+        )
+    else:
+        imimgs = timeSort(bucket, "summit_imexam", num)
+        specimgs = timeSort(bucket, "summit_specexam", num)
     trimmed_specims = []
     for img in imimgs:
         match = False
@@ -147,11 +172,35 @@ def timeSort(
     bucket: Bucket, prefix: str, num: Optional[int] = None
 ) -> List[Image]:
     blobs = bucket.list_blobs(prefix=prefix)
-    sblobs = sorted(blobs, key=lambda x: x.time_created, reverse=True)
-    clean_URLs = [
-        el.public_url for el in sblobs if el.public_url.endswith(".png")
+    imgs = [
+        Image(el.public_url) for el in blobs if el.public_url.endswith(".png")
     ]
+    simgs = sorted(imgs, key=lambda x: (x.date, x.seq), reverse=True)
 
     if num:
-        return [Image(p) for p in clean_URLs][:num]
-    return [Image(p) for p in clean_URLs][:num]
+        return simgs[:num]
+    return simgs
+
+
+def timeWindowSort(
+    bucket: Bucket,
+    prefix: str,
+    num: Optional[int] = None,
+    beg_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+) -> List[Image]:
+    imgs = timeSort(bucket, prefix)
+    if beg_date and end_date:
+        simgs = [
+            el for el in imgs if beg_date < el.date and end_date > el.date
+        ]
+    elif beg_date:
+        simgs = [el for el in imgs if beg_date < el.date]
+    elif end_date:
+        simgs = [el for el in imgs if end_date > el.date]
+    else:
+        raise RuntimeError(f"Something went wrong: {beg_date} and {end_date}")
+
+    if num:
+        return simgs[:num]
+    return simgs
