@@ -5,15 +5,7 @@
 __all__ = [
     "get_index",
     "get_table",
-    "imevents",
-    "specevents",
-    "imcurrent",
-    "speccurrent",
+    "events",
+    "current",
 ]
-from rubintv.handlers.external.endpoints import (
-    get_table,
-    imcurrent,
-    imevents,
-    speccurrent,
-    specevents,
-)
+from rubintv.handlers.external.endpoints import current, events, get_table

@@ -4,11 +4,19 @@ from typing import Tuple
 
 
 @dataclass
+class Channel:
+    name: str
+    prefix: str
+    endpoint: str
+
+
+@dataclass
 class Image:
     url: str
     name: str = field(init=False)
     date: datetime = field(init=False)
     seq: int = field(init=False)
+    chans: list = field(init=False)
 
     def parse_filename(self, delimiter: str = "_") -> Tuple:
         name = self.url.split("/")[
@@ -24,3 +32,4 @@ class Image:
 
     def __post_init__(self) -> None:
         self.name, self.date, self.seq = self.parse_filename()
+        self.chans = []

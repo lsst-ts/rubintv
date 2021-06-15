@@ -2,10 +2,8 @@
 
 __all__ = [
     "get_table",
-    "imevents",
-    "specevents",
-    "imcurrent",
-    "speccurrent",
+    "events",
+    "current",
 ]
 
 from datetime import datetime
@@ -16,7 +14,16 @@ from google.cloud.storage import Bucket
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 from rubintv.handlers import routes
-from rubintv.models import Image
+from rubintv.models import Channel, Image
+
+channels = {
+    "spec": Channel(
+        name="SpecExamine", prefix="summit_specexam", endpoint="specevents"
+    ),
+    "im": Channel(
+        name="ImExamine", prefix="summit_imexam", endpoint="imevents"
+    ),
+}
 
 
 @routes.get("")
@@ -42,15 +49,9 @@ async def get_table(request: web.Request) -> web.Response:
     return web.Response(text=page, content_type="text/html")
 
 
-@routes.get("/imevents/{date}/{seq}")
-async def imevents(request: web.Request) -> web.Response:
-    page = get_event_page(request, "summit_imexam")
-    return web.Response(text=page, content_type="text/html")
-
-
-@routes.get("/specevents/{date}/{seq}")
-async def specevents(request: web.Request) -> web.Response:
-    page = get_event_page(request, "summit_specexam")
+@routes.get("/{name}events/{date}/{seq}")
+async def events(request: web.Request) -> web.Response:
+    page = get_event_page(request, channels[request.match_info["name"]].prefix)
     return web.Response(text=page, content_type="text/html")
 
 
@@ -61,17 +62,15 @@ def get_event_page(request: web.Request, prefix: str) -> str:
     return get_formatted_page("data.html", prefix, bucket, date=date, seq=seq)
 
 
-@routes.get("/im_current")
-async def imcurrent(request: web.Request) -> web.Response:
+@routes.get("/{name}_current")
+async def current(request: web.Request) -> web.Response:
     bucket = request.config_dict["rubintv/gcs_bucket"]
-    page = get_formatted_page("current.html", "summit_imexam", bucket, num=1)
-    return web.Response(text=page, content_type="text/html")
-
-
-@routes.get("/spec_current")
-async def speccurrent(request: web.Request) -> web.Response:
-    bucket = request.config_dict["rubintv/gcs_bucket"]
-    page = get_formatted_page("current.html", "summit_specexam", bucket, num=1)
+    page = get_formatted_page(
+        "current.html",
+        channels[request.match_info["name"]].prefix,
+        bucket,
+        num=1,
+    )
     return web.Response(text=page, content_type="text/html")
 
 
@@ -82,32 +81,37 @@ def get_formatted_table(
     beg_date: datetime = None,
     end_date: datetime = None,
 ) -> str:
+    imgs = {}
     if beg_date or end_date:
-        imimgs = timeWindowSort(
-            bucket, "summit_imexam", num, beg_date=beg_date, end_date=end_date
-        )
-        specimgs = timeWindowSort(
-            bucket,
-            "summit_specexam",
-            num,
-            beg_date=beg_date,
-            end_date=end_date,
-        )
+        for chan in channels:
+            imgs[chan] = timeWindowSort(
+                bucket,
+                channels[chan].prefix,
+                num,
+                beg_date=beg_date,
+                end_date=end_date,
+            )
     else:
-        imimgs = timeSort(bucket, "summit_imexam", num)
-        specimgs = timeSort(bucket, "summit_specexam", num)
-    trimmed_specims = []
-    for img in imimgs:
-        match = False
-        for simg in specimgs:
-            if img.cleanDate() == simg.cleanDate() and img.seq == simg.seq:
-                trimmed_specims.append(simg)
-                match = True
-                break
-        if not match:
-            # Ignore typing here since the template expects None if there
-            # is no spec image for this run
-            trimmed_specims.append(None)  # type: ignore[arg-type]
+        for chan in channels:
+            imgs[chan] = timeSort(bucket, channels[chan].prefix, num)
+    keys = list(imgs.keys())
+    for i, img in enumerate(
+        imgs["im"]
+    ):  # I know there will always be an im style image
+        imgs["im"][i].chans.append(channels["im"])
+        for k in keys:
+            if k == "im":
+                continue
+            match = False
+            for mim in imgs[k]:
+                if img.cleanDate() == mim.cleanDate() and img.seq == mim.seq:
+                    imgs["im"][i].chans.append(channels[k])
+                    match = True
+                    break
+            if not match:
+                # Ignore typing here since the template expects None if there
+                # is no spec image for this run
+                imgs["im"][i].chans.append(None)
 
     env = Environment(
         loader=PackageLoader("rubintv", "templates"),
@@ -120,12 +124,8 @@ def get_formatted_table(
     env.globals.update(zip=zip)
     templ = env.get_template(template)
     return templ.render(
-        imimgs=imimgs,
-        specimgs=trimmed_specims,
-        imimg_attr1="date",
-        imimg_attr2="seq",
-        specimg_attr1="date",
-        specimg_attr2="date",
+        ncols=len(channels),
+        imgs=imgs["im"],
     )
 
 
