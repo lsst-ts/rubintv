@@ -170,9 +170,9 @@ google-auth==1.31.0 \
     #   google-api-core
     #   google-cloud-core
     #   google-cloud-storage
-google-cloud-core==1.6.0 \
-    --hash=sha256:40d9c2da2d03549b5ac3dcccf289d4f15e6d1210044c6381ce45c92913e62904 \
-    --hash=sha256:c6abb18527545379fc82efc4de75ce9a3772ccad2fc645adace593ba097cbb02
+google-cloud-core==1.7.0 \
+    --hash=sha256:2ab0cf260c11d0cc334573301970419abb6a1f3909c6cd136e4be996616372fe \
+    --hash=sha256:9bd528810423aeaa428a9a178e7320883bbb690a8b0bb38297b794dc319c415a
     # via google-cloud-storage
 google-cloud-storage==1.38.0 \
     --hash=sha256:162011d66f64b8dc5d7936609a5daf0066cc521231546aea02c126a5559446c4 \
@@ -209,9 +209,9 @@ google-crc32c==1.1.2 \
     --hash=sha256:ea170341a4a9078a067b431044cd56c73553425833a7c2bb81734777a230ad4b \
     --hash=sha256:ef2ed6d0ac4de4ac602903e203eccd25ec8e37f1446fe1a3d2953a658035e0a5
     # via google-resumable-media
-google-resumable-media==1.3.0 \
-    --hash=sha256:030a650e6dd18faad1b86c8f64be8b6cd59a90dbc22937d25631576f0c23a305 \
-    --hash=sha256:e2075b40a645965e4312fe6dac20a274b6718801630017b7b75afe7f1081bd70
+google-resumable-media==1.3.1 \
+    --hash=sha256:106db689574283a7d9d154d5a97ab384153c55a1195cecb8c01cad9e6e827628 \
+    --hash=sha256:1a1eb743d13f782d1405437c266b2c815ef13c2b141ba40835c74a3317539d01
     # via google-cloud-storage
 googleapis-common-protos==1.53.0 \
     --hash=sha256:a88ee8903aa0a81f6c3cec2d5cf62d3c8aa67c06439b0496b49048fb1854ebf4 \
@@ -406,9 +406,9 @@ rsa==4.7.2 \
     --hash=sha256:78f9a9bf4e7be0c5ded4583326e7461e3a3c5aae24073648b4bdfa797d78c9d2 \
     --hash=sha256:9d689e6ca1b3038bc82bf8d23e944b6b6037bc02301a574935b2dd946e0353b9
     # via google-auth
-safir==0.2.0 \
-    --hash=sha256:240c16ccc43c7a1cb0ee7fcbb94de44a9675d9bf5aef7509cb09c1e49e9d386b \
-    --hash=sha256:fb6c27f1defb13428dde17b7b304d7672955a4b77ae4de9a5ab5f08f3e09e3cc
+safir==1.0.0 \
+    --hash=sha256:43df32e3bd076a5a59e5e69d138e3220304881908669ea3ce4da9a22bf0b9df3 \
+    --hash=sha256:6086fc32c4a95a294ef4fc5520e9bf566585d88e638029509040d2d7a2d4bbb8
     # via -r requirements/main.in
 six==1.16.0 \
     --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
