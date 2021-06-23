@@ -23,6 +23,11 @@ channels = {
     "im": Channel(
         name="ImExamine", prefix="summit_imexam", endpoint="imevents"
     ),
+    "mount": Channel(
+        name="AuxtelTorques",
+        prefix="auxtel_mount_torques",
+        endpoint="mountevents",
+    ),
 }
 
 
