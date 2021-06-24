@@ -28,7 +28,7 @@
 			</article>
 			<article>
 				<h2>Searching for past images between dates</h2>
-				<p>You can search for past images within a time window using the fields on the lower right. The Begin Date and End Date are not inclusive.  Only dates between the two are returned.  The list of available images between the two dates will appear in the table at the bottom of the page.</p>
+				<p>You can search for past images within a time window using the fields on the lower right. The Begin Date and End Date are not inclusive.  Only dates between the two are returned.  The list of available images between the two dates will appear in the table at the bottom of the page. The "Number in Table" entry determines how many entries are displayed in the table.</p>
 
 			</article>
 			<article>
@@ -148,13 +148,15 @@
   <input type="text" style="text-align:center;" id="beg_date" name="beg_date" value="2021-06-08"><br>
   <label for="date">End Date: Format=2021-06-08:</label><br>
   <input type="text" style="text-align:center;" id="end_date" name="end_date" value="2021-06-10"><br><br>
+  <label for="num">Number in Table:</label><br>
+  <input type="text" style="text-align:center;" id="num" name="num" value="500"><br><br>
   <input type="submit" value="Submit">
 
   <script>
     function search_process()
     {
     window.open( 
-    "/rubintv/?beg_date=" + document.getElementById("beg_date").value + "&end_date=" + document.getElementById("end_date").value +"&num=1000", "_blank");
+    "/rubintv/?beg_date=" + document.getElementById("beg_date").value + "&end_date=" + document.getElementById("end_date").value +"&num=" + document.getElementById("num").value, "_self");
     return false;
     }
 </script>
