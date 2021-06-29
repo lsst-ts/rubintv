@@ -8,19 +8,33 @@
 </head>
 
 <body>
-	<header>
-	  <div id="logo"><img src="/rubintv/static/images/Rubin_Logo.png" style="width:180px;height:120px;"></div>
-	  <div id="title"><center><h1><br><br>Rubin TV image display service&nbsp;&nbsp;&nbsp;&nbsp;</h1></center></div>
-	  <div id="logo"><img src="/rubintv/static/images/tv4.png" style="width:180px;height:120px;"></div>
-	</header>
-	<section>
-		<strong>This site is for accessing rapid image analysis from the LSST Auxiliary Telescope.</strong>
-	</section>
+
+
+<header>
+	  <div id="logo1"><img src="/rubintv/static/images/Rubin_Logo.png"></div>
+	  <div id="title"><h1>Rubin TV image display service</h1></div>
+	  <div id="logo2"><img src="/rubintv/static/images/tv4.png"></div>
+</header>
+	
+<section id="subheader">
+		<h2>This site is for accessing rapid image analysis from the LSST Auxiliary Telescope.</h2>
+</section>
+
+<section  id="nav">
+<h1>Most recent images</h1>
+<div class="container">
+    <button onclick="window.open('http://localhost:8000/rubintv/monitor_current','_blank');"><img src="/rubintv/static/images/tv5.png"></br>Monitor</button>
+    <button onclick="window.open('http://localhost:8000/rubintv/im_current','_blank');"><img src="/rubintv/static/images/tv1.png"></br>Image Analysis</button>
+    <button onclick="window.open('http://localhost:8000/rubintv/spec_current','_blank');"><img src="/rubintv/static/images/tv3.png"></br>Spectrum</button>
+    <button onclick="window.open('http://localhost:8000/rubintv/mount_current','_blank');"><img src="/rubintv/static/images/tv2.png"></br>Mount</button>
+</div>
+</section>
+
 	<section id="pageContent">
 		<main role="main">
 			<article>
 				<h2>Most recent image</h2>
-				<p>The most recent image analysis is rapidly uploaded to the site selected to the right.  It will refresh as soon as a new image is available.  The most recent images are listed in the table at the bottom of the page.  There are three types of image analysis, simple non-dispersed images, spectral analysis of dispersed images, and analysis of mount tracking accuracy.</p>
+				<p>The most recent image analysis is rapidly uploaded to the site and these images are accessible using the "Most recent images" buttons above.  They will refresh as soon as a new image is available.  The most recent images are listed in the table at the bottom of the page.  There are four types of image analysis, the raw image with simple ISR, analysis of simple non-dispersed images, spectral analysis of dispersed images, and analysis of mount tracking accuracy.</p>
 			</article>
 			<article>
 				<h2>Past images</h2>
@@ -36,57 +50,32 @@
 				<p></p>
 			</article>
 
-
-<h1>Table of recent images</h1>
-
-<div id="refresher">
-
-<table class="crimson">
-
-  <thead>
-
-    <tr>
-      <th> Date </th>
-      <th> Sequence Number </th>
-      <th colspan={{ncols}}> Channels </th>
-    </tr>
-
-  </thead>
-
-  <tbody>
-
-    {% for img in imgs %}
-    <tr>
-      <td>{{img.cleanDate()}}</td>
-      <td>{{img.seq}}</td>
-      {% for chan in img.chans %}
-        {% if chan is not none %}
-          <td><a href="{{ '/rubintv/' + chan.endpoint + '/' + img.cleanDate() + '/' + img.seq|string }}">{{chan.name}}</a></td>
-        {% else %}
-          <td></td>
-          <td></td>
-        {% endif %}
-      {% endfor %}
-    </tr>
-    {% endfor %}
-  </tbody>
-
-</table>
-
-</div>
-
-
 </main>
+
+
 <aside>
-		  
-		  <div><h2>Most recent images</h2>
-		    <button type="button" onclick="window.open('http://localhost:8000/rubintv/im_current','_blank');"><img src="/rubintv/static/images/tv1.jpeg" style="width:60px;height:45px;"><br/>Image</button>
-		    <button type="button" onclick="window.open('http://localhost:8000/rubintv/spec_current','_blank');"><img src="/rubintv/static/images/tv3.jpeg" style="width:60px;height:45px;"><br/>Spectrum</button>
-		    <button type="button" onclick="window.open('http://localhost:8000/rubintv/mount_current','_blank');"><img src="/rubintv/static/images/tv2.jpeg" style="width:60px;height:45px;"><br/>Mount</button>
+
+<div><h2>Past monitor event</h2>
+<form style="background-color:light blue;" onSubmit="return mon_process();" id="monevents">
+  <label for="date">Date: Format=2021-06-08:</label><br>
+  <input type="text" style="text-align:center;" id="mon_date" name="date" value="2021-06-08"><br>
+  <label for="seqno">Sequence number:</label><br>
+  <input type="text" style="text-align:center;" id="mon_seqno" name="seqno" value="179"><br><br>
+  <input type="submit" value="Submit">
+
+  <script>
+    function mon_process()
+    {
+    window.open( 
+    "/rubintv/monevents/" + document.getElementById("mon_date").value + "/" + document.getElementById("mon_seqno").value, "_blank");
+    return false;
+    }
+</script>
+</form>
 </div>
 
 <div><h2>Past image event</h2>
-<form style="background-color:light blue; "onSubmit="return im_process();" id="imevents">
+<form style="background-color:light blue;" onSubmit="return im_process();" id="imevents">
   <label for="date">Date: Format=2021-06-08:</label><br>
   <input type="text" style="text-align:center;" id="im_date" name="date" value="2021-06-08"><br>
   <label for="seqno">Sequence number:</label><br>
@@ -105,7 +94,7 @@
 </div>
 
 <div><h2>Past spectrum event</h2>
-<form style="background-color:light blue; "onSubmit="return spec_process();" id="specevents">
+<form style="background-color:light blue;" onSubmit="return spec_process();" id="specevents">
   <label for="date">Date: Format=2021-06-08:</label><br>
   <input type="text" style="text-align:center;" id="spec_date" name="date" value="2021-06-08"><br>
   <label for="seqno">Sequence number:</label><br>
@@ -124,7 +113,7 @@
 </div>
 
 <div><h2>Past mount tracking event</h2>
-<form style="background-color:light blue; "onSubmit="return mount_process();" id="imevents">
+<form style="background-color:light blue;" onSubmit="return mount_process();" id="imevents">
   <label for="date">Date: Format=2021-06-08:</label><br>
   <input type="text" style="text-align:center;" id="mount_date" name="date" value="2021-06-08"><br>
   <label for="seqno">Sequence number:</label><br>
@@ -165,6 +154,49 @@
 </div>
 </aside>
 </section>
+
+	
+<section id="table_section">
+
+<div id="refresher">
+
+
+<table class="crimson">
+<caption><h1>Table of recent images</h1></caption>
+  <thead>
+    <tr>
+      <th> Date </th>
+      <th> Sequence Number </th>
+      <th colspan={{ncols}}> Channels </th>
+    </tr>
+
+  </thead>
+
+  <tbody>
+
+    {% for img in imgs %}
+    <tr>
+      <td>{{img.cleanDate()}}</td>
+      <td>{{img.seq}}</td>
+      {% for chan in img.chans %}
+        {% if chan is not none %}
+          <td><a href="{{ '/rubintv/' + chan.endpoint + '/' + img.cleanDate() + '/' + img.seq|string }}">{{chan.name}}</a></td>
+        {% else %}
+          <td></td>
+          <td></td>
+        {% endif %}
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+
+</table>
+
+</div>
+
+</section>
+
+			
 
 </body>
 
