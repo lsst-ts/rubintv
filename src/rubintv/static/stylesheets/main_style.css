@@ -1,0 +1,137 @@
+body,html {
+	background-color: #FFF;
+}
+
+
+header {
+    background: #AEC6CF;
+    padding: 20px 30px;
+    max-width: 940px;
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+}
+
+#logo1 img {
+    width: 180px;
+    height: 120px;
+    font-size: 30px;
+    color: #FFF;
+}
+
+#logo2 img {
+    width: 180px;
+    height: 120px;
+}
+
+#subheader {
+    text-align: center;
+    max-height: 20px;
+}
+
+#nav {
+    background: #AEC6CF;
+    padding: 20px 20px;
+    max-width: 960px;
+    max-height: 200px;
+}
+
+.container {
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+}
+button {
+    font-size: large;
+    background: #AEC6CF;
+    margin: 0;
+    outline: none;
+    border: none;
+    box-shadow: none;
+}
+
+button img {
+    width: 135px;
+    height: 90px;
+    background: #AEC6CF;
+}
+
+button:hover {
+    cursor: pointer;
+}
+    
+#pageContent {
+    max-width: 1000px;
+    margin: auto;
+    border: none;
+}
+main {
+	float: left;
+	width: 60%;
+}
+aside {
+	float: right;
+	width: 30%;
+}
+article {
+    border-bottom: 2px dotted #999;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+article h2 {
+    font-weight: normal;
+    margin-bottom: 12px;
+}
+article p {
+	
+}
+main section {
+    	text-align: center;
+	
+}
+address {
+    padding: 10px 20px 30px 10px;
+}
+aside > div {
+	margin: 10px auto;
+	background: #AEC6CF;
+	min-height: 40px;
+	text-align: center;
+	float: center;
+	input { text-align: center; }
+}
+
+table{
+  border-collapse:collapse;
+  width:100%;
+  display: table;
+  text-align: center;
+}
+
+
+thead th:nth-child(1) {
+  width: 40%;
+}
+
+thead th:nth-child(2) {
+  width: 10%;
+}
+
+thead th:nth-child(3) {
+  width: 50%;
+}
+
+th, td {
+  padding: 20px;
+}
+
+
+
+body > section {
+    max-width: 1000px;
+    margin: auto;
+    padding: 30px 0px;
+    border-bottom: 1px solid #999;
+    color: #333;
+    text-align: center;    
+}
