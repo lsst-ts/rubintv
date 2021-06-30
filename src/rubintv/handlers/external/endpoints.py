@@ -28,6 +28,11 @@ channels = {
         prefix="auxtel_mount_torques",
         endpoint="mountevents",
     ),
+    "monitor": Channel(
+        name="AuxtelMonitor",
+        prefix="auxtel_monitor",
+        endpoint="monitorevents",
+    ),
 }
 
 
