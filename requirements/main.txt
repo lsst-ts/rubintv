@@ -161,9 +161,9 @@ google-api-core==1.31.0 \
     --hash=sha256:7c8ba88e2b893ef4f67d67e229aade51a2db5053023b73b1394a5ee3dcdb561c \
     --hash=sha256:a9f979b5c6a9cad31a4120ca6be712df76adc32336a7bf4bc2f4331a1b527fe7
     # via google-cloud-core
-google-auth==1.33.0 \
-    --hash=sha256:9bd25d835c01ca3dd9045ea0b50f036e3fe3868ee2c5a9773a661925bbdf46ca \
-    --hash=sha256:a756a33978fac611e4f00b69715b80e35467c30cc6262132d29d33a0e398ac55
+google-auth==1.33.1 \
+    --hash=sha256:036dd68c1e8baa422b6b61619b8e02793da2e20f55e69514612de6c080468755 \
+    --hash=sha256:7665c04f2df13cc938dc7d9066cddb1f8af62b038bc8b2306848c1b23121865f
     # via
     #   google-api-core
     #   google-cloud-core
@@ -172,9 +172,9 @@ google-cloud-core==1.7.1 \
     --hash=sha256:31e8c8596d3fbe2ecbe8708572b48741f8b247a78740aebfaf4da445487a1af5 \
     --hash=sha256:3bd1e679a3d38b9da93c5919ae56239dda91fb32a2d954b2cd830392337c1cc9
     # via google-cloud-storage
-google-cloud-storage==1.41.0 \
-    --hash=sha256:44019944c6675f1ee733b19bd0720677a52924100d5ffdb006da6a4efa411564 \
-    --hash=sha256:705e564c096eb2dc35cced29fb44dafacdcf3185b0b139d7fa63c564d09e92c5
+google-cloud-storage==1.41.1 \
+    --hash=sha256:a81ecc0f382b8e4437cc7f152f74d77ef917c8280a5d1040f5dcfbd0502c7906 \
+    --hash=sha256:cd4c9039eb0017fdc75c3f96b0b5ea57759ceefe3a0401d514bcf0111cd7a508
     # via -r requirements/main.in
 google-crc32c==1.1.2 \
     --hash=sha256:0ae3cf54e0d4d83c8af1afe96fc0970fbf32f1b29275f3bfd44ce25c4b622a2b \
