@@ -204,22 +204,22 @@ flake8==3.9.2 \
     --hash=sha256:07528381786f2a6237b061f6e96610a4167b226cb926e2aa2b6b1d78057c576b \
     --hash=sha256:bf8fd333346d844f616e8d47905ef3a3384edae6b4e9beb0c5101e25e3110907
     # via -r requirements/dev.in
-google-api-core==1.31.1 \
-    --hash=sha256:108cf94336aed7e614eafc53933ef02adf63b9f0fd87e8f8212acaa09eaca456 \
-    --hash=sha256:1d63e2b28057d79d64795c9a70abcecb5b7e96da732d011abf09606a39b48701
+google-api-core==2.0.0 \
+    --hash=sha256:428805de17b48ca1af2fdb5bbfc2334e1bbcb0ea4a16506fa1337fb29c8f37c8 \
+    --hash=sha256:bd9eb0709f4e10dd6fddb32fd0788a190b434426c258be6e00ef40da136d768d
     # via
     #   google-cloud-core
     #   google-cloud-storage
-google-auth==1.34.0 \
-    --hash=sha256:bd6aa5916970a823e76ffb3d5c3ad3f0bedafca0a7fa53bc15149ab21cb71e05 \
-    --hash=sha256:f1094088bae046fb06f3d1a3d7df14717e8d959e9105b79c57725bd4e17597a2
+google-auth==2.0.1 \
+    --hash=sha256:c012c8be7c442c8309ca8fa0876fef33f5fd977c467be1e1c1c2f721e8ebd73c \
+    --hash=sha256:ea1af050b3e06eb73e4470f704d23007307bc0e87c13e015f6b90460f1407bd3
     # via
     #   google-api-core
     #   google-cloud-core
     #   google-cloud-storage
-google-cloud-core==1.7.2 \
-    --hash=sha256:5b77935f3d9573e27007749a3b522f08d764c5b5930ff1527b2ab2743e9f0c15 \
-    --hash=sha256:b1030aadcbb2aeb4ee51475426351af83c1072456b918fb8fdb80666c4bb63b5
+google-cloud-core==2.0.0 \
+    --hash=sha256:31785d1e1d02f90ad3f1b020d4aed63db4865c3394ff7c128a296b6995eef31f \
+    --hash=sha256:90ee99648ccf9e11a16781a7fc58d13e58f662b439c737d48c24ef18662c2702
     # via google-cloud-storage
 google-cloud-storage==1.42.0 \
     --hash=sha256:92a9c8b1a6a278c5c12877fe1a966ecd0cae327cf98c6ae50deedf1a32d6cf2b \
@@ -256,9 +256,9 @@ google-crc32c==1.1.2 \
     --hash=sha256:ea170341a4a9078a067b431044cd56c73553425833a7c2bb81734777a230ad4b \
     --hash=sha256:ef2ed6d0ac4de4ac602903e203eccd25ec8e37f1446fe1a3d2953a658035e0a5
     # via google-resumable-media
-google-resumable-media==1.3.3 \
-    --hash=sha256:092f39153cd67a4e409924edf08129f43cc72e630a1eb22abec93e80155df4ba \
-    --hash=sha256:ce38555d250bd70b0c2598bf61e99003cb8c569b0176ec0e3f38b86f9ffff581
+google-resumable-media==2.0.0 \
+    --hash=sha256:094c0381734649ac939083ea3833bd239b7fba904d246342d1268984029f2167 \
+    --hash=sha256:c65f9e08a4fe1df532138c8f00eeafcd7fe0d4db35dff70d7428b6ea659b2888
     # via google-cloud-storage
 googleapis-common-protos==1.53.0 \
     --hash=sha256:a88ee8903aa0a81f6c3cec2d5cf62d3c8aa67c06439b0496b49048fb1854ebf4 \
@@ -419,9 +419,7 @@ nodeenv==1.6.0 \
 packaging==21.0 \
     --hash=sha256:7dc96269f53a4ccec5c0670940a4281106dd0bb343f47b7471f779df49c2fbe7 \
     --hash=sha256:c86254f9220d55e31cc94d69bade760f0847da8000def4dfe1c6b872fd14ff14
-    # via
-    #   google-api-core
-    #   pytest
+    # via pytest
 platformdirs==2.2.0 \
     --hash=sha256:4666d822218db6a262bdfdc9c39d21f23b4cfdb08af331a81e92751daf6c866c \
     --hash=sha256:632daad3ab546bd8e6af0537d09805cec458dce201bccfe23012df73332e181e
@@ -509,10 +507,6 @@ pytest-aiohttp==0.3.0 \
     --hash=sha256:0b9b660b146a65e1313e2083d0d2e1f63047797354af9a28d6b7c9f0726fa33d \
     --hash=sha256:c929854339637977375838703b62fef63528598bc0a9d451639eba95f4aaa44f
     # via -r requirements/dev.in
-pytz==2021.1 \
-    --hash=sha256:83a4a90894bf38e243cf052c8b58f381bfe9a7a483f6a9cab140bc7f702ac4da \
-    --hash=sha256:eb10ce3e7736052ed3623d49975ce333bcd712c7bb19a58b9e2089d4057d0798
-    # via google-api-core
 pyyaml==5.4.1 \
     --hash=sha256:08682f6b72c722394747bddaf0aa62277e02557c0fd1c42cb853016a38f8dedf \
     --hash=sha256:0f5f5786c0e09baddcd8b4b45f20a7b5d61a7e7e99846e3c799b05c7c53fa696 \
@@ -558,10 +552,6 @@ six==1.16.0 \
     --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
     --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
     # via
-    #   google-api-core
-    #   google-auth
-    #   google-cloud-core
-    #   google-resumable-media
     #   protobuf
     #   virtualenv
 toml==0.10.2 \
