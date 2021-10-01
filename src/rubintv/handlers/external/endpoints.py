@@ -15,6 +15,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 from rubintv.handlers import routes
 from rubintv.models import Channel, Image
+from rubintv.timer import Timer
 
 channels = {
     "spec": Channel(
@@ -39,29 +40,36 @@ channels = {
 @routes.get("")
 @routes.get("/")
 async def get_table(request: web.Request) -> web.Response:
-    """"""
-    if "num" in request.query:
-        num = int(request.query["num"])
-    else:
-        num = 10
-    if "beg_date" in request.query:
-        beg_date = datetime.fromisoformat(request.query["beg_date"])
-    else:
-        beg_date = None  # type: ignore[assignment]
-    if "end_date" in request.query:
-        end_date = datetime.fromisoformat(request.query["end_date"])
-    else:
-        end_date = None  # type: ignore[assignment]
-    bucket = request.config_dict["rubintv/gcs_bucket"]
-    page = get_formatted_table(
-        "table.html", bucket, num=num, beg_date=beg_date, end_date=end_date
-    )
+    logger = request["safir/logger"]
+    with Timer() as timer:
+        if "num" in request.query:
+            num = int(request.query["num"])
+        else:
+            num = 10
+        if "beg_date" in request.query:
+            beg_date = datetime.fromisoformat(request.query["beg_date"])
+        else:
+            beg_date = None  # type: ignore[assignment]
+        if "end_date" in request.query:
+            end_date = datetime.fromisoformat(request.query["end_date"])
+        else:
+            end_date = None  # type: ignore[assignment]
+        bucket = request.config_dict["rubintv/gcs_bucket"]
+        page = get_formatted_table(
+            "table.html", bucket, num=num, beg_date=beg_date, end_date=end_date
+        )
+    logger.info("get_table", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
 
 @routes.get("/{name}events/{date}/{seq}")
 async def events(request: web.Request) -> web.Response:
-    page = get_event_page(request, channels[request.match_info["name"]].prefix)
+    logger = request["safir/logger"]
+    with Timer() as timer:
+        page = get_event_page(
+            request, channels[request.match_info["name"]].prefix
+        )
+    logger.info("events", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
 
@@ -74,13 +82,16 @@ def get_event_page(request: web.Request, prefix: str) -> str:
 
 @routes.get("/{name}_current")
 async def current(request: web.Request) -> web.Response:
-    bucket = request.config_dict["rubintv/gcs_bucket"]
-    page = get_formatted_page(
-        "current.html",
-        channels[request.match_info["name"]].prefix,
-        bucket,
-        num=1,
-    )
+    logger = request["safir/logger"]
+    with Timer() as timer:
+        bucket = request.config_dict["rubintv/gcs_bucket"]
+        page = get_formatted_page(
+            "current.html",
+            channels[request.match_info["name"]].prefix,
+            bucket,
+            num=1,
+        )
+    logger.info("current", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
 
