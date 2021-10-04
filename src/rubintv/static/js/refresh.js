@@ -4,6 +4,6 @@ $(document).ready(function () {
 
 function refreshDiv() {
   $('#refresher').load(window.location.href + ' #refresher', function () {
-    setTimeout(refreshDiv, 10000);
+    setTimeout(refreshDiv, 5000);
   });
 }
