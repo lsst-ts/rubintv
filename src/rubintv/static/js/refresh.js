@@ -1,9 +1,9 @@
-$(document).ready(function(){
-      refreshDiv();
-    });
+$(document).ready(function () {
+  refreshDiv();
+});
 
-    function refreshDiv(){
-        $('#refresher').load(window.location.href + " #refresher" , function(){
-           setTimeout(refreshDiv, 500);
-        });
-    }
+function refreshDiv() {
+  $('#refresher').load(window.location.href + ' #refresher', function () {
+    setTimeout(refreshDiv, 5000);
+  });
+}
