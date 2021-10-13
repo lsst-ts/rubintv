@@ -45,12 +45,12 @@ async def get_table(request: web.Request) -> web.Response:
         if "num" in request.query:
             num = int(request.query["num"])
         else:
-            num = 10
-        if "beg_date" in request.query:
+            num = 50
+        if "beg_date" in request.query and request.query["beg_date"]:
             beg_date = datetime.fromisoformat(request.query["beg_date"])
         else:
             beg_date = None  # type: ignore[assignment]
-        if "end_date" in request.query:
+        if "end_date" in request.query and request.query["end_date"]:
             end_date = datetime.fromisoformat(request.query["end_date"])
         else:
             end_date = None  # type: ignore[assignment]
