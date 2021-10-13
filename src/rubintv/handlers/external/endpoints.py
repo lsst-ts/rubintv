@@ -117,22 +117,21 @@ def get_formatted_table(
             imgs[chan] = timeSort(bucket, channels[chan].prefix, num)
     keys = list(imgs.keys())
     for i, img in enumerate(
-        imgs["im"]
-    ):  # I know there will always be an im style image
-        imgs["im"][i].chans.append(channels["im"])
+        imgs["monitor"]
+    ):  # I know there will always be a monitor style image
+        imgs["monitor"][i].chans.append(channels["monitor"])
         for k in keys:
-            if k == "im":
+            if k == "monitor":
                 continue
             match = False
             for mim in imgs[k]:
                 if img.cleanDate() == mim.cleanDate() and img.seq == mim.seq:
-                    imgs["im"][i].chans.append(channels[k])
+                    imgs["monitor"][i].chans.append(channels[k])
                     match = True
                     break
             if not match:
                 # Ignore typing here since the template expects None if there
-                # is no spec image for this run
-                imgs["im"][i].chans.append(None)
+                imgs["monitor"][i].chans.append(None)
 
     env = Environment(
         loader=PackageLoader("rubintv", "templates"),
@@ -146,7 +145,7 @@ def get_formatted_table(
     templ = env.get_template(template)
     return templ.render(
         ncols=len(channels),
-        imgs=imgs["im"],
+        imgs=imgs["monitor"],
     )
 
 
