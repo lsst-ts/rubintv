@@ -132,13 +132,14 @@
 </div>
 
 <div><h2>Search date range</h2>
+<h3>Omit dates to search for the top N records.</h3>
 <form style="background-color:light blue;" onSubmit="return search_process();" id="searchevents">
   <label for="date">Begin Date: Format=2021-06-08:</label><br>
-  <input type="text" style="text-align:center;" id="beg_date" name="beg_date" value="2021-06-08"><br>
+  <input type="text" style="text-align:center;" id="beg_date" name="beg_date" value=""><br>
   <label for="date">End Date: Format=2021-06-08:</label><br>
-  <input type="text" style="text-align:center;" id="end_date" name="end_date" value="2021-06-10"><br><br>
+  <input type="text" style="text-align:center;" id="end_date" name="end_date" value=""><br><br>
   <label for="num">Number in Table:</label><br>
-  <input type="text" style="text-align:center;" id="num" name="num" value="500"><br><br>
+  <input type="text" style="text-align:center;" id="num" name="num" value="50"><br><br>
   <input type="submit" value="Submit">
 
   <script>
@@ -182,7 +183,6 @@
         {% if chan is not none %}
           <td><a href="{{ '/rubintv/' + chan.endpoint + '/' + img.cleanDate() + '/' + img.seq|string }}">{{chan.name}}</a></td>
         {% else %}
-          <td></td>
           <td></td>
         {% endif %}
       {% endfor %}
