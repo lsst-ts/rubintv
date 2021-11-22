@@ -290,9 +290,9 @@ google-cloud-core==2.2.1 \
     --hash=sha256:476d1f71ab78089e0638e0aaf34bfdc99bab4fce8f4170ba6321a5243d13c5c7 \
     --hash=sha256:ab6cee07791afe4e210807ceeab749da6a076ab16d496ac734bf7e6ffea27486
     # via google-cloud-storage
-google-cloud-storage==1.42.3 \
-    --hash=sha256:71ee3a0dcf2c139f034a054181cd7658f1ec8f12837d2769c450a8a00fcd4c6d \
-    --hash=sha256:7754d4dcaa45975514b404ece0da2bb4292acbc67ca559a69e12a19d54fcdb06
+google-cloud-storage==1.43.0 \
+    --hash=sha256:bb3e4088054d50616bd57e4b81bb158db804c91faed39279d666e2fd07d2c118 \
+    --hash=sha256:f3b4f4be5c8a1b5727a8f7136c94d3bacdd4b7bf11f9553f51ae4c1d876529d3
     # via -r requirements/main.in
 google-crc32c==1.3.0 \
     --hash=sha256:04e7c220798a72fd0f08242bc8d7a05986b2a08a0573396187fd32c1dcdd58b3 \
@@ -604,11 +604,12 @@ six==1.16.0 \
     # via
     #   google-auth
     #   google-cloud-storage
-structlog==21.2.0 \
-    --hash=sha256:63a7111a32e5b615671536bb745692ea02cebfea2b39dcb7d2617eed19437cfe \
-    --hash=sha256:7ac42b565e1295712313f91edbcb64e0840a9037d888c8954f11fa6c43270e99
+structlog==21.3.0 \
+    --hash=sha256:063216becff8e6f6558122a9b00734f7e50bfef309eb730c85a52c74ed861a96 \
+    --hash=sha256:4da2aec0aebf6dee7beb884eb0fda26ed9d6cce5338fcd523e8597d0f1826746
     # via safir
 typing-extensions==4.0.0 \
+    --hash=sha256:2cdf80e4e04866a9b3689a51869016d36db0814d84b8d8a568d22781d45d27ed \
     --hash=sha256:829704698b22e13ec9eaf959122315eabb370b0884400e9818334d8b677023d9
     # via async-timeout
 urllib3==1.26.7 \
