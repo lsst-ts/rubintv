@@ -5,12 +5,13 @@
 # After editing, update requirements/dev.txt by running:
 #     make update-deps
 
-pre-commit
+-c main.txt
+
+aiohttp-devtools
 coverage[toml]
-flake8
+google-cloud-storage
+jinja2
 mypy
+pre-commit
 pytest
 pytest-aiohttp
-aiohttp-devtools
-jinja2
-google-cloud-storage
