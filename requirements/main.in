@@ -5,11 +5,10 @@
 # After editing, update requirements/main.txt by running:
 #     make update-deps
 
-safir<2
-aiohttp
 aiodns
+aiohttp
 cchardet
-importlib_metadata
 click
-jinja2
 google-cloud-storage
+jinja2
+safir<2
