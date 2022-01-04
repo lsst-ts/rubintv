@@ -49,11 +49,11 @@ async def get_table(request: web.Request) -> web.Response:
         if "beg_date" in request.query and request.query["beg_date"]:
             beg_date = datetime.fromisoformat(request.query["beg_date"])
         else:
-            beg_date = None  # type: ignore[assignment]
+            beg_date = None
         if "end_date" in request.query and request.query["end_date"]:
             end_date = datetime.fromisoformat(request.query["end_date"])
         else:
-            end_date = None  # type: ignore[assignment]
+            end_date = None
         bucket = request.config_dict["rubintv/gcs_bucket"]
         page = get_formatted_table(
             "table.html", bucket, num=num, beg_date=beg_date, end_date=end_date
