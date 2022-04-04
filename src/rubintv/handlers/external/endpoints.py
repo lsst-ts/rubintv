@@ -1,51 +1,84 @@
 """Handlers for rubintv endpoints."""
 
 __all__ = [
+    "get_page"
     "get_table",
-    "events",
-    "current",
+    # "events",
+    # "current",
 ]
 
+from asyncio.log import logger
 from datetime import datetime
 from typing import List, Optional
+from unicodedata import name
 
 from aiohttp import web
 from google.cloud.storage import Bucket
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 from rubintv.handlers import routes
-from rubintv.models import Channel, Image
+from rubintv.models import Channel, Image, Telescope
 from rubintv.timer import Timer
 
-channels = {
-    "spec": Channel(
-        name="SpecExamine", prefix="summit_specexam", endpoint="specevents"
+
+telescopes = {
+    "auxtel": Telescope(
+        name="Auxtel", slug="auxtel", online=True
     ),
-    "im": Channel(
-        name="ImExamine", prefix="summit_imexam", endpoint="imevents"
+    "comcam": Telescope(
+        name="Comcam", slug="comcam", online=False
     ),
-    "mount": Channel(
-        name="AuxtelTorques",
-        prefix="auxtel_mount_torques",
-        endpoint="mountevents",
-    ),
-    "monitor": Channel(
-        name="AuxtelMonitor",
-        prefix="auxtel_monitor",
-        endpoint="monitorevents",
+    "lsstcam": Telescope(
+        name="LSSTcam", slug="lsstcam", online=False
     ),
 }
 
+channels = {
+    "monitor": Channel(
+        name="Monitor",
+        prefix="auxtel_monitor",
+        endpoint="monitorevents",
+        css_class="monitor"
+    ),
+    "spec": Channel(
+        name="Spectrum", prefix="summit_specexam", endpoint="specevents", css_class="spec"
+    ),
+    "im": Channel(
+        name="Image Analysis", prefix="summit_imexam", endpoint="imevents", css_class="im"
+    ),
+    "mount": Channel(
+        name="Mount",
+        prefix="auxtel_mount_torques",
+        endpoint="mountevents",
+        css_class="mount"
+    ),
+    # "rollingbuffer": Channel(
+    #     name="Rolling Buffer",
+    #     prefix="rolling_buffer",
+    #     endpoint="rollingbuffer"
+    # ),
+    # "movie": Channel(
+    #     name="Tonight's Movie",
+    #     prefix="movie",
+    #     endpoint="movie"
+    # )
+}
 
 @routes.get("")
 @routes.get("/")
+async def get_page(request: web.Request) -> web.Response:
+    page = get_formatted_page("home.jinja", title="Rubin TV Display", telescopes=telescopes)
+    return web.Response(text=page, content_type="text/html")
+
+@routes.get("/{telescope}")
 async def get_table(request: web.Request) -> web.Response:
+    telescope = telescopes[request.match_info["telescope"]]
     logger = request["safir/logger"]
     with Timer() as timer:
         if "num" in request.query:
             num = int(request.query["num"])
         else:
-            num = 50
+            num = 36
         if "beg_date" in request.query and request.query["beg_date"]:
             beg_date = datetime.fromisoformat(request.query["beg_date"])
         else:
@@ -56,36 +89,40 @@ async def get_table(request: web.Request) -> web.Response:
             end_date = None
         bucket = request.config_dict["rubintv/gcs_bucket"]
         page = get_formatted_table(
-            "table.html", bucket, num=num, beg_date=beg_date, end_date=end_date
+            f'telescopes/{telescope.slug}.jinja', telescope, bucket, num=num, beg_date=beg_date, end_date=end_date
         )
     logger.info("get_table", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
 
-@routes.get("/{name}events/{date}/{seq}")
+@routes.get("/{telescope}/{channel}events/{date}/{seq}")
 async def events(request: web.Request) -> web.Response:
     logger = request["safir/logger"]
     with Timer() as timer:
-        page = get_event_page(
-            request, channels[request.match_info["name"]].prefix
+        page = get_single_event_page(
+            request, channels[request.match_info["channel"]]
         )
     logger.info("events", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
 
-def get_event_page(request: web.Request, prefix: str) -> str:
+def get_single_event_page(request: web.Request, channel: Channel) -> str:
+    # telescope = request.match_info["telescope"]
+    prefix = channel.prefix
+    prefix_dashes = prefix.replace("_", "-")
     date = request.match_info["date"]
     seq = request.match_info["seq"]
     bucket = request.config_dict["rubintv/gcs_bucket"]
-    return get_formatted_page("data.html", prefix, bucket, date=date, seq=seq)
+    img = Image(f"https://storage.googleapis.com/{bucket.name}/{prefix}/{prefix_dashes}_dayObs_{date}_seqNum_{seq}.png")
+    return get_formatted_page("single_event.jinja", img=img, prefix=channel.css_class)
 
 
-@routes.get("/{name}_current")
+@routes.get("/{telescope}/{name}_current")
 async def current(request: web.Request) -> web.Response:
     logger = request["safir/logger"]
     with Timer() as timer:
         bucket = request.config_dict["rubintv/gcs_bucket"]
-        page = get_formatted_page(
+        page = get_formatted_page2(
             "current.html",
             channels[request.match_info["name"]].prefix,
             bucket,
@@ -94,9 +131,21 @@ async def current(request: web.Request) -> web.Response:
     logger.info("current", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
+def get_formatted_page(
+    template: str,
+    **kwargs: dict
+) -> str:
+    env = Environment(
+        loader=PackageLoader("rubintv"),
+        autoescape=select_autoescape()
+    )
+    env.globals.update(zip=zip)
+    templ = env.get_template(template)
+    return templ.render(kwargs)
 
 def get_formatted_table(
     template: str,
+    telescope: Telescope,
     bucket: Bucket,
     num: int = None,
     beg_date: datetime = None,
@@ -114,7 +163,7 @@ def get_formatted_table(
             )
     else:
         for chan in channels:
-            imgs[chan] = timeSort(bucket, channels[chan].prefix, num)
+            imgs[chan] = get_image_list(bucket, channels[chan].prefix, num)
     keys = list(imgs.keys())
     for i, img in enumerate(
         imgs["monitor"]
@@ -134,22 +183,19 @@ def get_formatted_table(
                 imgs["monitor"][i].chans.append(None)
 
     env = Environment(
-        loader=PackageLoader("rubintv", "templates"),
-        autoescape=select_autoescape(
-            [
-                "html",
-            ]
-        ),
+        loader=PackageLoader("rubintv"),
+        autoescape=select_autoescape()
     )
     env.globals.update(zip=zip)
     templ = env.get_template(template)
     return templ.render(
-        ncols=len(channels),
+        channels=channels,
         imgs=imgs["monitor"],
+        telescope=telescope
     )
 
 
-def get_formatted_page(
+def get_formatted_page2(
     template: str,
     prefix: str,
     bucket: Bucket,
@@ -159,18 +205,14 @@ def get_formatted_page(
     **kwargs: str,
 ) -> str:
     if num:
-        imgs = timeSort(bucket, prefix, num)
+        imgs = get_image_list(bucket, prefix, num)
     elif date and seq:
         imgs = find_event(bucket, prefix, date, seq)
     else:
         raise ValueError("num or (date and seq) must be provided")
     env = Environment(
-        loader=PackageLoader("rubintv", "templates"),
-        autoescape=select_autoescape(
-            [
-                "html",
-            ]
-        ),
+        loader=PackageLoader("rubintv"),
+        autoescape=select_autoescape()
     )
     templ = env.get_template(template)
     return templ.render(imgs=imgs, **kwargs)
@@ -179,7 +221,7 @@ def get_formatted_page(
 def find_event(
     bucket: Bucket, prefix: str, date: str, seq: str
 ) -> List[Image]:
-    imgs = timeSort(bucket, prefix)
+    imgs = get_image_list(bucket, prefix)
     for img in imgs:
         if img.cleanDate() == date and img.seq == int(seq):
             return [
@@ -188,17 +230,14 @@ def find_event(
     raise ValueError(f"No event found for date={date} and sequence={seq}")
 
 
-def timeSort(
-    bucket: Bucket, prefix: str, num: Optional[int] = None
+def get_image_list(
+    bucket: Bucket, prefix: str, num: Optional[int] = 25
 ) -> List[Image]:
-    blobs = bucket.list_blobs(prefix=prefix)
+    blobs = bucket.list_blobs(max_results=num, prefix=prefix)
     imgs = [
         Image(el.public_url) for el in blobs if el.public_url.endswith(".png")
     ]
     simgs = sorted(imgs, key=lambda x: (x.date, x.seq), reverse=True)
-
-    if num:
-        return simgs[:num]
     return simgs
 
 

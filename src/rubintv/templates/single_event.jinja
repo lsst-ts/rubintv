@@ -1,0 +1,11 @@
+{% extends "layout.jinja" %}
+{% block content %}
+  {{ prefix }}
+  <div class="subheader">
+    <h2>Sequence {{img.seq}}</h2>
+  </div>
+  <a target="_blank" href="{{img.url}}">
+    <img class="resp {% if prefix=="auxtel_monitor" %} behind{ % endif %}" src="{{img.url}}">
+  </a>
+  <div class="desc">{{img.name}}</div>
+{% endblock content %}

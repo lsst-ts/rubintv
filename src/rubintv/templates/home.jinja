@@ -1,0 +1,17 @@
+{% extends "layout.jinja" %}
+{% block content %}
+  <h2>Online Telescopes</h2>
+  <nav class="telescope-list">
+    <ul>
+      {% for telescope in telescopes.values() %}
+        <li>
+          {% if telescope.online %}
+            <a href="/rubintv/{{ telescope.slug }}">{{ telescope.name }}</a>
+          {% else %}
+            {{ telescope.name }}
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </nav>
+{% endblock content %} 

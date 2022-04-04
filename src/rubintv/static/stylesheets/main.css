@@ -1,59 +1,132 @@
-div.gallery {
-  border: 1px solid #ccc;
+@import "reset.css";
+.flr-sb {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
 }
 
-div.gallery:hover {
-  border: 1px solid #777;
-}
-
-/* controls the size of the images themselves */
-/* set width to auto to do prevent verticle scrolling on larger screens */
-div.gallery img {
+.resp {
   width: 100%;
   height: auto;
 }
 
-div.desc {
-  padding: 15px;
-  text-align: center;
+.behind {
+  position: relative;
+  z-index: 1;
+  margin-top: -11%;
 }
 
-div.header {
-  padding: 15px;
-  text-align: center;
-  font-size: 40;
-}
-
-* {
+.button {
   box-sizing: border-box;
+  background: #eee;
+  color: #000;
+  display: flex;
+  flex-direction: column;
+  justify-content: end;
+  text-decoration: none;
+  box-shadow: 2.5px 2.5px 8px rgba(0, 0, 0, 0.26);
+  transition: box-shadow 0.2s;
 }
 
-/* Controls the box which contains the images */
-/* set width to auto to do prevent verticle scrolling on larger screens */
-/* change width percentage to get more images per line */
-.responsive {
-  padding: 0 6px;
-  float: left;
-  width: 99.99999%;
+.large-button {
+  min-width: 200px;
+  min-height: 200px;
+  border-radius: 10%;
+  padding: 1.5em;
 }
 
-/* 2 per row for small screens */
-@media only screen and (max-width: 700px) {
-  .responsive {
-    width: 49.99999%;
-    margin: 6px 0;
-  }
+.button-table {
+  width: 30px;
+  height: 30px;
+  border-radius: 10%;
 }
 
-/* 1 per row for even smaller screens */
-@media only screen and (max-width: 500px) {
-  .responsive {
-    width: 100%;
-  }
+.button:hover {
+  box-shadow: none;
 }
 
-.clearfix:after {
-  content: "";
-  display: table;
-  clear: both;
+.button.monitor {
+  background-color: #F07F85;
 }
+
+.button.mount {
+  background-color: #F0C87F;
+}
+
+.button.spec {
+  background-color: #7F85F0;
+}
+
+.button.im {
+  background-color: #7FF094;
+}
+
+html {
+  font-family: "Rubik", sans-serif;
+  font-size: 16px;
+}
+
+body {
+  background-color: #fff;
+}
+
+.page-wrapper {
+  margin: 30px 30px 30px;
+}
+
+header, .subheader {
+  position: relative;
+  z-index: 23;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 2em;
+}
+header .logo {
+  width: auto;
+  height: 100px;
+}
+header .title {
+  margin-left: 2em;
+  margin-bottom: -2px;
+}
+header .title h1 {
+  margin: 0;
+}
+
+#channel-menu {
+  margin: 3em 0;
+}
+
+.channel-data-archive {
+  width: 66.66%;
+}
+
+.container {
+  margin: auto;
+  display: flex;
+}
+
+.channel-grid {
+  font-family: "Monaco", monospace, monospace;
+  display: grid;
+  grid-template-columns: 2fr 1fr 40px 40px 40px 40px;
+  gap: 2px;
+}
+
+.grid-title.gt-channels {
+  grid-column: 3/7;
+}
+
+.grid-cell {
+  background-color: #f0f0f0;
+  padding: 0.3em;
+  display: flex;
+  align-content: center;
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+/*# sourceMappingURL=main.css.map */
