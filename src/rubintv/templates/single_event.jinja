@@ -1,5 +1,6 @@
 {% extends "layout.jinja" %}
 {% block content %}
+<div id="refresher">
   <div class="subheader">
     <h2>Sequence {{img.seq}}</h2>
   </div>
@@ -7,4 +8,5 @@
     <img class="resp {% if channel=="monitor" %} behind {% endif %}" src="{{img.url}}">
   </a>
   <div class="desc">{{img.name}}</div>
+</div>
 {% endblock content %}
