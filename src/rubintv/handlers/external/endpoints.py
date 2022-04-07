@@ -116,7 +116,6 @@ async def events(request: web.Request) -> web.Response:
 
 
 def get_single_event_page(request: web.Request, channel: Channel) -> str:
-    # camera = request.match_info["camera"]
     prefix = channel.prefix
     prefix_dashes = prefix.replace("_", "-")
     date = request.match_info["date"]
@@ -179,7 +178,8 @@ def get_most_recent_day_images(bucket: Bucket) -> List[Image]:
         imgs['monitor'] = get_sorted_images_from_blobs(blobs)
 
         for chan in per_image_channels.keys():
-            if chan == 'monitor': continue
+            if chan == 'monitor':
+                continue
             prefix = per_image_channels[chan].prefix
             prefix_dashes = prefix.replace("_", "-")
             new_prefix = f"{prefix}/{prefix_dashes}_dayObs_{try_date}_seqNum_"
@@ -192,7 +192,8 @@ def get_most_recent_day_images(bucket: Bucket) -> List[Image]:
         ):  # I know there will always be a monitor style image
             imgs["monitor"][i].chans.append(per_image_channels["monitor"])
             for k in keys:
-                if k == "monitor": continue
+                if k == "monitor":
+                    continue
                 match = False
                 for mim in imgs[k]:
                     if img.seq == mim.seq:
