@@ -5,7 +5,7 @@ from typing import Tuple
 from unicodedata import name
 
 @dataclass
-class Telescope:
+class Camera:
     name: str
     slug: str
     online: bool

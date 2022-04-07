@@ -5,7 +5,7 @@
     <div class="grid-cell">
       {% if chan is not none %}
         <a  class="button button-table {{ chan.css_class }}"
-            href="{{ '/rubintv/' + telescope.slug + '/' + chan.endpoint + '/' + img.cleanDate() + '/' + img.seq|string }}">
+            href="{{ '/rubintv/' + camera.slug + '/' + chan.endpoint + '/' + img.cleanDate() + '/' + img.seq|string }}">
         </a>
       {% endif %}
     </div>

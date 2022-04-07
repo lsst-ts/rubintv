@@ -17,18 +17,18 @@ from google.cloud.storage import Bucket
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 from rubintv.handlers import routes
-from rubintv.models import Channel, Image, Telescope
+from rubintv.models import Channel, Image, Camera
 from rubintv.timer import Timer
 
 
-telescopes = {
-    "auxtel": Telescope(
+cameras = {
+    "auxtel": Camera(
         name="Auxtel", slug="auxtel", online=True
     ),
-    "comcam": Telescope(
+    "comcam": Camera(
         name="Comcam", slug="comcam", online=False
     ),
-    "lsstcam": Telescope(
+    "lsstcam": Camera(
         name="LSSTcam", slug="lsstcam", online=False
     ),
 }
@@ -70,12 +70,12 @@ per_night_channels = {
 @routes.get("")
 @routes.get("/")
 async def get_page(request: web.Request) -> web.Response:
-    page = get_formatted_page("home.jinja", title="Rubin TV Display", telescopes=telescopes)
+    page = get_formatted_page("home.jinja", title="Rubin TV Display", cameras=cameras)
     return web.Response(text=page, content_type="text/html")
 
-@routes.get("/{telescope}")
+@routes.get("/{camera}")
 async def get_recent_table(request: web.Request) -> web.Response:
-    telescope = telescopes[request.match_info["telescope"]]
+    camera = cameras[request.match_info["camera"]]
     logger = request["safir/logger"]
     with Timer() as timer:
         # if "num" in request.query:
@@ -93,18 +93,18 @@ async def get_recent_table(request: web.Request) -> web.Response:
         bucket = request.config_dict["rubintv/gcs_bucket"]
         imgs = get_most_recent_day_images(bucket)
         page = get_formatted_page(
-            f'telescopes/layout.jinja', telescope=telescope, channels=per_image_channels,
+            f'cameras/layout.jinja', camera=camera, channels=per_image_channels,
             # date=date.today(),
             date=imgs[0].cleanDate(), imgs=imgs
         )
     logger.info("get_recent_table", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
-@routes.get("/{telescope}/historical")
+@routes.get("/{camera}/historical")
 async def get_historical_table(request: web.Request) -> web.Response:
     return
 
-@routes.get("/{telescope}/{channel}events/{date}/{seq}")
+@routes.get("/{camera}/{channel}events/{date}/{seq}")
 async def events(request: web.Request) -> web.Response:
     logger = request["safir/logger"]
     with Timer() as timer:
@@ -116,7 +116,7 @@ async def events(request: web.Request) -> web.Response:
 
 
 def get_single_event_page(request: web.Request, channel: Channel) -> str:
-    # telescope = request.match_info["telescope"]
+    # camera = request.match_info["camera"]
     prefix = channel.prefix
     prefix_dashes = prefix.replace("_", "-")
     date = request.match_info["date"]
@@ -126,7 +126,7 @@ def get_single_event_page(request: web.Request, channel: Channel) -> str:
     return get_formatted_page("single_event.jinja", img=img, prefix=channel.css_class)
 
 
-@routes.get("/{telescope}/{name}_current")
+@routes.get("/{camera}/{name}_current")
 async def current(request: web.Request) -> web.Response:
     logger = request["safir/logger"]
     with Timer() as timer:

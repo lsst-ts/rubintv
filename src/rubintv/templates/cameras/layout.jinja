@@ -1,12 +1,12 @@
 {% extends "layout.jinja" %}
 
 {% block subtitle %}
- <h2>{{ telescope.name }}</h2> 
+ <h2>{{ camera.name }}</h2> 
 {% endblock subtitle %}
 
 {% block content %}
     {# <section id="subheader">
-        <h2>This site is for accessing rapid image analysis from the LSST Auxiliary Telescope.</h2>
+        <h2>This site is for accessing rapid image analysis from the LSST Auxiliary camera.</h2>
     </section> #}
     <nav id="per-night-menu" class="channel-menu" role="navigation">
     <h3>Per Night Channels</h3>
@@ -21,7 +21,7 @@
         {% for channel in channels %}
           <li class="channel">
             <a  class="button large-button {{channel}}"
-                href="/rubintv/{{ telescope.slug }}/{{channel}}_current" target="_blank">
+                href="/rubintv/{{ camera.slug }}/{{channel}}_current" target="_blank">
               <span>{{ channels[channel].name }}</span>
             </a>
           </li>
@@ -43,12 +43,12 @@
             </div>
         </div>
         <div class="channel-grid">
-          {# {% include "telescopes/grid-data.jinja" %} #}
-          {% include "telescopes/fake_grid.html" %}
+          {# {% include "cameras/grid-data.jinja" %} #}
+          {% include "cameras/fake_grid.html" %}
         </div>
       </section>
       <section class="sidebar">
-        <a href="/rubintv/{{telescope.slug}}/historical">Historical data</a>
+        <a href="/rubintv/{{camera.slug}}/historical">Historical data</a>
       </section>
     </div>
 {% endblock content %}
