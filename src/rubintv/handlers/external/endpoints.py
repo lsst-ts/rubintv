@@ -2,9 +2,9 @@
 
 __all__ = [
     "get_page"
-    "get_table",
-    # "events",
-    # "current",
+    "get_recent_table",
+    "events",
+    "current",
 ]
 
 from asyncio.log import logger
@@ -97,7 +97,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
             # date=date.today(),
             date=imgs[0].cleanDate(), imgs=imgs
         )
-    logger.info("get_table", duration=timer.seconds)
+    logger.info("get_recent_table", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
 @routes.get("/{telescope}/historical")
