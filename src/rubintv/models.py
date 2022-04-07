@@ -8,7 +8,6 @@ from unicodedata import name
 class Telescope:
     name: str
     slug: str
-    # bucketname: str
     online: bool
 
 @dataclass
@@ -16,7 +15,7 @@ class Channel:
     name: str
     prefix: str
     endpoint: str
-    css_class: str
+    css_class: str=None
 
 @dataclass
 class Image:
@@ -39,29 +38,8 @@ class Image:
         return self.date.strftime("%Y-%m-%d")
 
     def humanDate(self) -> str:
-        return self.date.strftime("%a %d/%m/%Y")
+        return self.date.strftime("%a %Y/%m/%d")
 
     def __post_init__(self) -> None:
         self.name, self.date, self.seq = self.parse_filename()
         self.chans = []
-
-# channels = {
-#     "monitor": Channel(
-#         name="AuxtelMonitor",
-#         prefix="auxtel_monitor",
-#         endpoint="monitorevents",
-#     ),
-#     "spec": Channel(
-#         name="SpecExamine", prefix="summit_specexam", endpoint="specevents"
-#     ),
-#     "im": Channel(
-#         name="ImExamine", prefix="summit_imexam", endpoint="imevents"
-#     ),
-#     "mount": Channel(
-#         name="AuxtelTorques",
-#         prefix="auxtel_mount_torques",
-#         endpoint="mountevents",
-#     ),
-# }
-
-# print(channels['monitor'])

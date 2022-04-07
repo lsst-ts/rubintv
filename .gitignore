@@ -138,3 +138,7 @@ dmypy.json
 
 # VScode store
 .vscode/
+
+# jupyter notebooks
+*.ipynb
+.ipynb_checkpoints

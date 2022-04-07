@@ -1,8 +1,7 @@
 @import "reset.css";
-.flr-sb {
+.flr {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
 }
 
 .resp {
@@ -12,8 +11,9 @@
 
 .behind {
   position: relative;
-  z-index: 1;
-  margin-top: -11%;
+  z-index: -1;
+  margin-top: -7vh;
+  margin-bottom: -9vh;
 }
 
 .button {
@@ -24,13 +24,13 @@
   flex-direction: column;
   justify-content: end;
   text-decoration: none;
-  box-shadow: 2.5px 2.5px 8px rgba(0, 0, 0, 0.26);
+  box-shadow: 2.5px 2.5px 4px rgba(0, 0, 0, 0.26);
   transition: box-shadow 0.2s;
 }
 
 .large-button {
-  min-width: 200px;
-  min-height: 200px;
+  width: 200px;
+  height: 144px;
   border-radius: 10%;
   padding: 1.5em;
 }
@@ -64,6 +64,7 @@
 html {
   font-family: "Rubik", sans-serif;
   font-size: 16px;
+  box-sizing: border-box;
 }
 
 body {
@@ -72,11 +73,6 @@ body {
 
 .page-wrapper {
   margin: 30px 30px 30px;
-}
-
-header, .subheader {
-  position: relative;
-  z-index: 23;
 }
 
 header {
@@ -96,12 +92,38 @@ header .title h1 {
   margin: 0;
 }
 
-#channel-menu {
-  margin: 3em 0;
+.channel-menu {
+  margin-bottom: 3em;
+}
+.channel-menu .channel {
+  margin-right: 1em;
 }
 
-.channel-data-archive {
-  width: 66.66%;
+h3 {
+  font-size: 1.4em;
+  margin-bottom: 0.5em;
+}
+
+.columns {
+  display: flex;
+  flex-direction: row;
+}
+
+.channel-day-data {
+  flex-basis: 50%;
+}
+
+.sidebar {
+  flex-basis: 50%;
+  padding: 7.5em 0 0 2em;
+  background: #fff;
+}
+
+.channel-grid-heading {
+  background: #fff;
+  padding: 4em 0 0.5em;
+  position: sticky;
+  top: 0;
 }
 
 .container {
@@ -112,12 +134,13 @@ header .title h1 {
 .channel-grid {
   font-family: "Monaco", monospace, monospace;
   display: grid;
-  grid-template-columns: 2fr 1fr 40px 40px 40px 40px;
+  grid-template-columns: 1fr 40px 40px 40px 40px;
   gap: 2px;
 }
 
-.grid-title.gt-channels {
-  grid-column: 3/7;
+.grid-title.gt-channel {
+  transform: rotate(270deg);
+  transform-origin: 0.8em 2px;
 }
 
 .grid-cell {
