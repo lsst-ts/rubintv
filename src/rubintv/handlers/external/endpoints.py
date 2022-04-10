@@ -7,6 +7,7 @@ __all__ = [
     "current",
 ]
 
+from ast import Lambda
 from asyncio.log import logger
 from datetime import datetime, date, timedelta
 from typing import List, Optional
@@ -140,28 +141,6 @@ async def current(request: web.Request) -> web.Response:
     return web.Response(text=page, content_type="text/html")
 
 
-def get_current_event(
-    prefix: str,
-    bucket: Bucket,
-    channel_name: str
-) -> str:
-    imgs = get_image_list(bucket, prefix, 1)
-    if imgs:
-        return get_formatted_page("current.jinja", img=imgs[0], channel=channel_name)
-    raise ValueError(f"No current event found for prefix={prefix}")
-
-
-def get_image_list(bucket: Bucket, prefix: str, num: Optional[int] = None) -> List[Image]:
-    blobs = bucket.list_blobs(prefix=prefix)
-    simgs = get_sorted_images_from_blobs(blobs)
-    if num:
-        return simgs[:num]
-    return simgs
-
-
-def get_monitor_prefix_from_date(a_date):
-  return f"auxtel_monitor/auxtel-monitor_dayObs_{a_date}"
-
 def get_most_recent_day_images(bucket: Bucket) -> List[Image]:
     try_date = date.today()
     timer = datetime.now()
@@ -186,24 +165,33 @@ def get_most_recent_day_images(bucket: Bucket) -> List[Image]:
             blobs = list(bucket.list_blobs(prefix=new_prefix))
             imgs[chan] = get_sorted_images_from_blobs(blobs)
 
-        keys = list(imgs.keys())
-        for i, img in enumerate(
-            imgs["monitor"]
-        ):  # I know there will always be a monitor style image
-            imgs["monitor"][i].chans.append(per_image_channels["monitor"])
-            for k in keys:
-                if k == "monitor":
-                    continue
-                match = False
-                for mim in imgs[k]:
-                    if img.seq == mim.seq:
-                        imgs["monitor"][i].chans.append(per_image_channels[k])
-                        match = True
-                        imgs[k].remove(mim)
-                        break
-                if not match:
-                    # Ignore typing here since the template expects None if not there
-                    imgs["monitor"][i].chans.append(None)
+    match_criteron = lambda x,y: x.seq == y.seq
+    return flatten_imgs_dict_into_list(imgs, match_criteron)
+
+# passed a dict where keys are as per_night_channels keys and each corresponding value is a list of
+# Image(s) from that channel, will flatten into one list of Image(s) where each channel is represented
+# in the Image object's chan list
+def flatten_imgs_dict_into_list(imgs: dict, match_crit: Lambda = None)->List[Image]:
+    if not match_crit:
+        match_crit = lambda x,y: x.seq == y.seq
+    keys = list(imgs.keys())
+    for i, img in enumerate(
+        imgs["monitor"]
+    ):  # I know there will always be a monitor style image
+        imgs["monitor"][i].chans.append(per_image_channels["monitor"])
+        for k in keys:
+            if k == "monitor":
+                continue
+            match = False
+            for mim in imgs[k]:
+                if match_crit(img, mim):
+                    imgs["monitor"][i].chans.append(per_image_channels[k])
+                    match = True
+                    imgs[k].remove(mim)
+                    break
+            if not match:
+                # Ignore typing here since the template expects None if not there
+                imgs["monitor"][i].chans.append(None)
     return imgs['monitor']
 
 
@@ -249,3 +237,24 @@ def get_formatted_page(
     env.globals.update(zip=zip)
     templ = env.get_template(template)
     return templ.render(kwargs)
+
+def get_current_event(
+    prefix: str,
+    bucket: Bucket,
+    channel_name: str
+) -> str:
+    imgs = get_image_list(bucket, prefix, 1)
+    if imgs:
+        return get_formatted_page("current.jinja", img=imgs[0], channel=channel_name)
+    raise ValueError(f"No current event found for prefix={prefix}")
+
+
+def get_image_list(bucket: Bucket, prefix: str, num: Optional[int] = None) -> List[Image]:
+    blobs = bucket.list_blobs(prefix=prefix)
+    simgs = get_sorted_images_from_blobs(blobs)
+    if num:
+        return simgs[:num]
+    return simgs
+
+def get_monitor_prefix_from_date(a_date):
+  return f"auxtel_monitor/auxtel-monitor_dayObs_{a_date}"
