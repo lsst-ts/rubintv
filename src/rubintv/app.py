@@ -1,6 +1,6 @@
 """The main application factory for the rubintv service."""
 
-__all__ = ["create_app"]
+__all__ = ["create_app", "getCurrentDayObs"]
 
 from pathlib import Path
 
@@ -10,6 +10,9 @@ from safir.http import init_http_session
 from safir.logging import configure_logging
 from safir.metadata import setup_metadata
 from safir.middleware import bind_logger
+from google.cloud.storage import Bucket
+from datetime import date, timedelta
+from rubintv.models import Image
 
 from rubintv.config import Configuration
 from rubintv.handlers import init_external_routes, init_internal_routes
@@ -27,7 +30,9 @@ def create_app() -> web.Application:
     root_app = web.Application()
     root_app["safir/config"] = config
     client = storage.Client.create_anonymous_client()
-    root_app["rubintv/gcs_bucket"] = client.bucket("rubintv_data")
+    bucket = client.bucket('rubintv_data')
+    root_app["rubintv/gcs_bucket"] = bucket
+    root_app["rubintv/historical_data"] = HistoricalData(bucket)
     setup_metadata(package_name="rubintv", app=root_app)
     setup_middleware(root_app)
     root_app.add_routes(init_internal_routes())
@@ -51,3 +56,36 @@ def create_app() -> web.Application:
 def setup_middleware(app: web.Application) -> None:
     """Add middleware to the application."""
     app.middlewares.append(bind_logger)
+
+
+def getCurrentDayObs():
+    today = date.today()
+    offset = timedelta(0)  # XXX MFL to provide offset for dayObs rollover
+    return today + offset
+
+
+class HistoricalData():
+    """Provide a cache of the historical data.
+
+    Provides a cache of the hisotrical data which updates when the day rolls
+    over, but means that the full blob contents can be looped over without
+    makings a request for the full data for each operation.
+    """
+    def __init__(self, bucket: Bucket) -> None:
+        self._blobs = list(bucket.list_blobs())
+        self._bucket = bucket
+        self._lastCall = getCurrentDayObs()
+
+    def _getMostRecentDay(self):
+        imgs = [
+            Image(el.public_url) for el in self._blobs if el.public_url.endswith(".png")
+        ]
+        mostRecentDay = max([im.date for im in imgs])
+        return mostRecentDay.date()
+
+    def getBlobs(self):
+        if getCurrentDayObs() > self._lastCall:
+            self._blobs = list(self._bucket.list_blobs())
+            self._lastCall = getCurrentDayObs()
+
+        return self._blobs
