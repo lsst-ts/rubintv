@@ -1,4 +1,7 @@
 {% extends "layout.jinja" %}
 {% block content %}
-  {{ blobs | length }}
+  <div class="calendar">
+    <div class="most-recent-year"></div>
+    <div class="previous-years"></div>
+  </div>
 {% endblock content %}
