@@ -76,13 +76,6 @@ class HistoricalData():
         self._bucket = bucket
         self._lastCall = getCurrentDayObs()
 
-    def _getMostRecentDay(self):
-        imgs = [
-            Image(el.public_url) for el in self._blobs if el.public_url.endswith(".png")
-        ]
-        mostRecentDay = max([im.date for im in imgs])
-        return mostRecentDay.date()
-
     def getBlobs(self):
         if getCurrentDayObs() > self._lastCall:
             self._blobs = list(self._bucket.list_blobs())
