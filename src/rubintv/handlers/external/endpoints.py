@@ -210,29 +210,6 @@ def get_sorted_images_from_blobs(blobs: List)->List[Image]:
     return simgs
 
 
-def timeWindowSort(
-    bucket: Bucket,
-    prefix: str,
-    num: Optional[int] = None,
-    beg_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
-) -> List[Image]:
-    imgs = timeSort(bucket, prefix)
-    if beg_date and end_date:
-        simgs = [
-            el for el in imgs if beg_date < el.date and end_date > el.date
-        ]
-    elif beg_date:
-        simgs = [el for el in imgs if beg_date < el.date]
-    elif end_date:
-        simgs = [el for el in imgs if end_date > el.date]
-    else:
-        raise RuntimeError(f"Something went wrong: {beg_date} and {end_date}")
-
-    if num:
-        return simgs[:num]
-    return simgs
-
 def get_formatted_page(
     template: str,
     **kwargs: dict
