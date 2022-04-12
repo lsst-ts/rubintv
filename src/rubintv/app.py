@@ -26,9 +26,8 @@ def create_app() -> web.Application:
 
     root_app = web.Application()
     root_app["safir/config"] = config
-    root_app["rubintv/gcs_bucket"] = storage.Client().get_bucket(
-        config.bucket_name
-    )
+    client = storage.Client.create_anonymous_client()
+    root_app["rubintv/gcs_bucket"] = client.bucket("rubintv_data")
     setup_metadata(package_name="rubintv", app=root_app)
     setup_middleware(root_app)
     root_app.add_routes(init_internal_routes())

@@ -163,7 +163,7 @@ def get_formatted_page(
     elif date and seq:
         imgs = find_event(bucket, prefix, date, seq)
     else:
-        raise ValueError("num or (date and seq) must be profided")
+        raise ValueError("num or (date and seq) must be provided")
     env = Environment(
         loader=PackageLoader("rubintv", "templates"),
         autoescape=select_autoescape(
