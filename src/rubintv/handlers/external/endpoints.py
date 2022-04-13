@@ -87,7 +87,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
         events = get_most_recent_day_events(bucket)
         if camera.online:
             page = get_formatted_page(
-                'cameras/layout.jinja', camera=camera, channels=per_event_channels,
+                'cameras/camera.jinja', camera=camera, channels=per_event_channels,
                 date=events[0].cleanDate(), events=events
             )
         else:
@@ -116,30 +116,31 @@ async def events(request: web.Request) -> web.Response:
     logger.info("events", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
+@routes.get("/{camera}/{name}_current")
+async def current(request: web.Request) -> web.Response:
+    logger = request["safir/logger"]
+    with Timer() as timer:
+        camera = request.match_info["camera"]
+        bucket = request.config_dict["rubintv/gcs_bucket"]
+        channel = per_event_channels[request.match_info["name"]]
+        events = get_current_event(
+            channel.prefix,
+            bucket,
+        )
+        page = get_formatted_page("current.jinja", camera=camera, event=events[0], channel=channel.name)
+    logger.info("current", duration=timer.seconds)
+    return web.Response(text=page, content_type="text/html")
+
 
 def get_single_event_page(request: web.Request, channel: Channel) -> str:
+    camera = request.match_info["camera"]
     prefix = channel.prefix
     prefix_dashes = prefix.replace("_", "-")
     date = request.match_info["date"]
     seq = request.match_info["seq"]
     bucket = request.config_dict["rubintv/gcs_bucket"]
     event = Event(f"https://storage.googleapis.com/{bucket.name}/{prefix}/{prefix_dashes}_dayObs_{date}_seqNum_{seq}.png")
-    return get_formatted_page("single_event.jinja", event=event, prefix=channel.css_class)
-
-
-@routes.get("/{camera}/{name}_current")
-async def current(request: web.Request) -> web.Response:
-    logger = request["safir/logger"]
-    with Timer() as timer:
-        bucket = request.config_dict["rubintv/gcs_bucket"]
-        channel = per_event_channels[request.match_info["name"]]
-        page = get_current_event(
-            channel.prefix,
-            bucket,
-            channel.css_class
-        )
-    logger.info("current", duration=timer.seconds)
-    return web.Response(text=page, content_type="text/html")
+    return get_formatted_page("single_event.jinja", camera=camera, event=event, channel=channel.name)
 
 
 def get_most_recent_day_events(bucket: Bucket) -> List[Event]:
@@ -221,11 +222,10 @@ def get_formatted_page(
 def get_current_event(
     prefix: str,
     bucket: Bucket,
-    channel_name: str
 ) -> str:
     events = get_event_list(bucket, prefix, 1)
     if events:
-        return get_formatted_page("current.jinja", event=events[0], channel=channel_name)
+        return events
     raise ValueError(f"No current event found for prefix={prefix}")
 
 
