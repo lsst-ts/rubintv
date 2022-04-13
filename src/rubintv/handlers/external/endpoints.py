@@ -18,7 +18,7 @@ from google.cloud.storage import Bucket
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 from rubintv.handlers import routes
-from rubintv.models import Channel, Image, Camera
+from rubintv.models import Channel, Event, Camera
 from rubintv.timer import Timer
 
 
@@ -34,7 +34,7 @@ cameras = {
     ),
 }
 
-per_image_channels = {
+per_event_channels = {
     "monitor": Channel(
         name="Monitor",
         prefix="auxtel_monitor",
@@ -92,11 +92,11 @@ async def get_recent_table(request: web.Request) -> web.Response:
         # else:
         #     end_date = None
         bucket = request.config_dict["rubintv/gcs_bucket"]
-        imgs = get_most_recent_day_images(bucket)
+        events = get_most_recent_day_events(bucket)
         page = get_formatted_page(
-            f'cameras/layout.jinja', camera=camera, channels=per_image_channels,
+            f'cameras/layout.jinja', camera=camera, channels=per_event_channels,
             # date=date.today(),
-            date=imgs[0].cleanDate(), imgs=imgs
+            date=events[0].cleanDate(), events=events
         )
     logger.info("get_recent_table", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
@@ -117,7 +117,7 @@ async def events(request: web.Request) -> web.Response:
     logger = request["safir/logger"]
     with Timer() as timer:
         page = get_single_event_page(
-            request, per_image_channels[request.match_info["channel"]]
+            request, per_event_channels[request.match_info["channel"]]
         )
     logger.info("events", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
@@ -129,8 +129,8 @@ def get_single_event_page(request: web.Request, channel: Channel) -> str:
     date = request.match_info["date"]
     seq = request.match_info["seq"]
     bucket = request.config_dict["rubintv/gcs_bucket"]
-    img = Image(f"https://storage.googleapis.com/{bucket.name}/{prefix}/{prefix_dashes}_dayObs_{date}_seqNum_{seq}.png")
-    return get_formatted_page("single_event.jinja", img=img, prefix=channel.css_class)
+    event = Event(f"https://storage.googleapis.com/{bucket.name}/{prefix}/{prefix_dashes}_dayObs_{date}_seqNum_{seq}.png")
+    return get_formatted_page("single_event.jinja", event=event, prefix=channel.css_class)
 
 
 @routes.get("/{camera}/{name}_current")
@@ -138,7 +138,7 @@ async def current(request: web.Request) -> web.Response:
     logger = request["safir/logger"]
     with Timer() as timer:
         bucket = request.config_dict["rubintv/gcs_bucket"]
-        channel = per_image_channels[request.match_info["name"]]
+        channel = per_event_channels[request.match_info["name"]]
         page = get_current_event(
             channel.prefix,
             bucket,
@@ -148,10 +148,10 @@ async def current(request: web.Request) -> web.Response:
     return web.Response(text=page, content_type="text/html")
 
 
-def get_most_recent_day_images(bucket: Bucket) -> List[Image]:
+def get_most_recent_day_events(bucket: Bucket) -> List[Event]:
     try_date = date.today()
     timer = datetime.now()
-    timeout = 2
+    timeout = 5
     blobs = []
     while not blobs:
         try_date = try_date - timedelta(1) #no blobs? try the day defore
@@ -160,54 +160,54 @@ def get_most_recent_day_images(bucket: Bucket) -> List[Image]:
         elapsed = datetime.now() - timer
         if elapsed.seconds > timeout:
             raise TimeoutError(f"Timed out. Couldn't find most recent day's records within {timeout} seconds")
-        imgs = {}
-        imgs['monitor'] = get_sorted_images_from_blobs(blobs)
+        events = {}
+        events['monitor'] = get_sorted_events_from_blobs(blobs)
 
-        for chan in per_image_channels.keys():
+        for chan in per_event_channels.keys():
             if chan == 'monitor':
                 continue
-            prefix = per_image_channels[chan].prefix
+            prefix = per_event_channels[chan].prefix
             prefix_dashes = prefix.replace("_", "-")
             new_prefix = f"{prefix}/{prefix_dashes}_dayObs_{try_date}_seqNum_"
             blobs = list(bucket.list_blobs(prefix=new_prefix))
-            imgs[chan] = get_sorted_images_from_blobs(blobs)
+            events[chan] = get_sorted_events_from_blobs(blobs)
 
     match_criteron = lambda x,y: x.seq == y.seq
-    return flatten_imgs_dict_into_list(imgs, match_criteron)
+    return flatten_events_dict_into_list(events, match_criteron)
 
 # passed a dict where keys are as per_night_channels keys and each corresponding value is a list of
 # Image(s) from that channel, will flatten into one list of Image(s) where each channel is represented
 # in the Image object's chan list
-def flatten_imgs_dict_into_list(imgs: dict, match_crit: Lambda = None)->List[Image]:
+def flatten_events_dict_into_list(events: dict, match_crit: Lambda = None)->List[Event]:
     if not match_crit:
         match_crit = lambda x,y: x.seq == y.seq
-    keys = list(imgs.keys())
-    for i, img in enumerate(
-        imgs["monitor"]
-    ):  # I know there will always be a monitor style image
-        imgs["monitor"][i].chans.append(per_image_channels["monitor"])
+    keys = list(events.keys())
+    for i, event in enumerate(
+        events["monitor"]
+    ):  # I know there will always be a monitor style event
+        events["monitor"][i].chans.append(per_event_channels["monitor"])
         for k in keys:
             if k == "monitor":
                 continue
             match = False
-            for mim in imgs[k]:
-                if match_crit(img, mim):
-                    imgs["monitor"][i].chans.append(per_image_channels[k])
+            for mim in events[k]:
+                if match_crit(event, mim):
+                    events["monitor"][i].chans.append(per_event_channels[k])
                     match = True
-                    imgs[k].remove(mim)
+                    events[k].remove(mim)
                     break
             if not match:
                 # Ignore typing here since the template expects None if not there
-                imgs["monitor"][i].chans.append(None)
-    return imgs['monitor']
+                events["monitor"][i].chans.append(None)
+    return events['monitor']
 
 
-def get_sorted_images_from_blobs(blobs: List)->List[Image]:
-    imgs = [
-        Image(el.public_url) for el in blobs if el.public_url.endswith(".png")
+def get_sorted_events_from_blobs(blobs: List)->List[Event]:
+    events = [
+        Event(el.public_url) for el in blobs if el.public_url.endswith(".png")
     ]
-    simgs = sorted(imgs, key=lambda x: (x.date, x.seq), reverse=True)
-    return simgs
+    sevents = sorted(events, key=lambda x: (x.date, x.seq), reverse=True)
+    return sevents
 
 
 def get_formatted_page(
@@ -227,18 +227,18 @@ def get_current_event(
     bucket: Bucket,
     channel_name: str
 ) -> str:
-    imgs = get_image_list(bucket, prefix, 1)
-    if imgs:
-        return get_formatted_page("current.jinja", img=imgs[0], channel=channel_name)
+    events = get_event_list(bucket, prefix, 1)
+    if events:
+        return get_formatted_page("current.jinja", event=events[0], channel=channel_name)
     raise ValueError(f"No current event found for prefix={prefix}")
 
 
-def get_image_list(bucket: Bucket, prefix: str, num: Optional[int] = None) -> List[Image]:
+def get_event_list(bucket: Bucket, prefix: str, num: Optional[int] = None) -> List[Event]:
     blobs = bucket.list_blobs(prefix=prefix)
-    simgs = get_sorted_images_from_blobs(blobs)
+    sevents = get_sorted_events_from_blobs(blobs)
     if num:
-        return simgs[:num]
-    return simgs
+        return sevents[:num]
+    return sevents
 
 def get_monitor_prefix_from_date(a_date):
   return f"auxtel_monitor/auxtel-monitor_dayObs_{a_date}"

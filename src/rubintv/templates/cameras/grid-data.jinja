@@ -1,11 +1,11 @@
-{% for img in imgs %}
-  {# <div class="grid-cell">{{img.humanDate()}}</div> #}
-  <div class="grid-cell">{{img.seq}}</div>
-  {% for chan in img.chans %}
+{% for event in events %}
+  {# <div class="grid-cell">{{event.humanDate()}}</div> #}
+  <div class="grid-cell">{{event.seq}}</div>
+  {% for chan in event.chans %}
     <div class="grid-cell">
       {% if chan is not none %}
         <a  class="button button-table {{ chan.css_class }}"
-            href="{{ '/rubintv/' + camera.slug + '/' + chan.endpoint + '/' + img.cleanDate() + '/' + img.seq|string }}">
+            href="{{ '/rubintv/' + camera.slug + '/' + chan.endpoint + '/' + event.cleanDate() + '/' + event.seq|string }}">
         </a>
       {% endif %}
     </div>

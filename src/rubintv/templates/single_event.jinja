@@ -2,11 +2,11 @@
 {% block content %}
 <div id="refresher">
   <div class="subheader">
-    <h2>Sequence {{img.seq}}</h2>
+    <h2>Sequence {{event.seq}}</h2>
   </div>
-  <a target="_blank" href="{{img.url}}">
-    <img class="resp {% if channel=="monitor" %} behind {% endif %}" src="{{img.url}}">
+  <a target="_blank" href="{{event.url}}">
+    <img class="resp {% if channel=="monitor" %} behind {% endif %}" src="{{event.url}}">
   </a>
-  <div class="desc">{{img.name}}</div>
+  <div class="desc">{{event.name}}</div>
 </div>
 {% endblock content %}

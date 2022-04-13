@@ -1,7 +1,7 @@
 {% extends "layout.jinja" %}
 
 {% block subtitle %}
- <h2>{{ camera.name }}</h2> 
+ <h2>{{ camera.name }}</h2>
 {% endblock subtitle %}
 
 {% block content %}
@@ -43,8 +43,9 @@
             </div>
         </div>
         <div class="channel-grid">
-          {# {% include "cameras/grid-data.jinja" %} #}
-          {% include "cameras/fake_grid.html" %}
+          {# XXX: to change to live events before PR #}
+          {% include "cameras/grid-data.jinja" %}
+          {# {% include "cameras/fake_grid.html" %} #}
         </div>
       </section>
       <section class="sidebar">

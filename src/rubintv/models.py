@@ -18,7 +18,7 @@ class Channel:
     css_class: str=None
 
 @dataclass
-class Image:
+class Event:
     url: str
     name: str = field(init=False)
     date: datetime = field(init=False)
