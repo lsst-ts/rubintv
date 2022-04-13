@@ -58,6 +58,7 @@ def setup_middleware(app: web.Application) -> None:
 
 
 def getCurrentDayObs():
+    # XXX do not merge or deploy until this is correct
     today = date.today()
     offset = timedelta(0)  # XXX MFL to provide offset for dayObs rollover
     return today + offset

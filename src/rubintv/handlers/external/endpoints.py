@@ -21,6 +21,7 @@ from rubintv.handlers import routes
 from rubintv.models import Channel, Event, Camera
 from rubintv.timer import Timer
 
+from rubintv.app import getCurrentDayObs
 
 cameras = {
     "auxtel": Camera(
@@ -149,7 +150,7 @@ async def current(request: web.Request) -> web.Response:
 
 
 def get_most_recent_day_events(bucket: Bucket) -> List[Event]:
-    try_date = date.today()
+    try_date = getCurrentDayObs()
     timer = datetime.now()
     timeout = 5
     blobs = []
@@ -160,17 +161,19 @@ def get_most_recent_day_events(bucket: Bucket) -> List[Event]:
         elapsed = datetime.now() - timer
         if elapsed.seconds > timeout:
             raise TimeoutError(f"Timed out. Couldn't find most recent day's records within {timeout} seconds")
+        if not blobs:
+            continue
         events = {}
         events['monitor'] = get_sorted_events_from_blobs(blobs)
 
-        for chan in per_event_channels.keys():
-            if chan == 'monitor':
-                continue
-            prefix = per_event_channels[chan].prefix
-            prefix_dashes = prefix.replace("_", "-")
-            new_prefix = f"{prefix}/{prefix_dashes}_dayObs_{try_date}_seqNum_"
-            blobs = list(bucket.list_blobs(prefix=new_prefix))
-            events[chan] = get_sorted_events_from_blobs(blobs)
+    for chan in per_event_channels.keys():
+        if chan == 'monitor':
+            continue
+        prefix = per_event_channels[chan].prefix
+        prefix_dashes = prefix.replace("_", "-")
+        new_prefix = f"{prefix}/{prefix_dashes}_dayObs_{try_date}_seqNum_"
+        blobs = list(bucket.list_blobs(prefix=new_prefix))
+        events[chan] = get_sorted_events_from_blobs(blobs)
 
     match_criteron = lambda x,y: x.seq == y.seq
     return flatten_events_dict_into_list(events, match_criteron)
