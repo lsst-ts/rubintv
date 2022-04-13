@@ -123,11 +123,11 @@ async def current(request: web.Request) -> web.Response:
         camera = request.match_info["camera"]
         bucket = request.config_dict["rubintv/gcs_bucket"]
         channel = per_event_channels[request.match_info["name"]]
-        events = get_current_event(
+        event = get_current_event(
             channel.prefix,
             bucket,
         )
-        page = get_formatted_page("current.jinja", camera=camera, event=events[0], channel=channel.name)
+        page = get_formatted_page("current.jinja", camera=camera, event=event, channel=channel.name)
     logger.info("current", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
@@ -150,22 +150,20 @@ def get_most_recent_day_events(bucket: Bucket) -> List[Event]:
     blobs = []
     while not blobs:
         try_date = try_date - timedelta(1) #no blobs? try the day defore
-        prefix = get_monitor_prefix_from_date(try_date)
+        prefix = get_prefix_from_date('auxtel_monitor', try_date)
         blobs = list(bucket.list_blobs(prefix=prefix))
         elapsed = datetime.now() - timer
         if elapsed.seconds > timeout:
             raise TimeoutError(f"Timed out. Couldn't find most recent day's records within {timeout} seconds")
-        if not blobs:
-            continue
-        events = {}
-        events['monitor'] = get_sorted_events_from_blobs(blobs)
+
+    events = {}
+    events['monitor'] = get_sorted_events_from_blobs(blobs)
 
     for chan in per_event_channels.keys():
         if chan == 'monitor':
             continue
         prefix = per_event_channels[chan].prefix
-        prefix_dashes = prefix.replace("_", "-")
-        new_prefix = f"{prefix}/{prefix_dashes}_dayObs_{try_date}_seqNum_"
+        new_prefix = get_prefix_from_date(prefix, try_date)
         blobs = list(bucket.list_blobs(prefix=new_prefix))
         events[chan] = get_sorted_events_from_blobs(blobs)
 
@@ -219,22 +217,28 @@ def get_formatted_page(
     templ = env.get_template(template)
     return templ.render(kwargs)
 
+
 def get_current_event(
     prefix: str,
     bucket: Bucket,
-) -> str:
-    events = get_event_list(bucket, prefix, 1)
-    if events:
-        return events
-    raise ValueError(f"No current event found for prefix={prefix}")
+) -> Event:
+    try_date = getCurrentDayObs()
+    timer = datetime.now()
+    timeout = 10
+    blobs = []
+    while not blobs:
+        try_date = try_date - timedelta(1) #no blobs? try the day defore
+        new_prefix = get_prefix_from_date(prefix, try_date)
+        blobs = list(bucket.list_blobs(prefix=new_prefix))
+        elapsed = datetime.now() - timer
+        if elapsed.seconds > timeout:
+            raise TimeoutError(f"Timed out. Couldn't find most recent day's records within {timeout} seconds")
+
+    events = get_sorted_events_from_blobs(blobs)
+    return events[0]
 
 
-def get_event_list(bucket: Bucket, prefix: str, num: Optional[int] = None) -> List[Event]:
-    blobs = bucket.list_blobs(prefix=prefix)
-    sevents = get_sorted_events_from_blobs(blobs)
-    if num:
-        return sevents[:num]
-    return sevents
-
-def get_monitor_prefix_from_date(a_date):
-  return f"auxtel_monitor/auxtel-monitor_dayObs_{a_date}"
+def get_prefix_from_date(prefix, a_date):
+    prefix_dashes = prefix.replace("_", "-")
+    new_prefix = f"{prefix}/{prefix_dashes}_dayObs_{a_date}_seqNum_"
+    return new_prefix
