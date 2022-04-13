@@ -2,6 +2,7 @@
 .flr {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
 }
 
 .resp {
@@ -28,7 +29,7 @@
   transition: box-shadow 0.2s;
 }
 
-.large-button {
+.button-large {
   width: 200px;
   height: 144px;
   border-radius: 10%;
@@ -92,11 +93,16 @@ header .title h1 {
   margin: 0;
 }
 
-.channel-menu {
+.page-title {
+  margin-bottom: 1em;
+}
+
+[class$=-menu] {
   margin-bottom: 3em;
 }
-.channel-menu .channel {
+[class$=-menu] li {
   margin-right: 1em;
+  margin-bottom: 1em;
 }
 
 h3 {

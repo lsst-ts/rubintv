@@ -25,14 +25,17 @@ from rubintv.app import getCurrentDayObs
 
 cameras = {
     "auxtel": Camera(
-        name="Auxtel", slug="auxtel", online=True
+        name="Auxtel", slug="auxtel", online = True
     ),
     "comcam": Camera(
-        name="Comcam", slug="comcam", online=False
+        name="Comcam", slug="comcam", online = False
     ),
     "lsstcam": Camera(
-        name="LSSTcam", slug="lsstcam", online=False
+        name="LSSTcam", slug="lsstcam", online = False
     ),
+    "allsky": Camera(
+        name="All Sky", slug="allsky", online = False
+    )
 }
 
 per_event_channels = {
@@ -80,25 +83,15 @@ async def get_recent_table(request: web.Request) -> web.Response:
     camera = cameras[request.match_info["camera"]]
     logger = request["safir/logger"]
     with Timer() as timer:
-        # if "num" in request.query:
-        #     num = int(request.query["num"])
-        # else:
-        #     num = 36
-        # if "beg_date" in request.query and request.query["beg_date"]:
-        #     beg_date = datetime.fromisoformat(request.query["beg_date"])
-        # else:
-        #     beg_date = None
-        # if "end_date" in request.query and request.query["end_date"]:
-        #     end_date = datetime.fromisoformat(request.query["end_date"])
-        # else:
-        #     end_date = None
         bucket = request.config_dict["rubintv/gcs_bucket"]
         events = get_most_recent_day_events(bucket)
-        page = get_formatted_page(
-            f'cameras/layout.jinja', camera=camera, channels=per_event_channels,
-            # date=date.today(),
-            date=events[0].cleanDate(), events=events
-        )
+        if camera.online:
+            page = get_formatted_page(
+                'cameras/layout.jinja', camera=camera, channels=per_event_channels,
+                date=events[0].cleanDate(), events=events
+            )
+        else:
+            page = get_formatted_page("cameras/not_online.jinja", camera=camera)
     logger.info("get_recent_table", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 

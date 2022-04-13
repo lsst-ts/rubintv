@@ -5,14 +5,11 @@
 {% endblock subtitle %}
 
 {% block content %}
-    {# <section id="subheader">
-        <h2>This site is for accessing rapid image analysis from the LSST Auxiliary camera.</h2>
-    </section> #}
     <nav id="per-night-menu" class="channel-menu" role="navigation">
     <h3>Per Night Channels</h3>
       <ul class="channels flr">
-          <li class="channel"><a href="#" class="button large-button">Rolling Buffer</a></li>
-          <li class="channel"><a href="#" class="button large-button">Tonight's Movie</a></li>
+          <li class="channel"><a href="#" class="button button-large">Rolling Buffer</a></li>
+          <li class="channel"><a href="#" class="button button-large">Tonight's Movie</a></li>
       </ul>
     </nav>
     <nav id="per-image-menu" class="channel-menu" role="navigation">
@@ -20,7 +17,7 @@
       <ul class="channels flr">
         {% for channel in channels %}
           <li class="channel">
-            <a  class="button large-button {{channel}}"
+            <a  class="button button-large {{channel}}"
                 href="/rubintv/{{ camera.slug }}/{{channel}}_current" target="_blank">
               <span>{{ channels[channel].name }}</span>
             </a>
