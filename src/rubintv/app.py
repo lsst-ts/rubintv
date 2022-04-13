@@ -12,7 +12,6 @@ from safir.metadata import setup_metadata
 from safir.middleware import bind_logger
 from google.cloud.storage import Bucket
 from datetime import date, timedelta
-from rubintv.models import Image
 
 from rubintv.config import Configuration
 from rubintv.handlers import init_external_routes, init_internal_routes
@@ -78,7 +77,11 @@ class HistoricalData():
 
     def getBlobs(self):
         if getCurrentDayObs() > self._lastCall:
-            self._blobs = list(self._bucket.list_blobs())
+            # self._blobs = list(self._bucket.list_blobs())
+            # XXX to change back before PR
+            # note- blobs is
+            with open('blobs_store.txt','r') as file:
+                self._blobs = file.read().split()
             self._lastCall = getCurrentDayObs()
 
         return self._blobs
