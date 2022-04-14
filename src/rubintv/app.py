@@ -67,22 +67,21 @@ def getCurrentDayObs():
 class HistoricalData():
     """Provide a cache of the historical data.
 
-    Provides a cache of the hisotrical data which updates when the day rolls
+    Provides a cache of the historical data which updates when the day rolls
     over, but means that the full blob contents can be looped over without
     makings a request for the full data for each operation.
     """
     def __init__(self, bucket: Bucket) -> None:
-        self._blobs = list(bucket.list_blobs())
+        # XXX to change back before PR
+        # self._blobs = list(bucket.list_blobs())
+        with open('/Users/ugy/blobs_store.txt','r') as file:
+            self._blobs = file.read().split()
         self._bucket = bucket
         self._lastCall = getCurrentDayObs()
 
     def getBlobs(self):
-        if getCurrentDayObs() > self._lastCall:
-            # self._blobs = list(self._bucket.list_blobs())
-            # XXX to change back before PR
-            # note- blobs is
-            with open('blobs_store.txt','r') as file:
-                self._blobs = file.read().split()
-            self._lastCall = getCurrentDayObs()
-
+        # XXX to change back before PR
+        # if getCurrentDayObs() > self._lastCall:
+        #     self._blobs = list(self._bucket.list_blobs())
+        #     self._lastCall = getCurrentDayObs()
         return self._blobs
