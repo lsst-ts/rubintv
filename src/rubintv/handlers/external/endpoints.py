@@ -99,10 +99,10 @@ async def get_recent_table(request: web.Request) -> web.Response:
 async def get_historical_table(request: web.Request) -> web.Response:
     logger = request["safir/logger"]
     with Timer() as timer:
-        bucket = request.config_dict["rubintv/gcs_bucket"]
-        h = request.config_dict["rubintv/historical_data"]
-        blobs = h.get_blobs()
-        page = get_formatted_page("cameras/historical.jinja", blobs=blobs[:5])
+        camera = request.match_info["camera"]
+        historical = request.config_dict["rubintv/historical_data"]
+        years = historical.get_years()
+        page = get_formatted_page("cameras/historical.jinja", camera=camera, years=years)
     logger.info("get_historical_blobs", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
