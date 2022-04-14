@@ -172,7 +172,7 @@ def get_most_recent_day_events(bucket: Bucket) -> List[Event]:
 
 """passed a dict where keys are as per_night_channels keys and each corresponding value is a list of
 events from that channel, will flatten into one list of events where each channel is represented
-in the event object's chan list
+in the event object's chan list (or None if it doesn't exist for that event seq num)
 """
 def flatten_events_dict_into_list(events:dict, match_crit: Lambda = None) -> List[Event]:
     if not match_crit:
