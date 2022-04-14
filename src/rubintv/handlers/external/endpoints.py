@@ -99,7 +99,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
 async def get_historical_table(request: web.Request) -> web.Response:
     logger = request["safir/logger"]
     with Timer() as timer:
-        camera = request.match_info["camera"]
+        camera = cameras[request.match_info["camera"]]
         historical = request.config_dict["rubintv/historical_data"]
         years = historical.get_years()
         page = get_formatted_page("cameras/historical.jinja", camera=camera, years=years)
@@ -120,7 +120,7 @@ async def events(request: web.Request) -> web.Response:
 async def current(request: web.Request) -> web.Response:
     logger = request["safir/logger"]
     with Timer() as timer:
-        camera = request.match_info["camera"]
+        camera = cameras[request.match_info["camera"]]
         bucket = request.config_dict["rubintv/gcs_bucket"]
         channel = per_event_channels[request.match_info["name"]]
         event = get_current_event(
@@ -133,7 +133,7 @@ async def current(request: web.Request) -> web.Response:
 
 
 def get_single_event_page(request: web.Request, channel: Channel) -> str:
-    camera = request.match_info["camera"]
+    camera = cameras[request.match_info["camera"]]
     prefix = channel.prefix
     prefix_dashes = prefix.replace("_", "-")
     date = request.match_info["date"]
