@@ -170,32 +170,22 @@ def get_most_recent_day_events(bucket: Bucket) -> List[Event]:
     match_criteron = lambda x,y: x.seq == y.seq
     return flatten_events_dict_into_list(events, match_criteron)
 
-# passed a dict where keys are as per_night_channels keys and each corresponding value is a list of
-# Image(s) from that channel, will flatten into one list of Image(s) where each channel is represented
-# in the Image object's chan list
-def flatten_events_dict_into_list(events: dict, match_crit: Lambda = None)->List[Event]:
+"""passed a dict where keys are as per_night_channels keys and each corresponding value is a list of
+events from that channel, will flatten into one list of events where each channel is represented
+in the event object's chan list
+"""
+def flatten_events_dict_into_list(events:dict, match_crit: Lambda = None) -> List[Event]:
     if not match_crit:
         match_crit = lambda x,y: x.seq == y.seq
-    keys = list(events.keys())
-    for i, event in enumerate(
-        events["monitor"]
-    ):  # I know there will always be a monitor style event
-        events["monitor"][i].chans.append(per_event_channels["monitor"])
-        for k in keys:
-            if k == "monitor":
-                continue
-            match = False
-            for mim in events[k]:
-                if match_crit(event, mim):
-                    events["monitor"][i].chans.append(per_event_channels[k])
-                    match = True
-                    events[k].remove(mim)
-                    break
-            if not match:
-                # Ignore typing here since the template expects None if not there
-                events["monitor"][i].chans.append(None)
+    event_iters = [iter(li) for li in events.values()]
+    chan_lookup = list(per_event_channels.keys())
+    each_event = [next(it, None) for it in event_iters]
+    for event in events['monitor']:
+        monitor_event = each_event[0]
+        equal = [match_crit(monitor_event, other_event) for other_event in each_event]
+        event.chans = [(equality and per_event_channels[chan_lookup[i]]) or None for i, equality in enumerate(equal)]
+        each_event = [(equal[i] and next(it, None)) or each_event[i] for i, it in enumerate(event_iters)]
     return events['monitor']
-
 
 def get_sorted_events_from_blobs(blobs: List)->List[Event]:
     events = [
