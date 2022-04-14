@@ -101,7 +101,7 @@ async def get_historical_table(request: web.Request) -> web.Response:
     with Timer() as timer:
         bucket = request.config_dict["rubintv/gcs_bucket"]
         h = request.config_dict["rubintv/historical_data"]
-        blobs = h.getBlobs()
+        blobs = h.get_blobs()
         page = get_formatted_page("cameras/historical.jinja", blobs=blobs[:5])
     logger.info("get_historical_blobs", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
