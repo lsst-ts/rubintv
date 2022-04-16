@@ -120,8 +120,15 @@ class HistoricalData():
         days = set([event.date.day for event in self._get_events()['monitor'] if event.date.month == month and event.date.year == year])
         return list(days)
 
-    def get_events_for_date_and_prefix(self, a_date, prefix):
-        return [event for event in self._get_events()['monitor'] if event.date.date() == a_date and event.url.startswith(prefix)]
+    def get_events_for_date(self, a_date):
+        '''returns dict of events:
+        { 'chan_name1': [Event 1, Event 2, ...], 'chan_name2': [...], ...}
+        '''
+        events_dict = self._get_events()
+        days_events_dict = {}
+        for channel in events_dict:
+            days_events_dict[channel] = [event for event in events_dict[channel] if event.date == a_date]
+        return days_events_dict
 
     def get_second_most_recent_day(self):
         events = self._get_events()['monitor']

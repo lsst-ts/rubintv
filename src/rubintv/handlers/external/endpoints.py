@@ -60,7 +60,7 @@ async def get_historical(request: web.Request) -> web.Response:
         months = historical.get_months_for_year(year)
         months_days = {month:historical.get_days_for_month_and_year(month, year) for month in months}
         recent_day = historical.get_second_most_recent_day()
-        smrd_dict = {chan: historical.get_events_for_date_and_prefix(recent_day, per_event_channels[chan].prefix) for chan in per_event_channels }
+        smrd_dict = historical.get_events_for_date(recent_day)
         smrd_events = flatten_events_dict_into_list(smrd_dict)
         page = get_formatted_page("cameras/historical.jinja", camera=camera, year=year, years=reverse_years, months_days=months_days, events=smrd_events)
     logger.info("get_historical", duration=timer.seconds)
