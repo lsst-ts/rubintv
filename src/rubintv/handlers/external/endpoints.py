@@ -12,65 +12,18 @@ from asyncio.log import logger
 from datetime import datetime, date, timedelta
 from typing import List, Optional
 from unicodedata import name
+from xmlrpc.client import Boolean
 
 from aiohttp import web
 from google.cloud.storage import Bucket
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 from rubintv.handlers import routes
-from rubintv.models import Channel, Event, Camera
+from rubintv.models import Channel, Event, Camera, cameras, per_event_channels, per_night_channels
 from rubintv.timer import Timer
 
-from rubintv.app import getCurrentDayObs
+from rubintv.app import getCurrentDayObs, HistoricalData
 
-cameras = {
-    "auxtel": Camera(
-        name="Auxtel", slug="auxtel", online = True
-    ),
-    "comcam": Camera(
-        name="Comcam", slug="comcam", online = False
-    ),
-    "lsstcam": Camera(
-        name="LSSTcam", slug="lsstcam", online = False
-    ),
-    "allsky": Camera(
-        name="All Sky", slug="allsky", online = False
-    )
-}
-
-per_event_channels = {
-    "monitor": Channel(
-        name="Monitor",
-        prefix="auxtel_monitor",
-        endpoint="monitorevents",
-        css_class="monitor"
-    ),
-    "spec": Channel(
-        name="Spectrum", prefix="summit_specexam", endpoint="specevents", css_class="spec"
-    ),
-    "im": Channel(
-        name="Image Analysis", prefix="summit_imexam", endpoint="imevents", css_class="im"
-    ),
-    "mount": Channel(
-        name="Mount",
-        prefix="auxtel_mount_torques",
-        endpoint="mountevents",
-        css_class="mount"
-    ),
-}
-
-per_night_channels = {
-    "rollingbuffer": Channel(
-        name="Rolling Buffer",
-        prefix="rolling_buffer",
-        endpoint="rollingbuffer"
-    ),
-    "movie": Channel(
-        name="Tonight's Movie",
-        prefix="movie",
-        endpoint="movie"
-    )
-}
 
 @routes.get("")
 @routes.get("/")
@@ -96,14 +49,21 @@ async def get_recent_table(request: web.Request) -> web.Response:
     return web.Response(text=page, content_type="text/html")
 
 @routes.get("/{camera}/historical")
-async def get_historical_table(request: web.Request) -> web.Response:
+async def get_historical(request: web.Request) -> web.Response:
     logger = request["safir/logger"]
     with Timer() as timer:
         camera = cameras[request.match_info["camera"]]
         historical = request.config_dict["rubintv/historical_data"]
         years = historical.get_years()
-        page = get_formatted_page("cameras/historical.jinja", camera=camera, years=years)
-    logger.info("get_historical_blobs", duration=timer.seconds)
+        year = years.pop()
+        reverse_years = sorted(years, reverse=True)
+        months = historical.get_months_for_year(year)
+        months_days = {month:historical.get_days_for_month_and_year(month, year) for month in months}
+        recent_day = historical.get_second_most_recent_day()
+        smrd_dict = {chan: historical.get_events_for_date_and_prefix(recent_day, per_event_channels[chan].prefix) for chan in per_event_channels }
+        smrd_events = flatten_events_dict_into_list(smrd_dict)
+        page = get_formatted_page("cameras/historical.jinja", camera=camera, year=year, years=reverse_years, months_days=months_days, events=smrd_events)
+    logger.info("get_historical", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
 @routes.get("/{camera}/{channel}events/{date}/{seq}")
@@ -149,7 +109,7 @@ def get_most_recent_day_events(bucket: Bucket) -> List[Event]:
     timeout = 5
     blobs = []
     while not blobs:
-        try_date = try_date - timedelta(1) #no blobs? try the day defore
+        try_date = try_date - timedelta(1) #no blobs? try the day before
         prefix = get_prefix_from_date('auxtel_monitor', try_date)
         blobs = list(bucket.list_blobs(prefix=prefix))
         elapsed = datetime.now() - timer
@@ -159,6 +119,8 @@ def get_most_recent_day_events(bucket: Bucket) -> List[Event]:
     events = {}
     events['monitor'] = get_sorted_events_from_blobs(blobs)
 
+    # creates a dict where key => List of events e.g.:
+    # {"monitor": [Event 1, Event 2 ...] , "im": [Event 2 ...] ... }
     for chan in per_event_channels.keys():
         if chan == 'monitor':
             continue
@@ -167,24 +129,38 @@ def get_most_recent_day_events(bucket: Bucket) -> List[Event]:
         blobs = list(bucket.list_blobs(prefix=new_prefix))
         events[chan] = get_sorted_events_from_blobs(blobs)
 
-    match_criteron = lambda x,y: x.seq == y.seq
-    return flatten_events_dict_into_list(events, match_criteron)
+    return flatten_events_dict_into_list(events)
 
-"""passed a dict where keys are as per_night_channels keys and each corresponding value is a list of
-events from that channel, will flatten into one list of events where each channel is represented
-in the event object's chan list (or None if it doesn't exist for that event seq num)
-"""
-def flatten_events_dict_into_list(events:dict, match_crit: Lambda = None) -> List[Event]:
-    if not match_crit:
-        match_crit = lambda x,y: x.seq == y.seq
+def seq_num_equal(this_event, that_event) -> Boolean:
+    if not hasattr(that_event, 'seq'):
+        return False
+    else:
+        return this_event.seq == that_event.seq
+
+def flatten_events_dict_into_list(events:dict) -> List[Event]:
+    """passed a dict where keys are as per_night_channels keys and each corresponding value is a list of
+    events from that channel, will flatten into one list of events where each channel is represented
+    in the event object's chan list (or None if it doesn't exist for that event seq num) i.e:
+    from: {"monitor": [Event 1, Event 2 ...] , "im": [Event 2 ...] ... }
+    to: [Event 1 (chans=['monitor', None, None, None]), Event 2 (chans=['monitor', 'im', None, None], ... ]
+    """
+    # make an iterator out of each channel's list of events
     event_iters = [iter(li) for li in events.values()]
+    # store the channel names in order to use in the loop
     chan_lookup = list(per_event_channels.keys())
+    # make a list with the first event in each channel list
     each_event = [next(it, None) for it in event_iters]
+    # loop once through the monitor channel list
     for event in events['monitor']:
+        # get the next monitor event from the top
         monitor_event = each_event[0]
-        equal = [match_crit(monitor_event, other_event) for other_event in each_event]
-        event.chans = [(equality and per_event_channels[chan_lookup[i]]) or None for i, equality in enumerate(equal)]
-        each_event = [(equal[i] and next(it, None)) or each_event[i] for i, it in enumerate(event_iters)]
+        # make a list for each channel- true if seq num matches monitor event seq num, false otherwise
+        list_of_matches = [seq_num_equal(monitor_event,other_event) for other_event in each_event]
+        # for each of the channels add corresponding channel object to the monitor event
+        # if there was a seq num match and None if not
+        event.chans = [(matches and per_event_channels[chan_lookup[i]]) or None for i, matches in enumerate(list_of_matches)]
+        # if there was a match, move that channel's image list iterator to the next one
+        each_event = [(list_of_matches[i] and next(it, None)) or each_event[i] for i, it in enumerate(event_iters)]
     return events['monitor']
 
 def get_sorted_events_from_blobs(blobs: List)->List[Event]:
@@ -193,7 +169,6 @@ def get_sorted_events_from_blobs(blobs: List)->List[Event]:
     ]
     sevents = sorted(events, key=lambda x: (x.date, x.seq), reverse=True)
     return sevents
-
 
 def get_formatted_page(
     template: str,

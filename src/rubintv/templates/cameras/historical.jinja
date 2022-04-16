@@ -1,7 +1,34 @@
-{% extends "camera/layout.jinja" %}
+{% extends "cameras/layout.jinja" %}
 {% block content %}
   <div class="calendar">
-    <div class="most-recent-year"></div>
-    <div class="previous-years"></div>
+    <div class="most-recent-year">
+      <h4 class="year">{{ year }}</h4>
+      {% for month in months_days %}
+        <h5 class="month">
+            {{ month }}
+        </h5>
+        {{ months_days[month] }}
+      {% endfor %}
+    </div>
+    <div class="previous-years">
+      {% for a_year in years %}
+        <h4>{{ a_year }}</h4>
+      {% endfor %}
+    </div>
   </div>
+  <section class="channel-day-data">
+        <div class="channel-grid-heading">
+          <h3>Most recent data: <span class="data">{{ date }}<span></h3>
+          <div class="channel-grid">
+              <span class="grid-title">Seq. No.</span>
+              <span class="grid-title gt-channel">Monitor</span>
+              <span class="grid-title gt-channel">Spectrum</span>
+              <span class="grid-title gt-channel">ImAnalysis</span>
+              <span class="grid-title gt-channel">Mount</span>
+            </div>
+        </div>
+        <div class="channel-grid">
+          {% include "cameras/grid-data.jinja" %}
+        </div>
+      </section>
 {% endblock content %}

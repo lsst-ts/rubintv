@@ -16,7 +16,7 @@ from datetime import date, timedelta
 from rubintv.config import Configuration
 from rubintv.handlers import init_external_routes, init_internal_routes
 
-from rubintv.models import Event
+from rubintv.models import Event, Channel, per_event_channels
 
 
 def create_app() -> web.Application:
@@ -74,41 +74,58 @@ class HistoricalData():
     makings a request for the full data for each operation.
     """
     def __init__(self, bucket) -> None:
-        # XXX to change back before PR
-        # self._blobs = list(bucket.list_blobs())
-        with open('/Users/ugy/blobs_store.txt','r') as file:
-            self._blobs = file.read().split()
         self._bucket = bucket
+        self._events = {}
+        self._events = self._get_events()
         self._lastCall = getCurrentDayObs()
 
     def _get_blobs(self):
-        # XXX to change back before PR
-        # if getCurrentDayObs() > self._lastCall:
-        #     self._blobs = list(self._bucket.list_blobs())
-        #     self._lastCall = getCurrentDayObs()
-        return self._blobs
+        with open('/Users/ugy/blobs_store.txt','r') as file:
+            blobs = file.read().split()
+#           blobs = list(self._bucket.list_blobs())
+        return blobs
 
     def _get_events(self):
         # XXX remove _strings before PR
-        return self._get_sorted_events_from_blobs_strings(self._get_blobs())
+        # XXX to change back before PR
+        if not self._events or getCurrentDayObs() > self._lastCall:
+            print("reading in events...")
+            blobs = self._get_blobs()
+            self._events = self._get_events_from_blobs_strings(blobs)
+            self._lastCall = getCurrentDayObs()
+        return self._events
 
-    def _get_sorted_events_from_blobs_strings(self, blobs):
-        # XXX remove this method before PR
-        events = [Event(blob) for blob in blobs if blob.endswith(".png")]
-        sevents = sorted(events, key=lambda x: (x.date, x.seq), reverse=True)
-        return sevents
+    def _get_events_from_blobs_strings(self, blobs):
+        ''' Returns a dict with keys as per_event_channels and a
+            corresponding list of events for each channel
+        '''
+        # XXX change this method to deal with blobs (add .public_url) before PR
+        all_events = [Event(blob) for blob in blobs if blob.endswith(".png")]
+        s_events = sorted(all_events, key=lambda x: (x.date, x.seq), reverse=True)
+        events_dict = {}
+        for channel in per_event_channels:
+            events_dict[channel] = [e for e in s_events if e.prefix == per_event_channels[channel].prefix]
+        return events_dict
 
     def get_years(self):
-        unique_years = set([event.date.year for event in self._get_events()])
-        return list(unique_years)
+        years = set([event.date.year for event in self._get_events()['monitor']])
+        return list(years)
 
     def get_months_for_year(self, year):
-        months = set([event.date.month for event in self._get_events() if event.date.year == year])
-        return list(months)
+        months = set([event.date.month for event in self._get_events()['monitor'] if event.date.year == year])
+        reverse_months = sorted(months, reverse=True)
+        return list(reverse_months)
 
     def get_days_for_month_and_year(self, month, year):
-        days = set([event.date.day for event in self._get_events() if event.date.month == month and event.date.year == year])
+        days = set([event.date.day for event in self._get_events()['monitor'] if event.date.month == month and event.date.year == year])
         return list(days)
 
     def get_events_for_date_and_prefix(self, a_date, prefix):
-        return [event for event in self._get_events() if event.date.date() == a_date and event.url.startswith(prefix)]
+        return [event for event in self._get_events()['monitor'] if event.date.date() == a_date and event.url.startswith(prefix)]
+
+    def get_second_most_recent_day(self):
+        events = self._get_events()['monitor']
+        most_recent = events[0].date
+        events = [event for event in events if not (event.date == most_recent)]
+        second_most = events[0].date
+        return second_most
