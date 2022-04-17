@@ -127,12 +127,13 @@ class HistoricalData():
         events_dict = self._get_events()
         days_events_dict = {}
         for channel in events_dict:
-            days_events_dict[channel] = [event for event in events_dict[channel] if event.date == a_date]
+            days_events_dict[channel] = [event for event in events_dict[channel] if event.date.date() == a_date]
         return days_events_dict
 
     def get_second_most_recent_day(self):
         events = self._get_events()['monitor']
         most_recent = events[0].date
         events = [event for event in events if not (event.date == most_recent)]
-        second_most = events[0].date
+        # NB returns a date object not datetime
+        second_most = events[0].date.date()
         return second_most

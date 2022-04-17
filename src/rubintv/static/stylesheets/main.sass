@@ -1,4 +1,5 @@
 @import "reset.css"
+@import "calendar"
 
 .flr
 	display: flex
@@ -36,6 +37,10 @@
 	width: 30px
 	height: 30px
 	border-radius: 10%
+
+a
+	color: #000
+	text-decoration: none
 
 .button:hover
 	box-shadow: none
@@ -91,18 +96,21 @@ h3
 .columns
 	display: flex
 	flex-direction: row
+	> *
+		padding-right: 2em
 
 .channel-day-data
 	flex-basis: 50%
 
 .sidebar
 	flex-basis: 50%
-	padding: 7.5em 0 0 2em
+	padding-top: 4.5em
 	background: #fff
 
 .channel-grid-heading
 	background: #fff
 	padding: 4em 0 0.5em
+	margin-top: -3em
 	position: sticky
 	top: 0
 

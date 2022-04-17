@@ -1,4 +1,6 @@
 {% extends "layout.jinja" %}
 {% block subtitle %}
- <h2>{{ camera.name }}</h2>
+<a href="/rubintv/{{ camera.slug }}">
+   <h2>{{ camera.name }}</h2>
+</a>
 {% endblock subtitle %}

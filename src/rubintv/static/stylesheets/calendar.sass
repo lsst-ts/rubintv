@@ -1,14 +1,30 @@
 .calendar
-  width: 50%
+  flex-basis: 50%
+  padding-top: 4em
+  margin-top: -3em
+
+.most-recent-year
+  margin-bottom: 2em
+
+.year
+  font-size: 1.4em
+  margin-bottom: 1em
+  padding: 4px 0
+  border-bottom: 1px #999 solid
+
+.month
+  font-size: 1.1em
 
 .days
   display: grid
   grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr
   gap: 2px
+  margin-bottom: 1em
 
 .day
   padding: 0.5em
   background: #eee
+  cursor: pointer
 
 h6
   text-align: center

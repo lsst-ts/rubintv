@@ -5,7 +5,8 @@
 __all__ = [
     "get_index",
     "get_recent_table",
-    "get_historical"
+    "get_historical",
+    "get_historical_day_data"
     "events",
     "current",
 ]

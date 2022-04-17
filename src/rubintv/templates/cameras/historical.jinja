@@ -1,34 +1,35 @@
 {% extends "cameras/layout.jinja" %}
 {% block content %}
-  <div class="calendar">
+<h2>Historical Data</h2>
+<div class="columns">
+  <section class="calendar">
     <div class="most-recent-year">
       <h4 class="year">{{ year }}</h4>
       {% for month in months_days %}
         <h5 class="month">
-            {{ month }}
+            {{ month_names[month - 1] }}
         </h5>
-        {{ months_days[month] }}
+        <div class="days">
+          {% for day in months_days[month] %}
+            <div class="day" data-date="{{ year }}-{{ month }}-{{ day }}">
+              {{ day }}
+            </div>
+          {% endfor %}
+        </div>
       {% endfor %}
     </div>
     <div class="previous-years">
       {% for a_year in years %}
-        <h4>{{ a_year }}</h4>
+        <h4 class="year">{{ a_year }}</h4>
       {% endfor %}
     </div>
-  </div>
+  </section>
   <section class="channel-day-data">
-        <div class="channel-grid-heading">
-          <h3>Most recent data: <span class="data">{{ date }}<span></h3>
-          <div class="channel-grid">
-              <span class="grid-title">Seq. No.</span>
-              <span class="grid-title gt-channel">Monitor</span>
-              <span class="grid-title gt-channel">Spectrum</span>
-              <span class="grid-title gt-channel">ImAnalysis</span>
-              <span class="grid-title gt-channel">Mount</span>
-            </div>
-        </div>
-        <div class="channel-grid">
-          {% include "cameras/grid-data.jinja" %}
-        </div>
-      </section>
+    {% include "cameras/day-data.jinja" %}
+  </section>
+</div>
 {% endblock content %}
+{% block footer_scripts %}
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type=text/javascript src="/rubintv/static/js/calendar.js"></script>
+{% endblock footer_scripts %}

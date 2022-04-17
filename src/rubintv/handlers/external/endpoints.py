@@ -9,6 +9,7 @@ __all__ = [
 
 from ast import Lambda
 from asyncio.log import logger
+from calendar import month_name
 from datetime import datetime, date, timedelta
 from typing import List, Optional
 from unicodedata import name
@@ -58,13 +59,30 @@ async def get_historical(request: web.Request) -> web.Response:
         year = years.pop()
         reverse_years = sorted(years, reverse=True)
         months = historical.get_months_for_year(year)
-        months_days = {month:historical.get_days_for_month_and_year(month, year) for month in months}
+        months_days = {month: historical.get_days_for_month_and_year(month, year)
+                        for month in months}
         recent_day = historical.get_second_most_recent_day()
         smrd_dict = historical.get_events_for_date(recent_day)
         smrd_events = flatten_events_dict_into_list(smrd_dict)
-        page = get_formatted_page("cameras/historical.jinja", camera=camera, year=year, years=reverse_years, months_days=months_days, events=smrd_events)
+        page = get_formatted_page("cameras/historical.jinja", camera=camera, year=year, years=reverse_years,
+                                    months_days=months_days, month_names = month_names(), date=recent_day, events=smrd_events)
     logger.info("get_historical", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
+
+@routes.get("/{camera}/historical/{date_str}")
+async def get_historical_day_data(request: web.Request) -> web.Response:
+    camera = cameras[request.match_info["camera"]]
+    date_str = request.match_info["date_str"]
+    historical = request.config_dict["rubintv/historical_data"]
+    year, month, day = [int(s) for s in date_str.split("-")]
+    the_date = date(year, month, day)
+    day_dict = historical.get_events_for_date(the_date)
+    day_events = flatten_events_dict_into_list(day_dict)
+    page = get_formatted_page("cameras/day-data.jinja", camera=camera, date=the_date, events=day_events)
+    return web.Response(text=page, content_type="text/html")
+
+def month_names():
+    return [date(2000, m, 1).strftime("%B") for m in list(range(1,13))]
 
 @routes.get("/{camera}/{channel}events/{date}/{seq}")
 async def events(request: web.Request) -> web.Response:
