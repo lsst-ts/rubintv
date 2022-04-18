@@ -80,27 +80,22 @@ class HistoricalData():
         self._lastCall = getCurrentDayObs()
 
     def _get_blobs(self):
-        with open('/Users/ugy/blobs_store.txt','r') as file:
-            blobs = file.read().split()
-#           blobs = list(self._bucket.list_blobs())
+        blobs = list(self._bucket.list_blobs())
         return blobs
 
     def _get_events(self):
-        # XXX remove _strings before PR
-        # XXX to change back before PR
         if not self._events or getCurrentDayObs() > self._lastCall:
             print("reading in events...")
             blobs = self._get_blobs()
-            self._events = self._get_events_from_blobs_strings(blobs)
+            self._events = self._get_events_from_blobs(blobs)
             self._lastCall = getCurrentDayObs()
         return self._events
 
-    def _get_events_from_blobs_strings(self, blobs):
+    def _get_events_from_blobs(self, blobs):
         ''' Returns a dict with keys as per_event_channels and a
             corresponding list of events for each channel
         '''
-        # XXX change this method to deal with blobs (add .public_url) before PR
-        all_events = [Event(blob) for blob in blobs if blob.endswith(".png")]
+        all_events = [Event(blob.public_url) for blob in blobs if blob.public_url.endswith(".png")]
         s_events = sorted(all_events, key=lambda x: (x.date, x.seq), reverse=True)
         events_dict = {}
         for channel in per_event_channels:
