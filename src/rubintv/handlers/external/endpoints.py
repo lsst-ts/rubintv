@@ -84,7 +84,7 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
     the_date = date(year, month, day)
     day_dict = historical.get_events_for_date(the_date)
     day_events = flatten_events_dict_into_list(day_dict)
-    page = get_formatted_page("cameras/day-data.jinja", camera=camera, date=the_date, events=day_events)
+    page = get_formatted_page("cameras/day-data-per-day-channels.jinja", camera=camera, date=the_date, events=day_events)
     return web.Response(text=page, content_type="text/html")
 
 def month_names():
