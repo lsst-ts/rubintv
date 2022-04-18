@@ -1,5 +1,5 @@
 {% for event in events %}
-  <div class="grid-cell">{{event.seq}}</div>
+  <div class="grid-cell"><div>{{event.seq}}</div></div>
   {% for chan in event.chans %}
     <div class="grid-cell">
       {% if chan is not none %}

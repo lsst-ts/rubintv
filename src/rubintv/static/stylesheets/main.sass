@@ -18,6 +18,7 @@
 
 .button
 	box-sizing: border-box
+	border-radius: 10%
 	background: #eee
 	color: #000
 	display: flex
@@ -26,12 +27,16 @@
 	text-decoration: none
 	box-shadow: 2.5px 2.5px 4px rgba(0, 0, 0, 0.26)
 	transition: box-shadow 0.2s
+	padding: 0.5em
 
 .button-large
 	width: 200px
 	height: 144px
-	border-radius: 10%
 	padding: 1.5em
+
+.button-small
+	width: 100px
+	height: 67px
 
 .button-table
 	width: 30px
@@ -104,19 +109,20 @@ h3
 
 .sidebar
 	flex-basis: 50%
-	padding-top: 4.5em
+	// padding-top: 2.5em
 	background: #fff
 
 .channel-grid-heading
 	background: #fff
-	padding: 4em 0 0.5em
-	margin-top: -3em
+	padding: 2em 0 0.5em
+	// margin-top: -2em
 	position: sticky
 	top: 0
 
-.container
-	margin: auto
-	display: flex
+.per-day-channels
+	margin-bottom: 1em
+	> *
+		margin-right: 1em
 
 .channel-grid
 	font-family: "Monaco", monospace, monospace
@@ -136,3 +142,7 @@ h3
 	align-content: center
 	flex-direction: row
 	justify-content: flex-start
+	> div
+		display: flex
+		flex-direction: column
+		justify-content: center

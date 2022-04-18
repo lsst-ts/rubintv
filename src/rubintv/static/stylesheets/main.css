@@ -1,36 +1,72 @@
+@charset "UTF-8";
 @import "reset.css";
 .calendar {
   flex-basis: 50%;
   padding-top: 4em;
-  margin-top: -3em;
+  margin-top: -2em;
 }
 
 .most-recent-year {
   margin-bottom: 2em;
 }
 
-.year {
-  font-size: 1.4em;
+.year-title {
+  font-size: 1.1em;
   margin-bottom: 1em;
-  padding: 4px 0;
+  padding: 2px 0;
   border-bottom: 1px #999 solid;
+  cursor: pointer;
+}
+.year-title::before {
+  content: "∆";
+  margin-right: 0.3em;
+  transform-origin: 50% 50%;
+  transform: rotate(180deg);
+  display: inline-block;
+  width: 0.7em;
+}
+
+.year.closed .year-title::before {
+  transform: rotate(90deg);
+}
+.year.closed .months {
+  display: none;
+}
+
+.month-title {
+  font-size: 1.1em;
+}
+
+.months {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
 }
 
 .month {
-  font-size: 1.1em;
+  flex-basis: calc(33% - 1em);
+  margin-bottom: 1em;
 }
 
 .days {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
-  gap: 2px;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0.3em;
   margin-bottom: 1em;
+  background: #eee;
+  padding: 0.3em;
+  border-radius: 0 6px 6px 6px;
 }
 
 .day {
   padding: 0.5em;
-  background: #eee;
+  background: #fff;
   cursor: pointer;
+  transition: background 0.3s;
+}
+.day:hover {
+  background: #eaeaea;
 }
 
 h6 {
@@ -57,6 +93,7 @@ h6 {
 
 .button {
   box-sizing: border-box;
+  border-radius: 10%;
   background: #eee;
   color: #000;
   display: flex;
@@ -65,13 +102,18 @@ h6 {
   text-decoration: none;
   box-shadow: 2.5px 2.5px 4px rgba(0, 0, 0, 0.26);
   transition: box-shadow 0.2s;
+  padding: 0.5em;
 }
 
 .button-large {
   width: 200px;
   height: 144px;
-  border-radius: 10%;
   padding: 1.5em;
+}
+
+.button-small {
+  width: 100px;
+  height: 67px;
 }
 
 .button-table {
@@ -167,21 +209,21 @@ h3 {
 
 .sidebar {
   flex-basis: 50%;
-  padding-top: 4.5em;
   background: #fff;
 }
 
 .channel-grid-heading {
   background: #fff;
-  padding: 4em 0 0.5em;
-  margin-top: -3em;
+  padding: 2em 0 0.5em;
   position: sticky;
   top: 0;
 }
 
-.container {
-  margin: auto;
-  display: flex;
+.per-day-channels {
+  margin-bottom: 1em;
+}
+.per-day-channels > * {
+  margin-right: 1em;
 }
 
 .channel-grid {
@@ -203,6 +245,11 @@ h3 {
   align-content: center;
   flex-direction: row;
   justify-content: flex-start;
+}
+.grid-cell > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /*# sourceMappingURL=main.css.map */

@@ -3,29 +3,33 @@
 <h2>Historical Data</h2>
 <div class="columns">
   <section class="calendar">
-    <div class="most-recent-year">
-      <h4 class="year">{{ year }}</h4>
-      {% for month in months_days %}
-        <h5 class="month">
-            {{ month_names[month - 1] }}
-        </h5>
-        <div class="days">
-          {% for day in months_days[month] %}
-            <div class="day" data-date="{{ year }}-{{ month }}-{{ day }}">
-              {{ day }}
+      {% for year in years %}
+        {% if year == year_to_display %}
+        <div class="year open" data-year="{{ year }}">
+        {% else %}
+        <div class="year closed" data-year="{{ year }}">
+        {% endif %}
+          <h4 class="year-title">{{ year }}</h4>
+            <div class="months">
+              {% for month in years[year] %}
+              <div class="month">
+                <h5 class="month-title">
+                  {{ month_names[month - 1] }}
+                </h5>
+                <div class="days">
+                  {% for day in years[year][month] %}
+                    <div class="day" data-date="{{ year }}-{{ month }}-{{ day }}">{{ day }}</div>
+                  {% endfor %}
+                </div>  {# end of days #}
+              </div> {# end of month #}
+            {% endfor %}
             </div>
-          {% endfor %}
-        </div>
+
+        </div> {# end of year #}
       {% endfor %}
-    </div>
-    <div class="previous-years">
-      {% for a_year in years %}
-        <h4 class="year">{{ a_year }}</h4>
-      {% endfor %}
-    </div>
   </section>
   <section class="channel-day-data">
-    {% include "cameras/day-data.jinja" %}
+    {% include "cameras/day-data-per-day-channels.jinja" %}
   </section>
 </div>
 {% endblock content %}

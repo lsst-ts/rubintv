@@ -55,17 +55,23 @@ async def get_historical(request: web.Request) -> web.Response:
     with Timer() as timer:
         camera = cameras[request.match_info["camera"]]
         historical = request.config_dict["rubintv/historical_data"]
-        years = historical.get_years()
-        year = years.pop()
-        reverse_years = sorted(years, reverse=True)
-        months = historical.get_months_for_year(year)
-        months_days = {month: historical.get_days_for_month_and_year(month, year)
-                        for month in months}
-        recent_day = historical.get_second_most_recent_day()
-        smrd_dict = historical.get_events_for_date(recent_day)
+        active_years = historical.get_years()
+        reverse_years = sorted(active_years, reverse=True)
+        year_to_display = reverse_years[0]
+        years = {}
+        for year in reverse_years:
+            months = historical.get_months_for_year(year)
+            months_days = {month: historical.get_days_for_month_and_year(month, year)
+                            for month in months}
+            years[year] = months_days
+
+        smrd = historical.get_second_most_recent_day()
+        smrd_dict = historical.get_events_for_date(smrd)
         smrd_events = flatten_events_dict_into_list(smrd_dict)
-        page = get_formatted_page("cameras/historical.jinja", camera=camera, year=year, years=reverse_years,
-                                    months_days=months_days, month_names = month_names(), date=recent_day, events=smrd_events)
+
+        page = get_formatted_page("cameras/historical.jinja", camera=camera, year_to_display=year_to_display, years=years,
+                                    month_names = month_names(), date=smrd, events=smrd_events)
+
     logger.info("get_historical", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
@@ -168,13 +174,11 @@ def flatten_events_dict_into_list(events:dict) -> List[Event]:
     chan_lookup = list(per_event_channels.keys())
     # make a list with the first event in each channel list
     each_event = [next(it, None) for it in event_iters]
-    # loop once through the monitor channel list
     for event in events['monitor']:
-        # get the next monitor event from the top
         monitor_event = each_event[0]
         # make a list for each channel- true if seq num matches monitor event seq num, false otherwise
         list_of_matches = [seq_num_equal(monitor_event,other_event) for other_event in each_event]
-        # for each of the channels add corresponding channel object to the monitor event
+        # for each of the channels, add corresponding channel object to the monitor event
         # if there was a seq num match and None if not
         event.chans = [(matches and per_event_channels[chan_lookup[i]]) or None for i, matches in enumerate(list_of_matches)]
         # if there was a match, move that channel's image list iterator to the next one
