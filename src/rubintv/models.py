@@ -62,11 +62,11 @@ per_event_channels = {
     "monitor": Channel(
         name="Monitor", prefix="auxtel_monitor", simplename="monitor"
     ),
-    "spec": Channel(
-        name="Spectrum", prefix="summit_specexam", simplename="spec"
-    ),
     "im": Channel(
         name="Image Analysis", prefix="summit_imexam", simplename="im"
+    ),
+    "spec": Channel(
+        name="Spectrum", prefix="summit_specexam", simplename="spec"
     ),
     "mount": Channel(
         name="Mount", prefix="auxtel_mount_torques", simplename="mount"
