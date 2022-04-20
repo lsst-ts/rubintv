@@ -16,7 +16,7 @@ from datetime import date, timedelta
 from rubintv.config import Configuration
 from rubintv.handlers import init_external_routes, init_internal_routes
 
-from rubintv.models import Event, Channel, per_event_channels
+from rubintv.models import Event, per_event_channels
 
 
 def create_app() -> web.Application:

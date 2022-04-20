@@ -209,6 +209,7 @@ h3 {
 
 .sidebar {
   flex-basis: 50%;
+  padding-top: 5.6em;
   background: #fff;
 }
 
