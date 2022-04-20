@@ -1,8 +1,6 @@
-from ast import For
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Tuple
-from unicodedata import name
 
 
 @dataclass

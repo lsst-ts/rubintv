@@ -10,7 +10,6 @@ from safir.http import init_http_session
 from safir.logging import configure_logging
 from safir.metadata import setup_metadata
 from safir.middleware import bind_logger
-from google.cloud.storage import Bucket
 from datetime import date, timedelta
 
 from rubintv.config import Configuration

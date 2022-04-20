@@ -7,12 +7,8 @@ __all__ = [
     "current",
 ]
 
-from ast import Lambda
-from asyncio.log import logger
-from calendar import month_name
 from datetime import datetime, date, timedelta
-from typing import List, Optional
-from unicodedata import name
+from typing import List
 from xmlrpc.client import Boolean
 
 from aiohttp import web
@@ -23,14 +19,12 @@ from rubintv.handlers import routes
 from rubintv.models import (
     Channel,
     Event,
-    Camera,
     cameras,
     per_event_channels,
-    per_night_channels,
 )
 from rubintv.timer import Timer
 
-from rubintv.app import getCurrentDayObs, HistoricalData
+from rubintv.app import getCurrentDayObs
 
 
 @routes.get("")
