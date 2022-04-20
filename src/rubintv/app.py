@@ -1,6 +1,6 @@
 """The main application factory for the rubintv service."""
 
-__all__ = ["create_app", "getCurrentDayObs"]
+__all__ = ["create_app", "get_current_day_obs"]
 
 from pathlib import Path
 
@@ -10,7 +10,9 @@ from safir.http import init_http_session
 from safir.logging import configure_logging
 from safir.metadata import setup_metadata
 from safir.middleware import bind_logger
-from datetime import date, timedelta
+import datetime
+from datetime import timedelta
+from dateutil.tz import gettz
 
 from rubintv.config import Configuration
 from rubintv.handlers import init_external_routes, init_internal_routes
@@ -58,11 +60,13 @@ def setup_middleware(app: web.Application) -> None:
     app.middlewares.append(bind_logger)
 
 
-def getCurrentDayObs():
-    # XXX do not merge or deploy until this is correct
-    today = date.today()
-    offset = timedelta(0)  # XXX MFL to provide offset for dayObs rollover
-    return today + offset
+def get_current_day_obs():
+    """Get the current day_obs - the observatory rolls the date over at UTC-12"""
+    utc = gettz("UTC")
+    nowUtc = datetime.datetime.now().astimezone(utc)
+    offset = timedelta(hours=-12)
+    dayObs = (nowUtc + offset).date()
+    return dayObs
 
 
 class HistoricalData:
@@ -77,18 +81,18 @@ class HistoricalData:
         self._bucket = bucket
         self._events = {}
         self._events = self._get_events()
-        self._lastCall = getCurrentDayObs()
+        self._lastCall = get_current_day_obs()
 
     def _get_blobs(self):
         blobs = list(self._bucket.list_blobs())
         return blobs
 
     def _get_events(self):
-        if not self._events or getCurrentDayObs() > self._lastCall:
+        if not self._events or get_current_day_obs() > self._lastCall:
             print("reading in events...")
             blobs = self._get_blobs()
             self._events = self._get_events_from_blobs(blobs)
-            self._lastCall = getCurrentDayObs()
+            self._lastCall = get_current_day_obs()
         return self._events
 
     def _get_events_from_blobs(self, blobs):

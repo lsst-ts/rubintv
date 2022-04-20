@@ -24,7 +24,7 @@ from rubintv.models import (
 )
 from rubintv.timer import Timer
 
-from rubintv.app import getCurrentDayObs
+from rubintv.app import get_current_day_obs
 
 
 @routes.get("")
@@ -163,7 +163,7 @@ def get_single_event_page(request: web.Request, channel: Channel) -> str:
 
 
 def get_most_recent_day_events(bucket: Bucket) -> List[Event]:
-    try_date = getCurrentDayObs()
+    try_date = get_current_day_obs()
     timer = datetime.now()
     timeout = 5
     blobs = []
@@ -273,7 +273,7 @@ def get_current_event(
     prefix: str,
     bucket: Bucket,
 ) -> Event:
-    try_date = getCurrentDayObs()
+    try_date = get_current_day_obs()
     timer = datetime.now()
     timeout = 10
     blobs = []
