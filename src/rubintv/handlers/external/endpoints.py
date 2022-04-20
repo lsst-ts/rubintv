@@ -154,7 +154,8 @@ def get_single_event_page(request: web.Request, channel: Channel) -> str:
     seq = request.match_info["seq"]
     bucket = request.config_dict["rubintv/gcs_bucket"]
     event = Event(
-        f"https://storage.googleapis.com/{bucket.name}/{prefix}/{prefix_dashes}_dayObs_{date}_seqNum_{seq}.png"
+        f"https://storage.googleapis.com/{bucket.name}/{prefix}/"
+        f"{prefix_dashes}_dayObs_{date}_seqNum_{seq}.png"
     )
     return get_formatted_page(
         "single_event.jinja", camera=camera, event=event, channel=channel.name
@@ -200,11 +201,26 @@ def seq_num_equal(this_event, that_event) -> Boolean:
 
 
 def flatten_events_dict_into_list(events: dict) -> List[Event]:
-    """passed a dict where keys are as per_night_channels keys and each corresponding value is a list of
-    events from that channel, will flatten into one list of events where each channel is represented
-    in the event object's chan list (or None if it doesn't exist for that event seq num) i.e:
+    """Transforms the per_night_channels into lists per channel.
+
+    Takes a dict where the keys are as per_night_channels keys and each
+    corresponding value is a list of events from that channel. Flattens into
+    one list of events where each channel is represented in the event object's
+    channel list (or None if it doesn't exist for that event seq num) i.e:
     from: {"monitor": [Event 1, Event 2 ...] , "im": [Event 2 ...] ... }
-    to: [Event 1 (chans=['monitor', None, None, None]), Event 2 (chans=['monitor', 'im', None, None], ... ]
+    to: [Event 1 (chans=['monitor', None, None, None]),
+         Event 2 (chans=['monitor', 'im', None, None], ... ]
+
+    Parameters
+    ----------
+    events : `dict`
+        The dict of events. See above for details.
+
+    Returns
+    -------
+    event_list : `list`
+        The list of events, per channel
+
     """
     # make an iterator out of each channel's list of events
     event_iters = [iter(li) for li in events.values()]
@@ -214,18 +230,21 @@ def flatten_events_dict_into_list(events: dict) -> List[Event]:
     each_event = [next(it, None) for it in event_iters]
     for event in events["monitor"]:
         monitor_event = each_event[0]
-        # make a list for each channel- true if seq num matches monitor event seq num, false otherwise
+        # make a list for each channel- true if seq num matches monitor
+        # event seq num, false otherwise
         list_of_matches = [
             seq_num_equal(monitor_event, other_event)
             for other_event in each_event
         ]
-        # for each of the channels, add corresponding channel object to the monitor event
+        # for each of the channels, add corresponding channel object to
+        # the monitor event
         # if there was a seq num match and None if not
         event.chans = [
             (matches and per_event_channels[chan_lookup[i]]) or None
             for i, matches in enumerate(list_of_matches)
         ]
-        # if there was a match, move that channel's image list iterator to the next one
+        # if there was a match, move that channel's image list iterator to the
+        # next one
         each_event = [
             (list_of_matches[i] and next(it, None)) or each_event[i]
             for i, it in enumerate(event_iters)
