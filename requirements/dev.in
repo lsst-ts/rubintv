@@ -15,3 +15,5 @@ mypy
 pre-commit
 pytest
 pytest-aiohttp
+python-dateutil
+types-python-dateutil

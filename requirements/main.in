@@ -12,3 +12,4 @@ click
 google-cloud-storage
 jinja2
 safir<2
+python-dateutil
