@@ -5,10 +5,12 @@ __all__ = ["create_app", "get_current_day_obs"]
 import datetime
 from datetime import timedelta
 from pathlib import Path
+from typing import Dict, List
 
 from aiohttp import web
 from dateutil.tz import gettz
 from google.cloud import storage
+from google.cloud.storage import Bucket
 from safir.http import init_http_session
 from safir.logging import configure_logging
 from safir.metadata import setup_metadata
@@ -59,7 +61,7 @@ def setup_middleware(app: web.Application) -> None:
     app.middlewares.append(bind_logger)
 
 
-def get_current_day_obs():
+def get_current_day_obs() -> datetime.date:
     """Get the current day_obs - the observatory rolls the date over at UTC-12"""
     utc = gettz("UTC")
     nowUtc = datetime.datetime.now().astimezone(utc)
@@ -76,24 +78,24 @@ class HistoricalData:
     makings a request for the full data for each operation.
     """
 
-    def __init__(self, bucket) -> None:
+    def __init__(self, bucket: Bucket) -> None:
         self._bucket = bucket
         self._events = {}
         self._events = self._get_events()
         self._lastCall = get_current_day_obs()
 
-    def _get_blobs(self):
+    def _get_blobs(self) -> List:
         blobs = list(self._bucket.list_blobs())
         return blobs
 
-    def _get_events(self):
+    def _get_events(self) -> Dict:
         if not self._events or get_current_day_obs() > self._lastCall:
             blobs = self._get_blobs()
             self._events = self._get_events_from_blobs(blobs)
             self._lastCall = get_current_day_obs()
         return self._events
 
-    def _get_events_from_blobs(self, blobs):
+    def _get_events_from_blobs(self, blobs: List) -> Dict:
         """Returns a dict with keys as per_event_channels and a
         corresponding list of events for each channel
         """
@@ -114,13 +116,13 @@ class HistoricalData:
             ]
         return events_dict
 
-    def get_years(self):
+    def get_years(self) -> List:
         years = set(
             [event.date.year for event in self._get_events()["monitor"]]
         )
         return list(years)
 
-    def get_months_for_year(self, year):
+    def get_months_for_year(self, year: int) -> List:
         months = set(
             [
                 event.date.month
@@ -131,7 +133,7 @@ class HistoricalData:
         reverse_months = sorted(months, reverse=True)
         return list(reverse_months)
 
-    def get_days_for_month_and_year(self, month, year):
+    def get_days_for_month_and_year(self, month: int, year: int) -> List:
         days = set(
             [
                 event.date.day
@@ -141,7 +143,7 @@ class HistoricalData:
         )
         return list(days)
 
-    def get_events_for_date(self, a_date):
+    def get_events_for_date(self, a_date: datetime.date) -> Dict:
         """returns dict of events:
         { 'chan_name1': [Event 1, Event 2, ...], 'chan_name2': [...], ...}
         """
@@ -155,7 +157,7 @@ class HistoricalData:
             ]
         return days_events_dict
 
-    def get_second_most_recent_day(self):
+    def get_second_most_recent_day(self) -> datetime.date:
         events = self._get_events()["monitor"]
         most_recent = events[0].date
         events = [event for event in events if not (event.date == most_recent)]

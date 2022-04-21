@@ -4,7 +4,7 @@ from pathlib import Path
 from google.cloud import storage
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Upload images to GCS for use with RubinTV"
     )

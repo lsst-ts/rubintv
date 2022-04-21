@@ -8,7 +8,7 @@ __all__ = [
 ]
 
 from datetime import date, datetime, timedelta
-from typing import List
+from typing import Any, Iterator, List, Optional
 
 from aiohttp import web
 from google.cloud.storage import Bucket
@@ -106,7 +106,7 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
     return web.Response(text=page, content_type="text/html")
 
 
-def month_names():
+def month_names() -> List[str]:
     return [date(2000, m, 1).strftime("%B") for m in list(range(1, 13))]
 
 
@@ -159,7 +159,7 @@ def get_most_recent_day_events(bucket: Bucket) -> List[Event]:
     try_date = get_current_day_obs()
     timer = datetime.now()
     timeout = 5
-    blobs = []
+    blobs: List = []
     while not blobs:
         try_date = try_date - timedelta(1)  # no blobs? try the day before
         prefix = get_prefix_from_date("auxtel_monitor", try_date)
@@ -186,11 +186,12 @@ def get_most_recent_day_events(bucket: Bucket) -> List[Event]:
     return flatten_events_dict_into_list(events)
 
 
-def seq_num_equal(this_event, that_event) -> bool:
-    if not hasattr(that_event, "seq"):
+def seq_num_equal(
+    this_event: Optional[Event], that_event: Optional[Event]
+) -> bool:
+    if this_event is None or that_event is None:
         return False
-    else:
-        return this_event.seq == that_event.seq
+    return this_event.seq == that_event.seq
 
 
 def flatten_events_dict_into_list(events: dict) -> List[Event]:
@@ -216,11 +217,11 @@ def flatten_events_dict_into_list(events: dict) -> List[Event]:
 
     """
     # make an iterator out of each channel's list of events
-    event_iters = [iter(li) for li in events.values()]
+    event_iters: List[Iterator] = [iter(li) for li in events.values()]
     # store the channel names in order to use in the loop
     chan_lookup = list(per_event_channels.keys())
     # make a list with the first event in each channel list
-    each_event = [next(it, None) for it in event_iters]
+    each_event: List[Any] = [next(it, None) for it in event_iters]
     for event in events["monitor"]:
         monitor_event = each_event[0]
         # make a list for each channel- true if seq num matches monitor
@@ -239,7 +240,7 @@ def flatten_events_dict_into_list(events: dict) -> List[Event]:
         # if there was a match, move that channel's image list iterator to the
         # next one
         each_event = [
-            (list_of_matches[i] and next(it, None)) or each_event[i]
+            (list_of_matches[i] and next(it, False)) or each_event[i]
             for i, it in enumerate(event_iters)
         ]
     return events["monitor"]
@@ -253,7 +254,7 @@ def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
     return sevents
 
 
-def get_formatted_page(template: str, **kwargs: dict) -> str:
+def get_formatted_page(template: str, **kwargs: Any) -> str:
     env = Environment(
         loader=PackageLoader("rubintv"), autoescape=select_autoescape()
     )
@@ -269,7 +270,7 @@ def get_current_event(
     try_date = get_current_day_obs()
     timer = datetime.now()
     timeout = 10
-    blobs = []
+    blobs: List[Any] = []
     while not blobs:
         try_date = try_date - timedelta(1)  # no blobs? try the day defore
         new_prefix = get_prefix_from_date(prefix, try_date)
@@ -284,7 +285,7 @@ def get_current_event(
     return events[0]
 
 
-def get_prefix_from_date(prefix, a_date):
+def get_prefix_from_date(prefix: str, a_date: date) -> str:
     prefix_dashes = prefix.replace("_", "-")
     new_prefix = f"{prefix}/{prefix_dashes}_dayObs_{a_date}_seqNum_"
     return new_prefix
