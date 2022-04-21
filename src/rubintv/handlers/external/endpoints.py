@@ -9,7 +9,6 @@ __all__ = [
 
 from datetime import datetime, date, timedelta
 from typing import List
-from xmlrpc.client import Boolean
 
 from aiohttp import web
 from google.cloud.storage import Bucket
@@ -193,7 +192,7 @@ def get_most_recent_day_events(bucket: Bucket) -> List[Event]:
     return flatten_events_dict_into_list(events)
 
 
-def seq_num_equal(this_event, that_event) -> Boolean:
+def seq_num_equal(this_event, that_event) -> bool:
     if not hasattr(that_event, "seq"):
         return False
     else:

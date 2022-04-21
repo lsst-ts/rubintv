@@ -89,7 +89,6 @@ class HistoricalData:
 
     def _get_events(self):
         if not self._events or get_current_day_obs() > self._lastCall:
-            print("reading in events...")
             blobs = self._get_blobs()
             self._events = self._get_events_from_blobs(blobs)
             self._lastCall = get_current_day_obs()
