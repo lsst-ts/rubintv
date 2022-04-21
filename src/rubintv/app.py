@@ -2,21 +2,20 @@
 
 __all__ = ["create_app", "get_current_day_obs"]
 
+import datetime
+from datetime import timedelta
 from pathlib import Path
 
 from aiohttp import web
+from dateutil.tz import gettz
 from google.cloud import storage
 from safir.http import init_http_session
 from safir.logging import configure_logging
 from safir.metadata import setup_metadata
 from safir.middleware import bind_logger
-import datetime
-from datetime import timedelta
-from dateutil.tz import gettz
 
 from rubintv.config import Configuration
 from rubintv.handlers import init_external_routes, init_internal_routes
-
 from rubintv.models import Event, per_event_channels
 
 

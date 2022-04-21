@@ -7,23 +7,17 @@ __all__ = [
     "current",
 ]
 
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from typing import List
 
 from aiohttp import web
 from google.cloud.storage import Bucket
 from jinja2 import Environment, PackageLoader, select_autoescape
 
-from rubintv.handlers import routes
-from rubintv.models import (
-    Channel,
-    Event,
-    cameras,
-    per_event_channels,
-)
-from rubintv.timer import Timer
-
 from rubintv.app import get_current_day_obs
+from rubintv.handlers import routes
+from rubintv.models import Channel, Event, cameras, per_event_channels
+from rubintv.timer import Timer
 
 
 @routes.get("")
