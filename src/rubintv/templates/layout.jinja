@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="http://fonts.cdnfonts.com/css/rubik" rel="stylesheet">
+    <link rel="stylesheet" href="/rubintv/static/stylesheets/main.css">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <div class="page-wrapper">
+        <header>
+            <a href="/rubintv" title="home">
+                <img class="logo" src="/rubintv/static/images/Rubin_Logo.png">
+            </a>
+            <div class="title">
+                <h1>Rubin TV Image Display Service</h1>
+                {% block subtitle %}
+                {% endblock subtitle %}
+            </div>
+        </header>
+        {% block content %}
+        {% endblock content %}
+    </div>
+    {% block footer_scripts %}
+    {% endblock footer_scripts %}
+</body>
+</html>

@@ -1,59 +1,256 @@
-div.gallery {
-  border: 1px solid #ccc;
+@charset "UTF-8";
+@import "reset.css";
+.calendar {
+  flex-basis: 50%;
+  padding-top: 4em;
+  margin-top: -2em;
 }
 
-div.gallery:hover {
-  border: 1px solid #777;
+.most-recent-year {
+  margin-bottom: 2em;
 }
 
-/* controls the size of the images themselves */
-/* set width to auto to do prevent verticle scrolling on larger screens */
-div.gallery img {
+.year-title {
+  font-size: 1.1em;
+  margin-bottom: 1em;
+  padding: 2px 0;
+  border-bottom: 1px #999 solid;
+  cursor: pointer;
+}
+.year-title::before {
+  content: "∆";
+  margin-right: 0.3em;
+  transform-origin: 50% 50%;
+  transform: rotate(180deg);
+  display: inline-block;
+  width: 0.7em;
+}
+
+.year.closed .year-title::before {
+  transform: rotate(90deg);
+}
+.year.closed .months {
+  display: none;
+}
+
+.month-title {
+  font-size: 1.1em;
+}
+
+.months {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.month {
+  flex-basis: calc(33% - 1em);
+  margin-bottom: 1em;
+}
+
+.days {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0.3em;
+  margin-bottom: 1em;
+  background: #eee;
+  padding: 0.3em;
+  border-radius: 0 6px 6px 6px;
+}
+
+.day {
+  padding: 0.5em;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.day:hover {
+  background: #eaeaea;
+}
+
+h6 {
+  text-align: center;
+}
+
+.flr {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.resp {
   width: 100%;
   height: auto;
 }
 
-div.desc {
-  padding: 15px;
-  text-align: center;
+.behind {
+  position: relative;
+  z-index: -1;
+  margin-top: -7vh;
+  margin-bottom: -9vh;
 }
 
-div.header {
-  padding: 15px;
-  text-align: center;
-  font-size: 40;
+.button {
+  box-sizing: border-box;
+  border-radius: 10%;
+  background: #eee;
+  color: #000;
+  display: flex;
+  flex-direction: column;
+  justify-content: end;
+  text-decoration: none;
+  box-shadow: 2.5px 2.5px 4px rgba(0, 0, 0, 0.26);
+  transition: box-shadow 0.2s;
+  padding: 0.5em;
 }
 
-* {
+.button-large {
+  width: 200px;
+  height: 144px;
+  padding: 1.5em;
+}
+
+.button-small {
+  width: 100px;
+  height: 67px;
+}
+
+.button-table {
+  width: 30px;
+  height: 30px;
+  border-radius: 10%;
+}
+
+a {
+  color: #000;
+  text-decoration: none;
+}
+
+.button:hover {
+  box-shadow: none;
+}
+
+.button.monitor {
+  background-color: #F07F85;
+}
+
+.button.mount {
+  background-color: #F0C87F;
+}
+
+.button.spec {
+  background-color: #7F85F0;
+}
+
+.button.im {
+  background-color: #7FF094;
+}
+
+html {
+  font-family: "Rubik", sans-serif;
+  font-size: 16px;
   box-sizing: border-box;
 }
 
-/* Controls the box which contains the images */
-/* set width to auto to do prevent verticle scrolling on larger screens */
-/* change width percentage to get more images per line */
-.responsive {
-  padding: 0 6px;
-  float: left;
-  width: 99.99999%;
+body {
+  background-color: #fff;
 }
 
-/* 2 per row for small screens */
-@media only screen and (max-width: 700px) {
-  .responsive {
-    width: 49.99999%;
-    margin: 6px 0;
-  }
+.page-wrapper {
+  margin: 30px 30px 30px;
 }
 
-/* 1 per row for even smaller screens */
-@media only screen and (max-width: 500px) {
-  .responsive {
-    width: 100%;
-  }
+header {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 2em;
+}
+header .logo {
+  width: auto;
+  height: 100px;
+}
+header .title {
+  margin-left: 2em;
+  margin-bottom: -2px;
+}
+header .title h1 {
+  margin: 0;
 }
 
-.clearfix:after {
-  content: "";
-  display: table;
-  clear: both;
+.page-title {
+  margin-bottom: 1em;
 }
+
+[class$=-menu] {
+  margin-bottom: 3em;
+}
+[class$=-menu] li {
+  margin-right: 1em;
+  margin-bottom: 1em;
+}
+
+h3 {
+  font-size: 1.4em;
+  margin-bottom: 0.5em;
+}
+
+.columns {
+  display: flex;
+  flex-direction: row;
+}
+.columns > * {
+  padding-right: 2em;
+}
+
+.channel-day-data {
+  flex-basis: 50%;
+}
+
+.sidebar {
+  flex-basis: 50%;
+  padding-top: 5.6em;
+  background: #fff;
+}
+
+.channel-grid-heading {
+  background: #fff;
+  padding: 2em 0 0.5em;
+  position: sticky;
+  top: 0;
+}
+
+.per-day-channels {
+  margin-bottom: 1em;
+}
+.per-day-channels > * {
+  margin-right: 1em;
+}
+
+.channel-grid {
+  font-family: "Monaco", monospace, monospace;
+  display: grid;
+  grid-template-columns: 1fr 40px 40px 40px 40px;
+  gap: 2px;
+}
+
+.grid-title.gt-channel {
+  transform: rotate(270deg);
+  transform-origin: 0.8em 2px;
+}
+
+.grid-cell {
+  background-color: #f0f0f0;
+  padding: 0.3em;
+  display: flex;
+  align-content: center;
+  flex-direction: row;
+  justify-content: flex-start;
+}
+.grid-cell > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/*# sourceMappingURL=main.css.map */

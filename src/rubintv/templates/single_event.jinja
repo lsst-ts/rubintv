@@ -1,0 +1,13 @@
+{% extends "cameras/layout.jinja" %}
+
+{% block content %}
+<div id="refresher">
+  <div class="subheader">
+    <h2>Sequence {{event.seq}}</h2>
+  </div>
+  <a target="_blank" href="{{event.url}}">
+    <img class="resp {% if channel=="Monitor" %} behind {% endif %}" src="{{event.url}}">
+  </a>
+  <div class="desc">{{event.name}}</div>
+</div>
+{% endblock content %}

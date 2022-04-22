@@ -1,0 +1,63 @@
+.calendar
+  flex-basis: 50%
+  padding-top: 4em
+  margin-top: -2em
+
+.most-recent-year
+  margin-bottom: 2em
+
+.year-title
+  // display: inline-block
+  font-size: 1.1em
+  margin-bottom: 1em
+  padding: 2px 0
+  border-bottom: 1px #999 solid
+  cursor: pointer
+  &::before
+    content: "∆"
+    margin-right: 0.3em
+    transform-origin: 50% 50%
+    transform: rotate(180deg)
+    display: inline-block
+    width: 0.7em
+
+.year.closed
+  .year-title::before
+    transform: rotate(90deg)
+  .months
+    display: none
+
+
+.month-title
+  font-size: 1.1em
+
+.months
+  display: flex
+  flex-direction: row
+  flex-wrap: wrap
+  justify-content: space-between
+
+.month
+  flex-basis: calc(33% - 1em)
+  margin-bottom: 1em
+
+.days
+  display: grid
+  grid-template-columns: 1fr 1fr 1fr 1fr
+  gap: 0.3em
+  margin-bottom: 1em
+  background: #eee
+  padding: 0.3em
+  border-radius: 0 6px 6px 6px
+
+.day
+  padding: 0.5em
+  background: #fff
+  cursor: pointer
+  transition: background 0.3s
+  &:hover
+    background: #eaeaea
+
+
+h6
+  text-align: center

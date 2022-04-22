@@ -20,58 +20,78 @@ async def test_get_index(aiohttp_client: TestClient) -> None:
     assert response.status == 200
 
 
-async def test_get_index_num(aiohttp_client: TestClient) -> None:
-    """Test GET /app-name/"""
+async def test_get_camera_page(aiohttp_client: TestClient) -> None:
+    """Test GET /app-name/camera-name"""
     app = create_app()
     name = app["safir/config"].name
     client = await aiohttp_client(app)
 
-    response = await client.get(f"/{name}/?num=10")
+    response = await client.get(f"/{name}/auxtel")
     assert response.status == 200
 
 
-async def test_get_index_num_fail(aiohttp_client: TestClient) -> None:
-    """Test GET /app-name/"""
+async def test_get_camera_page_fail(aiohttp_client: TestClient) -> None:
+    """Test GET /app-name/none"""
     app = create_app()
     name = app["safir/config"].name
     client = await aiohttp_client(app)
 
-    response = await client.get(f"/{name}/?num=hello")
-    # Expect this to fail since "hello" can't be coerced to an int
+    response = await client.get(f"/{name}/none")
+    # Expect this to fail since "none" is not a camera endpoint/slug
     assert response.status == 500
 
 
-async def test_imevents(aiohttp_client: TestClient) -> None:
-    """Test GET /app-name/"""
+async def test_camera_imevents(aiohttp_client: TestClient) -> None:
+    """Test GET /app-name/auxtel/imevents/2022-04-05"""
     app = create_app()
     name = app["safir/config"].name
     client = await aiohttp_client(app)
-    response = await client.get(f"/{name}/imevents/2021-03-23/327")
+    response = await client.get(f"/{name}/auxtel/imevents/2022-04-05/929")
     assert response.status == 200
 
 
-async def test_specevents(aiohttp_client: TestClient) -> None:
-    """Test GET /app-name/"""
+async def test_camera_specevents(aiohttp_client: TestClient) -> None:
+    """Test GET /app-name/auxtel/specevents/2022-02-08/163"""
     app = create_app()
     name = app["safir/config"].name
     client = await aiohttp_client(app)
-    response = await client.get(f"/{name}/specevents/2021-03-23/327")
+    response = await client.get(f"/{name}/auxtel/specevents/2022-02-08/163")
     assert response.status == 200
 
 
-async def test_imcurrent(aiohttp_client: TestClient) -> None:
-    """Test GET /app-name/"""
+async def test_camera_imcurrent(aiohttp_client: TestClient) -> None:
+    """Test GET /app-name/auxtel/im_current"""
     app = create_app()
     name = app["safir/config"].name
     client = await aiohttp_client(app)
-    response = await client.get(f"/{name}/im_current")
+    response = await client.get(f"/{name}/auxtel/im_current")
     assert response.status == 200
 
 
-async def test_speccurrent(aiohttp_client: TestClient) -> None:
-    """Test GET /app-name/"""
+async def test_camera_speccurrent(aiohttp_client: TestClient) -> None:
+    """Test GET /app-name/auxtel/spec_current"""
     app = create_app()
     name = app["safir/config"].name
     client = await aiohttp_client(app)
-    response = await client.get(f"/{name}/spec_current")
+    response = await client.get(f"/{name}/auxtel/spec_current")
+    assert response.status == 200
+
+
+async def test_get_camera_historical(aiohttp_client: TestClient) -> None:
+    """Test GET /app-name/camera-name/historical"""
+    app = create_app()
+    name = app["safir/config"].name
+    client = await aiohttp_client(app)
+
+    response = await client.get(f"/{name}/auxtel/historical")
+    assert response.status == 200
+
+
+async def test_get_camera_historical_date(aiohttp_client: TestClient) -> None:
+    """Test GET /app-name/camera-name/historical/2022-02-23"""
+    app = create_app()
+    name = app["safir/config"].name
+    client = await aiohttp_client(app)
+
+    response = await client.get(f"/{name}/auxtel/historical/2022-02-23")
     assert response.status == 200

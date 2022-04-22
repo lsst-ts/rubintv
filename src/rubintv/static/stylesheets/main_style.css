@@ -59,7 +59,7 @@ button img {
 button:hover {
     cursor: pointer;
 }
-    
+
 #pageContent {
     max-width: 1000px;
     margin: auto;
@@ -82,24 +82,15 @@ article h2 {
     font-weight: normal;
     margin-bottom: 12px;
 }
-article p {
-	
-}
+
 main section {
     	text-align: center;
-	
+
 }
 address {
     padding: 10px 20px 30px 10px;
 }
-aside > div {
-	margin: 10px auto;
-	background: #AEC6CF;
-	min-height: 40px;
-	text-align: center;
-	float: center;
-	input { text-align: center; }
-}
+
 
 table{
   border-collapse:collapse;
@@ -107,7 +98,6 @@ table{
   display: table;
   text-align: center;
 }
-
 
 thead th:nth-child(1) {
   width: 40%;
@@ -133,5 +123,5 @@ body > section {
     padding: 30px 0px;
     border-bottom: 1px solid #999;
     color: #333;
-    text-align: center;    
+    text-align: center;
 }
