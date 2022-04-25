@@ -160,6 +160,7 @@ def get_most_recent_day_events(bucket: Bucket) -> List[Event]:
     timer = datetime.now()
     timeout = 5
     blobs: List = []
+    try_date += timedelta(1)  # add a day as to not start with yesterday
     while not blobs:
         try_date = try_date - timedelta(1)  # no blobs? try the day before
         prefix = get_prefix_from_date("auxtel_monitor", try_date)
@@ -271,6 +272,7 @@ def get_current_event(
     timer = datetime.now()
     timeout = 10
     blobs: List[Any] = []
+    try_date += timedelta(1)  # add a day as to not start with yesterday
     while not blobs:
         try_date = try_date - timedelta(1)  # no blobs? try the day defore
         new_prefix = get_prefix_from_date(prefix, try_date)
