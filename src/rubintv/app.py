@@ -84,18 +84,18 @@ class HistoricalData:
         self._events = self._get_events()
         self._lastCall = get_current_day_obs()
 
-    def _get_blobs(self) -> List:
+    def _get_blobs(self) -> List[Bucket]:
         blobs = list(self._bucket.list_blobs())
         return blobs
 
-    def _get_events(self) -> Dict:
+    def _get_events(self) -> Dict[str, List[Event]]:
         if not self._events or get_current_day_obs() > self._lastCall:
             blobs = self._get_blobs()
             self._events = self._get_events_from_blobs(blobs)
             self._lastCall = get_current_day_obs()
         return self._events
 
-    def _get_events_from_blobs(self, blobs: List) -> Dict:
+    def _get_events_from_blobs(self, blobs: List) -> Dict[str, List[Event]]:
         """Returns a dict with keys as per_event_channels and a
         corresponding list of events for each channel
         """
@@ -116,13 +116,13 @@ class HistoricalData:
             ]
         return events_dict
 
-    def get_years(self) -> List:
+    def get_years(self) -> List[int]:
         years = set(
             [event.date.year for event in self._get_events()["monitor"]]
         )
         return list(years)
 
-    def get_months_for_year(self, year: int) -> List:
+    def get_months_for_year(self, year: int) -> List[int]:
         months = set(
             [
                 event.date.month
@@ -133,7 +133,7 @@ class HistoricalData:
         reverse_months = sorted(months, reverse=True)
         return list(reverse_months)
 
-    def get_days_for_month_and_year(self, month: int, year: int) -> List:
+    def get_days_for_month_and_year(self, month: int, year: int) -> List[int]:
         days = set(
             [
                 event.date.day
@@ -143,7 +143,9 @@ class HistoricalData:
         )
         return list(days)
 
-    def get_events_for_date(self, a_date: datetime.date) -> Dict:
+    def get_events_for_date(
+        self, a_date: datetime.date
+    ) -> Dict[str, List[Event]]:
         """returns dict of events:
         { 'chan_name1': [Event 1, Event 2, ...], 'chan_name2': [...], ...}
         """
@@ -161,6 +163,5 @@ class HistoricalData:
         events = self._get_events()["monitor"]
         most_recent = events[0].date
         events = [event for event in events if not (event.date == most_recent)]
-        # NB returns a date object not datetime
         second_most = events[0].date.date()
         return second_most

@@ -8,7 +8,7 @@ __all__ = [
 ]
 
 from datetime import date, datetime, timedelta
-from typing import Any, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from aiohttp import web
 from google.cloud.storage import Bucket
@@ -49,6 +49,49 @@ async def get_recent_table(request: web.Request) -> web.Response:
                 "cameras/not_online.jinja", camera=camera
             )
     logger.info("get_recent_table", duration=timer.seconds)
+    return web.Response(text=page, content_type="text/html")
+
+
+@routes.get("/{camera}/update/{date}")
+async def update_todays_table(request: web.Request) -> web.Response:
+    logger = request["safir/logger"]
+    with Timer() as timer:
+        camera = cameras[request.match_info["camera"]]
+        bucket = request.config_dict["rubintv/gcs_bucket"]
+        date_str = request.match_info["date"]
+        year, month, day = [int(s) for s in date_str.split("-")]
+        the_date = date(year, month, day)
+        blobs = []
+        # if the actual date is greater than displayed on the page
+        # get the data from today if there is any
+        current_day = get_current_day_obs()
+        lookup_prefix = "auxtel_monitor"
+        if the_date < current_day:
+            prefix = get_prefix_from_date(lookup_prefix, current_day)
+            blobs = list(bucket.list_blobs(prefix=prefix))
+        # if there's no data from a more recent day then return the refreshed
+        # table from today
+        if not blobs:
+            prefix = get_prefix_from_date(lookup_prefix, the_date)
+            blobs = list(bucket.list_blobs(prefix=prefix))
+        # if there was data from more recent than displayed, store the date
+        # so it can be displayed instead
+        else:
+            the_date = current_day
+        recent_events = {}
+        recent_events["monitor"] = get_sorted_events_from_blobs(blobs)
+        events_dict = build_dict_with_remaining_channels(
+            bucket, recent_events, the_date
+        )
+        events = flatten_events_dict_into_list(events_dict)
+        page = get_formatted_page(
+            "cameras/day-data.jinja",
+            camera=camera,
+            date=the_date,
+            events=events,
+        )
+
+    logger.info("update_todays_table", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
 
@@ -174,17 +217,27 @@ def get_most_recent_day_events(bucket: Bucket) -> List[Event]:
     events = {}
     events["monitor"] = get_sorted_events_from_blobs(blobs)
 
+    events_dict = build_dict_with_remaining_channels(bucket, events, try_date)
+
+    todays_events = flatten_events_dict_into_list(events_dict)
+    return todays_events
+
+
+def build_dict_with_remaining_channels(
+    bucket: Bucket,
+    events_dict: Dict[str, List[Event]],
+    the_date: date,
+) -> Dict[str, List[Event]]:
     # creates a dict where key => List of events e.g.:
     # {"monitor": [Event 1, Event 2 ...] , "im": [Event 2 ...] ... }
     for chan in per_event_channels.keys():
         if chan == "monitor":
             continue
         prefix = per_event_channels[chan].prefix
-        new_prefix = get_prefix_from_date(prefix, try_date)
+        new_prefix = get_prefix_from_date(prefix, the_date)
         blobs = list(bucket.list_blobs(prefix=new_prefix))
-        events[chan] = get_sorted_events_from_blobs(blobs)
-
-    return flatten_events_dict_into_list(events)
+        events_dict[chan] = get_sorted_events_from_blobs(blobs)
+    return events_dict
 
 
 def seq_num_equal(
