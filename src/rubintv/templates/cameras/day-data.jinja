@@ -4,10 +4,9 @@
   {% endblock day_data_per_day_channels %}
   <div class="channel-grid">
     <span class="grid-title">Seq. No.</span>
-    <span class="grid-title gt-channel">Monitor</span>
-    <span class="grid-title gt-channel">ImAnalysis</span>
-    <span class="grid-title gt-channel">Spectrum</span>
-    <span class="grid-title gt-channel">Mount</span>
+    {% for channel in camera.channels.values() %}
+      <span class="grid-title gt-channel">{{ channel['simplename'] }}</span>
+    {% endfor %}
   </div>
 </div>
 <div class="channel-grid">

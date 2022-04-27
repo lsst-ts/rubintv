@@ -4,13 +4,6 @@ from typing import Tuple
 
 
 @dataclass
-class Camera:
-    name: str
-    slug: str
-    online: bool
-
-
-@dataclass
 class Channel:
     name: str
     prefix: str
@@ -19,6 +12,16 @@ class Channel:
 
     def __post_init__(self) -> None:
         self.endpoint = self.simplename + "events"
+
+
+@dataclass
+class Camera:
+    name: str
+    slug: str
+    online: bool
+    has_historical: bool = False
+    channels: dict[str, Channel] = field(default_factory=dict)
+    per_night_channels: dict[str, Channel] = field(default_factory=dict)
 
 
 @dataclass
@@ -52,13 +55,15 @@ class Event:
 
 
 cameras = {
-    "auxtel": Camera(name="Auxtel", slug="auxtel", online=True),
-    "comcam": Camera(name="Comcam", slug="comcam", online=False),
+    "auxtel": Camera(
+        name="Auxtel", slug="auxtel", online=True, has_historical=True
+    ),
+    "comcam": Camera(name="Comcam", slug="comcam", online=True),
     "lsstcam": Camera(name="LSSTcam", slug="lsstcam", online=False),
     "allsky": Camera(name="All Sky", slug="allsky", online=False),
 }
 
-per_event_channels = {
+cameras["auxtel"].channels = {
     "monitor": Channel(
         name="Monitor", prefix="auxtel_monitor", simplename="monitor"
     ),
@@ -72,12 +77,26 @@ per_event_channels = {
         name="Mount", prefix="auxtel_mount_torques", simplename="mount"
     ),
 }
-
-per_night_channels = {
+cameras["auxtel"].per_night_channels = {
     "rollingbuffer": Channel(
         name="Rolling Buffer", prefix="rolling_buffer", simplename="rolling"
     ),
     "movie": Channel(
         name="Tonight's Movie", prefix="movie", simplename="movie"
+    ),
+}
+
+cameras["comcam"].channels = {
+    "monitor": Channel(
+        name="Monitor", prefix="comcam_monitor", simplename="monitor"
+    ),
+    "im": Channel(
+        name="Image Analysis", prefix="comcam_imexam", simplename="im"
+    ),
+    "spec": Channel(
+        name="Spectrum", prefix="comcam_specexam", simplename="spec"
+    ),
+    "mount": Channel(
+        name="Mount", prefix="comcam_mount_torques", simplename="mount"
     ),
 }
