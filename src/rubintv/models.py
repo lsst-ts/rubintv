@@ -58,7 +58,9 @@ cameras = {
     "auxtel": Camera(
         name="Auxtel", slug="auxtel", online=True, has_historical=True
     ),
-    "comcam": Camera(name="Comcam", slug="comcam", online=True),
+    "comcam": Camera(
+        name="Comcam", slug="comcam", online=True, has_historical=True
+    ),
     "lsstcam": Camera(name="LSSTcam", slug="lsstcam", online=False),
     "allsky": Camera(name="All Sky", slug="allsky", online=False),
 }
