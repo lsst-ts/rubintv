@@ -183,13 +183,13 @@ async def events(request: web.Request) -> web.Response:
     return web.Response(text=page, content_type="text/html")
 
 
-@routes.get("/{camera}/{name}_current")
+@routes.get("/{camera}/{channel}_current")
 async def current(request: web.Request) -> web.Response:
     logger = request["safir/logger"]
     with Timer() as timer:
         camera = cameras[request.match_info["camera"]]
         bucket = request.config_dict["rubintv/gcs_bucket"]
-        channel = camera.channels[request.match_info["name"]]
+        channel = camera.channels[request.match_info["channel"]]
         event = get_current_event(
             channel.prefix,
             bucket,
