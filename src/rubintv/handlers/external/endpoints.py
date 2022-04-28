@@ -31,7 +31,11 @@ async def get_page(request: web.Request) -> web.Response:
 
 @routes.get("/{camera}")
 async def get_recent_table(request: web.Request) -> web.Response:
-    camera = cameras[request.match_info["camera"]]
+    cam_name = request.match_info["camera"]
+    try:
+        camera = cameras[cam_name]
+    except KeyError:
+        raise web.HTTPNotFound()
     logger = request["safir/logger"]
     with Timer() as timer:
         if not camera.online:
