@@ -90,11 +90,11 @@ class HistoricalData:
 
     def _get_events(self) -> Dict[str, Dict[str, List[Event]]]:
         # XXX remove before PR
-        self._events = {}
-        # if not self._events or get_current_day_obs() > self._lastCall:
-        #     blobs = self._get_blobs()
-        #     self._events = self._sort_events_from_blobs(blobs)
-        #     self._lastCall = get_current_day_obs()
+        # self._events = {}
+        if not self._events or get_current_day_obs() > self._lastCall:
+            blobs = self._get_blobs()
+            self._events = self._sort_events_from_blobs(blobs)
+            self._lastCall = get_current_day_obs()
         return self._events
 
     def _sort_events_from_blobs(
@@ -182,5 +182,8 @@ class HistoricalData:
         events = self._get_events()[camera_name]["monitor"]
         most_recent = events[0].date
         events = [event for event in events if not (event.date == most_recent)]
-        second_most = events[0].date.date()
-        return second_most
+        if events:
+            second_most = events[0].date.date()
+            return second_most
+        else:
+            return most_recent.date()
