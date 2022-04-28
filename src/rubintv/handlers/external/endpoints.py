@@ -91,7 +91,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
         )
         events = flatten_events_dict_into_list(camera, events_dict)
         page = get_formatted_page(
-            "cameras/day-data.jinja",
+            "cameras/data-table-header.jinja",
             camera=camera,
             date=the_date,
             events=events,
@@ -157,7 +157,7 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
     day_dict = historical.get_events_for_date(camera, the_date)
     day_events = flatten_events_dict_into_list(camera, day_dict)
     page = get_formatted_page(
-        "cameras/day-data-per-day-channels.jinja",
+        "cameras/data-table-header-with-day-channels.jinja",
         camera=camera,
         date=the_date,
         events=day_events,
@@ -272,9 +272,9 @@ def seq_num_equal(
 
 
 def flatten_events_dict_into_list(camera: Camera, events: dict) -> List[Event]:
-    """Transforms the per_night_channels into lists per channel.
+    """Transforms the per_day_channels into lists per channel.
 
-    Takes a dict where the keys are as per_night_channels keys and each
+    Takes a dict where the keys are as per_day_channels keys and each
     corresponding value is a list of events from that channel. Flattens into
     one list of events where each channel is represented in the event object's
     channel list (or None if it doesn't exist for that event seq num) i.e:

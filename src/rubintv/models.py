@@ -21,7 +21,7 @@ class Camera:
     online: bool
     has_historical: bool = False
     channels: dict[str, Channel] = field(default_factory=dict)
-    per_night_channels: dict[str, Channel] = field(default_factory=dict)
+    per_day_channels: dict[str, Channel] = field(default_factory=dict)
 
 
 @dataclass
@@ -79,7 +79,7 @@ cameras["auxtel"].channels = {
         name="Mount", prefix="auxtel_mount_torques", simplename="mount"
     ),
 }
-cameras["auxtel"].per_night_channels = {
+cameras["auxtel"].per_day_channels = {
     "rollingbuffer": Channel(
         name="Rolling Buffer", prefix="rolling_buffer", simplename="rolling"
     ),

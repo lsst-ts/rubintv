@@ -1,13 +1,22 @@
 {% extends "cameras/layout.jinja" %}
 
 {% block content %}
-    <nav id="per-night-menu" class="channel-menu" role="navigation">
-    <h3>Per Night Channels</h3>
-      <ul class="channels flr">
-          <li class="channel"><a href="#" class="button button-large">Rolling Buffer</a></li>
-          <li class="channel"><a href="#" class="button button-large">Tonight's Movie</a></li>
-      </ul>
-    </nav>
+
+    {% if camera.per_day_channels | length %}
+        <nav id="per-night-menu" class="channel-menu" role="navigation">
+          <h3>Per Night Channels</h3>
+          <ul class="channels flr">
+            {% for pn_channel in camera.per_day_channels.values() %}
+              <li class="channel">
+                <a class="button button-large" href="#">
+                  {{ pn_channel.name }}
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </nav>
+    {% endif %}
+
     <nav id="per-image-menu" class="channel-menu" role="navigation">
     <h3>Per Image Channels: Current</h3>
       <ul class="channels flr">
@@ -24,7 +33,7 @@
 
     <div class="columns">
       <section class="channel-day-data">
-        {% include "cameras/day-data.jinja" %}
+        {% include "cameras/data-table-header.jinja" %}
       </section>
       <section class="sidebar">
         <a class="button button-large" href="/rubintv/{{camera.slug}}/historical">Historical data</a>
