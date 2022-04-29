@@ -36,7 +36,9 @@
         {% include "cameras/data-table-header.jinja" %}
       </section>
       <section class="sidebar">
-        <a class="button button-large" href="/rubintv/{{camera.slug}}/historical">Historical data</a>
+        {% if camera.has_historical %}
+          <a class="button button-large" href="/rubintv/{{camera.slug}}/historical">Historical data</a>
+        {% endif %}
       </section>
     </div>
 {% endblock content %}

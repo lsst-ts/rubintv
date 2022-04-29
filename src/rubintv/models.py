@@ -46,9 +46,6 @@ class Event:
     def cleanDate(self) -> str:
         return self.date.strftime("%Y-%m-%d")
 
-    def humanDate(self) -> str:
-        return self.date.strftime("%a %Y/%m/%d")
-
     def __post_init__(self) -> None:
         self.name, self.prefix, self.date, self.seq = self.parse_filename()
         self.chans = []
@@ -62,14 +59,16 @@ cameras = {
         name="Comcam", slug="comcam", online=True, has_historical=True
     ),
     "lsstcam": Camera(name="LSSTcam", slug="lsstcam", online=False),
-    "allsky": Camera(name="All Sky", slug="allsky", online=True),
+    "allsky": Camera(
+        name="All Sky", slug="allsky", online=True, has_historical=True
+    ),
 }
 
 cameras["allsky"].channels = {
     "still": Channel(
         name="Current Still", prefix="all_sky_current", simplename="still"
     ),
-    "movie": Channel(
+    "monitor": Channel(
         name="Current Movie", prefix="all_sky_movies", simplename="movie"
     ),
 }
@@ -90,10 +89,12 @@ cameras["auxtel"].channels = {
 }
 cameras["auxtel"].per_day_channels = {
     "rollingbuffer": Channel(
-        name="Rolling Buffer", prefix="rolling_buffer", simplename="rolling"
+        name="Rolling Buffer",
+        prefix="auxtel_rolling_buffer",
+        simplename="rolling",
     ),
     "movie": Channel(
-        name="Tonight's Movie", prefix="movie", simplename="movie"
+        name="Tonight's Movie", prefix="auxtel_movie", simplename="movie"
     ),
 }
 

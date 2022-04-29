@@ -19,14 +19,7 @@
     <section class="current-movie">
     <h2>Most recent movie:</h2>
       <div id="refresher">
-        <div class="subheader">
-          <h3>{{ movie.date.date() }} final</h3>
-        </div>
-        {# <video width="100%" controls>
-          <source src="{{ movie.url }}" type="video/mp4">
-        </video> #}
-        {{ movie }}
-         <div class="desc">{{ movie.name }}</div>
+        {% include "cameras/allsky-movie.jinja" %}
       </div>
       <br>
       <a class="button button-large" href="/rubintv/allsky/historical">Historical movies</a>

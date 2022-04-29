@@ -35,7 +35,7 @@ async def get_all_sky_current(request: web.Request) -> web.Response:
     camera = cameras["allsky"]
     prefix = camera.channels["still"].prefix
     current = get_current_event(prefix, bucket)
-    prefix = camera.channels["movie"].prefix
+    prefix = camera.channels["monitor"].prefix
     movie = get_current_event(prefix, bucket)
     page = get_formatted_page(
         "cameras/allsky.jinja",
@@ -44,6 +44,56 @@ async def get_all_sky_current(request: web.Request) -> web.Response:
         current=current,
         movie=movie,
     )
+    return web.Response(text=page, content_type="text/html")
+
+
+@routes.get("/allsky/historical")
+async def get_allsky_historical(request: web.Request) -> web.Response:
+    logger = request["safir/logger"]
+    with Timer() as timer:
+        camera = cameras["allsky"]
+        historical = request.config_dict["rubintv/historical_data"]
+        active_years = historical.get_years(camera)
+        reverse_years = sorted(active_years, reverse=True)
+        year_to_display = reverse_years[0]
+        years = {}
+        for year in reverse_years:
+            months = historical.get_months_for_year(camera, year)
+            months_days = {
+                month: historical.get_days_for_month_and_year(
+                    camera, month, year
+                )
+                for month in months
+            }
+            years[year] = months_days
+        movie = historical.get_most_recent_event(camera)
+        page = get_formatted_page(
+            "cameras/allsky-historical.jinja",
+            camera=camera,
+            year_to_display=year_to_display,
+            years=years,
+            month_names=month_names(),
+            movie=movie,
+        )
+    logger.info("get_allsky_historical", duration=timer.seconds)
+    return web.Response(text=page, content_type="text/html")
+
+
+@routes.get("/allsky/historical/{date_str}")
+async def get_allsky_historical_movie(request: web.Request) -> web.Response:
+    logger = request["safir/logger"]
+    with Timer() as timer:
+        camera = cameras["allsky"]
+        date_str = request.match_info["date_str"]
+        historical = request.config_dict["rubintv/historical_data"]
+        year, month, day = [int(s) for s in date_str.split("-")]
+        the_date = date(year, month, day)
+        all_events = historical.get_events_for_date(camera, the_date)
+        movie = all_events["monitor"][0]
+        page = get_formatted_page(
+            "cameras/allsky-movie.jinja", camera=camera, movie=movie
+        )
+    logger.info("get_allsky_historical_movie", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
 

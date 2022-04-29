@@ -117,7 +117,8 @@ class HistoricalData:
         all_events = [
             Event(blob.public_url)
             for blob in blobs
-            if blob.public_url.endswith(".png")
+            if list(filter(blob.public_url.endswith, [".png", ".jpg", ".mp4"]))
+            != []
         ]
         s_events = sorted(
             all_events, key=lambda x: (x.date, x.seq), reverse=True
@@ -197,3 +198,8 @@ class HistoricalData:
             return second_most
         else:
             return most_recent.date()
+
+    def get_most_recent_event(self, camera: Camera) -> Event:
+        camera_name = camera.slug
+        events = self._get_events()[camera_name]["monitor"]
+        return events[0]
