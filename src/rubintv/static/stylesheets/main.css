@@ -213,7 +213,11 @@ h3 {
   background: #fff;
 }
 
-.current-image, .current-movie {
+.current-image {
+  flex-basis: 50%;
+}
+
+.allsky-current-image, .allsky-current-movie {
   flex-basis: 50%;
 }
 

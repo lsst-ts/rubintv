@@ -65,8 +65,8 @@ cameras = {
 }
 
 cameras["allsky"].channels = {
-    "still": Channel(
-        name="Current Still", prefix="all_sky_current", simplename="still"
+    "image": Channel(
+        name="Current Image", prefix="all_sky_current", simplename="image"
     ),
     "monitor": Channel(
         name="Current Movie", prefix="all_sky_movies", simplename="movie"

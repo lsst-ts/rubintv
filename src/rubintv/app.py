@@ -99,8 +99,6 @@ class HistoricalData:
         return blobs
 
     def _get_events(self) -> Dict[str, Dict[str, List[Event]]]:
-        # XXX remove before PR
-        # self._events = {}
         if not self._events or get_current_day_obs() > self._lastCall:
             blobs = self._get_blobs()
             self._events = self._sort_events_from_blobs(blobs)

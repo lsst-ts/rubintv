@@ -3,26 +3,24 @@
 {% block content %}
   <div class="columns">
 
-    <section class="current-image">
+    <section class="allsky-current-image">
     <h2>Current Still Image:</h2>
-      <div id="refresher">
-        <div class="subheader">
-          <h3>{{current.date.date()}} : Sequence {{current.seq}}</h3>
-        </div>
-        <a target="_blank" href="{{current.url}}">
-          <img class="resp" src="{{current.url}}">
-        </a>
-        <div class="desc">{{current.name}}</div>
+      <div class="current-still">
+        {% include "cameras/allsky-image.jinja" %}
       </div>
     </section>
 
-    <section class="current-movie">
+    <section class="allsky-current-movie">
     <h2>Most recent movie:</h2>
-      <div id="refresher">
-        {% include "cameras/allsky-movie.jinja" %}
+      <div class="current-movie">
+        {% include "cameras/allsky-monitor.jinja" %}
       </div>
-      <br>
+      <br><br>
       <a class="button button-large" href="/rubintv/allsky/historical">Historical movies</a>
     </section>
   </div>
 {% endblock content %}
+{% block footer_scripts %}
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type=text/javascript src="/rubintv/static/js/allsky-refresh.js"></script>
+{% endblock footer_scripts %}
