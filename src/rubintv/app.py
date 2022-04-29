@@ -36,6 +36,7 @@ def create_app() -> web.Application:
     bucket = client.bucket("rubintv_data")
     root_app["rubintv/gcs_bucket"] = bucket
     root_app["rubintv/historical_data"] = HistoricalData(bucket)
+    root_app["rubintv/site_title"] = "Rubin TV Display"
     setup_metadata(package_name="rubintv", app=root_app)
     setup_middleware(root_app)
     root_app.add_routes(init_internal_routes())
@@ -85,7 +86,16 @@ class HistoricalData:
         self._lastCall = get_current_day_obs()
 
     def _get_blobs(self) -> List[Bucket]:
-        blobs = list(self._bucket.list_blobs())
+        blobs = []
+        cameras_with_history = [
+            cam for cam in cameras.values() if cam.has_historical
+        ]
+        for cam in cameras_with_history:
+            for channel in cam.channels.values():
+                prefix = channel.prefix
+                print(f"Trying prefix: {prefix}")
+                blobs += list(self._bucket.list_blobs(prefix=prefix))
+                print(f"blobs found: {len(blobs)}")
         return blobs
 
     def _get_events(self) -> Dict[str, Dict[str, List[Event]]]:

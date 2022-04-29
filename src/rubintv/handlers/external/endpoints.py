@@ -23,8 +23,26 @@ from rubintv.timer import Timer
 @routes.get("")
 @routes.get("/")
 async def get_page(request: web.Request) -> web.Response:
+    title = build_title(request=request)
+    page = get_formatted_page("home.jinja", title=title, cameras=cameras)
+    return web.Response(text=page, content_type="text/html")
+
+
+@routes.get("/allsky")
+async def get_all_sky_current(request: web.Request) -> web.Response:
+    title = build_title("All Sky", request=request)
+    bucket = request.config_dict["rubintv/gcs_bucket"]
+    camera = cameras["allsky"]
+    prefix = camera.channels["still"].prefix
+    current = get_current_event(prefix, bucket)
+    prefix = camera.channels["movie"].prefix
+    movie = get_current_event(prefix, bucket)
     page = get_formatted_page(
-        "home.jinja", title="Rubin TV Display", cameras=cameras
+        "cameras/allsky.jinja",
+        title=title,
+        camera=camera,
+        current=current,
+        movie=movie,
     )
     return web.Response(text=page, content_type="text/html")
 
@@ -107,9 +125,7 @@ async def get_historical(request: web.Request) -> web.Response:
     with Timer() as timer:
         camera = cameras[request.match_info["camera"]]
         if not camera.has_historical:
-            return web.Response(
-                status=404, reason=f"{camera.name} has no historical data"
-            )
+            raise web.HTTPNotFound()
         historical = request.config_dict["rubintv/historical_data"]
         active_years = historical.get_years(camera)
         reverse_years = sorted(active_years, reverse=True)
@@ -217,28 +233,12 @@ def get_single_event_page(
 
 
 def get_most_recent_day_events(bucket: Bucket, camera: Camera) -> List[Event]:
-    try_date = get_current_day_obs()
-    timer = datetime.now()
-    timeout = 5
-    blobs: List = []
-    try_date += timedelta(1)  # add a day as to not start with yesterday
-    while not blobs:
-        try_date = try_date - timedelta(1)  # no blobs? try the day before
-        prefix = get_prefix_from_date(
-            camera.channels["monitor"].prefix, try_date
-        )
-        blobs = list(bucket.list_blobs(prefix=prefix))
-        elapsed = datetime.now() - timer
-        if elapsed.seconds > timeout:
-            raise TimeoutError(
-                f"Timed out. Couldn't find most recent day's records within {timeout} seconds"
-            )
-
+    prefix = camera.channels["monitor"].prefix
     events = {}
-    events["monitor"] = get_sorted_events_from_blobs(blobs)
-
+    events["monitor"] = get_most_recent_events_for_prefix(prefix, bucket)
+    the_date = events["monitor"][0].date.date()
     events_dict = build_dict_with_remaining_channels(
-        bucket, camera, events, try_date
+        bucket, camera, events, the_date
     )
 
     todays_events = flatten_events_dict_into_list(camera, events_dict)
@@ -325,7 +325,11 @@ def flatten_events_dict_into_list(camera: Camera, events: dict) -> List[Event]:
 
 def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
     events = [
-        Event(el.public_url) for el in blobs if el.public_url.endswith(".png")
+        Event(el.public_url)
+        for el in blobs
+        if el.public_url.endswith(".png")
+        or el.public_url.endswith(".jpg")
+        or el.public_url.endswith(".mp4")
     ]
     sevents = sorted(events, key=lambda x: (x.date, x.seq), reverse=True)
     return sevents
@@ -340,13 +344,13 @@ def get_formatted_page(template: str, **kwargs: Any) -> str:
     return templ.render(kwargs)
 
 
-def get_current_event(
+def get_most_recent_events_for_prefix(
     prefix: str,
     bucket: Bucket,
-) -> Event:
+) -> List[Event]:
     try_date = get_current_day_obs()
     timer = datetime.now()
-    timeout = 10
+    timeout = 3
     blobs: List[Any] = []
     try_date += timedelta(1)  # add a day as to not start with yesterday
     while not blobs:
@@ -355,11 +359,30 @@ def get_current_event(
         blobs = list(bucket.list_blobs(prefix=new_prefix))
         elapsed = datetime.now() - timer
         if elapsed.seconds > timeout:
-            raise TimeoutError(
-                f"Timed out. Couldn't find most recent day's records within {timeout} seconds"
+            print(
+                f"Looking back for blobs timed out within {timeout} seconds...\n"
+                + f"Retrieving whole list for {prefix}"
             )
-
+            blobs = get_all_events_for_prefix(prefix, bucket)
+            if not blobs:
+                raise TimeoutError(f"Timed out. No data found for {prefix}")
     events = get_sorted_events_from_blobs(blobs)
+    return events
+
+
+def get_all_events_for_prefix(
+    prefix: str,
+    bucket: Bucket,
+) -> List[Event]:
+    blobs = list(bucket.list_blobs(prefix=prefix))
+    return blobs
+
+
+def get_current_event(
+    prefix: str,
+    bucket: Bucket,
+) -> Event:
+    events = get_most_recent_events_for_prefix(prefix, bucket)
     return events[0]
 
 
@@ -367,3 +390,11 @@ def get_prefix_from_date(prefix: str, a_date: date) -> str:
     prefix_dashes = prefix.replace("_", "-")
     new_prefix = f"{prefix}/{prefix_dashes}_dayObs_{a_date}_seqNum_"
     return new_prefix
+
+
+def build_title(*title_parts: str, request: web.Request) -> str:
+    title = request.config_dict["rubintv/site_title"]
+    to_append = " - ".join(title_parts)
+    if to_append:
+        title += " - " + to_append
+    return title

@@ -41,7 +41,7 @@ class Event:
         nList = name.split(delimiter)
         date = nList[2]
         seq = nList[4][:-4]  # Strip extension
-        return (name, prefix, datetime.strptime(date, "%Y-%m-%d"), int(seq))
+        return (name, prefix, datetime.strptime(date, "%Y-%m-%d"), seq)
 
     def cleanDate(self) -> str:
         return self.date.strftime("%Y-%m-%d")
@@ -62,7 +62,16 @@ cameras = {
         name="Comcam", slug="comcam", online=True, has_historical=True
     ),
     "lsstcam": Camera(name="LSSTcam", slug="lsstcam", online=False),
-    "allsky": Camera(name="All Sky", slug="allsky", online=False),
+    "allsky": Camera(name="All Sky", slug="allsky", online=True),
+}
+
+cameras["allsky"].channels = {
+    "still": Channel(
+        name="Current Still", prefix="all_sky_current", simplename="still"
+    ),
+    "movie": Channel(
+        name="Current Movie", prefix="all_sky_movies", simplename="movie"
+    ),
 }
 
 cameras["auxtel"].channels = {

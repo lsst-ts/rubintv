@@ -1,0 +1,35 @@
+{% extends "cameras/layout.jinja" %}
+
+{% block content %}
+  <div class="columns">
+
+    <section class="current-image">
+    <h2>Current Still Image:</h2>
+      <div id="refresher">
+        <div class="subheader">
+          <h3>{{current.date.date()}} : Sequence {{current.seq}}</h3>
+        </div>
+        <a target="_blank" href="{{current.url}}">
+          <img class="resp" src="{{current.url}}">
+        </a>
+        <div class="desc">{{current.name}}</div>
+      </div>
+    </section>
+
+    <section class="current-movie">
+    <h2>Most recent movie:</h2>
+      <div id="refresher">
+        <div class="subheader">
+          <h3>{{ movie.date.date() }} final</h3>
+        </div>
+        {# <video width="100%" controls>
+          <source src="{{ movie.url }}" type="video/mp4">
+        </video> #}
+        {{ movie }}
+         <div class="desc">{{ movie.name }}</div>
+      </div>
+      <br>
+      <a class="button button-large" href="/rubintv/allsky/historical">Historical movies</a>
+    </section>
+  </div>
+{% endblock content %}
