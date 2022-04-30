@@ -41,12 +41,13 @@
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  justify-content: space-evenly;
+  justify-content: flex-start;
 }
 
 .month {
   flex-basis: calc(33% - 1em);
   margin-bottom: 1em;
+  margin-right: 1em;
 }
 
 .days {
@@ -213,12 +214,15 @@ h3 {
   background: #fff;
 }
 
-.current-image {
+.allsky-current-image, .allsky-current-movie {
   flex-basis: 50%;
 }
 
-.allsky-current-image, .allsky-current-movie {
+.current-movie {
   flex-basis: 50%;
+  align-self: flex-start;
+  position: sticky;
+  top: 3em;
 }
 
 .channel-grid-heading {
