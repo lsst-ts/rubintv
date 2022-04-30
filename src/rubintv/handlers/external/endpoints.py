@@ -104,7 +104,7 @@ async def get_allsky_historical_movie(request: web.Request) -> web.Response:
         all_events = historical.get_events_for_date(camera, the_date)
         movie = all_events["monitor"][0]
         page = get_formatted_page(
-            "cameras/allsky-movie.jinja", camera=camera, movie=movie
+            "cameras/allsky-monitor.jinja", camera=camera, movie=movie
         )
     logger.info("get_allsky_historical_movie", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
