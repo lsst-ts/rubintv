@@ -7,6 +7,7 @@ __all__ = [
     "current",
 ]
 
+import json
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, Iterator, List, Optional
 
@@ -54,10 +55,15 @@ async def get_all_sky_current_update(request: web.Request) -> web.Response:
     channel_name = request.match_info["channel"]
     prefix = camera.channels[channel_name].prefix
     current = get_current_event(prefix, bucket)
-    page = get_formatted_page(
-        f"cameras/allsky-{channel_name}.jinja", movie=current, current=current
-    )
-    return web.Response(text=page, content_type="text/html")
+    json_dict = {
+        "channel": channel_name,
+        "url": current.url,
+        "date": current.cleanDate(),
+        "seq": current.seq,
+        "name": current.name,
+    }
+    json_res = json.dumps(json_dict)
+    return web.Response(text=json_res, content_type="application/json")
 
 
 @routes.get("/allsky/historical")
