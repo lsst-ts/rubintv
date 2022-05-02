@@ -1,12 +1,12 @@
 {% for event in events %}
   <div class="grid-cell"><div>{{event.seq}}</div></div>
   {% for chan in event.chans %}
-    <div class="grid-cell">
-      {% if chan is not none %}
-        <a  class="button button-table {{ chan.simplename }}"
-            href="{{ '/rubintv/' + camera.slug + '/' + chan.endpoint + '/' + event.cleanDate() + '/' + event.seq|string }}">
-        </a>
-      {% endif %}
-    </div>
+      <div class="grid-cell">
+        {% if chan is not none %}
+          <a  class="button button-table {{ chan.simplename }}"
+              href="{{ '/rubintv/' + camera.slug + '/' + chan.endpoint + '/' + event.cleanDate() + '/' + event.seq|string }}">
+          </a>
+        {% endif %}
+      </div>
   {% endfor %}
 {% endfor %}

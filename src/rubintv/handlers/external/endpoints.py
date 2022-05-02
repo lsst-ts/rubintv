@@ -17,7 +17,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 from rubintv.app import get_current_day_obs
 from rubintv.handlers import routes
-from rubintv.models import Camera, Event, cameras
+from rubintv.models import Camera, Channel, Event, cameras
 from rubintv.timer import Timer
 
 
@@ -133,15 +133,24 @@ async def get_recent_table(request: web.Request) -> web.Response:
             bucket = request.config_dict["rubintv/gcs_bucket"]
             events = get_most_recent_day_events(bucket, camera)
             channels = camera.channels
+            grid_columns = build_grid_columns_css(channels)
             page = get_formatted_page(
                 "cameras/camera.jinja",
                 camera=camera,
                 channels=channels,
                 date=events[0].cleanDate(),
                 events=events,
+                grid_columns=grid_columns,
             )
     logger.info("get_recent_table", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
+
+
+def build_grid_columns_css(channels: Dict[str, Channel]) -> str:
+    grid_columns = "1fr"
+    for channel in channels:
+        grid_columns += " 40px"
+    return grid_columns
 
 
 @routes.get("/{camera}/update/{date}")
@@ -177,11 +186,13 @@ async def update_todays_table(request: web.Request) -> web.Response:
             bucket, camera, recent_events, the_date
         )
         events = flatten_events_dict_into_list(camera, events_dict)
+        grid_columns = build_grid_columns_css(camera.channels)
         page = get_formatted_page(
             "cameras/data-table-header.jinja",
             camera=camera,
             date=the_date,
             events=events,
+            grid_columns=grid_columns,
         )
 
     logger.info("update_todays_table", duration=timer.seconds)
@@ -214,6 +225,8 @@ async def get_historical(request: web.Request) -> web.Response:
         smrd_dict = historical.get_events_for_date(camera, smrd)
         smrd_events = flatten_events_dict_into_list(camera, smrd_dict)
 
+        grid_columns = build_grid_columns_css(camera.channels)
+
         page = get_formatted_page(
             "cameras/historical.jinja",
             camera=camera,
@@ -222,6 +235,7 @@ async def get_historical(request: web.Request) -> web.Response:
             month_names=month_names(),
             date=smrd,
             events=smrd_events,
+            grid_columns=grid_columns,
         )
 
     logger.info("get_historical", duration=timer.seconds)
@@ -241,11 +255,13 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
     the_date = date(year, month, day)
     day_dict = historical.get_events_for_date(camera, the_date)
     day_events = flatten_events_dict_into_list(camera, day_dict)
+    grid_columns = build_grid_columns_css(camera.channels)
     page = get_formatted_page(
         "cameras/data-table-header-with-day-channels.jinja",
         camera=camera,
         date=the_date,
         events=day_events,
+        grid_columns=grid_columns,
     )
     return web.Response(text=page, content_type="text/html")
 

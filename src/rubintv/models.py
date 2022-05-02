@@ -8,6 +8,7 @@ class Channel:
     name: str
     prefix: str
     simplename: str
+    label: str = ""
     endpoint: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -40,7 +41,11 @@ class Event:
         )  # We know the name is the last part of the URL
         nList = name.split(delimiter)
         date = nList[2]
-        seq = nList[4][:-4]  # Strip extension
+        seq_str = nList[4][:-4]  # Strip extension
+        if seq_str == "final":
+            seq = 0
+        else:
+            seq = int(seq_str)
         return (name, prefix, datetime.strptime(date, "%Y-%m-%d"), seq)
 
     def cleanDate(self) -> str:
@@ -53,12 +58,12 @@ class Event:
 
 cameras = {
     "auxtel": Camera(
-        name="Auxtel", slug="auxtel", online=True, has_historical=True
+        name="AuxTel", slug="auxtel", online=True, has_historical=True
     ),
     "comcam": Camera(
-        name="Comcam", slug="comcam", online=True, has_historical=True
+        name="ComCam", slug="comcam", online=True, has_historical=True
     ),
-    "lsstcam": Camera(name="LSSTcam", slug="lsstcam", online=False),
+    "lsstcam": Camera(name="LSSTCam", slug="lsstcam", online=False),
     "allsky": Camera(
         name="All Sky", slug="allsky", online=True, has_historical=True
     ),
@@ -75,16 +80,28 @@ cameras["allsky"].channels = {
 
 cameras["auxtel"].channels = {
     "monitor": Channel(
-        name="Monitor", prefix="auxtel_monitor", simplename="monitor"
+        name="Monitor",
+        prefix="auxtel_monitor",
+        simplename="monitor",
+        label="Monitor",
     ),
     "im": Channel(
-        name="Image Analysis", prefix="summit_imexam", simplename="im"
+        name="Image Analysis",
+        prefix="summit_imexam",
+        simplename="im",
+        label="ImAnalysis",
     ),
     "spec": Channel(
-        name="Spectrum", prefix="summit_specexam", simplename="spec"
+        name="Spectrum",
+        prefix="summit_specexam",
+        simplename="spec",
+        label="Spectrum",
     ),
     "mount": Channel(
-        name="Mount", prefix="auxtel_mount_torques", simplename="mount"
+        name="Mount",
+        prefix="auxtel_mount_torques",
+        simplename="mount",
+        label="Mount",
     ),
 }
 cameras["auxtel"].per_day_channels = {
@@ -100,15 +117,18 @@ cameras["auxtel"].per_day_channels = {
 
 cameras["comcam"].channels = {
     "monitor": Channel(
-        name="Monitor", prefix="comcam_monitor", simplename="monitor"
+        name="Central CCD Monitor",
+        prefix="comcam_monitor",
+        simplename="monitor",
+        label="Monitor",
     ),
-    "im": Channel(
-        name="Image Analysis", prefix="comcam_imexam", simplename="im"
-    ),
-    "spec": Channel(
-        name="Spectrum", prefix="comcam_specexam", simplename="spec"
-    ),
-    "mount": Channel(
-        name="Mount", prefix="comcam_mount_torques", simplename="mount"
-    ),
+    # "im": Channel(
+    #     name="Image Analysis", prefix="comcam_imexam", simplename="im"
+    # ),
+    # "spec": Channel(
+    #     name="Spectrum", prefix="comcam_specexam", simplename="spec"
+    # ),
+    # "mount": Channel(
+    #     name="Mount", prefix="comcam_mount_torques", simplename="mount"
+    # ),
 }

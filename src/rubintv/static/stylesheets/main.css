@@ -220,6 +220,9 @@ h3 {
 
 .current-movie {
   flex-basis: 50%;
+}
+
+.historical.current-movie {
   align-self: flex-start;
   position: sticky;
   top: 3em;
@@ -242,7 +245,6 @@ h3 {
 .channel-grid {
   font-family: "Monaco", monospace, monospace;
   display: grid;
-  grid-template-columns: 1fr 40px 40px 40px 40px;
   gap: 2px;
 }
 

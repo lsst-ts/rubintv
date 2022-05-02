@@ -21,12 +21,14 @@
     <h3>Per Image Channels: Current</h3>
       <ul class="channels flr">
         {% for channel in channels %}
-          <li class="channel">
-            <a  class="button button-large {{channel}}"
-                href="/rubintv/{{ camera.slug }}/{{channel}}_current" target="_blank">
-              <span>{{ channels[channel].name }}</span>
-            </a>
-          </li>
+          {% if channels[channel].label %}
+            <li class="channel">
+              <a  class="button button-large {{channel}}"
+                  href="/rubintv/{{ camera.slug }}/{{channel}}_current" target="_blank">
+                <span>{{ channels[channel].name }}</span>
+              </a>
+            </li>
+          {% endif %}
         {% endfor %}
       </ul>
     </nav>
