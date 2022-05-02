@@ -1,7 +1,7 @@
 <div class="subheader">
   <h3>{{ movie.date.date() }} final</h3>
 </div>
-  <video width="100%" controls autoplay>
+  <video width="100%" controls autoplay loop>
     <source src="{{ movie.url }}" type="video/mp4">
   </video>
 <div class="desc">{{ movie.name }}</div>
