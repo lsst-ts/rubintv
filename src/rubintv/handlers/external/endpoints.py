@@ -417,10 +417,12 @@ def flatten_events_dict_into_list(camera: Camera, events: dict) -> List[Event]:
     seq_list = [ev.seq for ev in each_chan]
     event_list = []
 
-    while max(seq_list) > 0:
+    while True:
         seq_list = [ev.seq for ev in each_chan]
-        highest_seq_index = seq_list.index(max(seq_list))
+        if max(seq_list) == 0:
+            break
 
+        highest_seq_index = seq_list.index(max(seq_list))
         key_event = each_chan[highest_seq_index]
         # make a list for each channel- true if seq num matches highest
         # event seq num, false otherwise
@@ -437,7 +439,8 @@ def flatten_events_dict_into_list(camera: Camera, events: dict) -> List[Event]:
         for i, it in enumerate(chan_iters):
             if list_of_matches[i]:
                 each_chan[i] = next(it, nonevent)
-    return event_list[:-1] #  last element is always spurious
+
+    return event_list
 
 
 def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
