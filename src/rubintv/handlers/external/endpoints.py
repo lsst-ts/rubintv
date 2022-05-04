@@ -89,6 +89,7 @@ async def get_allsky_historical(request: web.Request) -> web.Response:
         movie = historical.get_most_recent_event(camera)
         page = get_formatted_page(
             "cameras/allsky-historical.jinja",
+            title=title,
             camera=camera,
             year_to_display=year_to_display,
             years=years,
@@ -286,7 +287,9 @@ async def events(request: web.Request) -> web.Response:
         date = request.match_info["date"]
         seq = request.match_info["seq"]
         channel = camera.channels[channel_name]
-        title = build_title(camera.name, channel.name, date, seq, request=request)
+        title = build_title(
+            camera.name, channel.name, date, seq, request=request
+        )
         page = get_single_event_page(bucket, camera, channel, date, seq, title)
     logger.info("events", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
@@ -303,16 +306,27 @@ async def current(request: web.Request) -> web.Response:
             channel.prefix,
             bucket,
         )
-        title = build_title(camera.name, f"Current {channel.name}", request=request)
+        title = build_title(
+            camera.name, f"Current {channel.name}", request=request
+        )
         page = get_formatted_page(
-            "current.jinja", title=title, camera=camera, event=event, channel=channel.name
+            "current.jinja",
+            title=title,
+            camera=camera,
+            event=event,
+            channel=channel.name,
         )
     logger.info("current", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
 
 def get_single_event_page(
-    bucket: Bucket, camera: Camera, channel: Channel, date: str, seq: str, title: str
+    bucket: Bucket,
+    camera: Camera,
+    channel: Channel,
+    date: str,
+    seq: str,
+    title: str,
 ) -> str:
     prefix = channel.prefix
     prefix_dashes = prefix.replace("_", "-")
@@ -321,7 +335,11 @@ def get_single_event_page(
         f"{prefix_dashes}_dayObs_{date}_seqNum_{seq}.png"
     )
     return get_formatted_page(
-        "single_event.jinja", title=title, camera=camera, event=event, channel=channel.name
+        "single_event.jinja",
+        title=title,
+        camera=camera,
+        event=event,
+        channel=channel.name,
     )
 
 
@@ -396,35 +414,31 @@ def flatten_events_dict_into_list(camera: Camera, events: dict) -> List[Event]:
     chan_lookup = list(camera.channels.keys())
     # make a list with the first event in each channel list
     each_chan: List[Any] = [next(it, nonevent) for it in chan_iters]
-
     seq_list = [ev.seq for ev in each_chan]
-    highest_seq_index = seq_list.index(max(seq_list))
-    key_chan = chan_lookup[highest_seq_index]
+    event_list = []
 
-    for event in events[key_chan]:
+    while max(seq_list) > 0:
         seq_list = [ev.seq for ev in each_chan]
         highest_seq_index = seq_list.index(max(seq_list))
 
-        monitor_event = each_chan[highest_seq_index]
-        # make a list for each channel- true if seq num matches monitor
+        key_event = each_chan[highest_seq_index]
+        # make a list for each channel- true if seq num matches highest
         # event seq num, false otherwise
         list_of_matches = [
-            seq_num_equal(monitor_event, other_event)
-            for other_event in each_chan
+            seq_num_equal(key_event, other_event) for other_event in each_chan
         ]
-        # for each of the channels, add corresponding channel object to
-        # the monitor event
-        # if there was a seq num match and None if not
-        event.chans = [
+        key_event.chans = [
             (matches and camera.channels[chan_lookup[i]]) or None
             for i, matches in enumerate(list_of_matches)
         ]
+        event_list.append(key_event)
         # if there was a match, move that channel's image list iterator to the
         # next one
         for i, it in enumerate(chan_iters):
             if list_of_matches[i]:
                 each_chan[i] = next(it, nonevent)
-    return events[key_chan]
+
+    return event_list
 
 
 def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
