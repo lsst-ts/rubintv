@@ -68,7 +68,7 @@ async def get_all_sky_current_update(request: web.Request) -> web.Response:
 
 @routes.get("/allsky/historical")
 async def get_allsky_historical(request: web.Request) -> web.Response:
-    title = build_title("All Sky - Historical", request=request)
+    title = build_title("All Sky", "Historical", request=request)
     logger = request["safir/logger"]
     with Timer() as timer:
         camera = cameras["allsky"]
