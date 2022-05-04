@@ -124,8 +124,10 @@ h6 {
 }
 
 a {
-  color: #1db8b9;
   text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
 }
 
 .button:hover {
