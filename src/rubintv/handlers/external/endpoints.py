@@ -34,10 +34,10 @@ async def get_all_sky_current(request: web.Request) -> web.Response:
     title = build_title("All Sky", request=request)
     bucket = request.config_dict["rubintv/gcs_bucket"]
     camera = cameras["allsky"]
-    prefix = camera.channels["image"].prefix
-    current = get_current_event(prefix, bucket)
-    prefix = camera.channels["monitor"].prefix
-    movie = get_current_event(prefix, bucket)
+    image_prefix = camera.channels["image"].prefix
+    current = get_current_event(image_prefix, bucket)
+    movie_prefix = camera.channels["monitor"].prefix
+    movie = get_current_event(movie_prefix, bucket)
     page = get_formatted_page(
         "cameras/allsky.jinja",
         title=title,
