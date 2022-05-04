@@ -124,7 +124,7 @@ h6 {
 }
 
 a {
-  color: #000;
+  color: #25d;
   text-decoration: none;
 }
 
@@ -216,6 +216,15 @@ h3 {
 
 .allsky-current-image, .allsky-current-movie {
   flex-basis: 50%;
+}
+
+.allsky-current-movie {
+  position: relative;
+}
+.allsky-current-movie .button {
+  position: absolute;
+  top: -23px;
+  right: 34px;
 }
 
 .current-movie {
