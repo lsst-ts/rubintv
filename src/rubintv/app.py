@@ -36,7 +36,7 @@ def create_app() -> web.Application:
     bucket = client.bucket("rubintv_data")
     root_app["rubintv/gcs_bucket"] = bucket
     root_app["rubintv/historical_data"] = HistoricalData(bucket)
-    root_app["rubintv/site_title"] = "Rubin TV Display"
+    root_app["rubintv/site_title"] = "RubinTV Display"
     setup_metadata(package_name="rubintv", app=root_app)
     setup_middleware(root_app)
     root_app.add_routes(init_internal_routes())
