@@ -437,8 +437,7 @@ def flatten_events_dict_into_list(camera: Camera, events: dict) -> List[Event]:
         for i, it in enumerate(chan_iters):
             if list_of_matches[i]:
                 each_chan[i] = next(it, nonevent)
-
-    return event_list
+    return event_list[:-1] #  last element is always spurious
 
 
 def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
