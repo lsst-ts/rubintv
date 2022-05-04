@@ -7,7 +7,7 @@
     $.get(url_path + "/update/image", function(data){
       if (data.channel == "image"){
         currentImage.find('img').attr({'src': data.url})
-        currentImage.find('.subheader h3').text(`${data.date} : Sequence ${data.seq}`);
+        currentImage.find('.subheader h3').text(`${data.date} : Image ${data.seq}`);
         currentImage.find('.desc').text(data.name)
       }
     });
@@ -19,7 +19,8 @@
     let currentMovieUrl = $(video).find('source').attr('src');
     if (data.channel == "monitor" && data.url != currentMovieUrl) {
       $(video).find('source').attr({'src': data.url});
-      currentMovie.find('.subheader h3').text(`${data.date} ${data.seq}`);
+      currentMovie.find('.movie-date').text(data.date);
+      currentMovie.find('.movie-number').text(data.seq)
       currentMovie.find('.desc').text(data.name);
       video.load();
       }
