@@ -378,19 +378,31 @@ def flatten_events_dict_into_list(camera: Camera, events: dict) -> List[Event]:
         The list of events, per channel
 
     """
+    nonevent = Event(
+        """https://storage.googleapis.com/rubintv_data/
+    auxtel_monitor/auxtel-monitor_dayObs_2022-02-15_seqNum_0.png"""
+    )
     # make an iterator out of each channel's list of events
-    event_iters: List[Iterator] = [iter(li) for li in events.values()]
+    chan_iters: List[Iterator] = [iter(li) for li in events.values()]
     # store the channel names in order to use in the loop
     chan_lookup = list(camera.channels.keys())
     # make a list with the first event in each channel list
-    each_event: List[Any] = [next(it, None) for it in event_iters]
-    for event in events["monitor"]:
-        monitor_event = each_event[0]
+    each_chan: List[Any] = [next(it, nonevent) for it in chan_iters]
+
+    seq_list = [ev.seq for ev in each_chan]
+    highest_seq_index = seq_list.index(max(seq_list))
+    key_chan = chan_lookup[highest_seq_index]
+
+    for event in events[key_chan]:
+        seq_list = [ev.seq for ev in each_chan]
+        highest_seq_index = seq_list.index(max(seq_list))
+
+        monitor_event = each_chan[highest_seq_index]
         # make a list for each channel- true if seq num matches monitor
         # event seq num, false otherwise
         list_of_matches = [
             seq_num_equal(monitor_event, other_event)
-            for other_event in each_event
+            for other_event in each_chan
         ]
         # for each of the channels, add corresponding channel object to
         # the monitor event
@@ -401,11 +413,10 @@ def flatten_events_dict_into_list(camera: Camera, events: dict) -> List[Event]:
         ]
         # if there was a match, move that channel's image list iterator to the
         # next one
-        each_event = [
-            (list_of_matches[i] and next(it, False)) or each_event[i]
-            for i, it in enumerate(event_iters)
-        ]
-    return events["monitor"]
+        for i, it in enumerate(chan_iters):
+            if list_of_matches[i]:
+                each_chan[i] = next(it, nonevent)
+    return events[key_chan]
 
 
 def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
