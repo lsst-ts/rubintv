@@ -68,6 +68,7 @@ async def get_all_sky_current_update(request: web.Request) -> web.Response:
 
 @routes.get("/allsky/historical")
 async def get_allsky_historical(request: web.Request) -> web.Response:
+    title = build_title("All Sky - Historical", request=request)
     logger = request["safir/logger"]
     with Timer() as timer:
         camera = cameras["allsky"]
@@ -123,6 +124,8 @@ async def get_recent_table(request: web.Request) -> web.Response:
         camera = cameras[cam_name]
     except KeyError:
         raise web.HTTPNotFound()
+
+    title = build_title(camera.name, request=request)
     logger = request["safir/logger"]
     with Timer() as timer:
         if not camera.online:
@@ -136,6 +139,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
             grid_columns = build_grid_columns_css(channels)
             page = get_formatted_page(
                 "cameras/camera.jinja",
+                title=title,
                 camera=camera,
                 channels=channels,
                 date=events[0].cleanDate(),
@@ -206,6 +210,7 @@ async def get_historical(request: web.Request) -> web.Response:
         camera = cameras[request.match_info["camera"]]
         if not camera.has_historical:
             raise web.HTTPNotFound()
+        title = build_title(camera.name, "Historical", request=request)
         historical = request.config_dict["rubintv/historical_data"]
         active_years = historical.get_years(camera)
         reverse_years = sorted(active_years, reverse=True)
@@ -229,6 +234,7 @@ async def get_historical(request: web.Request) -> web.Response:
 
         page = get_formatted_page(
             "cameras/historical.jinja",
+            title=title,
             camera=camera,
             year_to_display=year_to_display,
             years=years,
@@ -279,7 +285,9 @@ async def events(request: web.Request) -> web.Response:
         channel_name = request.match_info["channel"]
         date = request.match_info["date"]
         seq = request.match_info["seq"]
-        page = get_single_event_page(bucket, camera, channel_name, date, seq)
+        channel = camera.channels[channel_name]
+        title = build_title(camera.name, channel.name, date, seq, request=request)
+        page = get_single_event_page(bucket, camera, channel, date, seq, title)
     logger.info("events", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
@@ -295,17 +303,17 @@ async def current(request: web.Request) -> web.Response:
             channel.prefix,
             bucket,
         )
+        title = build_title(camera.name, f"Current {channel.name}", request=request)
         page = get_formatted_page(
-            "current.jinja", camera=camera, event=event, channel=channel.name
+            "current.jinja", title=title, camera=camera, event=event, channel=channel.name
         )
     logger.info("current", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
 
 
 def get_single_event_page(
-    bucket: Bucket, camera: Camera, channel_name: str, date: str, seq: str
+    bucket: Bucket, camera: Camera, channel: Channel, date: str, seq: str, title: str
 ) -> str:
-    channel = camera.channels[channel_name]
     prefix = channel.prefix
     prefix_dashes = prefix.replace("_", "-")
     event = Event(
@@ -313,7 +321,7 @@ def get_single_event_page(
         f"{prefix_dashes}_dayObs_{date}_seqNum_{seq}.png"
     )
     return get_formatted_page(
-        "single_event.jinja", camera=camera, event=event, channel=channel.name
+        "single_event.jinja", title=title, camera=camera, event=event, channel=channel.name
     )
 
 
