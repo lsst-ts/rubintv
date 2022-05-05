@@ -3,6 +3,7 @@
 <h2>Historical Data</h2>
 <div class="columns">
   <section class="calendar">
+
       {% for year in years %}
         {% if year == year_to_display %}
         <div class="year open" data-year="{{ year }}">
@@ -24,16 +25,16 @@
               </div> {# end of month #}
             {% endfor %}
             </div>
-
         </div> {# end of year #}
       {% endfor %}
+
   </section>
-  <section class="channel-day-data">
-    {% include "cameras/data-table-header-with-day-channels.jinja" %}
+  <section class="current-movie historical">
+    {% include "cameras/allsky-monitor.jinja" %}
   </section>
 </div>
 {% endblock content %}
 {% block footer_scripts %}
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script type=text/javascript src="/rubintv/static/js/calendar.js"></script>
+<script type=text/javascript src="/rubintv/static/js/allsky-calendar.js"></script>
 {% endblock footer_scripts %}

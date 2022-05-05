@@ -1,0 +1,26 @@
+{% extends "cameras/layout.jinja" %}
+
+{% block content %}
+  <div class="columns">
+
+    <section class="allsky-current-image">
+    <h2>Current Still Image:</h2>
+      <div class="current-still">
+        {% include "cameras/allsky-image.jinja" %}
+      </div>
+    </section>
+
+    <section class="allsky-current-movie">
+    <h2>Most recent movie:</h2>
+      <div class="current-movie">
+        {% include "cameras/allsky-monitor.jinja" %}
+      </div>
+      <br><br>
+      <a class="button button-small" href="/rubintv/allsky/historical">Historical movies</a>
+    </section>
+  </div>
+{% endblock content %}
+{% block footer_scripts %}
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type=text/javascript src="/rubintv/static/js/allsky-refresh.js"></script>
+{% endblock footer_scripts %}

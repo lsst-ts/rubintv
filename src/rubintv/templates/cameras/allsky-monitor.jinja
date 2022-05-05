@@ -1,0 +1,16 @@
+<div class="subheader">
+  <h3>
+    <span class="movie-date">{{ movie.date.date() }}</span>
+    Images 1 &#8594; <span class="movie-number">
+    {% if movie.seq != 0 %}
+      {{ movie.seq }}
+    {% else %}
+      final
+    {% endif %}
+    </span>
+  </h3>
+</div>
+  <video width="100%" controls autoplay loop>
+    <source src="{{ movie.url }}" type="video/mp4">
+  </video>
+<div class="desc">{{ movie.name }}</div>

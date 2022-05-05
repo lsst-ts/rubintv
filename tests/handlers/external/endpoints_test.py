@@ -38,7 +38,7 @@ async def test_get_camera_page_fail(aiohttp_client: TestClient) -> None:
 
     response = await client.get(f"/{name}/none")
     # Expect this to fail since "none" is not a camera endpoint/slug
-    assert response.status == 500
+    assert response.status == 404
 
 
 async def test_camera_imevents(aiohttp_client: TestClient) -> None:

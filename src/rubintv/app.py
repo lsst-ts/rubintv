@@ -18,7 +18,7 @@ from safir.middleware import bind_logger
 
 from rubintv.config import Configuration
 from rubintv.handlers import init_external_routes, init_internal_routes
-from rubintv.models import Event, per_event_channels
+from rubintv.models import Camera, Event, cameras
 
 
 def create_app() -> web.Application:
@@ -36,6 +36,7 @@ def create_app() -> web.Application:
     bucket = client.bucket("rubintv_data")
     root_app["rubintv/gcs_bucket"] = bucket
     root_app["rubintv/historical_data"] = HistoricalData(bucket)
+    root_app["rubintv/site_title"] = "RubinTV Display"
     setup_metadata(package_name="rubintv", app=root_app)
     setup_middleware(root_app)
     root_app.add_routes(init_internal_routes())
@@ -85,71 +86,97 @@ class HistoricalData:
         self._lastCall = get_current_day_obs()
 
     def _get_blobs(self) -> List[Bucket]:
-        blobs = list(self._bucket.list_blobs())
+        blobs = []
+        cameras_with_history = [
+            cam for cam in cameras.values() if cam.has_historical
+        ]
+        for cam in cameras_with_history:
+            for channel in cam.channels.values():
+                prefix = channel.prefix
+                print(f"Trying prefix: {prefix}")
+                blobs += list(self._bucket.list_blobs(prefix=prefix))
+                print(f"blobs found: {len(blobs)}")
         return blobs
 
-    def _get_events(self) -> Dict[str, List[Event]]:
+    def _get_events(self) -> Dict[str, Dict[str, List[Event]]]:
         if not self._events or get_current_day_obs() > self._lastCall:
             blobs = self._get_blobs()
-            self._events = self._get_events_from_blobs(blobs)
+            self._events = self._sort_events_from_blobs(blobs)
             self._lastCall = get_current_day_obs()
         return self._events
 
-    def _get_events_from_blobs(self, blobs: List) -> Dict[str, List[Event]]:
-        """Returns a dict with keys as per_event_channels and a
+    def _sort_events_from_blobs(
+        self, blobs: List
+    ) -> Dict[str, Dict[str, List[Event]]]:
+        """Returns a dict of dicts: an outer with key per camera
+        and the inner with a key per channel for that camera and a
         corresponding list of events for each channel
         """
         all_events = [
             Event(blob.public_url)
             for blob in blobs
-            if blob.public_url.endswith(".png")
+            if list(filter(blob.public_url.endswith, [".png", ".jpg", ".mp4"]))
+            != []
         ]
         s_events = sorted(
             all_events, key=lambda x: (x.date, x.seq), reverse=True
         )
-        events_dict = {}
-        for channel in per_event_channels:
-            events_dict[channel] = [
-                e
-                for e in s_events
-                if e.prefix == per_event_channels[channel].prefix
-            ]
+        events_dict: Dict[str, Dict[str, List[Event]]] = {}
+        cameras_with_history = [
+            cam for cam in cameras.values() if cam.has_historical
+        ]
+        for cam in cameras_with_history:
+            channels = cam.channels
+            events_dict[cam.slug] = {}
+            for channel in channels:
+                events_dict[cam.slug][channel] = [
+                    e for e in s_events if e.prefix == channels[channel].prefix
+                ]
         return events_dict
 
-    def get_years(self) -> List[int]:
+    def get_years(self, camera: Camera) -> List[int]:
+        camera_name = camera.slug
         years = set(
-            [event.date.year for event in self._get_events()["monitor"]]
+            [
+                event.date.year
+                for event in self._get_events()[camera_name]["monitor"]
+            ]
         )
         return list(years)
 
-    def get_months_for_year(self, year: int) -> List[int]:
+    def get_months_for_year(self, camera: Camera, year: int) -> List[int]:
+        camera_name = camera.slug
         months = set(
             [
                 event.date.month
-                for event in self._get_events()["monitor"]
+                for event in self._get_events()[camera_name]["monitor"]
                 if event.date.year == year
             ]
         )
         reverse_months = sorted(months, reverse=True)
         return list(reverse_months)
 
-    def get_days_for_month_and_year(self, month: int, year: int) -> List[int]:
+    def get_days_for_month_and_year(
+        self, camera: Camera, month: int, year: int
+    ) -> List[int]:
+        camera_name = camera.slug
         days = set(
             [
                 event.date.day
-                for event in self._get_events()["monitor"]
+                for event in self._get_events()[camera_name]["monitor"]
                 if event.date.month == month and event.date.year == year
             ]
         )
         return list(days)
 
     def get_events_for_date(
-        self, a_date: datetime.date
+        self, camera: Camera, a_date: datetime.date
     ) -> Dict[str, List[Event]]:
         """returns dict of events:
         { 'chan_name1': [Event 1, Event 2, ...], 'chan_name2': [...], ...}
         """
-        events_dict = self._get_events()
+        camera_name = camera.slug
+        events_dict = self._get_events()[camera_name]
         days_events_dict = {}
         for channel in events_dict:
             days_events_dict[channel] = [
@@ -159,9 +186,18 @@ class HistoricalData:
             ]
         return days_events_dict
 
-    def get_second_most_recent_day(self) -> datetime.date:
-        events = self._get_events()["monitor"]
+    def get_second_most_recent_day(self, camera: Camera) -> datetime.date:
+        camera_name = camera.slug
+        events = self._get_events()[camera_name]["monitor"]
         most_recent = events[0].date
         events = [event for event in events if not (event.date == most_recent)]
-        second_most = events[0].date.date()
-        return second_most
+        if events:
+            second_most = events[0].date.date()
+            return second_most
+        else:
+            return most_recent.date()
+
+    def get_most_recent_event(self, camera: Camera) -> Event:
+        camera_name = camera.slug
+        events = self._get_events()[camera_name]["monitor"]
+        return events[0]

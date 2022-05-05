@@ -41,12 +41,13 @@
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: flex-start;
 }
 
 .month {
   flex-basis: calc(33% - 1em);
   margin-bottom: 1em;
+  margin-right: 1em;
 }
 
 .days {
@@ -123,8 +124,10 @@ h6 {
 }
 
 a {
-  color: #000;
   text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
 }
 
 .button:hover {
@@ -213,6 +216,29 @@ h3 {
   background: #fff;
 }
 
+.allsky-current-image, .allsky-current-movie {
+  flex-basis: 50%;
+}
+
+.allsky-current-movie {
+  position: relative;
+}
+.allsky-current-movie .button {
+  position: absolute;
+  top: -23px;
+  right: 34px;
+}
+
+.current-movie {
+  flex-basis: 50%;
+}
+
+.historical.current-movie {
+  align-self: flex-start;
+  position: sticky;
+  top: 3em;
+}
+
 .channel-grid-heading {
   background: #fff;
   padding: 2em 0 0.5em;
@@ -230,7 +256,6 @@ h3 {
 .channel-grid {
   font-family: "Monaco", monospace, monospace;
   display: grid;
-  grid-template-columns: 1fr 40px 40px 40px 40px;
   gap: 2px;
 }
 
