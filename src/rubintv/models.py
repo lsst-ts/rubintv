@@ -122,13 +122,4 @@ cameras["comcam"].channels = {
         simplename="monitor",
         label="Monitor",
     ),
-    # "im": Channel(
-    #     name="Image Analysis", prefix="comcam_imexam", simplename="im"
-    # ),
-    # "spec": Channel(
-    #     name="Spectrum", prefix="comcam_specexam", simplename="spec"
-    # ),
-    # "mount": Channel(
-    #     name="Mount", prefix="comcam_mount_torques", simplename="mount"
-    # ),
 }
