@@ -150,6 +150,11 @@ a:hover {
   background-color: #7FF094;
 }
 
+.button.historical {
+  background-color: #262534;
+  color: #fff;
+}
+
 html {
   font-family: "Rubik", sans-serif;
   font-size: 16px;
@@ -223,10 +228,10 @@ h3 {
 .allsky-current-movie {
   position: relative;
 }
-.allsky-current-movie .button {
+.allsky-current-movie .button.historical {
   position: absolute;
-  top: -23px;
-  right: 34px;
+  top: -103px;
+  right: 32px;
 }
 
 .current-movie {
