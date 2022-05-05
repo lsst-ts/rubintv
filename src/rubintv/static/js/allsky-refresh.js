@@ -7,6 +7,7 @@
     $.get(url_path + "/update/image", function(data){
       if (data.channel == "image"){
         currentImage.find('img').attr({'src': data.url})
+        currentImage.find('a').attr({'href': data.url})
         currentImage.find('.subheader h3').text(`${data.date} : Image ${data.seq}`);
         currentImage.find('.desc').text(data.name)
       }
