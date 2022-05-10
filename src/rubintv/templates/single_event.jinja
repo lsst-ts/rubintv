@@ -5,7 +5,7 @@
   <div class="subheader">
     <h2>{{event.date.date()}} : Sequence {{event.seq}}</h2>
   </div>
-  <a target="_blank" href="{{event.url}}">
+  <a href="{{event.url}}">
     <img class="resp {% if channel=="Monitor" %} behind {% endif %}" src="{{event.url}}">
   </a>
   {% if channel != "Monitor" %}

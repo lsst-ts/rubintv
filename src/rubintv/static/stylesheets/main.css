@@ -125,6 +125,7 @@ h6 {
 
 a {
   text-decoration: none;
+  display: block;
 }
 a:hover {
   text-decoration: underline;
