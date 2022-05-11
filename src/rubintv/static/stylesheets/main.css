@@ -69,6 +69,14 @@
 .day:hover {
   background: #eaeaea;
 }
+.day .day_num {
+  font-size: 1.2em;
+  display: block;
+}
+.day .num_evs {
+  font-size: 0.6em;
+  display: block;
+}
 
 h6 {
   text-align: center;
@@ -235,6 +243,14 @@ h3 {
   right: 32px;
 }
 
+@media screen and (max-width: 1165px) {
+  .allsky-current-movie .button.historical {
+    top: -68px;
+    right: 32px;
+    width: 8.6em;
+    height: 5.3em;
+  }
+}
 .current-movie {
   flex-basis: 50%;
 }

@@ -76,7 +76,7 @@ class HistoricalData:
 
     Provides a cache of the historical data which updates when the day rolls
     over, but means that the full blob contents can be looped over without
-    makings a request for the full data for each operation.
+    making a request for the full data for each operation.
     """
 
     def __init__(self, bucket: Bucket) -> None:
@@ -158,7 +158,10 @@ class HistoricalData:
 
     def get_days_for_month_and_year(
         self, camera: Camera, month: int, year: int
-    ) -> List[int]:
+    ) -> Dict[int, int]:
+        """Returns a dict:
+        { day_num: num_events }
+        """
         camera_name = camera.slug
         days = set(
             [
@@ -167,7 +170,21 @@ class HistoricalData:
                 if event.date.month == month and event.date.year == year
             ]
         )
-        return list(days)
+        days_dict = {
+            day: self.get_num_events_for_date(
+                camera, datetime.date(year, month, day)
+            )
+            for day in list(days)
+        }
+        return days_dict
+
+    def get_num_events_for_date(
+        self, camera: Camera, a_date: datetime.date
+    ) -> int:
+        camera_name = camera.slug
+        cam_events = self._get_events()[camera_name]["monitor"]
+        days_events = [ev for ev in cam_events if ev.date.date() == a_date]
+        return len(days_events)
 
     def get_events_for_date(
         self, camera: Camera, a_date: datetime.date

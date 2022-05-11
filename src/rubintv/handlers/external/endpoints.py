@@ -226,7 +226,7 @@ async def get_historical(request: web.Request) -> web.Response:
                 for month in months
             }
             years[year] = months_days
-
+        print(years)
         smrd = historical.get_second_most_recent_day(camera)
         smrd_dict = historical.get_events_for_date(camera, smrd)
         smrd_events = flatten_events_dict_into_list(camera, smrd_dict)
