@@ -171,20 +171,20 @@ class HistoricalData:
             ]
         )
         days_dict = {
-            day: self.get_num_events_for_date(
+            day: self.get_max_event_seq_for_date(
                 camera, datetime.date(year, month, day)
             )
             for day in list(days)
         }
         return days_dict
 
-    def get_num_events_for_date(
+    def get_max_event_seq_for_date(
         self, camera: Camera, a_date: datetime.date
     ) -> int:
         camera_name = camera.slug
         cam_events = self._get_events()[camera_name]["monitor"]
         days_events = [ev for ev in cam_events if ev.date.date() == a_date]
-        return len(days_events)
+        return days_events[0].seq
 
     def get_events_for_date(
         self, camera: Camera, a_date: datetime.date
