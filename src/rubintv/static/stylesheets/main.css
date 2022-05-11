@@ -261,6 +261,15 @@ h3 {
   top: 3em;
 }
 
+.video-with-overlay {
+  position: relative;
+}
+.video-with-overlay img {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
 .channel-grid-heading {
   background: #fff;
   padding: 2em 0 0.5em;
