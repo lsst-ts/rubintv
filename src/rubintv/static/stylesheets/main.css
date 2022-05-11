@@ -69,6 +69,14 @@
 .day:hover {
   background: #eaeaea;
 }
+.day .day_num {
+  font-size: 1.2em;
+  display: block;
+}
+.day .num_evs {
+  font-size: 0.6em;
+  display: block;
+}
 
 h6 {
   text-align: center;
@@ -125,6 +133,7 @@ h6 {
 
 a {
   text-decoration: none;
+  display: block;
 }
 a:hover {
   text-decoration: underline;
@@ -148,6 +157,11 @@ a:hover {
 
 .button.im {
   background-color: #7FF094;
+}
+
+.button.historical {
+  background-color: #262534;
+  color: #fff;
 }
 
 html {
@@ -223,12 +237,20 @@ h3 {
 .allsky-current-movie {
   position: relative;
 }
-.allsky-current-movie .button {
+.allsky-current-movie .button.historical {
   position: absolute;
-  top: -23px;
-  right: 34px;
+  top: -103px;
+  right: 32px;
 }
 
+@media screen and (max-width: 1165px) {
+  .allsky-current-movie .button.historical {
+    top: -68px;
+    right: 32px;
+    width: 8.6em;
+    height: 5.3em;
+  }
+}
 .current-movie {
   flex-basis: 50%;
 }
@@ -237,6 +259,16 @@ h3 {
   align-self: flex-start;
   position: sticky;
   top: 3em;
+}
+
+.video-with-overlay {
+  position: relative;
+}
+.video-with-overlay img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
 }
 
 .channel-grid-heading {

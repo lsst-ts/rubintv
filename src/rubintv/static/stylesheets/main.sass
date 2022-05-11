@@ -45,6 +45,7 @@
 
 a
 	text-decoration: none
+	display: block
 	&:hover
 		text-decoration: underline
 
@@ -59,6 +60,9 @@ a
 	background-color: #7F85F0
 .button.im
 	background-color: #7FF094
+.button.historical
+	background-color: #262534
+	color: #fff
 
 html
 	font-family: "Rubik", sans-serif
@@ -118,10 +122,19 @@ h3
 
 .allsky-current-movie
 	position: relative
-	.button
+	.button.historical
 		position: absolute
-		top: -23px
-		right: 34px
+		top: -103px
+		right: 32px
+
+@media screen and (max-width: 1165px)
+	.allsky-current-movie
+		.button.historical
+			top: -68px
+			right: 32px
+			width: 8.6em
+			height: 5.3em
+
 
 .current-movie
 	flex-basis: 50%
@@ -131,10 +144,17 @@ h3
 	position: sticky
 	top: 3em
 
+.video-with-overlay
+	position: relative
+	img
+		position: absolute
+		top: 0
+		left: 0
+		pointer-events: none
+
 .channel-grid-heading
 	background: #fff
 	padding: 2em 0 0.5em
-	// margin-top: -2em
 	position: sticky
 	top: 0
 
