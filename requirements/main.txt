@@ -96,9 +96,9 @@ attrs==21.4.0 \
     --hash=sha256:2d27e3784d7a565d36ab851fe94887c5eccd6a463168875832a1be79c82828b4 \
     --hash=sha256:626ba8234211db98e869df76230a137c4c40a12d72445c45d5f5b716f076e2fd
     # via aiohttp
-cachetools==5.0.0 \
-    --hash=sha256:486471dfa8799eb7ec503a8059e263db000cdda20075ce5e48903087f79d5fd6 \
-    --hash=sha256:8fecd4203a38af17928be7b90689d8083603073622229ca7077b72d8e5a976e4
+cachetools==5.1.0 \
+    --hash=sha256:4ebbd38701cdfd3603d1f751d851ed248ab4570929f2d8a7ce69e30c420b141c \
+    --hash=sha256:8b3b8fa53f564762e5b221e9896798951e7f915513abf2ba072ce0f07f3f5a98
     # via google-auth
 cchardet==2.1.7 \
     --hash=sha256:0b859069bbb9d27c78a2c9eb997e6f4b738db2d7039a03f8792b4058d61d1109 \
@@ -330,9 +330,9 @@ google-resumable-media==2.3.2 \
     --hash=sha256:06924e8b1e79f158f0202e7dd151ad75b0ea9d59b997c850f56bdd4a5a361513 \
     --hash=sha256:3c13f84813861ac8f5b6371254bdd437076bf1f3bac527a9f3fd123a70166f52
     # via google-cloud-storage
-googleapis-common-protos==1.56.0 \
-    --hash=sha256:4007500795bcfc269d279f0f7d253ae18d6dc1ff5d5a73613ffe452038b1ec5f \
-    --hash=sha256:60220c89b8bd5272159bed4929ecdc1243ae1f73437883a499a44a1cbc084086
+googleapis-common-protos==1.56.1 \
+    --hash=sha256:6b5ee59dc646eb61a8eb65ee1db186d3df6687c8804830024f32573298bca19b \
+    --hash=sha256:ddcd955b5bb6589368f659fa475373faa1ed7d09cde5ba25e88513d87007e174
     # via google-api-core
 idna==3.3 \
     --hash=sha256:84d9dd047ffa80596e0f246e2eab0b391788b0503584e8945f2368256d2735ff \
