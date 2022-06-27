@@ -1,0 +1,15 @@
+{% for event in events %}
+  <tr id="seqno-{{ event.seq }}">
+    <td class="grid-cell">
+      {{event.seq}}
+    </td>
+    {% for chan in event.chans %}
+        <td class="grid-cell">
+          {% if chan is not none %}
+            <a  class="button button-table {{ chan.simplename }}"
+                href="{{ '/rubintv/' + camera.slug + '/' + chan.endpoint + '/' + event.cleanDate() + '/' + event.seq|string }}">
+            </a>
+          {% endif %}
+        </td>
+    {% endfor %}
+{% endfor %}

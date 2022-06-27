@@ -200,6 +200,8 @@ header .title h1 {
 }
 
 [class$=-menu] {
+  position: relative;
+  z-index: 23;
   margin-bottom: 3em;
 }
 [class$=-menu] li {
@@ -273,7 +275,7 @@ h3 {
 
 .channel-grid-heading {
   background: #fff;
-  padding: 2em 0 0.5em;
+  padding-bottom: 6em;
   position: sticky;
   top: 0;
 }
@@ -287,22 +289,25 @@ h3 {
 
 .channel-grid {
   font-family: "Monaco", monospace, monospace;
-  display: grid;
-  gap: 2px;
+  border-spacing: 2px;
+  border-collapse: separate;
 }
 
-.grid-title.gt-channel {
+.grid-title {
+  text-align: left;
+  position: sticky;
+  top: 6em;
+}
+.grid-title.sideways {
+  max-width: 40px;
   transform: rotate(270deg);
-  transform-origin: 0.8em 2px;
+  transform-origin: 17px 14px;
 }
 
 .grid-cell {
   background-color: #f0f0f0;
   padding: 0.3em;
-  display: flex;
-  align-content: center;
-  flex-direction: row;
-  justify-content: flex-start;
+  vertical-align: middle;
 }
 .grid-cell > div {
   display: flex;
