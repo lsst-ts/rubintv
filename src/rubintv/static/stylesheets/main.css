@@ -300,8 +300,9 @@ h3 {
 }
 .grid-title.sideways {
   max-width: 40px;
-  transform: rotate(270deg);
-  transform-origin: 17px 14px;
+  transform: rotate(315deg);
+  transform-origin: 7px -2px;
+  white-space: nowrap;
 }
 
 .grid-cell {
@@ -313,6 +314,25 @@ h3 {
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+.table-panel {
+  background: #eee;
+  padding: 1.2em 19px;
+  border-radius: 20px;
+}
+
+.table-control-title::after {
+  content: "▼";
+  margin-left: 4px;
+}
+
+.table-controls {
+  margin-top: 1em;
+}
+
+.table-control-title {
+  margin-bottom: 0;
 }
 
 /*# sourceMappingURL=main.css.map */

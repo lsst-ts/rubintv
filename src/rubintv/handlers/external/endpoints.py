@@ -140,12 +140,9 @@ async def get_recent_table(request: web.Request) -> web.Response:
             channels = camera.channels
             the_date = events[0].cleanDate()
 
-            date_str = the_date.replace("-", "")
-            metadata_url = get_metadata_url(bucket.name, camera.slug, date_str)
+            metadata_url = get_metadata_url(bucket.name, camera.slug, the_date)
             metadata_json = requests.get(metadata_url).text
 
-            print(f"getting: {metadata_url}...")
-            print(metadata_json)
             page = get_formatted_page(
                 "cameras/camera.jinja",
                 title=title,
@@ -160,6 +157,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
     return web.Response(text=page, content_type="text/html")
 
 def get_metadata_url(bucket_name: str, camera_slug: str, date_str: str) -> str:
+    date_str = date_str.replace("-", "")
     url = f"https://storage.googleapis.com/{bucket_name}/"
     url += f"{camera_slug}_metadata/dayObs_{date_str}.json"
     return url
@@ -197,12 +195,16 @@ async def update_todays_table(request: web.Request) -> web.Response:
             bucket, camera, recent_events, the_date
         )
         events = flatten_events_dict_into_list(camera, events_dict)
-        # grid_columns = build_grid_columns_css(camera.channels)
+
+        metadata_url = get_metadata_url(bucket.name, camera.slug, date_str)
+        metadata_json = requests.get(metadata_url).text
+
         page = get_formatted_page(
             "cameras/data-table-header-table.jinja",
             camera=camera,
             date=the_date,
             events=events,
+            metadata=metadata_json,
         )
 
     logger.info("update_todays_table", duration=timer.seconds)
