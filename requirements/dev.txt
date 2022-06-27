@@ -344,9 +344,9 @@ google-resumable-media==2.3.3 \
     # via
     #   -c requirements/main.txt
     #   google-cloud-storage
-googleapis-common-protos==1.56.2 \
-    --hash=sha256:023eaea9d8c1cceccd9587c6af6c20f33eeeb05d4148670f2b0322dc1511700c \
-    --hash=sha256:b09b56f5463070c2153753ef123f07d2e49235e89148e9b2459ec8ed2f68d7d3
+googleapis-common-protos==1.56.3 \
+    --hash=sha256:6f1369b58ed6cf3a4b7054a44ebe8d03b29c309257583a2bbdc064cd1e4a1442 \
+    --hash=sha256:87955d7b3a73e6e803f2572a33179de23989ebba725e05ea42f24838b792e461
     # via
     #   -c requirements/main.txt
     #   google-api-core
@@ -509,9 +509,9 @@ mypy-extensions==0.4.3 \
     --hash=sha256:090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d \
     --hash=sha256:2d82818f5bb3e369420cb3c4060a7970edba416647068eb4c5343488a6c604a8
     # via mypy
-nodeenv==1.6.0 \
-    --hash=sha256:3ef13ff90291ba2a4a7a4ff9a979b63ffdd00a464dbe04acf0ea6471517a4c2b \
-    --hash=sha256:621e6b7076565ddcacd2db0294c0381e01fd28945ab36bcf00f41c5daf63bef7
+nodeenv==1.7.0 \
+    --hash=sha256:27083a7b96a25f2f5e1d8cb4b6317ee8aeda3bdd121394e5ac54e498028a042e \
+    --hash=sha256:e0e7f7dfb85fc5394c6fe1e8fa98131a2473e04311a45afb6508f7cf1836fa2b
     # via pre-commit
 packaging==21.3 \
     --hash=sha256:dd47c42927d89ab911e606518907cc2d3a1f38bbd026385970643f9c5b8ecfeb \
@@ -529,31 +529,21 @@ pre-commit==2.19.0 \
     --hash=sha256:10c62741aa5704faea2ad69cb550ca78082efe5697d6f04e5710c3c229afdd10 \
     --hash=sha256:4233a1e38621c87d9dda9808c6606d7e7ba0e087cd56d3fe03202a01d2919615
     # via -r requirements/dev.in
-protobuf==3.20.1 \
-    --hash=sha256:06059eb6953ff01e56a25cd02cca1a9649a75a7e65397b5b9b4e929ed71d10cf \
-    --hash=sha256:097c5d8a9808302fb0da7e20edf0b8d4703274d140fd25c5edabddcde43e081f \
-    --hash=sha256:284f86a6207c897542d7e956eb243a36bb8f9564c1742b253462386e96c6b78f \
-    --hash=sha256:32ca378605b41fd180dfe4e14d3226386d8d1b002ab31c969c366549e66a2bb7 \
-    --hash=sha256:3cc797c9d15d7689ed507b165cd05913acb992d78b379f6014e013f9ecb20996 \
-    --hash=sha256:62f1b5c4cd6c5402b4e2d63804ba49a327e0c386c99b1675c8a0fefda23b2067 \
-    --hash=sha256:69ccfdf3657ba59569c64295b7d51325f91af586f8d5793b734260dfe2e94e2c \
-    --hash=sha256:6f50601512a3d23625d8a85b1638d914a0970f17920ff39cec63aaef80a93fb7 \
-    --hash=sha256:7403941f6d0992d40161aa8bb23e12575637008a5a02283a930addc0508982f9 \
-    --hash=sha256:755f3aee41354ae395e104d62119cb223339a8f3276a0cd009ffabfcdd46bb0c \
-    --hash=sha256:77053d28427a29987ca9caf7b72ccafee011257561259faba8dd308fda9a8739 \
-    --hash=sha256:7e371f10abe57cee5021797126c93479f59fccc9693dafd6bd5633ab67808a91 \
-    --hash=sha256:9016d01c91e8e625141d24ec1b20fed584703e527d28512aa8c8707f105a683c \
-    --hash=sha256:9be73ad47579abc26c12024239d3540e6b765182a91dbc88e23658ab71767153 \
-    --hash=sha256:adc31566d027f45efe3f44eeb5b1f329da43891634d61c75a5944e9be6dd42c9 \
-    --hash=sha256:adfc6cf69c7f8c50fd24c793964eef18f0ac321315439d94945820612849c388 \
-    --hash=sha256:af0ebadc74e281a517141daad9d0f2c5d93ab78e9d455113719a45a49da9db4e \
-    --hash=sha256:cb29edb9eab15742d791e1025dd7b6a8f6fcb53802ad2f6e3adcb102051063ab \
-    --hash=sha256:cd68be2559e2a3b84f517fb029ee611546f7812b1fdd0aa2ecc9bc6ec0e4fdde \
-    --hash=sha256:cdee09140e1cd184ba9324ec1df410e7147242b94b5f8b0c64fc89e38a8ba531 \
-    --hash=sha256:db977c4ca738dd9ce508557d4fce0f5aebd105e158c725beec86feb1f6bc20d8 \
-    --hash=sha256:dd5789b2948ca702c17027c84c2accb552fc30f4622a98ab5c51fcfe8c50d3e7 \
-    --hash=sha256:e250a42f15bf9d5b09fe1b293bdba2801cd520a9f5ea2d7fb7536d4441811d20 \
-    --hash=sha256:ff8d8fa42675249bb456f5db06c00de6c2f4c27a065955917b28c4f15978b9c3
+protobuf==4.21.2 \
+    --hash=sha256:095fda15fe04a79c9f0edab09b424be46dd057b15986d235b84c8cea91659df7 \
+    --hash=sha256:29eaf8e9db33bc3bae14576ad61370aa2b64ea5d6e6cd705042692e5e0404b10 \
+    --hash=sha256:4758b9c22ad0486639a68cea58d38571f233019a73212d78476ec648f68a49a3 \
+    --hash=sha256:57a593e40257ab4f164fe6e171651b1386c98f8ec5f5a8643642889c50d4f3c4 \
+    --hash=sha256:5f8c7488e74024fa12b46aab4258f707d7d6e94c8d322d7c45cc13770f66ab59 \
+    --hash=sha256:7b2dcca25d88ec77358eed3d031c8260b5bf3023fff03a31c9584591c5910833 \
+    --hash=sha256:853708afc3a7eed4df28a8d4bd4812f829f8d736c104dd8d584ccff27969e311 \
+    --hash=sha256:863f65e137d9de4a76cac39ae731a19bea1c30997f512ecf0dc9348112313401 \
+    --hash=sha256:9b42afb67e19010cdda057e439574ccd944902ea14b0d52ba0bfba2aad50858d \
+    --hash=sha256:b82ac05b0651a4d2b9d56f5aeef3d711f5858eb4b71c13d77553739e5930a74a \
+    --hash=sha256:d622dc75e289e8b3031dd8b4e87df508f11a6b3d86a49fb50256af7ce030d35b \
+    --hash=sha256:e3d3df3292ab4bae85213b9ebef566b5aedb45f97425a92fac5b2e431d31e71c \
+    --hash=sha256:ef0768a609a02b2b412fa0f59f1242f1597e9bb15188d043f3fde09115ca6c69 \
+    --hash=sha256:f2f43ae8dff452aee3026b59ea0a09245ab2529a55a0984992e76bcf848610e1
     # via
     #   -c requirements/main.txt
     #   google-api-core
@@ -677,9 +667,9 @@ tomli==2.0.1 \
     #   coverage
     #   mypy
     #   pytest
-types-python-dateutil==2.8.17 \
-    --hash=sha256:0be7435b4d382d1cd00b8c55a8a90f4e515aaad8a96f8f0bc20c22df046792e5 \
-    --hash=sha256:6c54265a221681dd87f61df6743bd5eab060cf1b4086ff65c1a8fd763ed6370e
+types-python-dateutil==2.8.18 \
+    --hash=sha256:8695c7d7a5b1aef4002f3ab4e1247e23b1d41cd7cc1286d4594c2d8c5593c991 \
+    --hash=sha256:fd5ed97262b76ae684695ea38ace8dd7c1bc9491aba7eb4edf6654b7ecabc870
     # via -r requirements/dev.in
 typing-extensions==4.2.0 \
     --hash=sha256:6657594ee297170d19f67d55c05852a874e7eb634f4f753dbd667855e07c1708 \
@@ -691,9 +681,9 @@ urllib3==1.26.9 \
     # via
     #   -c requirements/main.txt
     #   requests
-virtualenv==20.14.1 \
-    --hash=sha256:e617f16e25b42eb4f6e74096b9c9e37713cf10bf30168fb4a739f3fa8f898a3a \
-    --hash=sha256:ef589a79795589aada0c1c5b319486797c03b67ac3984c48c669c0e4f50df3a5
+virtualenv==20.15.0 \
+    --hash=sha256:4c44b1d77ca81f8368e2d7414f9b20c428ad16b343ac6d226206c5b84e2b4fcc \
+    --hash=sha256:804cce4de5b8a322f099897e308eecc8f6e2951f1a8e7e2b3598dff865f01336
     # via pre-commit
 watchgod==0.8.2 \
     --hash=sha256:2f3e8137d98f493ff58af54ea00f4d1433a6afe2ed08ab331a657df468c6bfce \
@@ -775,3 +765,7 @@ yarl==1.7.2 \
     # via
     #   -c requirements/main.txt
     #   aiohttp
+
+# WARNING: The following packages were not pinned, but pip requires them to be
+# pinned when the requirements file includes hashes. Consider using the --allow-unsafe flag.
+# setuptools
