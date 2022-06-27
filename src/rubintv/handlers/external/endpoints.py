@@ -215,6 +215,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
 async def get_historical(request: web.Request) -> web.Response:
     logger = request["safir/logger"]
     with Timer() as timer:
+        bucket = request.config_dict["rubintv/gcs_bucket"]
         camera = cameras[request.match_info["camera"]]
         if not camera.has_historical:
             raise web.HTTPNotFound()
@@ -237,6 +238,9 @@ async def get_historical(request: web.Request) -> web.Response:
         smrd_dict = historical.get_events_for_date(camera, smrd)
         smrd_events = flatten_events_dict_into_list(camera, smrd_dict)
 
+        metadata_url = get_metadata_url(bucket.name, camera.slug, smrd.strftime("%Y-%m-%d"))
+        metadata_json = requests.get(metadata_url).text
+
         page = get_formatted_page(
             "cameras/historical.jinja",
             title=title,
@@ -246,6 +250,7 @@ async def get_historical(request: web.Request) -> web.Response:
             month_names=month_names(),
             date=smrd,
             events=smrd_events,
+            metadata=metadata_json,
         )
 
     logger.info("get_historical", duration=timer.seconds)
@@ -254,6 +259,7 @@ async def get_historical(request: web.Request) -> web.Response:
 
 @routes.get("/{camera}/historical/{date_str}")
 async def get_historical_day_data(request: web.Request) -> web.Response:
+    bucket = request.config_dict["rubintv/gcs_bucket"]
     camera = cameras[request.match_info["camera"]]
     if not camera.has_historical:
         return web.Response(
@@ -265,11 +271,16 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
     the_date = date(year, month, day)
     day_dict = historical.get_events_for_date(camera, the_date)
     day_events = flatten_events_dict_into_list(camera, day_dict)
+
+    metadata_url = get_metadata_url(bucket.name, camera.slug, date_str)
+    metadata_json = requests.get(metadata_url).text
+
     page = get_formatted_page(
         "cameras/data-table-header-with-day-channels.jinja",
         camera=camera,
         date=the_date,
         events=day_events,
+        metadata=metadata_json,
     )
     return web.Response(text=page, content_type="text/html")
 

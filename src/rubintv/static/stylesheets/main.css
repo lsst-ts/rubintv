@@ -1,7 +1,8 @@
 @charset "UTF-8";
 @import "reset.css";
 .calendar {
-  flex-basis: 50%;
+  width: 50%;
+  min-width: 600px;
   padding-top: 4em;
   margin-top: -2em;
 }
@@ -275,9 +276,14 @@ h3 {
 
 .channel-grid-heading {
   background: #fff;
-  padding-bottom: 6em;
+  padding-top: 1em;
   position: sticky;
   top: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 3.7em;
+  z-index: 23;
 }
 
 .per-day-channels {
@@ -296,7 +302,7 @@ h3 {
 .grid-title {
   text-align: left;
   position: sticky;
-  top: 6em;
+  top: 11em;
 }
 .grid-title.sideways {
   max-width: 40px;
@@ -316,23 +322,50 @@ h3 {
   justify-content: center;
 }
 
+.table-spacer {
+  background: #fff;
+  height: 8em;
+  position: sticky;
+  top: 4.4em;
+}
+
 .table-panel {
   background: #eee;
   padding: 1.2em 19px;
   border-radius: 20px;
+  margin-left: 1em;
 }
 
-.table-control-title::after {
-  content: "▼";
-  margin-left: 4px;
+.table-control-button::after {
+  content: "∆";
+  margin-left: 1em;
+  transform-origin: 50% 50%;
+  transform: rotate(90deg);
+  display: inline-block;
+  width: 0.7em;
+  transition: 0.3s;
 }
 
 .table-controls {
-  margin-top: 1em;
+  display: none;
+  position: absolute;
+  padding: 20px;
+  margin: -3px -21px;
+  border: 2px #fff solid;
+  border-top: none;
+  background: #eee;
 }
 
-.table-control-title {
-  margin-bottom: 0;
+.table-panel.open .table-controls {
+  display: block;
+}
+.table-panel.open .table-control-button::after {
+  transform: rotate(180deg);
+}
+
+.table-control-button {
+  border: none;
+  background: inherit;
 }
 
 /*# sourceMappingURL=main.css.map */

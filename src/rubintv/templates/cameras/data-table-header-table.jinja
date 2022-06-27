@@ -1,11 +1,12 @@
+{% block day_data_per_day_channels %}
+{% endblock day_data_per_day_channels %}
 <div class="channel-grid-heading">
   <h3 class="the-date" data-date="{{ date }}">Data for day: <span class="data">{{ date }}<span></h3>
-  {% block day_data_per_day_channels %}
-  {% endblock day_data_per_day_channels %}
 </div>
+<div class="table-spacer"></div>
   <table class="channel-grid">
     <tr>
-      <th class="grid-title">Seq. No.</th>
+      <th class="grid-title sideways">Seq. No.</th>
       {% for channel in camera.channels.values() %}
         {% if channel.label %}
           <th class="grid-title gt-channel sideways">{{ channel['label'] }}</th>
