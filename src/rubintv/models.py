@@ -57,16 +57,16 @@ class Event:
 
 
 cameras = {
-    # TODO: put these back before push:
+
     "auxtel": Camera(
         name="AuxTel", slug="auxtel", online=True, has_historical=True
     ),
     "comcam": Camera(
-        name="ComCam", slug="comcam", online=True, has_historical=False
+        name="ComCam", slug="comcam", online=True, has_historical=True
     ),
     "lsstcam": Camera(name="LSSTCam", slug="lsstcam", online=False),
     "allsky": Camera(
-        name="All Sky", slug="allsky", online=True, has_historical=False
+        name="All Sky", slug="allsky", online=True, has_historical=True
     ),
 }
 
