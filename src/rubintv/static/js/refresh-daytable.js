@@ -18,10 +18,14 @@ import { createTableControlUI, applySelected } from "./modules/table-control.js"
   setInterval(function refreshTable(){
     let date = $('.the-date')[0].dataset.date;
     let url_path = document.location.pathname;
-    $('.channel-day-data').load(url_path + "/update/" + date, function() {
+    $.get(url_path + "/update/" + date, function(res){
+      $('.channel-day-data').html(res);
+    }).done(function(){
       applySelected(selected);
       createTableControlUI($('.channel-grid-heading'), selected);
-    });
+    }).fail(function(){
+      console.log("Couldn't reach server");
+    })
   }, 5000);
 
 })(jQuery)
