@@ -10,7 +10,7 @@ import { createTableControlUI, applySelected } from "./modules/table-control.js"
   ];
 
   createTableControlUI($('.channel-grid-heading'), defaultSelected);
-  applySelected(defaultSelected);
+  applySelected(defaultSelected, true);
   let selected = defaultSelected;
 
   // click to retrieve & display data for day:
@@ -18,7 +18,7 @@ import { createTableControlUI, applySelected } from "./modules/table-control.js"
     let date = this.dataset.date;
     let url_path = document.location.pathname;
     $('.channel-day-data').load(url_path + "/" + date, function(){
-      applySelected(selected);
+      applySelected(selected, true);
       createTableControlUI($('.channel-grid-heading'), selected);
     });
 

@@ -140,8 +140,11 @@ async def get_recent_table(request: web.Request) -> web.Response:
             channels = camera.channels
             the_date = events[0].cleanDate()
 
+            metadata_json = "{}"
             metadata_url = get_metadata_url(bucket.name, camera.slug, the_date)
-            metadata_json = requests.get(metadata_url).text
+            metadata_res = requests.get(metadata_url)
+            if metadata_res.status_code == 200:
+                metadata_json = metadata_res.text
 
             page = get_formatted_page(
                 "cameras/camera.jinja",
@@ -158,7 +161,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
 
 
 def get_metadata_url(bucket_name: str, camera_slug: str, date_str: str) -> str:
-    date_str = date_str.replace("-", "")
+    date_str = date_str.split("-")
     url = f"https://storage.googleapis.com/{bucket_name}/"
     url += f"{camera_slug}_metadata/dayObs_{date_str}.json"
     return url

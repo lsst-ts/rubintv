@@ -22,9 +22,13 @@ const checkbox_mapping = {
 
 let metaText = document.querySelector("#table-metadata").text;
 let metaData = JSON.parse(metaText);
+
 let controlsOpen = false;
 
-export function applySelected(selection) {
+export function applySelected(selection, sortable = false) {
+   // empty object test- there's no data, just go home
+   if (Object.getOwnPropertyNames(metaData).length == 0) return;
+
   selection.forEach(attribute => {
     let last_header_cell = $('.grid-title').last();
     let el = $("<th>",{class: "grid-title sideways " + attribute});
@@ -46,13 +50,16 @@ export function applySelected(selection) {
       el.text(val);
       seq_row_last_cell.after(el);
     });
-
   });
-
-  makeTableSortable();
+  if (sortable) {
+    makeTableSortable();
+  }
 }
 
 export function createTableControlUI($elementToAppendTo, selection){
+  // empty object test- there's no data, just go home
+  if (Object.getOwnPropertyNames(metaData).length == 0) return;
+
   let panel = $("<div>", {class: "table-panel"});
   panel.append($("<button>", {class: "table-control-button", text: "Add/Remove Columns"}));
   let controls = $("<div>", {class: "table-controls"});
