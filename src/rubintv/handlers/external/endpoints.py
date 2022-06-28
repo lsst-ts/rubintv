@@ -200,7 +200,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
         metadata_json = requests.get(metadata_url).text
 
         page = get_formatted_page(
-            "cameras/data-table-header-table.jinja",
+            "cameras/data-table-header.jinja",
             camera=camera,
             date=the_date,
             events=events,

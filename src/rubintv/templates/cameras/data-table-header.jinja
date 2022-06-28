@@ -1,0 +1,24 @@
+{% block day_data_per_day_channels %}
+{% endblock day_data_per_day_channels %}
+<div class="channel-grid-heading">
+  <h3 class="the-date" data-date="{{ date }}">Data for day: <span class="data">{{ date }}<span></h3>
+</div>
+<div class="table-spacer"></div>
+  <table class="channel-grid">
+    <thead>
+        <tr>
+        <th class="grid-title sideways">Seq. No.</th>
+        {% for channel in camera.channels.values() %}
+          {% if channel.label %}
+            <th class="grid-title gt-channel sideways">{{ channel['label'] }}</th>
+          {% endif %}
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% include "cameras/data-table.jinja" %}
+    </tbody>
+  </table>
+  <script type="application/json" id="table-metadata">
+    {{ metadata }}
+  </script>
