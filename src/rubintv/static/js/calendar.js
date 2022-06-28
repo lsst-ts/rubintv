@@ -17,9 +17,14 @@ import { createTableControlUI, applySelected } from "./modules/table-control.js"
   $('.day').click(function(){
     let date = this.dataset.date;
     let url_path = document.location.pathname;
-    $('.channel-day-data').load(url_path + "/" + date, function(){
+
+     $.get(url_path + "/" + date, function(res){
+      $('.channel-day-data').html(res);
+    }).done(function(){
       applySelected(selected, true);
       createTableControlUI($('.channel-grid-heading'), selected);
+    }).fail(function(){
+      console.log("Couldn't reach server");
     });
 
   });
