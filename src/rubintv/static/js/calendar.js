@@ -30,7 +30,7 @@ import { createTableControlUI, applySelected } from "./modules/table-control.js"
   });
 
   $('.year-title').click(function(){
-    $year_to_open = $(this).parent('.year');
+    let $year_to_open = $(this).parent('.year');
     if ($year_to_open.hasClass('open')) return;
     $('.year.open').removeClass('open').addClass('closed')
     $year_to_open.removeClass('closed').addClass('open');
