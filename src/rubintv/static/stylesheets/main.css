@@ -181,7 +181,7 @@ body {
 
 header {
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   margin-bottom: 2em;
 }
 header .logo {
@@ -190,10 +190,16 @@ header .logo {
 }
 header .title {
   margin-left: 2em;
-  margin-bottom: -2px;
+  display: flex;
+  flex-direction: column;
 }
 header .title h1 {
   margin: 0;
+}
+header .title .historical {
+  width: max-content;
+  margin-top: auto;
+  border-radius: 9px;
 }
 
 .page-title {
@@ -203,7 +209,6 @@ header .title h1 {
 [class$=-menu] {
   position: relative;
   z-index: 23;
-  margin-bottom: 3em;
 }
 [class$=-menu] li {
   margin-right: 1em;
@@ -221,6 +226,10 @@ h3 {
 }
 .columns > * {
   padding-right: 2em;
+}
+
+#per-image-menu {
+  flex-basis: 70%;
 }
 
 .channel-day-data {

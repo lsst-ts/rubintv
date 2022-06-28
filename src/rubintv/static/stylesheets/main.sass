@@ -77,7 +77,7 @@ body
 
 header
 	display: flex
-	align-items: flex-end
+	align-items: stretch
 	margin-bottom: 2em
 
 	.logo
@@ -86,9 +86,17 @@ header
 
 	.title
 		margin-left: 2em
-		margin-bottom: -2px //fix for font not sitting on baseline
+		display: flex
+		flex-direction: column
+
 		h1
 			margin: 0
+
+		.historical
+			width: max-content
+			margin-top: auto
+			border-radius: 9px
+
 
 .page-title
 	margin-bottom: 1em
@@ -96,7 +104,6 @@ header
 [class$="-menu"]
 	position: relative
 	z-index: 23
-	margin-bottom: 3em
 	li
 		margin-right: 1em
 		margin-bottom: 1em
@@ -110,6 +117,9 @@ h3
 	flex-direction: row
 	> *
 		padding-right: 2em
+
+#per-image-menu
+	flex-basis: 70%
 
 .channel-day-data
 	flex-basis: 50%
