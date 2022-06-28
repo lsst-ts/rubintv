@@ -161,7 +161,9 @@ async def get_recent_table(request: web.Request) -> web.Response:
 
 
 def get_metadata_url(bucket_name: str, camera_slug: str, date_str: str) -> str:
-    date_str = date_str.split("-")
+    #  reformat the date string from YYYY-m-d to YYYYmmdd
+    date_str = "".join([f"{int(x):02}" for x in date_str.split("-")])
+
     url = f"https://storage.googleapis.com/{bucket_name}/"
     url += f"{camera_slug}_metadata/dayObs_{date_str}.json"
     return url
