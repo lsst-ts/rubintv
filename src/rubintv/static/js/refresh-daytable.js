@@ -1,4 +1,4 @@
-import { createTableControlUI, applySelected } from "./modules/table-control.js";
+import { createTableControlUI, applySelected, loadMetadata } from "./modules/table-control.js";
 
 (function($){
 
@@ -12,8 +12,8 @@ import { createTableControlUI, applySelected } from "./modules/table-control.js"
   ];
 
   let meta = loadMetadata();
-  createTableControlUI($('.channel-grid-heading'), defaultSelected);
-  applySelected(defaultSelected);
+  createTableControlUI(meta, $('.channel-grid-heading'), defaultSelected);
+  applySelected(meta, defaultSelected);
   let selected = defaultSelected;
 
   setInterval(function refreshTable(){
