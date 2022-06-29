@@ -196,12 +196,19 @@ header .title {
 header .title h1 {
   margin: 0;
 }
+header .title h1 a {
+  display: inline-block;
+  font-size: 1em;
+}
 header .title .historical {
   width: max-content;
-  margin-top: auto;
+  margin-top: 2px;
+  padding: 0.5em 0.9em;
   border-radius: 9px;
   display: flex;
   flex-direction: row;
+  align-items: center;
+  height: 100%;
 }
 header .title .historical img {
   height: 1em;
