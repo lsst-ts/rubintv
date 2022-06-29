@@ -203,8 +203,11 @@ async def update_todays_table(request: web.Request) -> web.Response:
         )
         events = flatten_events_dict_into_list(camera, events_dict)
 
+        metadata_json = "{}"
         metadata_url = get_metadata_url(bucket.name, camera.slug, date_str)
-        metadata_json = requests.get(metadata_url).text
+        metadata_res = requests.get(metadata_url)
+        if metadata_res.status_code == 200:
+            metadata_json = metadata_res.text
 
         page = get_formatted_page(
             "cameras/data-table-header.jinja",
@@ -245,10 +248,13 @@ async def get_historical(request: web.Request) -> web.Response:
         smrd_dict = historical.get_events_for_date(camera, smrd)
         smrd_events = flatten_events_dict_into_list(camera, smrd_dict)
 
+        metadata_json = "{}"
         metadata_url = get_metadata_url(
             bucket.name, camera.slug, smrd.strftime("%Y-%m-%d")
         )
-        metadata_json = requests.get(metadata_url).text
+        metadata_res = requests.get(metadata_url)
+        if metadata_res.status_code == 200:
+            metadata_json = metadata_res.text
 
         page = get_formatted_page(
             "cameras/historical.jinja",
@@ -281,8 +287,12 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
     day_dict = historical.get_events_for_date(camera, the_date)
     day_events = flatten_events_dict_into_list(camera, day_dict)
 
+    metadata_json = "{}"
     metadata_url = get_metadata_url(bucket.name, camera.slug, date_str)
     metadata_json = requests.get(metadata_url).text
+    metadata_res = requests.get(metadata_url)
+    if metadata_res.status_code == 200:
+        metadata_json = metadata_res.text
 
     page = get_formatted_page(
         "cameras/data-table-header-with-day-channels.jinja",
