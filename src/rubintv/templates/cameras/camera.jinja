@@ -2,7 +2,10 @@
 
 {% block undertitle %}
   {% if camera.has_historical %}
-    <a class="button historical" href="/rubintv/{{camera.slug}}/historical">Historical data</a>
+    <a class="button historical" href="/rubintv/{{camera.slug}}/historical">
+      Historical data
+      <img src="/rubintv/static/images/history-line.svg">
+    </a>
 {% endif %}
 {% endblock undertitle %}
 

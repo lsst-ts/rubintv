@@ -200,6 +200,13 @@ header .title .historical {
   width: max-content;
   margin-top: auto;
   border-radius: 9px;
+  display: flex;
+  flex-direction: row;
+}
+header .title .historical img {
+  height: 1em;
+  width: auto;
+  margin-left: 4px;
 }
 
 .page-title {
