@@ -1,4 +1,4 @@
-import { createTableControlUI, applySelected } from "./modules/table-control.js";
+import { createTableControlUI, applySelected, loadMetadata } from "./modules/table-control.js";
 (function($){
   let defaultSelected = [
     "exposure_time",
@@ -9,8 +9,9 @@ import { createTableControlUI, applySelected } from "./modules/table-control.js"
     "time_begin_tai",
   ];
 
-  createTableControlUI($('.channel-grid-heading'), defaultSelected);
-  applySelected(defaultSelected, true);
+  let meta = loadMetadata();
+  createTableControlUI(meta, $('.channel-grid-heading'), defaultSelected);
+  applySelected(meta, defaultSelected, true);
   let selected = defaultSelected;
 
   // click to retrieve & display data for day:
@@ -21,8 +22,9 @@ import { createTableControlUI, applySelected } from "./modules/table-control.js"
      $.get(url_path + "/" + date, function(res){
       $('.channel-day-data').html(res);
     }).done(function(){
-      applySelected(selected, true);
-      createTableControlUI($('.channel-grid-heading'), selected);
+      meta = loadMetadata();
+      applySelected(meta, selected, true);
+      createTableControlUI(meta, $('.channel-grid-heading'), selected);
     }).fail(function(){
       console.log("Couldn't reach server");
     });

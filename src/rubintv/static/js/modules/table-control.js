@@ -20,14 +20,16 @@ const checkbox_mapping = {
   'airmass': 'Airmass',
 };
 
-let metaText = document.querySelector("#table-metadata").text;
-let metaData = JSON.parse(metaText);
+export function loadMetadata(){
+  let metaText = document.querySelector("#table-metadata").text;
+  return JSON.parse(metaText);
+}
 
 let controlsOpen = false;
 
-export function applySelected(selection, sortable = false) {
+export function applySelected(metaData, selection, sortable = false) {
    // empty object test- there's no data, just go home
-   if (Object.getOwnPropertyNames(metaData).length == 0) return;
+   if (Object.keys(metaData).length == 0) return;
 
   selection.forEach(attribute => {
     let last_header_cell = $('.grid-title').last();
@@ -56,7 +58,7 @@ export function applySelected(selection, sortable = false) {
   }
 }
 
-export function createTableControlUI($elementToAppendTo, selection){
+export function createTableControlUI(metaData, $elementToAppendTo, selection){
   // empty object test- there's no data, just go home
   if (Object.getOwnPropertyNames(metaData).length == 0) return;
 

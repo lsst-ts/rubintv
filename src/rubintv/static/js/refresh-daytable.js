@@ -11,6 +11,7 @@ import { createTableControlUI, applySelected } from "./modules/table-control.js"
     "time_begin_tai",
   ];
 
+  let meta = loadMetadata();
   createTableControlUI($('.channel-grid-heading'), defaultSelected);
   applySelected(defaultSelected);
   let selected = defaultSelected;
@@ -21,8 +22,9 @@ import { createTableControlUI, applySelected } from "./modules/table-control.js"
     $.get(url_path + "/update/" + date, function(res){
       $('.channel-day-data').html(res);
     }).done(function(){
-      applySelected(selected);
-      createTableControlUI($('.channel-grid-heading'), selected);
+      meta = loadMetadata();
+      applySelected(meta, selected);
+      createTableControlUI(meta, $('.channel-grid-heading'), selected);
     }).fail(function(){
       console.log("Couldn't reach server");
     })
