@@ -135,8 +135,8 @@ function makeTableSortable() {
 }
 
 function addToTopBottomControls($elementToAppendTo) {
-  let toTop = $('<button>', {class: "to-top button"}).text("jump to top");
-  let toBottom =  $('<button>', {class: "to-bottom button"}).text("jump to bottom");
+  let toTop = $('<button>', {class: "to-top button"}).text("Jump to top ↑");
+  let toBottom =  $('<button>', {class: "to-bottom button"}).text("Jump to bottom ↓");
   toTop.click(function(){
     let tableHeight = $('#table-top').offset().top;
     $(window).scrollTop(tableHeight);
