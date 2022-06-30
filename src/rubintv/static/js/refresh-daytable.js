@@ -4,6 +4,7 @@ import { createTableControlUI, applySelected, loadMetadata } from "./modules/tab
 
   let defaultSelected = [
     "exposure_time",
+    "image_type",
     "filter",
     "disperser",
     "airmass",
