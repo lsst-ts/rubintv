@@ -93,7 +93,7 @@ export function createTableControlUI(metaData, $elementToAppendTo, selection){
      $('table .' + this.name).remove()
     } else {
      selection.push(this.name);
-     applySelected([this.name]);
+     applySelected(metaData, [this.name]);
     }
    });
 
