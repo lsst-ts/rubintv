@@ -311,13 +311,6 @@ h3 {
 .channel-grid-heading h3 {
   margin-bottom: 0;
 }
-.channel-grid-heading button:not(.table-control-button) {
-  background: #eee;
-  padding: 1.2em 19px;
-  border-radius: 20px;
-  margin-left: 1em;
-  border: none;
-}
 
 .per-day-channels {
   margin-bottom: 1em;
@@ -408,6 +401,26 @@ h3 {
 .table-control-button {
   border: none;
   background: inherit;
+}
+
+.jump-buttons {
+  position: absolute;
+  width: 30px;
+  height: 60px;
+  display: flex;
+  flex-direction: column;
+  bottom: -80px;
+  left: -30px;
+}
+.jump-buttons .jump-button {
+  height: 30px;
+  width: 30px;
+  border: none;
+  padding: 3px;
+  margin-bottom: 2px;
+}
+.jump-buttons .to-bottom {
+  transform: rotate(180deg);
 }
 
 /*# sourceMappingURL=main.css.map */

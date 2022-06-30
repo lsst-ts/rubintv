@@ -134,9 +134,10 @@ function makeTableSortable() {
   });
 }
 
-function addToTopBottomControls($elementToAppendTo) {
-  let toTop = $('<button>', {class: "to-top button"}).text("Jump to top ↑");
-  let toBottom =  $('<button>', {class: "to-bottom button"}).text("Jump to bottom ↓");
+function addToTopBottomControls() {
+  let icon = $('<img>',{src: "/rubintv/static/images/to-top.svg"});
+  let toTop = $('<button>', {class: "to-top jump-button", title:"To top"}).append(icon);
+  let toBottom =  $('<button>', {class: "to-bottom jump-button", title:"To bottom"}).append(icon.clone());
   toTop.click(function(){
     let tableHeight = $('#table-top').offset().top;
     $(window).scrollTop(tableHeight);
@@ -145,5 +146,5 @@ function addToTopBottomControls($elementToAppendTo) {
     let tableHeight = $('table').offset().top + $('table').height();
     $(window).scrollTop(tableHeight);
   });
-  $elementToAppendTo.append(toTop).append(toBottom);
+  $('.jump-buttons').append(toTop).append(toBottom);
 }
