@@ -60,51 +60,54 @@ export function applySelected(metaData, selection, sortable = false) {
 
 export function createTableControlUI(metaData, $elementToAppendTo, selection){
   // empty object test- there's no data, just go home
-  if (Object.getOwnPropertyNames(metaData).length == 0) return;
+  if (Object.keys(metaData).length != 0) {
 
-  let panel = $("<div>", {class: "table-panel"});
-  panel.append($("<button>", {class: "table-control-button", text: "Add/Remove Columns"}));
-  let controls = $("<div>", {class: "table-controls"});
-  // get the first row of data for list of all available attrs
+    let panel = $("<div>", {class: "table-panel"});
+    panel.append($("<button>", {class: "table-control-button", text: "Add/Remove Columns"}));
+    let controls = $("<div>", {class: "table-controls"});
+    // get the first row of data for list of all available attrs
 
-  let attrs = metaData[Object.keys(metaData)[0]];
-  Object.keys(attrs).forEach(attr => {
-    let title = checkbox_mapping[attr] ? checkbox_mapping[attr] : attr
-    let label = $("<label>",{for: attr}).text(title);
-    let checkBox = $("<input>", {type: "checkbox", id: attr, name: attr, value: 1});
-    if (selection.includes(attr)) {
-      checkBox.attr('checked', true);
+    let attrs = metaData[Object.keys(metaData)[0]];
+    Object.keys(attrs).forEach(attr => {
+      let title = checkbox_mapping[attr] ? checkbox_mapping[attr] : attr
+      let label = $("<label>",{for: attr}).text(title);
+      let checkBox = $("<input>", {type: "checkbox", id: attr, name: attr, value: 1});
+      if (selection.includes(attr)) {
+        checkBox.attr('checked', true);
+      }
+      let control = $("<div>",{class: "table-control"});
+      label.prepend(checkBox);
+      control.append(label);
+      controls.append(control);
+    });
+    panel.append(controls);
+    $elementToAppendTo.append(panel);
+
+    if (controlsOpen) {
+      $(".table-panel").addClass('open');
     }
-    let control = $("<div>",{class: "table-control"});
-    label.prepend(checkBox);
-    control.append(label);
-    controls.append(control);
-  });
-  panel.append(controls);
-  $elementToAppendTo.append(panel);
 
-  if (controlsOpen) {
-    $(".table-panel").addClass('open');
+    $(".table-control [type='checkbox']").change(function(e) {
+      if (selection.includes(this.name)){
+       selection.splice(selection.indexOf(this.name), 1);
+       $('table .' + this.name).remove()
+      } else {
+       selection.push(this.name);
+       applySelected(metaData, [this.name]);
+      }
+     });
+
+     $(".table-control-button").click(function(){
+      $(".table-panel").toggleClass('open');
+      if (controlsOpen) {
+        controlsOpen = false;
+      } else {
+        controlsOpen = true;
+      }
+     });
   }
 
-  $(".table-control [type='checkbox']").change(function(e) {
-    if (selection.includes(this.name)){
-     selection.splice(selection.indexOf(this.name), 1);
-     $('table .' + this.name).remove()
-    } else {
-     selection.push(this.name);
-     applySelected(metaData, [this.name]);
-    }
-   });
-
-   $(".table-control-button").click(function(){
-    $(".table-panel").toggleClass('open');
-    if (controlsOpen) {
-      controlsOpen = false;
-    } else {
-      controlsOpen = true;
-    }
-   });
+  addToTopBottomControls($elementToAppendTo)
 }
 
 function makeTableSortable() {
@@ -129,4 +132,18 @@ function makeTableSortable() {
         asc = !asc
     });
   });
+}
+
+function addToTopBottomControls($elementToAppendTo) {
+  let toTop = $('<button>', {class: "to-top button"}).text("jump to top");
+  let toBottom =  $('<button>', {class: "to-bottom button"}).text("jump to bottom");
+  toTop.click(function(){
+    let tableHeight = $('#table-top').offset().top;
+    $(window).scrollTop(tableHeight);
+  });
+  toBottom.click(function(){
+    let tableHeight = $('table').offset().top + $('table').height();
+    $(window).scrollTop(tableHeight);
+  });
+  $elementToAppendTo.append(toTop).append(toBottom);
 }
