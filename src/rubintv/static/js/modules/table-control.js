@@ -71,12 +71,12 @@ export function createTableControlUI(metaData, $elementToAppendTo, selection){
   Object.keys(attrs).forEach(attr => {
     let title = checkbox_mapping[attr] ? checkbox_mapping[attr] : attr
     let label = $("<label>",{for: attr}).text(title);
-    let checkBox = $("<input>", {type: "checkbox", name: attr, value: 1});
+    let checkBox = $("<input>", {type: "checkbox", id: attr, name: attr, value: 1});
     if (selection.includes(attr)) {
       checkBox.attr('checked', true);
     }
     let control = $("<div>",{class: "table-control"});
-    control.append(checkBox);
+    label.prepend(checkBox);
     control.append(label);
     controls.append(control);
   });

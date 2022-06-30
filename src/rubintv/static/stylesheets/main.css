@@ -381,6 +381,15 @@ h3 {
   border-top: none;
   background: #eee;
 }
+.table-controls label {
+  padding: 3px 0px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.table-controls label:hover {
+  background: #ddd;
+}
 
 .table-panel.open .table-controls {
   display: block;
