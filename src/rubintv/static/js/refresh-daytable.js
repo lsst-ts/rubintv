@@ -17,18 +17,18 @@ import { createTableControlUI, applySelected, loadMetadata } from "./modules/tab
   applySelected(meta, defaultSelected);
   let selected = defaultSelected;
 
-  // setInterval(function refreshTable(){
-  //   let date = $('.the-date')[0].dataset.date;
-  //   let url_path = document.location.pathname;
-  //   $.get(url_path + "/update/" + date, function(res){
-  //     $('.channel-day-data').html(res);
-  //   }).done(function(){
-  //     meta = loadMetadata();
-  //     applySelected(meta, selected);
-  //     createTableControlUI(meta, $('.channel-grid-heading'), selected);
-  //   }).fail(function(){
-  //     console.log("Couldn't reach server");
-  //   })
-  // }, 5000);
+  setInterval(function refreshTable(){
+    let date = $('.the-date')[0].dataset.date;
+    let url_path = document.location.pathname;
+    $.get(url_path + "/update/" + date, function(res){
+      $('.channel-day-data').html(res);
+    }).done(function(){
+      meta = loadMetadata();
+      applySelected(meta, selected);
+      createTableControlUI(meta, $('.channel-grid-heading'), selected);
+    }).fail(function(){
+      console.log("Couldn't reach server");
+    })
+  }, 5000);
 
 })(jQuery)
