@@ -145,7 +145,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
 
             the_date = events[0].date
             per_day = {}
-            per_day['movie'] = get_movie_url(bucket, camera, the_date, logger)
+            per_day["movie"] = get_movie_url(bucket, camera, the_date, logger)
 
             logger.info(per_day)
 
@@ -202,7 +202,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
         )
 
         per_day = {}
-        per_day['movie'] = get_movie_url(bucket, camera, the_date, logger)
+        per_day["movie"] = get_movie_url(bucket, camera, the_date, logger)
 
         page = get_formatted_page(
             "cameras/data-table-header.jinja",
@@ -210,7 +210,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
             date=the_date,
             events=events,
             metadata=metadata_json,
-            per_day=per_day
+            per_day=per_day,
         )
 
     logger.info("update_todays_table", duration=timer.seconds)
@@ -249,7 +249,7 @@ async def get_historical(request: web.Request) -> web.Response:
         )
 
         per_day = {}
-        per_day['movie'] = get_movie_url(bucket, camera, smrd, logger)
+        per_day["movie"] = get_movie_url(bucket, camera, smrd, logger)
 
         page = get_formatted_page(
             "cameras/historical.jinja",
@@ -285,7 +285,7 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
     day_events = flatten_events_dict_into_list(camera, day_dict)
 
     per_day = {}
-    per_day['movie'] = get_movie_url(bucket, camera, the_date, logger)
+    per_day["movie"] = get_movie_url(bucket, camera, the_date, logger)
 
     metadata_json = get_metadata_json(
         bucket.name, camera.slug, date_str, logger
@@ -297,13 +297,16 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
         date=the_date,
         events=day_events,
         metadata=metadata_json,
-        per_day=per_day
+        per_day=per_day,
     )
     return web.Response(text=page, content_type="text/html")
 
-def get_movie_url(bucket: Bucket, camera: Camera, a_date: date, logger: Any) -> str:
-    prefix = camera.per_day_channels['movie'].prefix
-    date_str = a_date.strftime('%Y%m%d')
+
+def get_movie_url(
+    bucket: Bucket, camera: Camera, a_date: date, logger: Any
+) -> str:
+    prefix = camera.per_day_channels["movie"].prefix
+    date_str = a_date.strftime("%Y%m%d")
     url = f"https://storage.googleapis.com/{bucket.name}/"
     url += f"{prefix}/dayObs_{date_str}.mp4"
     try:
@@ -314,6 +317,7 @@ def get_movie_url(bucket: Bucket, camera: Camera, a_date: date, logger: Any) -> 
         logger.error(f"Error retrieving movie from {url} with error {e}")
         url = ""
     return url
+
 
 def get_metadata_json(
     bucket_name: str, camera_slug: str, date_str: str, logger: Any
