@@ -57,7 +57,6 @@ class Event:
 
 
 cameras = {
-    # TODO: put back!
     "auxtel": Camera(
         name="AuxTel", slug="auxtel", online=True, has_historical=True
     ),
