@@ -19,7 +19,9 @@ const checkboxMapping = {
   time_begin_tai: 'TAI',
   filter: 'Filter',
   disperser: 'Disperser',
-  airmass: 'Airmass'
+  airmass: 'Airmass',
+  focus_z: 'Focus-Z',
+  seeing: 'DIMM Seeing'
 }
 
 export function loadMetadata () {
