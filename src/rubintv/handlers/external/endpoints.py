@@ -141,7 +141,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
             the_date = events[0].cleanDate()
 
             metadata_json = get_metadata_json(
-                bucket.name, camera.slug, the_date
+                bucket.name, camera.slug, the_date, logger
             )
 
             page = get_formatted_page(
@@ -192,7 +192,9 @@ async def update_todays_table(request: web.Request) -> web.Response:
         )
         events = flatten_events_dict_into_list(camera, events_dict)
 
-        metadata_json = get_metadata_json(bucket.name, camera.slug, date_str)
+        metadata_json = get_metadata_json(
+            bucket.name, camera.slug, date_str, logger
+        )
 
         page = get_formatted_page(
             "cameras/data-table-header.jinja",
@@ -234,7 +236,7 @@ async def get_historical(request: web.Request) -> web.Response:
         smrd_events = flatten_events_dict_into_list(camera, smrd_dict)
 
         metadata_json = get_metadata_json(
-            bucket.name, camera.slug, smrd.strftime("%Y-%m-%d")
+            bucket.name, camera.slug, smrd.strftime("%Y-%m-%d"), logger
         )
 
         page = get_formatted_page(
@@ -255,6 +257,7 @@ async def get_historical(request: web.Request) -> web.Response:
 
 @routes.get("/{camera}/historical/{date_str}")
 async def get_historical_day_data(request: web.Request) -> web.Response:
+    logger = request["safir/logger"]
     bucket = request.config_dict["rubintv/gcs_bucket"]
     camera = cameras[request.match_info["camera"]]
     if not camera.has_historical:
@@ -268,7 +271,9 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
     day_dict = historical.get_events_for_date(camera, the_date)
     day_events = flatten_events_dict_into_list(camera, day_dict)
 
-    metadata_json = get_metadata_json(bucket.name, camera.slug, date_str)
+    metadata_json = get_metadata_json(
+        bucket.name, camera.slug, date_str, logger
+    )
 
     page = get_formatted_page(
         "cameras/data-table-header-with-day-channels.jinja",
@@ -281,14 +286,16 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
 
 
 def get_metadata_json(
-    bucket_name: str, camera_slug: str, date_str: str
+    bucket_name: str, camera_slug: str, date_str: str, logger: Any
 ) -> str:
     metadata_json = "{}"
     metadata_url = get_metadata_url(bucket_name, camera_slug, date_str)
-    metadata_json = requests.get(metadata_url).text
-    metadata_res = requests.get(metadata_url)
-    if metadata_res.status_code == 200:
-        metadata_json = metadata_res.text
+    try:
+        metadata_res = requests.get(metadata_url)
+        if metadata_res.status_code == 200:
+            metadata_json = metadata_res.text
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error retrieving from {metadata_url} with error: {e}")
     return metadata_json
 
 
