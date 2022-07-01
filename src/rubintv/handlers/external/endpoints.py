@@ -137,7 +137,6 @@ async def get_recent_table(request: web.Request) -> web.Response:
         else:
             bucket = request.config_dict["rubintv/gcs_bucket"]
             events = get_most_recent_day_events(bucket, camera)
-            channels = camera.channels
             the_date = events[0].cleanDate()
 
             metadata_json = get_metadata_json(
@@ -148,7 +147,6 @@ async def get_recent_table(request: web.Request) -> web.Response:
                 "cameras/camera.jinja",
                 title=title,
                 camera=camera,
-                channels=channels,
                 date=the_date,
                 events=events,
                 metadata=metadata_json,
@@ -271,6 +269,8 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
     day_dict = historical.get_events_for_date(camera, the_date)
     day_events = flatten_events_dict_into_list(camera, day_dict)
 
+    day_movie = get_movie_url(bucket, camera, the_date)
+
     metadata_json = get_metadata_json(
         bucket.name, camera.slug, date_str, logger
     )
@@ -284,6 +284,8 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
     )
     return web.Response(text=page, content_type="text/html")
 
+def get_movie_url(bucket: Bucket, camera: Camera, a_date: date) -> str:
+    return ""
 
 def get_metadata_json(
     bucket_name: str, camera_slug: str, date_str: str, logger: Any
