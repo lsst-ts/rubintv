@@ -10,6 +10,7 @@ __all__ = [
 import json
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, Iterator, List, Optional
+from importlib_metadata import metadata
 
 import requests
 from aiohttp import web
@@ -140,11 +141,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
             channels = camera.channels
             the_date = events[0].cleanDate()
 
-            metadata_json = "{}"
-            metadata_url = get_metadata_url(bucket.name, camera.slug, the_date)
-            metadata_res = requests.get(metadata_url)
-            if metadata_res.status_code == 200:
-                metadata_json = metadata_res.text
+            metadata_json = get_metadata_json(bucket.name, camera.slug, the_date)
 
             page = get_formatted_page(
                 "cameras/camera.jinja",
@@ -158,15 +155,6 @@ async def get_recent_table(request: web.Request) -> web.Response:
 
     logger.info("get_recent_table", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
-
-
-def get_metadata_url(bucket_name: str, camera_slug: str, date_str: str) -> str:
-    #  reformat the date string from YYYY-m-d to YYYYmmdd
-    date_str = "".join([f"{int(x):02}" for x in date_str.split("-")])
-
-    url = f"https://storage.googleapis.com/{bucket_name}/"
-    url += f"{camera_slug}_metadata/dayObs_{date_str}.json"
-    return url
 
 
 @routes.get("/{camera}/update/{date}")
@@ -203,11 +191,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
         )
         events = flatten_events_dict_into_list(camera, events_dict)
 
-        metadata_json = "{}"
-        metadata_url = get_metadata_url(bucket.name, camera.slug, date_str)
-        metadata_res = requests.get(metadata_url)
-        if metadata_res.status_code == 200:
-            metadata_json = metadata_res.text
+        metadata_json = get_metadata_json(bucket.name, camera.slug, date_str)
 
         page = get_formatted_page(
             "cameras/data-table-header.jinja",
@@ -248,13 +232,7 @@ async def get_historical(request: web.Request) -> web.Response:
         smrd_dict = historical.get_events_for_date(camera, smrd)
         smrd_events = flatten_events_dict_into_list(camera, smrd_dict)
 
-        metadata_json = "{}"
-        metadata_url = get_metadata_url(
-            bucket.name, camera.slug, smrd.strftime("%Y-%m-%d")
-        )
-        metadata_res = requests.get(metadata_url)
-        if metadata_res.status_code == 200:
-            metadata_json = metadata_res.text
+        metadata_json = get_metadata_json(bucket.name, camera.slug, smrd.strftime("%Y-%m-%d"))
 
         page = get_formatted_page(
             "cameras/historical.jinja",
@@ -287,12 +265,7 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
     day_dict = historical.get_events_for_date(camera, the_date)
     day_events = flatten_events_dict_into_list(camera, day_dict)
 
-    metadata_json = "{}"
-    metadata_url = get_metadata_url(bucket.name, camera.slug, date_str)
-    metadata_json = requests.get(metadata_url).text
-    metadata_res = requests.get(metadata_url)
-    if metadata_res.status_code == 200:
-        metadata_json = metadata_res.text
+    metadata_json = get_metadata_json(bucket.name, camera.slug, date_str)
 
     page = get_formatted_page(
         "cameras/data-table-header-with-day-channels.jinja",
@@ -303,6 +276,22 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
     )
     return web.Response(text=page, content_type="text/html")
 
+def get_metadata_json(bucket_name: str, camera_slug: str, date_str: str) -> str:
+    metadata_json = "{}"
+    metadata_url = get_metadata_url(bucket_name, camera_slug, date_str)
+    metadata_json = requests.get(metadata_url).text
+    metadata_res = requests.get(metadata_url)
+    if metadata_res.status_code == 200:
+        metadata_json = metadata_res.text
+    return metadata_json
+
+def get_metadata_url(bucket_name: str, camera_slug: str, date_str: str) -> str:
+    #  reformat the date string from YYYY-m-d to YYYYmmdd
+    date_str = "".join([f"{int(x):02}" for x in date_str.split("-")])
+
+    url = f"https://storage.googleapis.com/{bucket_name}/"
+    url += f"{camera_slug}_metadata/dayObs_{date_str}.json"
+    return url
 
 def month_names() -> List[str]:
     return [date(2000, m, 1).strftime("%B") for m in list(range(1, 13))]
