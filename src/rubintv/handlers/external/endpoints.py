@@ -147,8 +147,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
             per_day = {}
             movie = get_movie_url(bucket, camera, the_date, logger)
             if movie:
-                per_day["movie"]  = movie
-
+                per_day["movie"] = movie
 
             page = get_formatted_page(
                 "cameras/camera.jinja",
@@ -205,7 +204,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
         per_day = {}
         movie = get_movie_url(bucket, camera, the_date, logger)
         if movie:
-            per_day["movie"]  = movie
+            per_day["movie"] = movie
 
         page = get_formatted_page(
             "cameras/data-table-header.jinja",
@@ -254,7 +253,7 @@ async def get_historical(request: web.Request) -> web.Response:
         per_day = {}
         movie = get_movie_url(bucket, camera, smrd, logger)
         if movie:
-            per_day["movie"]  = movie
+            per_day["movie"] = movie
 
         page = get_formatted_page(
             "cameras/historical.jinja",
@@ -292,7 +291,7 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
     per_day = {}
     movie = get_movie_url(bucket, camera, the_date, logger)
     if movie:
-        per_day["movie"]  = movie
+        per_day["movie"] = movie
 
     metadata_json = get_metadata_json(
         bucket.name, camera.slug, date_str, logger
