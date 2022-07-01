@@ -21,7 +21,7 @@ const checkboxMapping = {
   disperser: 'Disperser',
   airmass: 'Airmass',
   focus_z: 'Focus-Z',
-  seeing: 'DIMM Seeing'
+  Seeing: 'DIMM Seeing'
 }
 
 export function loadMetadata () {
