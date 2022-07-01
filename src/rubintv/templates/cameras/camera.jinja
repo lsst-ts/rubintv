@@ -15,12 +15,12 @@
     <nav id="per-image-menu" class="channel-menu" role="navigation">
       <h3>Per Image Channels: Current</h3>
       <ul class="channels flr">
-        {% for channel in channels %}
-          {% if channels[channel].label %}
+        {% for channel in camera.channels %}
+          {% if camera.channels[channel].label %}
             <li class="channel">
               <a  class="button button-large {{channel}}"
                   href="/rubintv/{{ camera.slug }}/{{channel}}_current" target="_blank">
-                <span>{{ channels[channel].name }}</span>
+                <span>{{ camera.channels[channel].name }}</span>
               </a>
             </li>
           {% endif %}
