@@ -141,4 +141,10 @@ dmypy.json
 
 # jupyter notebooks
 *.ipynb
-.ipynb_checkpoints
+
+# npm and eslint
+*/jsconfig.json
+.eslintrc.*
+node_modules/
+package-lock.json
+package.json
