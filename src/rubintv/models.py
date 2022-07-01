@@ -43,7 +43,7 @@ class Event:
         date = nList[2]
         seq_str = nList[4][:-4]  # Strip extension
         if seq_str == "final":
-            seq = 0
+            seq = 99999
         else:
             seq = int(seq_str)
         return (name, prefix, datetime.strptime(date, "%Y-%m-%d"), seq)

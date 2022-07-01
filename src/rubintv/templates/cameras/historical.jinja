@@ -1,16 +1,14 @@
 {% extends "cameras/layout.jinja" %}
 {% block content %}
 <h2>Historical Data</h2>
-<div class="columns">
-  <section class="calendar">
-    {% include "cameras/calendar.jinja" %}
-  </section>
-  <section class="channel-day-data">
-    {% include "cameras/data-table-header-with-day-channels.jinja" %}
-  </section>
-</div>
+<section class="calendar">
+  {% include "cameras/calendar.jinja" %}
+</section>
+<section class="channel-day-data">
+  {% include "cameras/data-table-header-with-day-channels.jinja" %}
+</section>
 {% endblock content %}
 {% block footer_scripts %}
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script type=text/javascript src="/rubintv/static/js/calendar.js"></script>
+<script type=module src="/rubintv/static/js/calendar.js"></script>
 {% endblock footer_scripts %}

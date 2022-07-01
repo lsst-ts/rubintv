@@ -16,9 +16,15 @@
                 <img class="logo" src="/rubintv/static/images/Rubin_Logo.png">
             </a>
             <div class="title">
-                <h1>RubinTV Image Display Service</h1>
-                {% block subtitle %}
-                {% endblock subtitle %}
+               <h1>
+                    {% block title %}
+                        RubinTV Image Display Service
+                    {% endblock title %}
+                    {% block subtitle %}
+                    {% endblock subtitle %}
+                </h1>
+                {% block undertitle %}
+                {% endblock undertitle %}
             </div>
         </header>
         {% block content %}

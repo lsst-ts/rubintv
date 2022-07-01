@@ -1,14 +1,16 @@
-(function($){
+/* global jQuery */
+
+(function ($) {
   // click to retrieve & display data for day:
-  $('.day').click(function(){
-    let date = this.dataset.date;
-    let url_path = document.location.pathname;
-    $('.current-movie').load(url_path + "/" + date);
-  });
-  $('.year-title').click(function(){
-    $year_to_open = $(this).parent('.year');
-    if ($year_to_open.hasClass('open')) return;
+  $('.day').click(function () {
+    const date = this.dataset.date
+    const urlPath = document.location.pathname
+    $('.current-movie').load(urlPath + '/' + date)
+  })
+  $('.year-title').click(function () {
+    const $yearToOpen = $(this).parent('.year')
+    if ($yearToOpen.hasClass('open')) return
     $('.year.open').removeClass('open').addClass('closed')
-    $year_to_open.removeClass('closed').addClass('open');
-  });
+    $yearToOpen.removeClass('closed').addClass('open')
+  })
 })(jQuery)

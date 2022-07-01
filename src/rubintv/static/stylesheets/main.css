@@ -1,7 +1,8 @@
 @charset "UTF-8";
 @import "reset.css";
 .calendar {
-  flex-basis: 50%;
+  width: 50%;
+  min-width: 600px;
   padding-top: 4em;
   margin-top: -2em;
 }
@@ -180,7 +181,7 @@ body {
 
 header {
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   margin-bottom: 2em;
 }
 header .logo {
@@ -189,10 +190,30 @@ header .logo {
 }
 header .title {
   margin-left: 2em;
-  margin-bottom: -2px;
+  display: flex;
+  flex-direction: column;
 }
 header .title h1 {
   margin: 0;
+}
+header .title h1 a {
+  display: inline-block;
+  font-size: 1em;
+}
+header .title .historical {
+  width: max-content;
+  margin-top: 2px;
+  padding: 0.5em 0.9em;
+  border-radius: 9px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 100%;
+}
+header .title .historical img {
+  height: 1em;
+  width: auto;
+  margin-left: 4px;
 }
 
 .page-title {
@@ -200,7 +221,8 @@ header .title h1 {
 }
 
 [class$=-menu] {
-  margin-bottom: 3em;
+  position: relative;
+  z-index: 23;
 }
 [class$=-menu] li {
   margin-right: 1em;
@@ -218,6 +240,10 @@ h3 {
 }
 .columns > * {
   padding-right: 2em;
+}
+
+#per-image-menu {
+  flex-basis: 70%;
 }
 
 .channel-day-data {
@@ -273,9 +299,17 @@ h3 {
 
 .channel-grid-heading {
   background: #fff;
-  padding: 2em 0 0.5em;
+  padding-top: 1em;
   position: sticky;
   top: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 3.7em;
+  z-index: 23;
+}
+.channel-grid-heading h3 {
+  margin-bottom: 0;
 }
 
 .per-day-channels {
@@ -287,27 +321,109 @@ h3 {
 
 .channel-grid {
   font-family: "Monaco", monospace, monospace;
-  display: grid;
-  gap: 2px;
+  border-spacing: 2px;
+  border-collapse: separate;
 }
 
-.grid-title.gt-channel {
-  transform: rotate(270deg);
-  transform-origin: 0.8em 2px;
+.grid-title {
+  text-align: left;
+  position: sticky;
+  top: 11em;
+}
+.grid-title.sideways {
+  max-width: 40px;
+  transform: rotate(315deg);
+  transform-origin: 7px -2px;
+  white-space: nowrap;
 }
 
 .grid-cell {
   background-color: #f0f0f0;
   padding: 0.3em;
-  display: flex;
-  align-content: center;
-  flex-direction: row;
-  justify-content: flex-start;
+  vertical-align: middle;
+  height: 42px;
+  box-sizing: border-box;
 }
 .grid-cell > div {
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+.table-spacer {
+  background: #fff;
+  height: 8em;
+  position: sticky;
+  top: 4.4em;
+}
+
+.table-panel {
+  background: #eee;
+  padding: 1.2em 19px;
+  border-radius: 20px;
+  margin-left: 1em;
+}
+
+.table-control-button::after {
+  content: "∆";
+  margin-left: 1em;
+  transform-origin: 50% 50%;
+  transform: rotate(90deg);
+  display: inline-block;
+  width: 0.7em;
+  transition: 0.3s;
+}
+
+.table-controls {
+  display: none;
+  position: absolute;
+  padding: 20px;
+  margin: -3px -21px;
+  border: 2px #fff solid;
+  border-top: none;
+  background: #eee;
+}
+.table-controls label {
+  padding: 3px 0px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.table-controls label:hover {
+  background: #ddd;
+}
+
+.table-panel.open .table-controls {
+  display: block;
+}
+.table-panel.open .table-control-button::after {
+  transform: rotate(180deg);
+}
+
+.table-control-button {
+  border: none;
+  background: inherit;
+}
+
+.jump-buttons {
+  position: absolute;
+  width: 30px;
+  height: 86px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  top: 148px;
+  left: -30px;
+  gap: 2px;
+}
+.jump-buttons .jump-button {
+  height: 42px;
+  width: 30px;
+  border: none;
+  padding: 4px;
+}
+.jump-buttons .to-bottom {
+  transform: rotate(180deg);
 }
 
 /*# sourceMappingURL=main.css.map */

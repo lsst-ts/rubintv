@@ -1,5 +1,10 @@
 {% extends "cameras/layout.jinja" %}
-
+{% block undertitle %}
+  <a class="button button historical" href="/rubintv/allsky/historical">
+    Historical movies
+    <img src="/rubintv/static/images/history-line.svg">
+  </a>
+{% endblock undertitle %}
 {% block content %}
   <div class="columns">
 
@@ -15,8 +20,6 @@
       <div class="current-movie">
         {% include "cameras/allsky-monitor.jinja" %}
       </div>
-      <br><br>
-      <a class="button button-large historical" href="/rubintv/allsky/historical">Historical movies</a>
     </section>
   </div>
 {% endblock content %}

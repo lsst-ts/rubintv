@@ -11,6 +11,7 @@ import json
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, Iterator, List, Optional
 
+import requests
 from aiohttp import web
 from google.cloud.storage import Bucket
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -137,25 +138,24 @@ async def get_recent_table(request: web.Request) -> web.Response:
             bucket = request.config_dict["rubintv/gcs_bucket"]
             events = get_most_recent_day_events(bucket, camera)
             channels = camera.channels
-            grid_columns = build_grid_columns_css(channels)
+            the_date = events[0].cleanDate()
+
+            metadata_json = get_metadata_json(
+                bucket.name, camera.slug, the_date, logger
+            )
+
             page = get_formatted_page(
                 "cameras/camera.jinja",
                 title=title,
                 camera=camera,
                 channels=channels,
-                date=events[0].cleanDate(),
+                date=the_date,
                 events=events,
-                grid_columns=grid_columns,
+                metadata=metadata_json,
             )
+
     logger.info("get_recent_table", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
-
-
-def build_grid_columns_css(channels: Dict[str, Channel]) -> str:
-    grid_columns = "1fr"
-    for channel in channels:
-        grid_columns += " 40px"
-    return grid_columns
 
 
 @routes.get("/{camera}/update/{date}")
@@ -191,13 +191,17 @@ async def update_todays_table(request: web.Request) -> web.Response:
             bucket, camera, recent_events, the_date
         )
         events = flatten_events_dict_into_list(camera, events_dict)
-        grid_columns = build_grid_columns_css(camera.channels)
+
+        metadata_json = get_metadata_json(
+            bucket.name, camera.slug, date_str, logger
+        )
+
         page = get_formatted_page(
             "cameras/data-table-header.jinja",
             camera=camera,
             date=the_date,
             events=events,
-            grid_columns=grid_columns,
+            metadata=metadata_json,
         )
 
     logger.info("update_todays_table", duration=timer.seconds)
@@ -208,6 +212,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
 async def get_historical(request: web.Request) -> web.Response:
     logger = request["safir/logger"]
     with Timer() as timer:
+        bucket = request.config_dict["rubintv/gcs_bucket"]
         camera = cameras[request.match_info["camera"]]
         if not camera.has_historical:
             raise web.HTTPNotFound()
@@ -230,7 +235,9 @@ async def get_historical(request: web.Request) -> web.Response:
         smrd_dict = historical.get_events_for_date(camera, smrd)
         smrd_events = flatten_events_dict_into_list(camera, smrd_dict)
 
-        grid_columns = build_grid_columns_css(camera.channels)
+        metadata_json = get_metadata_json(
+            bucket.name, camera.slug, smrd.strftime("%Y-%m-%d"), logger
+        )
 
         page = get_formatted_page(
             "cameras/historical.jinja",
@@ -241,7 +248,7 @@ async def get_historical(request: web.Request) -> web.Response:
             month_names=month_names(),
             date=smrd,
             events=smrd_events,
-            grid_columns=grid_columns,
+            metadata=metadata_json,
         )
 
     logger.info("get_historical", duration=timer.seconds)
@@ -250,6 +257,8 @@ async def get_historical(request: web.Request) -> web.Response:
 
 @routes.get("/{camera}/historical/{date_str}")
 async def get_historical_day_data(request: web.Request) -> web.Response:
+    logger = request["safir/logger"]
+    bucket = request.config_dict["rubintv/gcs_bucket"]
     camera = cameras[request.match_info["camera"]]
     if not camera.has_historical:
         return web.Response(
@@ -261,15 +270,42 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
     the_date = date(year, month, day)
     day_dict = historical.get_events_for_date(camera, the_date)
     day_events = flatten_events_dict_into_list(camera, day_dict)
-    grid_columns = build_grid_columns_css(camera.channels)
+
+    metadata_json = get_metadata_json(
+        bucket.name, camera.slug, date_str, logger
+    )
+
     page = get_formatted_page(
         "cameras/data-table-header-with-day-channels.jinja",
         camera=camera,
         date=the_date,
         events=day_events,
-        grid_columns=grid_columns,
+        metadata=metadata_json,
     )
     return web.Response(text=page, content_type="text/html")
+
+
+def get_metadata_json(
+    bucket_name: str, camera_slug: str, date_str: str, logger: Any
+) -> str:
+    metadata_json = "{}"
+    metadata_url = get_metadata_url(bucket_name, camera_slug, date_str)
+    try:
+        metadata_res = requests.get(metadata_url)
+        if metadata_res.status_code == 200:
+            metadata_json = metadata_res.text
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error retrieving from {metadata_url} with error: {e}")
+    return metadata_json
+
+
+def get_metadata_url(bucket_name: str, camera_slug: str, date_str: str) -> str:
+    #  reformat the date string from YYYY-m-d to YYYYmmdd
+    date_str = "".join([f"{int(x):02}" for x in date_str.split("-")])
+
+    url = f"https://storage.googleapis.com/{bucket_name}/"
+    url += f"{camera_slug}_metadata/dayObs_{date_str}.json"
+    return url
 
 
 def month_names() -> List[str]:

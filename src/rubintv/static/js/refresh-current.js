@@ -1,9 +1,7 @@
-$(document).ready(function () {
-  refreshDiv();
-});
+/* global jQuery */
 
-function refreshDiv() {
-  $('#refresher').load(window.location.href + ' #refresher', function () {
-    setTimeout(refreshDiv, 5000);
-  });
-}
+(function ($) {
+  setTimeout(function () {
+    $('#refresher').load(window.location.href + ' #refresher')
+  }, 5000)
+})(jQuery)
