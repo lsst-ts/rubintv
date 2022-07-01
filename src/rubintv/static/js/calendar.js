@@ -3,13 +3,13 @@ import { createTableControlUI, applySelected, loadMetadata } from './modules/tab
 
 (function ($) {
   const defaultSelected = [
-    'exposureTime',
-    'observationType',
-    'targetName',
+    'exposure_time',
+    'observation_type',
+    'target_name',
     'filter',
     'disperser',
     'airmass',
-    'timeBeginTai'
+    'time_begin_tai'
   ]
 
   let meta = loadMetadata()
