@@ -27,7 +27,22 @@
         {% endfor %}
       </ul>
     </nav>
-    {% include "cameras/per-day-channels.jinja" %}
+     {% if per_day | length %}
+      <nav id="per-night-menu" class="channel-menu" role="navigation">
+        <h3>Per Night Channels</h3>
+        <ul class="channels flr">
+          {% for pd_channel_name in per_day %}
+            <li class="channel">
+              <a  class="button button-large {{ pd_channel_name }}"
+                  href="{{ per_day[pd_channel_name] }}">
+                <img src="/rubintv/static/images/{{ pd_channel_name }}.svg">
+                Tonight's Movie
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </nav>
+    {% endif %}
   </div>
 
     <section class="channel-day-data">
