@@ -137,19 +137,26 @@ async def get_recent_table(request: web.Request) -> web.Response:
         else:
             bucket = request.config_dict["rubintv/gcs_bucket"]
             events = get_most_recent_day_events(bucket, camera)
-            the_date = events[0].cleanDate()
+            date_str = events[0].cleanDate()
 
             metadata_json = get_metadata_json(
-                bucket.name, camera.slug, the_date, logger
+                bucket.name, camera.slug, date_str, logger
             )
+
+            the_date = events[0].date
+            per_day = {}
+            per_day['movie'] = get_movie_url(bucket, camera, the_date, logger)
+
+            logger.info(per_day)
 
             page = get_formatted_page(
                 "cameras/camera.jinja",
                 title=title,
                 camera=camera,
-                date=the_date,
+                date=date_str,
                 events=events,
                 metadata=metadata_json,
+                per_day=per_day,
             )
 
     logger.info("get_recent_table", duration=timer.seconds)
@@ -194,12 +201,16 @@ async def update_todays_table(request: web.Request) -> web.Response:
             bucket.name, camera.slug, date_str, logger
         )
 
+        per_day = {}
+        per_day['movie'] = get_movie_url(bucket, camera, the_date, logger)
+
         page = get_formatted_page(
             "cameras/data-table-header.jinja",
             camera=camera,
             date=the_date,
             events=events,
             metadata=metadata_json,
+            per_day=per_day
         )
 
     logger.info("update_todays_table", duration=timer.seconds)
@@ -237,6 +248,9 @@ async def get_historical(request: web.Request) -> web.Response:
             bucket.name, camera.slug, smrd.strftime("%Y-%m-%d"), logger
         )
 
+        per_day = {}
+        per_day['movie'] = get_movie_url(bucket, camera, smrd, logger)
+
         page = get_formatted_page(
             "cameras/historical.jinja",
             title=title,
@@ -247,6 +261,7 @@ async def get_historical(request: web.Request) -> web.Response:
             date=smrd,
             events=smrd_events,
             metadata=metadata_json,
+            per_day=per_day,
         )
 
     logger.info("get_historical", duration=timer.seconds)
@@ -269,7 +284,8 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
     day_dict = historical.get_events_for_date(camera, the_date)
     day_events = flatten_events_dict_into_list(camera, day_dict)
 
-    day_movie = get_movie_url(bucket, camera, the_date)
+    per_day = {}
+    per_day['movie'] = get_movie_url(bucket, camera, the_date, logger)
 
     metadata_json = get_metadata_json(
         bucket.name, camera.slug, date_str, logger
@@ -281,11 +297,23 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
         date=the_date,
         events=day_events,
         metadata=metadata_json,
+        per_day=per_day
     )
     return web.Response(text=page, content_type="text/html")
 
-def get_movie_url(bucket: Bucket, camera: Camera, a_date: date) -> str:
-    return ""
+def get_movie_url(bucket: Bucket, camera: Camera, a_date: date, logger: Any) -> str:
+    prefix = camera.per_day_channels['movie'].prefix
+    date_str = a_date.strftime('%Y%m%d')
+    url = f"https://storage.googleapis.com/{bucket.name}/"
+    url += f"{prefix}/dayObs_{date_str}.mp4"
+    try:
+        res = requests.head(url)
+        if res.status_code != 200:
+            url = ""
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error retrieving movie from {url} with error {e}")
+        url = ""
+    return url
 
 def get_metadata_json(
     bucket_name: str, camera_slug: str, date_str: str, logger: Any

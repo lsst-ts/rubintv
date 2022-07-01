@@ -165,6 +165,10 @@ a:hover {
   color: #fff;
 }
 
+.button.movie {
+  background-color: #83daee;
+}
+
 html {
   font-family: "Rubik", sans-serif;
   font-size: 16px;

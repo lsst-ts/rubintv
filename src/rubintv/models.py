@@ -57,6 +57,7 @@ class Event:
 
 
 cameras = {
+    # TODO: put back!
     "auxtel": Camera(
         name="AuxTel", slug="auxtel", online=True, has_historical=True
     ),
@@ -111,7 +112,7 @@ cameras["auxtel"].per_day_channels = {
         simplename="rolling",
     ),
     "movie": Channel(
-        name="Tonight's Movie", prefix="auxtel_movie", simplename="movie"
+        name="Tonight's Movie", prefix="auxtel_movies", simplename="movie"
     ),
 }
 
