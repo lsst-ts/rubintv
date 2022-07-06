@@ -9,7 +9,8 @@ import { createTableControlUI, applySelected, loadMetadata } from './modules/tab
     'filter',
     'disperser',
     'airmass',
-    'time_begin_tai'
+    'time_begin_tai',
+    'Seeing'
   ]
 
   let meta = loadMetadata()

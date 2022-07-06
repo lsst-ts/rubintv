@@ -15,32 +15,33 @@
     <nav id="per-image-menu" class="channel-menu" role="navigation">
       <h3>Per Image Channels: Current</h3>
       <ul class="channels flr">
-        {% for channel in channels %}
-          {% if channels[channel].label %}
+        {% for channel in camera.channels %}
+          {% if camera.channels[channel].label %}
             <li class="channel">
               <a  class="button button-large {{channel}}"
                   href="/rubintv/{{ camera.slug }}/{{channel}}_current" target="_blank">
-                <span>{{ channels[channel].name }}</span>
+                <span>{{ camera.channels[channel].name }}</span>
               </a>
             </li>
           {% endif %}
         {% endfor %}
       </ul>
     </nav>
-
-      {% if camera.per_day_channels | length %}
-        <nav id="per-night-menu" class="channel-menu" role="navigation">
-          <h3>Per Night Channels</h3>
-          <ul class="channels flr">
-            {% for pn_channel in camera.per_day_channels.values() %}
-              <li class="channel">
-                <a class="button button-small" href="#">
-                  {{ pn_channel.name }}
-                </a>
-              </li>
-            {% endfor %}
-          </ul>
-        </nav>
+     {% if per_day | length %}
+      <nav id="per-night-menu" class="channel-menu" role="navigation">
+        <h3>Per Night Channels</h3>
+        <ul class="channels flr">
+          {% for pd_channel_name in per_day %}
+            <li class="channel">
+              <a  class="button button-large {{ pd_channel_name }}"
+                  href="{{ per_day[pd_channel_name] }}">
+                <img src="/rubintv/static/images/{{ pd_channel_name }}.svg">
+                Tonight's Movie
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </nav>
     {% endif %}
   </div>
 

@@ -111,7 +111,7 @@ cameras["auxtel"].per_day_channels = {
         simplename="rolling",
     ),
     "movie": Channel(
-        name="Tonight's Movie", prefix="auxtel_movie", simplename="movie"
+        name="Tonight's Movie", prefix="auxtel_movies", simplename="movie"
     ),
 }
 
