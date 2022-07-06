@@ -137,23 +137,16 @@ async def get_recent_table(request: web.Request) -> web.Response:
         else:
             bucket = request.config_dict["rubintv/gcs_bucket"]
             events = get_most_recent_day_events(bucket, camera)
-            date_str = events[0].cleanDate()
-
-            metadata_json = get_metadata_json(
-                bucket.name, camera.slug, date_str, logger
-            )
-
             the_date = events[0].date
-            per_day = {}
-            movie = get_movie_url(bucket, camera, the_date, logger)
-            if movie:
-                per_day["movie"] = movie
+
+            metadata_json = get_metadata_json(bucket, camera, the_date, logger)
+            per_day = get_per_day_channels(bucket, camera, the_date, logger)
 
             page = get_formatted_page(
                 "cameras/camera.jinja",
                 title=title,
                 camera=camera,
-                date=date_str,
+                date=the_date.strftime("%Y-%m-%d"),
                 events=events,
                 metadata=metadata_json,
                 per_day=per_day,
@@ -197,14 +190,8 @@ async def update_todays_table(request: web.Request) -> web.Response:
         )
         events = flatten_events_dict_into_list(camera, events_dict)
 
-        metadata_json = get_metadata_json(
-            bucket.name, camera.slug, date_str, logger
-        )
-
-        per_day = {}
-        movie = get_movie_url(bucket, camera, the_date, logger)
-        if movie:
-            per_day["movie"] = movie
+        metadata_json = get_metadata_json(bucket, camera, the_date, logger)
+        per_day = get_per_day_channels(bucket, camera, the_date, logger)
 
         page = get_formatted_page(
             "cameras/data-table-header.jinja",
@@ -246,14 +233,8 @@ async def get_historical(request: web.Request) -> web.Response:
         smrd_dict = historical.get_events_for_date(camera, smrd)
         smrd_events = flatten_events_dict_into_list(camera, smrd_dict)
 
-        metadata_json = get_metadata_json(
-            bucket.name, camera.slug, smrd.strftime("%Y-%m-%d"), logger
-        )
-
-        per_day = {}
-        movie = get_movie_url(bucket, camera, smrd, logger)
-        if movie:
-            per_day["movie"] = movie
+        metadata_json = get_metadata_json(bucket, camera, smrd, logger)
+        per_day = get_per_day_channels(bucket, camera, smrd, logger)
 
         page = get_formatted_page(
             "cameras/historical.jinja",
@@ -288,14 +269,8 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
     day_dict = historical.get_events_for_date(camera, the_date)
     day_events = flatten_events_dict_into_list(camera, day_dict)
 
-    per_day = {}
-    movie = get_movie_url(bucket, camera, the_date, logger)
-    if movie:
-        per_day["movie"] = movie
-
-    metadata_json = get_metadata_json(
-        bucket.name, camera.slug, date_str, logger
-    )
+    per_day = get_per_day_channels(bucket, camera, the_date, logger)
+    metadata_json = get_metadata_json(bucket, camera, the_date, logger)
 
     page = get_formatted_page(
         "cameras/historical-update.jinja",
@@ -306,6 +281,15 @@ async def get_historical_day_data(request: web.Request) -> web.Response:
         per_day=per_day,
     )
     return web.Response(text=page, content_type="text/html")
+
+
+def get_per_day_channels(
+    bucket: Bucket, camera: Camera, the_date: date, logger: Any
+) -> dict[str, str]:
+    per_day_channels = {}
+    if movie_url := get_movie_url(bucket, camera, the_date, logger):
+        per_day_channels["movie"] = movie_url
+    return per_day_channels
 
 
 def get_movie_url(
@@ -326,10 +310,11 @@ def get_movie_url(
 
 
 def get_metadata_json(
-    bucket_name: str, camera_slug: str, date_str: str, logger: Any
+    bucket: Bucket, camera: Camera, a_date: date, logger: Any
 ) -> str:
+    date_str = a_date.strftime("%Y%m%d")
     metadata_json = "{}"
-    metadata_url = get_metadata_url(bucket_name, camera_slug, date_str)
+    metadata_url = get_metadata_url(bucket.name, camera.slug, date_str)
     try:
         metadata_res = requests.get(metadata_url)
         if metadata_res.status_code == 200:
@@ -340,9 +325,6 @@ def get_metadata_json(
 
 
 def get_metadata_url(bucket_name: str, camera_slug: str, date_str: str) -> str:
-    #  reformat the date string from YYYY-m-d to YYYYmmdd
-    date_str = "".join([f"{int(x):02}" for x in date_str.split("-")])
-
     url = f"https://storage.googleapis.com/{bucket_name}/"
     url += f"{camera_slug}_metadata/dayObs_{date_str}.json"
     return url
