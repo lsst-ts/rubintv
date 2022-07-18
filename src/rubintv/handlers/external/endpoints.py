@@ -277,16 +277,9 @@ async def get_historical(request: web.Request) -> dict[str, Any]:
         active_years = historical.get_years(camera)
         reverse_years = sorted(active_years, reverse=True)
         year_to_display = reverse_years[0]
-        years = {}
-        for year in reverse_years:
-            months = historical.get_months_for_year(camera, year)
-            months_days = {
-                month: historical.get_days_for_month_and_year(
-                    camera, month, year
-                )
-                for month in months
-            }
-            years[year] = months_days
+
+        years = historical.get_camera_calendar(camera)
+
         smrd = historical.get_second_most_recent_day(camera)
         smrd_dict = historical.get_events_for_date(camera, smrd)
         smrd_events = flatten_events_dict_into_list(camera, smrd_dict)
@@ -312,16 +305,21 @@ async def get_historical(request: web.Request) -> dict[str, Any]:
 @template("cameras/historical-update.jinja")
 async def get_historical_day_data(request: web.Request) -> dict[str, Any]:
     logger = request["safir/logger"]
+    historical = request.config_dict["rubintv/historical_data"]
     bucket = request.config_dict["rubintv/gcs_bucket"]
+
     camera = cameras[request.match_info["camera"]]
     if not camera.has_historical:
         raise web.HTTPNotFound
     date_str = request.match_info["date_str"]
-    historical = request.config_dict["rubintv/historical_data"]
+    title = build_title(camera.name, "Historical", date_str, request=request)
+
     year, month, day = [int(s) for s in date_str.split("-")]
     the_date = date(year, month, day)
     day_dict = historical.get_events_for_date(camera, the_date)
     day_events = flatten_events_dict_into_list(camera, day_dict)
+
+    years = historical.get_camera_calendar(camera)
 
     per_day = get_per_day_channels(bucket, camera, the_date, logger)
     metadata_json = get_metadata_json(bucket, camera, the_date, logger)
