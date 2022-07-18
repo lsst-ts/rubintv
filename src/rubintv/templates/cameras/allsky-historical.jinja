@@ -19,7 +19,11 @@
                 </h5>
                 <div class="days">
                   {% for day in years[year][month] %}
-                    <div class="day" data-date="{{ year }}-{{ month }}-{{ day }}">{{ day }}</div>
+                    <a
+                      class="day"
+                      href="/rubintv/allsky/historical/{{ year }}-{{ month }}-{{ day }}">
+                      {{ day }}
+                    </a>
                   {% endfor %}
                 </div>  {# end of days #}
               </div> {# end of month #}

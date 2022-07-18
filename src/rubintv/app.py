@@ -234,3 +234,19 @@ class HistoricalData:
         camera_name = camera.slug
         events = self._get_events()[camera_name]["monitor"]
         return events[0]
+
+    def get_camera_calendar(
+        self, camera: Camera
+    ) -> Dict[int, Dict[int, Dict[int, int]]]:
+        """TODO Docstring"""
+        active_years = self.get_years(camera)
+        reverse_years = sorted(active_years, reverse=True)
+        years = {}
+        for year in reverse_years:
+            months = self.get_months_for_year(camera, year)
+            months_days = {
+                month: self.get_days_for_month_and_year(camera, month, year)
+                for month in months
+            }
+            years[year] = months_days
+        return years
