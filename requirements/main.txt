@@ -280,9 +280,9 @@ google-api-core==2.8.2 \
     # via
     #   google-cloud-core
     #   google-cloud-storage
-google-auth==2.9.0 \
-    --hash=sha256:3b2f9d2f436cc7c3b363d0ac66470f42fede249c3bafcc504e9f0bcbe983cff0 \
-    --hash=sha256:75b3977e7e22784607e074800048f44d6a56df589fb2abe58a11d4d20c97c314
+google-auth==2.9.1 \
+    --hash=sha256:14292fa3429f2bb1e99862554cde1ee730d6840ebae067814d3d15d8549c0888 \
+    --hash=sha256:5a7eed0cb0e3a83989fad0b59fe1329dfc8c479543039cd6fd1e01e9adf39475
     # via
     #   google-api-core
     #   google-cloud-core
@@ -344,9 +344,9 @@ google-resumable-media==2.3.3 \
     --hash=sha256:27c52620bd364d1c8116eaac4ea2afcbfb81ae9139fb3199652fcac1724bfb6c \
     --hash=sha256:5b52774ea7a829a8cdaa8bd2d4c3d4bc660c91b30857ab2668d0eb830f4ea8c5
     # via google-cloud-storage
-googleapis-common-protos==1.56.3 \
-    --hash=sha256:6f1369b58ed6cf3a4b7054a44ebe8d03b29c309257583a2bbdc064cd1e4a1442 \
-    --hash=sha256:87955d7b3a73e6e803f2572a33179de23989ebba725e05ea42f24838b792e461
+googleapis-common-protos==1.56.4 \
+    --hash=sha256:8eb2cbc91b69feaf23e32452a7ae60e791e09967d81d4fcc7fc388182d1bd394 \
+    --hash=sha256:c25873c47279387cfdcbdafa36149887901d36202cb645a0e4f29686bf6e4417
     # via google-api-core
 idna==3.3 \
     --hash=sha256:84d9dd047ffa80596e0f246e2eab0b391788b0503584e8945f2368256d2735ff \
