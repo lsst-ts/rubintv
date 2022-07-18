@@ -104,6 +104,7 @@ h6 {
 .button {
   box-sizing: border-box;
   border-radius: 10%;
+  border: none;
   background: #eee;
   color: #000;
   display: flex;
@@ -122,8 +123,10 @@ h6 {
 }
 
 .button-small {
-  width: 100px;
+  padding: 1em;
   height: 67px;
+  width: fit-content;
+  min-width: 100px;
 }
 
 .button-table {
@@ -168,6 +171,10 @@ a:hover {
 .button.movie {
   background-color: #83daee;
   text-align: center;
+}
+
+.button.admin {
+  background-color: #999;
 }
 
 html {
@@ -429,6 +436,10 @@ h3 {
 }
 .jump-buttons .to-bottom {
   transform: rotate(180deg);
+}
+
+.admin-access {
+  margin-top: 3em;
 }
 
 /*# sourceMappingURL=main.css.map */

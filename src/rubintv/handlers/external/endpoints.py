@@ -31,6 +31,11 @@ async def get_page(request: web.Request) -> dict[str, Any]:
     # return web.Response(text=page, content_type="text/html")
     return {"title": title, "cameras": cameras}
 
+@routes.get("/admin")
+async def get_admin_page(request: web.Request) -> web.Response:
+    title = build_title("Admin", request=request)
+    page = get_formatted_page("admin.jinja", title=title, cameras=cameras)
+    return web.Response(text=page, content_type="text/html")
 
 @routes.get("/allsky")
 @template("cameras/allsky.jinja")

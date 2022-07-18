@@ -19,6 +19,7 @@
 .button
 	box-sizing: border-box
 	border-radius: 10%
+	border: none
 	background: #eee
 	color: #000
 	display: flex
@@ -35,8 +36,10 @@
 	padding: 1.5em
 
 .button-small
-	width: 100px
+	padding: 1em
 	height: 67px
+	width: fit-content
+	min-width: 100px
 
 .button-table
 	width: 30px
@@ -66,6 +69,8 @@ a
 .button.movie
 	background-color: #83daee
 	text-align: center
+.button.admin
+	background-color: #999
 
 html
 	font-family: "Rubik", sans-serif
@@ -287,3 +292,7 @@ h3
 		padding: 4px
 	.to-bottom
 		transform: rotate(180deg)
+
+
+.admin-access
+	margin-top: 3em
