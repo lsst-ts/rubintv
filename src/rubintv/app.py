@@ -238,7 +238,25 @@ class HistoricalData:
     def get_camera_calendar(
         self, camera: Camera
     ) -> Dict[int, Dict[int, Dict[int, int]]]:
-        """TODO Docstring"""
+        """Generates calendar for given Camera
+
+        Provides a dict of days and number of events, within a dict of months, within
+        a dict of years for every event for the given Camera.
+
+        Parameters
+        ----------
+
+        camera : `Camera`
+            The given Camera object
+
+        Returns
+        -------
+
+        years : `Dict[int, Dict[int, Dict[int, int]]]`
+            A data structure for the view to iterate over with years, months, days and num. of
+            events for that day for the given Camera
+
+        """
         active_years = self.get_years(camera)
         reverse_years = sorted(active_years, reverse=True)
         years = {}
