@@ -10,8 +10,8 @@ __all__ = [
 import json
 import os
 from datetime import date, datetime, timedelta
-from typing import Any, Dict, Iterator, List, Optional
 from functools import cache
+from typing import Any, Dict, Iterator, List, Optional
 
 import requests
 from aiohttp import web
@@ -348,6 +348,7 @@ def get_metadata_url(bucket_name: str, camera_slug: str, date_str: str) -> str:
 
 def month_names() -> List[str]:
     return [date(2000, m, 1).strftime("%B") for m in list(range(1, 13))]
+
 
 @cache
 def get_static_resource_timestamp() -> int:
