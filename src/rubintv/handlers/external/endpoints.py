@@ -8,7 +8,9 @@ __all__ = [
 ]
 
 import json
+import os
 from datetime import date, datetime, timedelta
+from functools import cache
 from typing import Any, Dict, Iterator, List, Optional
 
 import requests
@@ -39,12 +41,16 @@ async def get_all_sky_current(request: web.Request) -> web.Response:
     current = get_current_event(image_prefix, bucket)
     movie_prefix = camera.channels["monitor"].prefix
     movie = get_current_event(movie_prefix, bucket)
+
+    css_version = get_static_resource_timestamp()
+
     page = get_formatted_page(
         "cameras/allsky.jinja",
         title=title,
         camera=camera,
         current=current,
         movie=movie,
+        css_version=css_version,
     )
     return web.Response(text=page, content_type="text/html")
 
@@ -88,6 +94,9 @@ async def get_allsky_historical(request: web.Request) -> web.Response:
             }
             years[year] = months_days
         movie = historical.get_most_recent_event(camera)
+
+        css_version = get_static_resource_timestamp()
+
         page = get_formatted_page(
             "cameras/allsky-historical.jinja",
             title=title,
@@ -96,6 +105,7 @@ async def get_allsky_historical(request: web.Request) -> web.Response:
             years=years,
             month_names=month_names(),
             movie=movie,
+            css_version=css_version,
         )
     logger.info("get_allsky_historical", duration=timer.seconds)
     return web.Response(text=page, content_type="text/html")
@@ -142,6 +152,8 @@ async def get_recent_table(request: web.Request) -> web.Response:
             metadata_json = get_metadata_json(bucket, camera, the_date, logger)
             per_day = get_per_day_channels(bucket, camera, the_date, logger)
 
+            css_version = get_static_resource_timestamp()
+
             page = get_formatted_page(
                 "cameras/camera.jinja",
                 title=title,
@@ -150,6 +162,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
                 events=events,
                 metadata=metadata_json,
                 per_day=per_day,
+                css_version=css_version,
             )
 
     logger.info("get_recent_table", duration=timer.seconds)
@@ -236,6 +249,8 @@ async def get_historical(request: web.Request) -> web.Response:
         metadata_json = get_metadata_json(bucket, camera, smrd, logger)
         per_day = get_per_day_channels(bucket, camera, smrd, logger)
 
+        css_version = get_static_resource_timestamp()
+
         page = get_formatted_page(
             "cameras/historical.jinja",
             title=title,
@@ -247,6 +262,7 @@ async def get_historical(request: web.Request) -> web.Response:
             events=smrd_events,
             metadata=metadata_json,
             per_day=per_day,
+            css_version=css_version,
         )
 
     logger.info("get_historical", duration=timer.seconds)
@@ -332,6 +348,11 @@ def get_metadata_url(bucket_name: str, camera_slug: str, date_str: str) -> str:
 
 def month_names() -> List[str]:
     return [date(2000, m, 1).strftime("%B") for m in list(range(1, 13))]
+
+
+@cache
+def get_static_resource_timestamp() -> int:
+    return int(os.path.getmtime("src/rubintv/static/stylesheets/main.css"))
 
 
 @routes.get("/{camera}/{channel}events/{date}/{seq}")
