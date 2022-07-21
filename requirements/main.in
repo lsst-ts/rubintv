@@ -3,10 +3,11 @@
 # with constrained versions.
 #
 # After editing, update requirements/main.txt by running:
-#     make update-deps
+#     make update
 
 aiodns
 aiohttp
+aiohttp-jinja2
 cchardet
 click
 google-cloud-storage

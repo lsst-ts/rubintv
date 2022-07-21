@@ -3,7 +3,7 @@
 # as implicit dev dependencies with constrained versions.
 #
 # After editing, update requirements/dev.txt by running:
-#     make update-deps
+#     make update
 
 -c main.txt
 
@@ -11,6 +11,7 @@ aiohttp-devtools
 coverage[toml]
 google-cloud-storage
 jinja2
+aiohttp-jinja2
 mypy
 pre-commit
 pytest

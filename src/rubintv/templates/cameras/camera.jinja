@@ -36,7 +36,7 @@
               <a  class="button button-large {{ pd_channel_name }}"
                   href="{{ per_day[pd_channel_name] }}">
                 <img src="/rubintv/static/images/{{ pd_channel_name }}.svg">
-                Tonight's Movie
+                {{ camera.per_day_channels[pd_channel_name]['name'] }}
               </a>
             </li>
           {% endfor %}

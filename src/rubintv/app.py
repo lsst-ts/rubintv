@@ -7,6 +7,8 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Dict, List
 
+import aiohttp_jinja2
+import jinja2
 from aiohttp import web
 from dateutil.tz import gettz
 from google.cloud import storage
@@ -43,17 +45,31 @@ def create_app() -> web.Application:
     root_app.cleanup_ctx.append(init_http_session)
 
     sub_app = web.Application()
+    aiohttp_jinja2.setup(
+        sub_app,
+        loader=jinja2.FileSystemLoader(Path(__file__).parent / "templates"),
+    )
     setup_middleware(sub_app)
     sub_app.add_routes(init_external_routes())
     sub_app.add_routes(
         [
             web.static(
-                "/static", Path(__file__).parent / "static", name="static"
+                "/static",
+                Path(__file__).parent / "static",
+                name="static",
+                append_version=True,
             ),
         ]
     )
-    root_app.add_subapp(f'/{root_app["safir/config"].name}', sub_app)
+    sub_app["static_root_url"] = "/rubintv/static"
+    env = aiohttp_jinja2.get_env(sub_app)
+    env.globals.update(
+        zip=zip,
+        url_for=web.Resource.url_for,
+        autoescape=jinja2.select_autoescape(),
+    )
 
+    root_app.add_subapp(f'/{root_app["safir/config"].name}', sub_app)
     return root_app
 
 

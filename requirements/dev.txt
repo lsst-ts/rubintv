@@ -80,11 +80,18 @@ aiohttp==3.8.1 \
     # via
     #   -c requirements/main.txt
     #   aiohttp-devtools
+    #   aiohttp-jinja2
     #   pytest-aiohttp
 aiohttp-devtools==1.0.post0 \
     --hash=sha256:1847ce92e6e8ca1ed5dc603864f4faecdfa40b6b5aeb5193f05cafd28d3ce3e3 \
     --hash=sha256:f46a87b250a84bf8edca21c8b6991dc2b6145cdf0af8a08b73f5c92d48d85f01
     # via -r requirements/dev.in
+aiohttp-jinja2==1.5 \
+    --hash=sha256:7c3ba5eac060b691f4e50534af2d79fca2a75712ebd2b25e6fcb1295859f910b \
+    --hash=sha256:b55c0ed167b0cc4b6d6a50fb2299a44beb5dc4aec9df21305b91a5484694cf74
+    # via
+    #   -c requirements/main.txt
+    #   -r requirements/dev.in
 aiosignal==1.2.0 \
     --hash=sha256:26e62109036cd181df6e6ad646f91f0dcfd05fe16d0cb924138ff2ab75d64e3a \
     --hash=sha256:78ed67db6c7b7ced4f98e495e572106d5c432a93e1ddd1bf475e1dc05f5b7df2
@@ -372,6 +379,7 @@ jinja2==3.1.2 \
     # via
     #   -c requirements/main.txt
     #   -r requirements/dev.in
+    #   aiohttp-jinja2
 markupsafe==2.1.1 \
     --hash=sha256:0212a68688482dc52b2d45013df70d169f542b7394fc744c02a57374a4207003 \
     --hash=sha256:089cf3dbf0cd6c100f02945abeb18484bd1ee57a079aefd52cffd17fba910b88 \

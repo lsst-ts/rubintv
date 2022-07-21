@@ -58,7 +58,7 @@ class Event:
 
 cameras = {
     "auxtel": Camera(
-        name="AuxTel", slug="auxtel", online=True, has_historical=True
+        name="AuxTel", slug="auxtel", online=True, has_historical=False
     ),
     "comcam": Camera(
         name="ComCam", slug="comcam", online=True, has_historical=True
@@ -109,9 +109,13 @@ cameras["auxtel"].per_day_channels = {
         name="Rolling Buffer",
         prefix="auxtel_rolling_buffer",
         simplename="rolling",
+        label="Rolling GIF for ",
     ),
     "movie": Channel(
-        name="Tonight's Movie", prefix="auxtel_movies", simplename="movie"
+        name="Tonight's Movie",
+        prefix="auxtel_movies",
+        simplename="movie",
+        label="Movie for ",
     ),
 }
 
