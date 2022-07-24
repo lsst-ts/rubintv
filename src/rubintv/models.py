@@ -58,7 +58,7 @@ class Event:
 
 cameras = {
     "auxtel": Camera(
-        name="AuxTel", slug="auxtel", online=True, has_historical=False
+        name="AuxTel", slug="auxtel", online=True, has_historical=True
     ),
     "comcam": Camera(
         name="ComCam", slug="comcam", online=True, has_historical=True

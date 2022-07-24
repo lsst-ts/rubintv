@@ -61,13 +61,6 @@ def create_app() -> web.Application:
             ),
         ]
     )
-    sub_app["static_root_url"] = "/rubintv/static"
-    env = aiohttp_jinja2.get_env(sub_app)
-    env.globals.update(
-        zip=zip,
-        url_for=web.Resource.url_for,
-        autoescape=jinja2.select_autoescape(),
-    )
 
     root_app.add_subapp(f'/{root_app["safir/config"].name}', sub_app)
     return root_app

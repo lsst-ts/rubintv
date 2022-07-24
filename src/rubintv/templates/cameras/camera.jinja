@@ -4,7 +4,7 @@
   {% if camera.has_historical %}
     <a class="button historical" href="/rubintv/{{camera.slug}}/historical">
       Historical data
-      <img src="/rubintv/static/images/history-line.svg">
+      <img src="{{ url('static', filename='images/history-line.svg') }}">
     </a>
 {% endif %}
 {% endblock undertitle %}
@@ -52,5 +52,5 @@
 
 {% block footer_scripts %}
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script type="module" src="/rubintv/static/js/refresh-daytable.js"></script>
+  <script type="module" src="{{ url('static', filename='js/refresh-daytable.js') }}"></script>
 {% endblock footer_scripts  %}

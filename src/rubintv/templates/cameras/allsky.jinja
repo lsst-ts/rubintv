@@ -2,7 +2,7 @@
 {% block undertitle %}
   <a class="button button historical" href="/rubintv/allsky/historical">
     Historical movies
-    <img src="/rubintv/static/images/history-line.svg">
+    <img src="{{ url('static', filename='images/history-line.svg') }}">
   </a>
 {% endblock undertitle %}
 {% block content %}
@@ -25,5 +25,5 @@
 {% endblock content %}
 {% block footer_scripts %}
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script type=text/javascript src="/rubintv/static/js/allsky-refresh.js"></script>
+<script type=text/javascript src="{{ url('static', filename='js/allsky-refresh.js') }}"></script>
 {% endblock footer_scripts %}
