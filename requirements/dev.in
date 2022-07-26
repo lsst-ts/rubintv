@@ -9,9 +9,6 @@
 
 aiohttp-devtools
 coverage[toml]
-google-cloud-storage
-jinja2
-aiohttp-jinja2
 mypy
 pre-commit
 pytest
