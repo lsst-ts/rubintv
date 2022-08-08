@@ -1,1 +1,27 @@
 {% extends "layout.jinja" %}
+{% block title %}
+RubinTV Admin
+{% endblock title %}
+
+{% block content %}
+  <h2>Service status</h2>
+  {% for camera in cameras %}
+  <div class="camera-service {{camera.slug}}">
+    <h3>
+      <a href="/rubintv/{{ camera.slug }}">
+        {{ camera.name }}
+      </a>
+    </h3>
+    <div class="services">
+      {% for channel in camera.channels %}
+      <div class="service {{ camera.channels[channel].simplename }}">
+        <div class="heartbeat">
+
+        </div>
+        {{ camera.channels[channel].name }}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+{% endblock content %}
