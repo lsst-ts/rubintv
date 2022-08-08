@@ -241,6 +241,11 @@ header .title .historical img {
   margin-bottom: 1em;
 }
 
+h2 {
+  font-size: 1.7em;
+  margin-bottom: 0.6em;
+}
+
 h3 {
   font-size: 1.4em;
   margin-bottom: 0.5em;
@@ -440,6 +445,66 @@ h3 {
 
 .admin-access {
   margin-top: 3em;
+}
+
+.camera-service {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5em;
+  padding: 1em;
+  background: #e8e8e8;
+}
+
+.services {
+  display: flex;
+  flex-direction: row;
+}
+
+.service {
+  background: #ddd;
+  padding: 0.8em;
+  margin-right: 0.5em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.heartbeat {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 0.3em;
+  background: #888;
+}
+.heartbeat.running {
+  background: #1db8b8;
+  animation: heartbeat 1.5s infinite;
+}
+.heartbeat.stopped {
+  background: #a60b0b;
+}
+
+@keyframes heartbeat {
+  0% {
+    transform: scale(0.8);
+  }
+  5% {
+    transform: scale(0.9);
+  }
+  10% {
+    transform: scale(0.8);
+  }
+  15% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.8);
+  }
+  100% {
+    transform: scale(0.8);
+  }
 }
 
 /*# sourceMappingURL=main.css.map */
