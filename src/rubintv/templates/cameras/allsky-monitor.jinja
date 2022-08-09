@@ -14,6 +14,6 @@
   <video width="100%" controls autoplay loop>
     <source src="{{ movie.url }}" type="video/mp4">
   </video>
-  <img src="/rubintv/static/images/allsky-cardinals.svg">
+  <img src="{{ url('static', filename='images/allsky-cardinals.svg') }}">
 </div>
 <div class="desc">{{ movie.name }}</div>

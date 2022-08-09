@@ -109,9 +109,13 @@ cameras["auxtel"].per_day_channels = {
         name="Rolling Buffer",
         prefix="auxtel_rolling_buffer",
         simplename="rolling",
+        label="Rolling GIF for ",
     ),
     "movie": Channel(
-        name="Tonight's Movie", prefix="auxtel_movies", simplename="movie"
+        name="Tonight's Movie",
+        prefix="auxtel_movies",
+        simplename="movie",
+        label="Movie for ",
     ),
 }
 
