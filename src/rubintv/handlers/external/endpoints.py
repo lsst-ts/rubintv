@@ -33,15 +33,13 @@ async def get_page(request: web.Request) -> dict[str, Any]:
 
 
 @routes.get("/admin")
-async def get_admin_page(request: web.Request) -> web.Response:
+@template("admin.jinja")
+async def get_admin_page(request: web.Request) -> dict[str, Any]:
     title = build_title("Admin", request=request)
     online_cameras = [
         cameras[camera] for camera in cameras if cameras[camera].online
     ]
-    page = get_formatted_page(
-        "admin.jinja", title=title, cameras=online_cameras
-    )
-    return web.Response(text=page, content_type="text/html")
+    return {"title": title, "cameras": online_cameras}
 
 
 @routes.get("/allsky")
@@ -425,7 +423,6 @@ def get_most_recent_day_events(bucket: Bucket, camera: Camera) -> List[Event]:
     events_dict = build_dict_with_remaining_channels(
         bucket, camera, events, the_date
     )
-
     todays_events = flatten_events_dict_into_list(camera, events_dict)
     return todays_events
 
@@ -551,7 +548,9 @@ def get_most_recent_events_for_prefix(
             blobs = get_all_events_for_prefix(prefix, bucket)
             if not blobs:
                 raise TimeoutError(f"Timed out. No data found for {prefix}")
-    events = get_sorted_events_from_blobs(blobs)
+    all_events = get_sorted_events_from_blobs(blobs)
+    the_date = all_events[0].date
+    events = [event for event in all_events if event.date == the_date]
     return events
 
 
