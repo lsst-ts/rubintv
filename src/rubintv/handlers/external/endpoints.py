@@ -548,9 +548,11 @@ def get_most_recent_events_for_prefix(
             blobs = get_all_events_for_prefix(prefix, bucket)
             if not blobs:
                 raise TimeoutError(f"Timed out. No data found for {prefix}")
-    all_events = get_sorted_events_from_blobs(blobs)
-    the_date = all_events[0].date
-    events = [event for event in all_events if event.date == the_date]
+            all_events = get_sorted_events_from_blobs(blobs)
+            the_date = all_events[0].date
+            events = [event for event in all_events if event.date == the_date]
+        else:
+            events = get_sorted_events_from_blobs(blobs)
     return events
 
 
