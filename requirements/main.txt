@@ -206,9 +206,9 @@ cffi==1.15.1 \
     --hash=sha256:fa6693661a4c91757f4412306191b6dc88c1703f780c8234035eac011922bc01 \
     --hash=sha256:fcd131dd944808b5bdb38e6f5b53013c5aa4f334c5cad0c72742f6eba4b73db0
     # via pycares
-charset-normalizer==2.1.0 \
-    --hash=sha256:5189b6f22b01957427f35b6a08d9a0bc45b46d3788ef5a92e978433c7a35f8a5 \
-    --hash=sha256:575e708016ff3a5e3681541cb9d79312c416835686d054a23accb873b254f413
+charset-normalizer==2.1.1 \
+    --hash=sha256:5a3d016c7c547f69d6f81fb0db9449ce888b418b5b9952cc5e6e66843e9dd845 \
+    --hash=sha256:83e9a75d1911279afd89352c68b45348559d1fc0506b054b346651b5e7fee29f
     # via
     #   aiohttp
     #   requests
@@ -285,9 +285,9 @@ google-api-core==2.8.2 \
     # via
     #   google-cloud-core
     #   google-cloud-storage
-google-auth==2.10.0 \
-    --hash=sha256:1deba4a54f95ef67b4139eaf5c20eaa7047215eec9f6a2344599b8596db8863b \
-    --hash=sha256:7904dbd44b745c7323fef29565adee2fe7ff48473e2d94443aced40b0404a395
+google-auth==2.11.0 \
+    --hash=sha256:be62acaae38d0049c21ca90f27a23847245c9f161ff54ede13af2cb6afecbac9 \
+    --hash=sha256:ed65ecf9f681832298e29328e1ef0a3676e3732b2e56f41532d45f70a22de0fb
     # via
     #   google-api-core
     #   google-cloud-core
