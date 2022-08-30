@@ -23,13 +23,13 @@ class ChannelStatus {
   }
 
   get nextInterval () {
-    return (this.isActive())
+    return (this.isActive)
       ? (this.next - this.nowTimestamp()) + this.TOLERANCE
       : this.RETRY
   }
 
   get isActive () {
-    return this.next < (this.nowTimestamp() + this.TOLERANCE)
+    return this.next > (this.nowTimestamp() + this.TOLERANCE)
   }
 
   consumeHeartbeat (heartbeat) {
@@ -40,14 +40,16 @@ class ChannelStatus {
   }
 
   waitForNextHeartbeat () {
-    setTimeout(this.updateHeartbeatData, this.nextInterval())
+    setTimeout(this.updateHeartbeatData(), this.nextInterval)
   }
 
   updateHeartbeatData () {
+    const self = this
     $.get(this.url, (rawHeartbeat) => {
-      this.consumeHeartbeat(rawHeartbeat)
-      this.displayStatus()
-      this.waitForNextHeartbeat()
+      console.log(self)
+      self.consumeHeartbeat(rawHeartbeat)
+      self.displayStatus()
+      self.waitForNextHeartbeat()
     })
   }
 
@@ -56,14 +58,14 @@ class ChannelStatus {
   }
 
   displayStatus () {
-    const status = this.isActive() ? 'active' : 'stopped'
+    const status = this.isActive ? 'active' : 'stopped'
     // channel in this context is the same as channel.prefix used in the template
     const $channelEl = $(`#${this.channel}`)
     $channelEl.removeClass('stopped')
     $channelEl.addClass(status)
     console.log(`Channel ${this.channel} is ${status}`)
-    console.log(`Last heartbeat from: ${new Date(this.time)}`)
-    console.log(`Next check at: ${new Date(this.next)}`)
+    console.log(`Last heartbeat from: ${new Date(this.time * 1000)}`)
+    console.log(`Next check at: ${new Date(this.next * 1000)}`)
   }
 }
 
