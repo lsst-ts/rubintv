@@ -61,9 +61,9 @@ class ChannelStatus {
     const $channelEl = $(`#${this.channel}`)
     $channelEl.removeClass('stopped')
     $channelEl.addClass(status)
-    console.log(`Channel ${this.channel} is ${status}`);
-    console.log(`Last heartbeat from: ${new Date(this.time)}`);
-    console.log(`Next check at: ${new Date(this.next)}`);
+    console.log(`Channel ${this.channel} is ${status}`)
+    console.log(`Last heartbeat from: ${new Date(this.time)}`)
+    console.log(`Next check at: ${new Date(this.next)}`)
   }
 }
 
