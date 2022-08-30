@@ -27,19 +27,32 @@ from rubintv.timer import Timer
 @template("home.jinja")
 async def get_page(request: web.Request) -> dict[str, Any]:
     title = build_title(request=request)
-    # page = get_formatted_page("home.jinja", title=title, cameras=cameras)
-    # return web.Response(text=page, content_type="text/html")
     return {"title": title, "cameras": cameras}
 
 
 @routes.get("/admin")
 @template("admin.jinja")
 async def get_admin_page(request: web.Request) -> dict[str, Any]:
+    bucket = request.config_dict["rubintv/gcs_bucket"]
     title = build_title("Admin", request=request)
+
     online_cameras = [
         cameras[camera] for camera in cameras if cameras[camera].online
     ]
-    return {"title": title, "cameras": online_cameras}
+
+    heartbeats_prefix = "/heartbeats"
+    hb_blobs = list(bucket.list_blobs(prefix=heartbeats_prefix))
+    heartbeats = []
+    for hb_blob in hb_blobs:
+        hb = json.loads(hb_blob.download_as_string)
+        hb["url"] = hb_blob.name
+        heartbeats.append(hb)
+
+    return {
+        "title": title,
+        "cameras": online_cameras,
+        "heartbeats": heartbeats,
+    }
 
 
 @routes.get("/allsky")

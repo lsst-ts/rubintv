@@ -14,7 +14,7 @@ RubinTV Admin
     </h3>
     <div class="services">
       {% for channel in camera.channels %}
-      <div class="service {{ camera.channels[channel].simplename }}">
+      <div class="service" id="{{ camera.channels[channel].prefix }}">
         <div class="heartbeat">
 
         </div>
@@ -24,4 +24,17 @@ RubinTV Admin
     </div>
   </div>
   {% endfor %}
+  <script type="application/json" id="heartbeats">
+    {# {{ heartbeats|tojson }} #}
+      {# dummy data: to be removed before PR #}
+        [
+          {
+            url: "https://storage.cloud.google.com/rubin_tv/heartbeats/auxtel_monitor.json",
+            channel: "auxtel_monitor",
+            currTime: 0,
+            nextExpected: 0,
+            errors: {},
+          }
+        ,]
+  </script>
 {% endblock content %}
