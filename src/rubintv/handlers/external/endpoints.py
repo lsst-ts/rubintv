@@ -41,18 +41,46 @@ async def get_admin_page(request: web.Request) -> dict[str, Any]:
     ]
 
     heartbeats_prefix = "/heartbeats"
-    hb_blobs = list(bucket.list_blobs(prefix=heartbeats_prefix))
-    heartbeats = []
-    for hb_blob in hb_blobs:
-        hb = json.loads(hb_blob.download_as_string)
-        hb["url"] = hb_blob.name
-        heartbeats.append(hb)
+    heartbeats = get_heartbeats(bucket, heartbeats_prefix)
 
     return {
         "title": title,
         "cameras": online_cameras,
         "heartbeats": heartbeats,
     }
+
+
+@routes.get("/heartbeat/{heartbeat_prefix}")
+async def request_heartbeat_for_channel(request: web.Request) -> str:
+    bucket = request.config_dict["rubintv/gcs_bucket"]
+    prefix = request.match_info["heartbeat_prefix"]
+    heartbeat_prefix = "/".join(["/heartbeats", prefix])
+    heartbeats = get_heartbeats(bucket, heartbeat_prefix)
+    if heartbeats and len(heartbeats) == 1:
+        hb_json = heartbeats[0]
+    else:
+        hb_json = {}
+    json_res = json.dumps(hb_json)
+    return web.Response(text=json_res, content_type="application/json")
+
+
+@routes.get("/heartbeats")
+async def request_all_heartbeats(request: web.Request) -> str:
+    bucket = request.config_dict["rubintv/gcs_bucket"]
+    heartbeats_prefix = "/heartbeats"
+    heartbeats = get_heartbeats(bucket, heartbeats_prefix)
+    json_res = json.dumps(heartbeats)
+    return web.Response(text=json_res, content_type="application/json")
+
+
+def get_heartbeats(bucket: Bucket, prefix: str):
+    hb_blobs = list(bucket.list_blobs(prefix=prefix))
+    heartbeats = []
+    for hb_blob in hb_blobs:
+        hb = json.loads(hb_blob.download_as_string)
+        hb["url"] = hb_blob.name
+        heartbeats.append(hb)
+    return heartbeats
 
 
 @routes.get("/allsky")
