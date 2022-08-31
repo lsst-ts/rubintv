@@ -471,19 +471,20 @@ h3 {
   border-radius: 6px;
   text-align: center;
 }
+.service.active .heartbeat {
+  background: #1db8b8;
+  animation: heartbeat 1.5s infinite;
+}
+.service.stopped .heartbeat {
+  background: #a60b0b;
+  animation: none;
+}
 
 .heartbeat {
   width: 32px;
   height: 32px;
   margin-bottom: 0.3em;
   background: #888;
-}
-.heartbeat.running {
-  background: #1db8b8;
-  animation: heartbeat 1.5s infinite;
-}
-.heartbeat.stopped {
-  background: #a60b0b;
 }
 
 @keyframes heartbeat {
