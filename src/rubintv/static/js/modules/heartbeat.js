@@ -13,7 +13,7 @@ class ChannelStatus {
   // allowable time for network/other tardiness in seconds
   TOLERANCE = 5
   // time in secs to try downloading heartbeat again after stale
-  RETRY = 10
+  RETRY = 60
 
   constructor (heartbeatFromApp) {
     this.consumeHeartbeat(heartbeatFromApp)
@@ -24,12 +24,16 @@ class ChannelStatus {
 
   get nextInterval () {
     return (this.isActive)
-      ? ((this.next - this.nowTimestamp()) + this.TOLERANCE) * 1000
-      : this.RETRY * 1000
+      ? ((this.next - this.nowTimestamp) + this.TOLERANCE)
+      : this.RETRY
   }
 
   get isActive () {
-    return this.next > (this.nowTimestamp() + this.TOLERANCE)
+    return this.next > (this.nowTimestamp + this.TOLERANCE)
+  }
+
+  get nowTimestamp () {
+    return Math.round(Date.now() / 1000)
   }
 
   consumeHeartbeat (heartbeat) {
@@ -42,8 +46,8 @@ class ChannelStatus {
   waitForNextHeartbeat () {
     setTimeout(() => {
       this.updateHeartbeatData()
-    }, this.nextInterval)
-    console.log(`interval set for ${this.nextInterval / 1000} seconds`)
+    }, this.nextInterval * 1000)
+    console.log(`interval set for ${this.nextInterval} seconds`)
   }
 
   updateHeartbeatData () {
@@ -56,10 +60,6 @@ class ChannelStatus {
     })
   }
 
-  nowTimestamp () {
-    return Math.round(Date.now() / 1000)
-  }
-
   displayStatus () {
     const status = this.isActive ? 'active' : 'stopped'
     // channel in this context is the same as channel.prefix used in the template
@@ -68,7 +68,10 @@ class ChannelStatus {
     $channelEl.addClass(status)
     console.log(`Channel ${this.channel} is ${status}`)
     console.log(`Last heartbeat from: ${new Date(this.time * 1000)}`)
-    console.log(`Next check at: ${new Date(this.next * 1000)}`)
+    const next = this.isActive
+      ? new Date(this.next * 1000)
+      : new Date((this.nowTimestamp + this.RETRY) * 1000)
+    console.log(`Next check at: ${next}`)
   }
 }
 
