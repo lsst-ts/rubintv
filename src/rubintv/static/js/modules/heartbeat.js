@@ -13,7 +13,7 @@ class ChannelStatus {
   // allowable time for network/other tardiness in seconds
   TOLERANCE = 5
   // time in secs to try downloading heartbeat again after stale
-  RETRY = 120
+  RETRY = 10
 
   constructor (heartbeatFromApp) {
     this.consumeHeartbeat(heartbeatFromApp)
@@ -24,8 +24,8 @@ class ChannelStatus {
 
   get nextInterval () {
     return (this.isActive)
-      ? (this.next - this.nowTimestamp()) + this.TOLERANCE
-      : this.RETRY
+      ? ((this.next - this.nowTimestamp()) + this.TOLERANCE) * 1000
+      : this.RETRY * 1000
   }
 
   get isActive () {
@@ -40,14 +40,17 @@ class ChannelStatus {
   }
 
   waitForNextHeartbeat () {
-    setTimeout(this.updateHeartbeatData(), this.nextInterval)
+    setTimeout(() => {
+      this.updateHeartbeatData()
+    }, this.nextInterval)
+    console.log(`interval set for ${this.nextInterval / 1000} seconds`)
   }
 
   updateHeartbeatData () {
     const self = this
     $.get(this.url, (rawHeartbeat) => {
-      console.log(self)
       self.consumeHeartbeat(rawHeartbeat)
+    }).always(() => {
       self.displayStatus()
       self.waitForNextHeartbeat()
     })
