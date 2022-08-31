@@ -25,17 +25,7 @@ RubinTV Admin
   </div>
   {% endfor %}
   <script type="application/json" id="heartbeats">
-    {# {{ heartbeats|tojson }} #}
-      {# dummy data: to be removed before PR #}
-        [
-          {
-            "url": "https://storage.cloud.google.com/rubin_tv/heartbeats/auxtel_monitor.json",
-            "channel": "auxtel_monitor",
-            "currTime": 1661875571,
-            "nextExpected": 1661875888,
-            "errors": {}
-          }
-        ]
+    {{ heartbeats|tojson }}
   </script>
 {% endblock content %}
 {% block footer_scripts %}
