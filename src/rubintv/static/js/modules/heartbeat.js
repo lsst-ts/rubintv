@@ -10,10 +10,9 @@
 // timestamp is seconds since epoch (Jan 1, 1970)
 
 class ChannelStatus {
-  // allowable time for network/other tardiness in seconds
-  TOLERANCE = 5
   // time in secs to try downloading heartbeat again after stale
-  RETRY = 60
+  RETRY = 120
+  // time in secs to query all blobs to bring in missing services
 
   constructor (heartbeatFromApp) {
     this.consumeHeartbeat(heartbeatFromApp)
@@ -24,12 +23,12 @@ class ChannelStatus {
 
   get nextInterval () {
     return (this.isActive)
-      ? ((this.next - this.nowTimestamp) + this.TOLERANCE)
+      ? this.next - this.nowTimestamp
       : this.RETRY
   }
 
   get isActive () {
-    return this.next > (this.nowTimestamp + this.TOLERANCE)
+    return this.next > this.nowTimestamp
   }
 
   get nowTimestamp () {
@@ -51,30 +50,54 @@ class ChannelStatus {
   }
 
   updateHeartbeatData () {
+    let alive = false
     const self = this
-    $.get(this.url, (rawHeartbeat) => {
-      self.consumeHeartbeat(rawHeartbeat)
+    const urlPath = document.location.pathname
+    $.get(`${urlPath}/heartbeat/${this.channel}`, (rawHeartbeat) => {
+      if (rawHeartbeat) {
+        self.consumeHeartbeat(rawHeartbeat)
+        alive = true
+      }
     }).always(() => {
-      self.displayStatus()
+      self.displayStatus(alive)
       self.waitForNextHeartbeat()
     })
   }
 
-  displayStatus () {
-    const status = this.isActive ? 'active' : 'stopped'
+  displayStatus (alive = true) {
     // channel in this context is the same as channel.prefix used in the template
     const $channelEl = $(`#${this.channel}`)
-    $channelEl.removeClass('stopped')
-    $channelEl.addClass(status)
-    console.log(`Channel ${this.channel} is ${status}`)
-    console.log(`Last heartbeat from: ${new Date(this.time * 1000)}`)
-    const next = this.isActive
-      ? new Date(this.next * 1000)
-      : new Date((this.nowTimestamp + this.RETRY) * 1000)
-    console.log(`Next check at: ${next}`)
+    if (alive) {
+      const status = this.isActive ? 'active' : 'stopped'
+      $channelEl.removeClass('stopped').addClass(status)
+      console.log(`Channel ${this.channel} is ${status}`)
+      console.log(`Last heartbeat from: ${new Date(this.time * 1000)}`)
+      const next = this.isActive
+        ? new Date(this.next * 1000)
+        : new Date((this.nowTimestamp + this.RETRY) * 1000)
+      console.log(`Next check at: ${next}`)
+      console.log('--------------------')
+    } else {
+      console.log(`Channel ${this.channel} is unreachable`)
+      $channelEl.removeClass('stopped active')
+    }
   }
 }
 
+const UPDATE_ALL_AFTER = 6000
+
 const heartbeatsText = document.querySelector('#heartbeats').text
 const heartbeats = JSON.parse(heartbeatsText)
-heartbeats.map(hb => new ChannelStatus(hb))
+let statuses = heartbeats.map(hb => new ChannelStatus(hb))
+
+setInterval(() => {
+  const urlPath = document.location.pathname
+  $.get(`${urlPath}/heartbeats`, (newHeartbeats) => {
+    console.log('Updating all heartbeats')
+    newHeartbeats.forEach(hb => {
+      console.log(`Found ${hb.channel}`)
+    })
+    statuses.forEach(hb => { hb.displayStatus(false) })
+    statuses = newHeartbeats.map(hb => new ChannelStatus(hb))
+  })
+}, UPDATE_ALL_AFTER * 1000)

@@ -127,3 +127,37 @@ cameras["comcam"].channels = {
         label="Monitor",
     ),
 }
+
+production_services = {
+    "auxtel": {
+        "display_name": "AuxTel",
+        "channels": {
+            "auxtel_monitor": "Monitor",
+            "summit_imexam": "Image Analysis",
+            "summit_specexam": "Spectrum",
+            "auxtel_mount_torques": "Mount",
+        },
+        "services": {
+            "auxtel_metadata": "Metadata",
+            "auxtel_isr_runner": "ISR Runner",
+        },
+    },
+    "allsky": {
+        "display_name": "All Sky",
+        "channels": {
+            "allsky": "All Sky",
+        },
+    },
+    "comcam": {
+        "display_name": "ComCam",
+        "channels": {
+            "comcam_monitor": "Central CCD Monitor",
+        },
+    },
+    "misc": {
+        "display_name": "Misc Services",
+        "services": {
+            "backgroundService": "Background",
+        },
+    },
+}

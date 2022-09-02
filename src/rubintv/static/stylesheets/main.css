@@ -447,7 +447,7 @@ h3 {
   margin-top: 3em;
 }
 
-.camera-service {
+.service-group {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -456,15 +456,28 @@ h3 {
   background: #e8e8e8;
 }
 
-.services {
+.all-services, .services {
   display: flex;
   flex-direction: row;
+  gap: 1em;
+}
+
+.all-services > * {
+  padding: 1em;
+  border: 1px solid #fff;
+}
+.all-services > *:nth-child(2) {
+  margin-left: 2em;
+}
+
+.all-services h4 {
+  text-align: center;
+  margin-bottom: 0.5em;
 }
 
 .service {
   background: #ddd;
   padding: 0.8em;
-  margin-right: 0.5em;
   display: flex;
   flex-direction: column;
   align-items: center;

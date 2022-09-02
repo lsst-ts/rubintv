@@ -5,23 +5,49 @@ RubinTV Admin
 
 {% block content %}
   <h2>Service status</h2>
-  {% for camera in cameras %}
-  <div class="camera-service {{camera.slug}}">
+  {% for group in services %}
+  <div class="service-group {{ group }}">
     <h3>
-      <a href="/rubintv/{{ camera.slug }}">
-        {{ camera.name }}
-      </a>
+      {{ services[group]['display_name'] }}
     </h3>
-    <div class="services">
-      {% for channel in camera.channels %}
-      <div class="service" id="{{ camera.channels[channel].prefix }}">
-        <div class="heartbeat">
 
+    <div class="all-services">
+
+      {% if services[group]['channels'] | length %}
+        <div>
+         <h4>Channels</h4>
+          <div class="services channels">
+            {% for channel in services[group]['channels'] %}
+              <div class="service" id="{{ channel }}">
+                <div class="heartbeat">
+
+                </div>
+                {{ services[group]['channels'][channel] }}
+              </div>
+            {% endfor %}
+          </div>
         </div>
-        {{ camera.channels[channel].name }}
-      </div>
-      {% endfor %}
+      {% endif %}
+
+      {% if services[group]['services'] | length %}
+        <div>
+         <h4>Services</h4>
+         <div class="services">
+            {% for service in services[group]['services'] %}
+              <div class="service" id="{{ service }}">
+                <div class="heartbeat">
+
+                </div>
+                {{ services[group]['services'][service] }}
+              </div>
+            {% endfor %}
+         </div>
+        </div>
+      {% endif %}
+
     </div>
+
+
   </div>
   {% endfor %}
   <script type="application/json" id="heartbeats">
