@@ -46,7 +46,6 @@ class ChannelStatus {
     setTimeout(() => {
       this.updateHeartbeatData()
     }, this.nextInterval * 1000)
-    console.log(`interval set for ${this.nextInterval} seconds`)
   }
 
   updateHeartbeatData () {
