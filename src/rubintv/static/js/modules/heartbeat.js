@@ -17,6 +17,7 @@ class ChannelStatus {
   constructor (heartbeatFromApp) {
     this.consumeHeartbeat(heartbeatFromApp)
     this.url = heartbeatFromApp.url
+    this.$el = $(`#${this.channel}`)
     this.displayStatus()
     this.waitForNextHeartbeat()
   }
@@ -29,6 +30,10 @@ class ChannelStatus {
 
   get isActive () {
     return this.next > this.nowTimestamp
+  }
+
+  get status () {
+    return this.isActive ? 'active' : 'stopped'
   }
 
   get nowTimestamp () {
@@ -63,23 +68,26 @@ class ChannelStatus {
     })
   }
 
+  displayHeartbeatInfo () {
+    const time = this.time
+      ? new Date(this.time * 1000).toLocaleString('en-US')
+      : 'never'
+
+    const next = this.isActive
+      ? new Date(this.next * 1000).toLocaleString('en-US')
+      : new Date((this.nowTimestamp + this.RETRY) * 1000).toLocaleString('en-US')
+
+    this.$el.attr({ title: `last heartbeat at: ${time} UTC\nnext check at: ${next} UTC` })
+  }
+
   displayStatus (alive = true) {
     // channel in this context is the same as channel.prefix used in the template
-    const $channelEl = $(`#${this.channel}`)
     if (alive) {
-      const status = this.isActive ? 'active' : 'stopped'
-      $channelEl.removeClass('stopped').addClass(status)
-      console.log(`Channel ${this.channel} is ${status}`)
-      console.log(`Last heartbeat from: ${new Date(this.time * 1000)}`)
-      const next = this.isActive
-        ? new Date(this.next * 1000)
-        : new Date((this.nowTimestamp + this.RETRY) * 1000)
-      console.log(`Next check at: ${next}`)
-      console.log('--------------------')
+      this.$el.removeClass('stopped').addClass(this.status)
     } else {
-      console.log(`Channel ${this.channel} is unreachable`)
-      $channelEl.removeClass('stopped active')
+      this.$el.removeClass('stopped active')
     }
+    this.displayHeartbeatInfo()
   }
 }
 
