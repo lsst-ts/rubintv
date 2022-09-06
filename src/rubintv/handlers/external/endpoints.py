@@ -14,12 +14,15 @@ from typing import Any, Dict, Iterator, List, Optional
 import requests
 from aiohttp import web
 from aiohttp_jinja2 import render_template, template
+from google.api_core.exceptions import NotFound
 from google.cloud.storage import Bucket
 
 from rubintv.app import get_current_day_obs
 from rubintv.handlers import routes
-from rubintv.models import Camera, Channel, Event, cameras
+from rubintv.models import Camera, Channel, Event, cameras, production_services
 from rubintv.timer import Timer
+
+HEARTBEATS_PREFIX = "heartbeats"
 
 
 @routes.get("")
@@ -27,9 +30,60 @@ from rubintv.timer import Timer
 @template("home.jinja")
 async def get_page(request: web.Request) -> dict[str, Any]:
     title = build_title(request=request)
-    # page = get_formatted_page("home.jinja", title=title, cameras=cameras)
-    # return web.Response(text=page, content_type="text/html")
     return {"title": title, "cameras": cameras}
+
+
+@routes.get("/admin")
+@template("admin.jinja")
+async def get_admin_page(request: web.Request) -> dict[str, Any]:
+    bucket = request.config_dict["rubintv/gcs_bucket"]
+    title = build_title("Admin", request=request)
+
+    heartbeats = get_heartbeats(bucket, HEARTBEATS_PREFIX)
+
+    return {
+        "title": title,
+        "services": production_services,
+        "heartbeats": heartbeats,
+    }
+
+
+@routes.get("/admin/heartbeat/{heartbeat_prefix}")
+async def request_heartbeat_for_channel(request: web.Request) -> web.Response:
+    bucket = request.config_dict["rubintv/gcs_bucket"]
+    prefix = request.match_info["heartbeat_prefix"]
+    heartbeat_prefix = "/".join([HEARTBEATS_PREFIX, prefix])
+    heartbeats = get_heartbeats(bucket, heartbeat_prefix)
+    if heartbeats and len(heartbeats) == 1:
+        hb_json = heartbeats[0]
+    else:
+        hb_json = {}
+    json_res = json.dumps(hb_json)
+    return web.Response(text=json_res, content_type="application/json")
+
+
+@routes.get("/admin/heartbeats")
+async def request_all_heartbeats(request: web.Request) -> web.Response:
+    bucket = request.config_dict["rubintv/gcs_bucket"]
+    heartbeats = get_heartbeats(bucket, HEARTBEATS_PREFIX)
+    json_res = json.dumps(heartbeats)
+    return web.Response(text=json_res, content_type="application/json")
+
+
+def get_heartbeats(bucket: Bucket, prefix: str) -> List[Dict]:
+    hb_blobs = list(bucket.list_blobs(prefix=prefix))
+    heartbeats = []
+    for hb_blob in hb_blobs:
+        try:
+            blob_content = hb_blob.download_as_string()
+        except NotFound as e:
+            print(f"Error: {hb_blob.name} not found.\n{e.errors()}")
+        if not blob_content:
+            continue
+        hb = json.loads(blob_content)
+        hb["url"] = hb_blob.name
+        heartbeats.append(hb)
+    return heartbeats
 
 
 @routes.get("/allsky")
@@ -413,7 +467,6 @@ def get_most_recent_day_events(bucket: Bucket, camera: Camera) -> List[Event]:
     events_dict = build_dict_with_remaining_channels(
         bucket, camera, events, the_date
     )
-
     todays_events = flatten_events_dict_into_list(camera, events_dict)
     return todays_events
 
@@ -539,7 +592,11 @@ def get_most_recent_events_for_prefix(
             blobs = get_all_events_for_prefix(prefix, bucket)
             if not blobs:
                 raise TimeoutError(f"Timed out. No data found for {prefix}")
-    events = get_sorted_events_from_blobs(blobs)
+            all_events = get_sorted_events_from_blobs(blobs)
+            the_date = all_events[0].date
+            events = [event for event in all_events if event.date == the_date]
+        else:
+            events = get_sorted_events_from_blobs(blobs)
     return events
 
 

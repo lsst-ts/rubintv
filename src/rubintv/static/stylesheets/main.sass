@@ -19,6 +19,7 @@
 .button
 	box-sizing: border-box
 	border-radius: 10%
+	border: none
 	background: #eee
 	color: #000
 	display: flex
@@ -35,8 +36,10 @@
 	padding: 1.5em
 
 .button-small
-	width: 100px
+	padding: 1em
 	height: 67px
+	width: fit-content
+	min-width: 100px
 
 .button-table
 	width: 30px
@@ -66,6 +69,8 @@ a
 .button.movie
 	background-color: #83daee
 	text-align: center
+.button.admin
+	background-color: #999
 
 html
 	font-family: "Rubik", sans-serif
@@ -123,6 +128,9 @@ header
 		margin-right: 1em
 		margin-bottom: 1em
 
+h2
+	font-size: 1.7em
+	margin-bottom: 0.6em
 h3
 	font-size: 1.4em
 	margin-bottom: 0.5em
@@ -287,3 +295,69 @@ h3
 		padding: 4px
 	.to-bottom
 		transform: rotate(180deg)
+
+
+.admin-access
+	margin-top: 3em
+
+.service-group
+	display: flex
+	flex-direction: column
+	align-items: center
+	margin-bottom: 1.5em
+	padding: 1em
+	background: #e8e8e8
+
+
+.all-services, .services
+	display: flex
+	flex-direction: row
+	gap: 1em
+
+
+.all-services > *
+	padding: 1em
+	border: 1px solid #fff
+	&:nth-child(2)
+		margin-left: 2em
+
+.all-services h4
+	text-align: center
+	margin-bottom: 0.5em
+
+.service
+	background: #ddd
+	padding: 0.8em
+	display: flex
+	flex-direction: column
+	align-items: center
+	border-radius: 6px
+	text-align: center
+	&.active .heartbeat
+		background: url(/rubintv/static/images/heartbeat_active.svg)
+		animation: heartbeat 1.5s infinite
+	&.stopped .heartbeat
+		background: url(/rubintv/static/images/heartbeat_stopped.svg)
+		animation:  none
+
+
+.heartbeat
+	width: 32px
+	height: 32px
+	margin-bottom: 0.3em
+	background: #fff
+	background-image: url(/rubintv/static/images/heartbeat_unknown.svg)
+
+@keyframes heartbeat
+	0%
+		transform: scale(1)
+	5%
+		transform: scale(1.1)
+	10%
+		transform: scale(1)
+	15%
+		transform: scale(1.3)
+	50%
+		transform: scale(1)
+	100%
+		transform: scale(1)
