@@ -1,6 +1,8 @@
 {% extends "cameras/layout.jinja" %}
+{% block undertitle %}
+<h2>Historical Data: {{ date }}</h2>
+{% endblock undertitle %}
 {% block content %}
-<h2>Historical Data</h2>
 <section class="calendar">
   {% include "cameras/calendar.jinja" %}
 </section>
