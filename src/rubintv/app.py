@@ -190,7 +190,7 @@ class HistoricalData:
             day: self.get_max_event_seq_for_date(
                 camera, datetime.date(year, month, day)
             )
-            for day in list(days)
+            for day in sorted(list(days))
         }
         return days_dict
 
