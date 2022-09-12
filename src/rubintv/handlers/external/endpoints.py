@@ -160,7 +160,7 @@ async def get_allsky_historical(request: web.Request) -> dict[str, Any]:
 
 
 @routes.get("/allsky/historical/{date_str}")
-@template("cameras/allsky-monitor.jinja")
+@template("cameras/allsky-historical.jinja")
 async def get_allsky_historical_movie(request: web.Request) -> dict[str, Any]:
     logger = request["safir/logger"]
     with Timer() as timer:
@@ -177,7 +177,14 @@ async def get_allsky_historical_movie(request: web.Request) -> dict[str, Any]:
         years = historical.get_camera_calendar(camera)
         movie = all_events["monitor"][0]
     logger.info("get_allsky_historical_movie", duration=timer.seconds)
-    return {"camera": camera, "movie": movie}
+    return {
+        "title": title,
+        "camera": camera,
+        "years": years,
+        "year_to_display": year,
+        "month_names": month_names(),
+        "movie": movie,
+    }
 
 
 @routes.get("/{camera}")
@@ -302,7 +309,7 @@ async def get_historical(request: web.Request) -> dict[str, Any]:
 
 
 @routes.get("/{camera}/historical/{date_str}")
-@template("cameras/historical-update.jinja")
+@template("cameras/historical.jinja")
 async def get_historical_day_data(request: web.Request) -> dict[str, Any]:
     logger = request["safir/logger"]
     historical = request.config_dict["rubintv/historical_data"]
@@ -324,7 +331,10 @@ async def get_historical_day_data(request: web.Request) -> dict[str, Any]:
     per_day = get_per_day_channels(bucket, camera, the_date, logger)
     metadata_json = get_metadata_json(bucket, camera, the_date, logger)
     return {
+        "title": title,
         "camera": camera,
+        "years": years,
+        "month_names": month_names(),
         "date": the_date,
         "events": day_events,
         "metadata": metadata_json,
