@@ -12,7 +12,6 @@ from dataclasses import asdict
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, Iterator, List, Optional
 
-import requests
 from aiohttp import web
 from aiohttp_jinja2 import render_template, template
 from google.api_core.exceptions import NotFound
