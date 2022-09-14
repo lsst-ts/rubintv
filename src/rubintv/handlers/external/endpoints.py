@@ -383,17 +383,11 @@ def get_per_day_channels(
 def get_channel_resource_url(
     bucket: Bucket, channel: Channel, a_date: date, logger: Any
 ) -> str:
-    prefix = channel.prefix
     date_str = a_date.strftime("%Y%m%d")
-    url = f"https://storage.googleapis.com/{bucket.name}/"
-    url += f"{prefix}/dayObs_{date_str}.mp4"
-    try:
-        res = requests.head(url)
-        if res.status_code != 200:
-            url = ""
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error retrieving movie from {url} with error {e}")
-        url = ""
+    prefix = f"{channel.prefix}/dayObs_{date_str}"
+    url = ""
+    if blobs := list(bucket.list_blobs(prefix=prefix)):
+        url = blobs[0].name
     return url
 
 
