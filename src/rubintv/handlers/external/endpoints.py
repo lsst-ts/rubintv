@@ -413,23 +413,29 @@ async def events(request: web.Request) -> dict[str, Any]:
         bucket = request.config_dict["rubintv/gcs_bucket"]
         camera = cameras[request.match_info["camera"]]
         channel_name = request.match_info["channel"]
-        date = request.match_info["date"]
+        the_date = request.match_info["date"]
         seq = request.match_info["seq"]
         channel = camera.channels[channel_name]
         title = build_title(
-            camera.name, channel.name, date, seq, request=request
+            camera.name, channel.name, the_date, seq, request=request
         )
         prefix = channel.prefix
         prefix_dashes = prefix.replace("_", "-")
-        event = Event(
-            f"https://storage.googleapis.com/{bucket.name}/{prefix}/"
-            f"{prefix_dashes}_dayObs_{date}_seqNum_{seq}.png"
+        whole_prefix = (
+            f"{prefix}/{prefix_dashes}_dayObs_{the_date}_seqNum_{seq}"
         )
+        # empty URL string is handled in the template
+        url = ""
+        if blobs := list(bucket.list_blobs(prefix=whole_prefix)):
+            url = blobs[0].public_url
     logger.info("events", duration=timer.seconds)
     return {
         "title": title,
         "camera": camera,
-        "event": event,
+        "the_url": url,
+        "date": the_date,
+        "seq": seq,
+        "name": whole_prefix,
         "channel": channel.name,
     }
 

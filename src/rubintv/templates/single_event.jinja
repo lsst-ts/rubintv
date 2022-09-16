@@ -3,13 +3,17 @@
 {% block content %}
 <div id="refresher">
   <div class="subheader">
-    <h2>{{event.date.date()}} : Sequence {{event.seq}}</h2>
+    <h2>{{ date }} : Sequence {{ seq }}</h2>
   </div>
-  <a href="{{event.url}}">
-    <img class="resp {% if channel=="Monitor" %} behind {% endif %}" src="{{event.url}}">
-  </a>
-  {% if channel != "Monitor" %}
-    <div class="desc">{{event.name}}</div>
+  {% if the_url | length %}
+    <a href="{{ the_url }}">
+      <img class="resp {% if channel=="Monitor" %} behind {% endif %}" src="{{ the_url }}">
+    </a>
+    {% if channel != "Monitor" %}
+      <div class="desc">{{ name }}</div>
+    {% endif %}
+  {% else %}
+    <p>Event not found</p>
   {% endif %}
 </div>
 {% endblock content %}
