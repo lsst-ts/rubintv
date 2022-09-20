@@ -70,12 +70,12 @@ class ChannelStatus {
 
   displayHeartbeatInfo () {
     const time = this.time
-      ? new Date(this.time * 1000).toLocaleString('en-US')
+      ? new Date(this.time * 1000).toLocaleString('en-US', { timeZone: 'UTC' })
       : 'never'
 
     const next = this.isActive
-      ? new Date(this.next * 1000).toLocaleString('en-US')
-      : new Date((this.nowTimestamp + this.RETRY) * 1000).toLocaleString('en-US')
+      ? new Date(this.next * 1000).toLocaleString('en-US', { timeZone: 'UTC' })
+      : new Date((this.nowTimestamp + this.RETRY) * 1000).toLocaleString('en-US', { timeZone: 'UTC' })
 
     this.$el.attr({ title: `last heartbeat at: ${time} UTC\nnext check at: ${next} UTC` })
   }
