@@ -107,8 +107,15 @@ class HistoricalData:
                 print(f"blobs found: {len(blobs)}")
         return blobs
 
-    def _get_events(self) -> Dict[str, Dict[str, List[Event]]]:
-        if not self._events or get_current_day_obs() > self._lastCall:
+    def reset(self) -> None:
+        self._events = self._get_events(reset=True)
+        self._lastCall = get_current_day_obs()
+        return
+
+    def _get_events(
+        self, reset: bool = False
+    ) -> Dict[str, Dict[str, List[Event]]]:
+        if not self._events or get_current_day_obs() > self._lastCall or reset:
             blobs = self._get_blobs()
             self._events = self._sort_events_from_blobs(blobs)
             self._lastCall = get_current_day_obs()
