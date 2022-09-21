@@ -398,23 +398,13 @@ def get_channel_resource_url(
 
 def get_metadata_json(
     bucket: Bucket, camera: Camera, a_date: date, logger: Any
-) -> str:
+) -> dict:
     date_str = a_date.strftime("%Y%m%d")
+    prefix = f"{camera.slug}_metadata/dayObs_{date_str}.json"
     metadata_json = "{}"
-    metadata_url = get_metadata_url(bucket.name, camera.slug, date_str)
-    try:
-        metadata_res = requests.get(metadata_url)
-        if metadata_res.status_code == 200:
-            metadata_json = metadata_res.text
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error retrieving from {metadata_url} with error: {e}")
-    return metadata_json
-
-
-def get_metadata_url(bucket_name: str, camera_slug: str, date_str: str) -> str:
-    url = f"https://storage.googleapis.com/{bucket_name}/"
-    url += f"{camera_slug}_metadata/dayObs_{date_str}.json"
-    return url
+    if blobs := list(bucket.list_blobs(prefix=prefix)):
+        metadata_json = blobs[0].download_as_string()
+    return json.loads(metadata_json)
 
 
 def month_names() -> List[str]:
