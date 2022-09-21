@@ -46,15 +46,22 @@ RubinTV Admin
       {% endif %}
 
     </div>
-
-
   </div>
   {% endfor %}
   <script type="application/json" id="heartbeats">
     {{ heartbeats|tojson }}
   </script>
+
+  <form action="reload_historical" method="POST" id="historicalReset">
+    <button>Reload All Historical Data</button>
+    <div class="pending hidden">
+      <img src="{{ url('static', filename='images/pending.gif') }}">
+    </div>
+  </form>
+
 {% endblock content %}
 {% block footer_scripts %}
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script type=text/javascript src="{{ url('static', filename='js/modules/heartbeat.js') }}"></script>
+<script type=text/javascript src="{{ url('static', filename='js/modules/historicalReset.js') }}"></script>
 {% endblock footer_scripts %}

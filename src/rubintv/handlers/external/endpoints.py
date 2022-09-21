@@ -49,7 +49,7 @@ async def get_admin_page(request: web.Request) -> dict[str, Any]:
     }
 
 
-@routes.post("/admin/reload_historical")
+@routes.post("/reload_historical")
 async def reload_historical(request: web.Request) -> web.Response:
     cams_with_history = [cam for cam in cameras.values() if cam.has_historical]
     historical = request.config_dict["rubintv/historical_data"]
@@ -59,7 +59,7 @@ async def reload_historical(request: web.Request) -> web.Response:
     # datetime can't be serialized so replace with string
     the_date = latest.cleanDate()
     latest_dict["date"] = the_date
-    json_res = json.dumps(latest_dict)
+    json_res = json.dumps({"most_recent_historical_event": latest_dict})
     return web.Response(text=json_res, content_type="application/json")
 
 

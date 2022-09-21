@@ -503,26 +503,6 @@ h3 {
 
 @keyframes heartbeat {
   0% {
-    transform: scale(0.8);
-  }
-  5% {
-    transform: scale(0.9);
-  }
-  10% {
-    transform: scale(0.8);
-  }
-  15% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(0.8);
-  }
-  100% {
-    transform: scale(0.8);
-  }
-}
-@keyframes heartbeat {
-  0% {
     transform: scale(1);
   }
   5% {
@@ -540,6 +520,21 @@ h3 {
   100% {
     transform: scale(1);
   }
+}
+#historicalReset {
+  display: flex;
+  align-items: center;
+}
+#historicalReset .pending {
+  margin-left: 2px;
+  height: 20px;
+  width: 20px;
+}
+#historicalReset .pending img {
+  height: 100%;
+}
+#historicalReset .hidden {
+  display: none;
 }
 
 /*# sourceMappingURL=main.css.map */
