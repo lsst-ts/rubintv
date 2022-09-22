@@ -9,7 +9,7 @@
 // }
 // timestamp is seconds since epoch (Jan 1, 1970)
 
-class ChannelStatus {
+export class ChannelStatus {
   // time in secs to try downloading heartbeat again after stale
   RETRY = 120
   // time in secs to query all blobs to bring in missing services
@@ -17,6 +17,7 @@ class ChannelStatus {
   constructor (heartbeatFromApp) {
     this.consumeHeartbeat(heartbeatFromApp)
     this.url = heartbeatFromApp.url
+    // pass the element in at construction
     this.$el = $(`#${this.channel}`)
     this.displayStatus()
     this.waitForNextHeartbeat()
@@ -90,21 +91,3 @@ class ChannelStatus {
     this.displayHeartbeatInfo()
   }
 }
-
-const UPDATE_ALL_AFTER = 6000
-
-const heartbeatsText = document.querySelector('#heartbeats').text
-const heartbeats = JSON.parse(heartbeatsText)
-let statuses = heartbeats.map(hb => new ChannelStatus(hb))
-
-setInterval(() => {
-  const urlPath = document.location.pathname
-  $.get(`${urlPath}/heartbeats`, (newHeartbeats) => {
-    console.log('Updating all heartbeats')
-    newHeartbeats.forEach(hb => {
-      console.log(`Found ${hb.channel}`)
-    })
-    statuses.forEach(hb => { hb.displayStatus(false) })
-    statuses = newHeartbeats.map(hb => new ChannelStatus(hb))
-  })
-}, UPDATE_ALL_AFTER * 1000)
