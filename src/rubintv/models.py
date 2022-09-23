@@ -10,6 +10,7 @@ class Channel:
     simplename: str
     label: str = ""
     endpoint: str = field(init=False)
+    service_dependency: str = ""
 
     def __post_init__(self) -> None:
         self.endpoint = self.simplename + "events"
@@ -84,18 +85,21 @@ cameras["auxtel"].channels = {
         prefix="auxtel_monitor",
         simplename="monitor",
         label="Monitor",
+        service_dependency="auxtel_isr_runner",
     ),
     "im": Channel(
         name="Image Analysis",
         prefix="summit_imexam",
         simplename="im",
         label="ImAnalysis",
+        service_dependency="auxtel_isr_runner",
     ),
     "spec": Channel(
         name="Spectrum",
         prefix="summit_specexam",
         simplename="spec",
         label="Spectrum",
+        service_dependency="auxtel_isr_runner",
     ),
     "mount": Channel(
         name="Mount",
@@ -131,12 +135,7 @@ cameras["comcam"].channels = {
 production_services = {
     "auxtel": {
         "display_name": "AuxTel",
-        "channels": {
-            "auxtel_monitor": "Monitor",
-            "summit_imexam": "Image Analysis",
-            "summit_specexam": "Spectrum",
-            "auxtel_mount_torques": "Mount",
-        },
+        "channels": cameras["auxtel"].channels,
         "services": {
             "auxtel_metadata": "Metadata",
             "auxtel_isr_runner": "ISR Runner",
@@ -144,15 +143,13 @@ production_services = {
     },
     "allsky": {
         "display_name": "All Sky",
-        "channels": {
+        "services": {
             "allsky": "All Sky",
         },
     },
     "comcam": {
         "display_name": "ComCam",
-        "channels": {
-            "comcam_monitor": "Central CCD Monitor",
-        },
+        "channels": cameras["comcam"].channels,
     },
     "misc": {
         "display_name": "Misc Services",

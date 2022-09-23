@@ -14,7 +14,7 @@ import { createTableControlUI, applySelected, loadMetadata } from './modules/tab
   ]
 
   let meta = loadMetadata()
-  createTableControlUI(meta, $('.channel-grid-heading'), defaultSelected)
+  createTableControlUI(meta, $('#table-controls'), defaultSelected)
   applySelected(meta, defaultSelected)
   const selected = defaultSelected
 
@@ -26,7 +26,7 @@ import { createTableControlUI, applySelected, loadMetadata } from './modules/tab
     }).done(function () {
       meta = loadMetadata()
       applySelected(meta, selected)
-      createTableControlUI(meta, $('.channel-grid-heading'), selected)
+      createTableControlUI(meta, $('#table-controls'), selected)
     }).fail(function () {
       console.log("Couldn't reach server")
     })

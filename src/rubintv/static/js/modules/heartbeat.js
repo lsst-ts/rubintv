@@ -14,13 +14,13 @@ export class ChannelStatus {
   RETRY = 120
   // time in secs to query all blobs to bring in missing services
 
-  constructor (heartbeatFromApp) {
-    this.consumeHeartbeat(heartbeatFromApp)
-    this.url = heartbeatFromApp.url
-    // pass the element in at construction
-    this.$el = $(`#${this.channel}`)
-    this.displayStatus()
-    this.waitForNextHeartbeat()
+  constructor (service, dependency = null) {
+    this.service = service
+    this.dependency = dependency
+    this.$el = $(`#${this.service}`)
+    this.time = 0
+    this.next = 0
+    this.updateHeartbeatData()
   }
 
   get nextInterval () {
@@ -30,7 +30,11 @@ export class ChannelStatus {
   }
 
   get isActive () {
-    return this.next > this.nowTimestamp
+    const thisActive = this.next > this.nowTimestamp
+    if (!this.dependency) {
+      return thisActive
+    }
+    return thisActive && this.dependency.isActive
   }
 
   get status () {
@@ -42,7 +46,7 @@ export class ChannelStatus {
   }
 
   consumeHeartbeat (heartbeat) {
-    this.channel = heartbeat.channel
+    this.service = heartbeat.channel
     this.time = heartbeat.currTime
     this.next = heartbeat.nextExpected
     this.errors = heartbeat.errors
@@ -55,16 +59,16 @@ export class ChannelStatus {
   }
 
   updateHeartbeatData () {
-    let alive = false
+    this.alive = false
     const self = this
-    const urlPath = document.location.pathname
-    $.get(`${urlPath}/heartbeat/${this.channel}`, (rawHeartbeat) => {
-      if (rawHeartbeat) {
-        self.consumeHeartbeat(rawHeartbeat)
-        alive = true
+
+    $.get(`admin/heartbeat/${this.service}`, (heartbeat) => {
+      if (!$.isEmptyObject(heartbeat)) {
+        self.consumeHeartbeat(heartbeat)
+        this.alive = true
       }
     }).always(() => {
-      self.displayStatus(alive)
+      self.displayStatus(this.alive)
       self.waitForNextHeartbeat()
     })
   }
@@ -82,7 +86,6 @@ export class ChannelStatus {
   }
 
   displayStatus (alive = true) {
-    // channel in this context is the same as channel.prefix used in the template
     if (alive) {
       this.$el.removeClass('stopped').addClass(this.status)
     } else {

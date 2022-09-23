@@ -17,12 +17,12 @@ RubinTV Admin
         <div>
          <h4>Channels</h4>
           <div class="services channels">
-            {% for channel in services[group]['channels'] %}
-              <div class="service" id="{{ channel }}">
+            {% for channel in services[group]['channels'].values() %}
+              <div class="service" id="{{ channel.prefix }}">
                 <div class="heartbeat">
 
                 </div>
-                {{ services[group]['channels'][channel] }}
+                {{ channel.name }}
               </div>
             {% endfor %}
           </div>
@@ -63,5 +63,5 @@ RubinTV Admin
 {% block footer_scripts %}
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script type=module src="{{ url('static', filename='js/admin-status.js') }}"></script>
-<script type=text/javascript src="{{ url('static', filename='js/modules/historicalReset.js') }}"></script>
+<script type=text/javascript src="{{ url('static', filename='js/modules/historical-reset.js') }}"></script>
 {% endblock footer_scripts %}

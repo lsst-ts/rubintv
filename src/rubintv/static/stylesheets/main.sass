@@ -187,6 +187,10 @@ h3
 		left: 0
 		pointer-events: none
 
+.metadata-status
+	display: flex
+	align-items: center
+
 .channel-grid-heading
 	background: #fff
 	padding-top: 1em
@@ -241,7 +245,7 @@ h3
 	background: #eee
 	padding: 1.2em 19px
 	border-radius: 20px
-	margin-left: 1em
+	margin: 0 1em
 
 .table-control-button::after
 	content: "∆"
@@ -308,45 +312,59 @@ h3
 	padding: 1em
 	background: #e8e8e8
 
+	.all-services, .services
+		display: flex
+		flex-direction: row
+		gap: 1em
 
-.all-services, .services
-	display: flex
-	flex-direction: row
-	gap: 1em
+	.all-services > *
+		padding: 1em
+		border: 1px solid #fff
+		&:nth-child(2)
+			margin-left: 2em
 
+	.all-services h4
+		text-align: center
+		margin-bottom: 0.5em
 
-.all-services > *
+	.service
+		background: #ddd
+		padding: 0.8em
+		display: flex
+		flex-direction: column
+		align-items: center
+		border-radius: 6px
+		text-align: center
+
+		.heartbeat
+			margin-bottom: 0.3em
+			background-color: #fff
+
+.on-page-status
 	padding: 1em
-	border: 1px solid #fff
-	&:nth-child(2)
-		margin-left: 2em
-
-.all-services h4
-	text-align: center
-	margin-bottom: 0.5em
-
-.service
-	background: #ddd
-	padding: 0.8em
+	margin: 1em 1em 1em auto
+	background: #f0f0f0
 	display: flex
 	flex-direction: column
-	align-items: center
-	border-radius: 6px
-	text-align: center
-	&.active .heartbeat
-		background: url(/rubintv/static/images/heartbeat_active.svg)
-		animation: heartbeat 1.5s infinite
-	&.stopped .heartbeat
-		background: url(/rubintv/static/images/heartbeat_stopped.svg)
-		animation:  none
+	justify-content: center
 
+.channel
+	.heartbeat
+		margin: auto
+		height: 50px
+		width: 50px
 
 .heartbeat
 	width: 32px
 	height: 32px
-	margin-bottom: 0.3em
-	background: #fff
 	background-image: url(/rubintv/static/images/heartbeat_unknown.svg)
+
+.active .heartbeat
+	background: url(/rubintv/static/images/heartbeat_active.svg)
+	animation: heartbeat 1.5s infinite
+.stopped .heartbeat
+	background: url(/rubintv/static/images/heartbeat_stopped.svg)
+	animation:  none
 
 @keyframes heartbeat
 	0%

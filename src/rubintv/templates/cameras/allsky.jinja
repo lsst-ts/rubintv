@@ -5,6 +5,13 @@
     <img src="{{ url('static', filename='images/history-line.svg') }}">
   </a>
 {% endblock undertitle %}
+
+{% block allsky_status %}
+<div id="allsky" class="on-page-status">
+  <div class="heartbeat"></div>
+</div>
+{% endblock allsky_status %}
+
 {% block content %}
   <div class="columns">
 
@@ -25,5 +32,5 @@
 {% endblock content %}
 {% block footer_scripts %}
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script type=text/javascript src="{{ url('static', filename='js/allsky-refresh.js') }}"></script>
+<script type=module src="{{ url('static', filename='js/allsky-refresh.js') }}"></script>
 {% endblock footer_scripts %}

@@ -4,9 +4,9 @@ import { ChannelStatus } from './modules/heartbeat.js'
 (function ($) {
   const UPDATE_ALL_AFTER = 6000
 
-  const heartbeatsText = document.querySelector('#heartbeats').text
-  const heartbeats = JSON.parse(heartbeatsText)
-  let statuses = heartbeats.map(hb => new ChannelStatus(hb))
+  const services = Array.from(document.querySelectorAll('.service').values()).map(s => s.id)
+  let stats = services.map(s => new ChannelStatus(s))
+  // let status = new ChannelStatus(services[0])
 
   setInterval(() => {
     const urlPath = document.location.pathname
@@ -15,8 +15,8 @@ import { ChannelStatus } from './modules/heartbeat.js'
       newHeartbeats.forEach(hb => {
         console.log(`Found ${hb.channel}`)
       })
-      statuses.forEach(hb => { hb.displayStatus(false) })
-      statuses = newHeartbeats.map(hb => new ChannelStatus(hb))
+      stats.forEach(service => { service.displayStatus(false) })
+      stats = newHeartbeats.map(hb => new ChannelStatus(hb.channel))
     })
   }, UPDATE_ALL_AFTER * 1000)
 })(jQuery)

@@ -1,0 +1,22 @@
+/* global jQuery */
+import { ChannelStatus } from './modules/heartbeat.js'
+
+(function ($) {
+  const services = Array.from(document.querySelectorAll('.service')
+    .values())
+    // eslint-disable-next-line no-new-object
+    .map(s => new Object({ id: s.id, dependentOn: s.dataset.dependentOn }))
+  console.log(services)
+  const dependenciesNames = Array.from(new Set(services.map(s => s.dependentOn)))
+    // eslint-disable-next-line eqeqeq
+    .filter(d => d != false)
+
+  const dependencies = Object.fromEntries(
+    dependenciesNames.map(d => [d,
+      new ChannelStatus(d)])
+  )
+
+  const stats = services
+    .map(s => new ChannelStatus(s.id, dependencies[s.dependentOn]))
+  console.log(stats)
+})(jQuery)
