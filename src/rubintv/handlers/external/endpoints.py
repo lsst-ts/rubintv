@@ -90,9 +90,10 @@ def get_heartbeats(bucket: Bucket, prefix: str) -> List[Dict]:
     heartbeats = []
     for hb_blob in hb_blobs:
         try:
-            blob_content = hb_blob.download_as_string()
-        except NotFound as e:
-            print(f"Error: {hb_blob.name} not found.\n{e.errors()}")
+            the_blob = bucket.get_blob(hb_blob.name)
+            blob_content = the_blob.download_as_string()
+        except NotFound:
+            print(f"Error: {hb_blob.name} not found.")
         if not blob_content:
             continue
         hb = json.loads(blob_content)
