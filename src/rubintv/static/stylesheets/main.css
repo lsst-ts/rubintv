@@ -487,7 +487,6 @@ h3 {
 }
 .service-group .service .heartbeat {
   margin-bottom: 0.3em;
-  background-color: #fff;
 }
 
 .on-page-status {
@@ -497,12 +496,6 @@ h3 {
   display: flex;
   flex-direction: column;
   justify-content: center;
-}
-
-.channel .heartbeat {
-  margin: auto;
-  height: 50px;
-  width: 50px;
 }
 
 .heartbeat {
@@ -519,6 +512,21 @@ h3 {
 .stopped .heartbeat {
   background: url(/rubintv/static/images/heartbeat_stopped.svg);
   animation: none;
+}
+
+.channel .heartbeat {
+  margin: auto;
+  height: 50px;
+  width: 50px;
+  background-image: none;
+}
+.channel.active {
+  background-image: none;
+}
+
+.metadata-status .heartbeat {
+  height: 14px;
+  width: 14px;
 }
 
 @keyframes heartbeat {
