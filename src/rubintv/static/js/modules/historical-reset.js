@@ -4,15 +4,11 @@ function historicalReset () {
   const $form = $('#historicalReset')
   $form.click(function (e) {
     e.preventDefault()
-    $(this).find('.pending').toggleClass('hidden')
-    $.post('reload_historical', function (jsonRes) {
-      $(this).find('.pending').toggleClass('hidden')
-      $form.replaceWith(
-        $('<div>', { class: 'message success' }).text('Historical Data Reloaded Successfully')
-          .append(
-            $('<pre>').text(JSON.stringify(jsonRes, null, '\t'))
-          )
-      )
+    $form.find('.done').addClass('hidden')
+    $form.find('.pending').toggleClass('hidden')
+    $.post('reload_historical', function () {
+      $form.find('.pending').toggleClass('hidden')
+      $form.find('.done').toggleClass('hidden')
     })
   })
 }
