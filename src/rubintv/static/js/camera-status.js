@@ -6,10 +6,9 @@ import { ChannelStatus } from './modules/heartbeat.js'
     .values())
     // eslint-disable-next-line no-new-object
     .map(s => new Object({ id: s.id, dependentOn: s.dataset.dependentOn }))
-  console.log(services)
   const dependenciesNames = Array.from(new Set(services.map(s => s.dependentOn)))
     // eslint-disable-next-line eqeqeq
-    .filter(d => d != false)
+    .filter(d => !(d === '' || typeof d === 'undefined'))
 
   const dependencies = Object.fromEntries(
     dependenciesNames.map(d => [d,

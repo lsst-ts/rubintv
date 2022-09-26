@@ -6,7 +6,6 @@ import { ChannelStatus } from './modules/heartbeat.js'
 
   const services = Array.from(document.querySelectorAll('.service').values()).map(s => s.id)
   let stats = services.map(s => new ChannelStatus(s))
-  // let status = new ChannelStatus(services[0])
 
   setInterval(() => {
     const urlPath = document.location.pathname
