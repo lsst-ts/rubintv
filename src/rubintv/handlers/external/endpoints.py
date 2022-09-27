@@ -37,15 +37,10 @@ async def get_page(request: web.Request) -> dict[str, Any]:
 @routes.get("/admin")
 @template("admin.jinja")
 async def get_admin_page(request: web.Request) -> dict[str, Any]:
-    bucket = request.config_dict["rubintv/gcs_bucket"]
     title = build_title("Admin", request=request)
-
-    heartbeats = get_heartbeats(bucket, HEARTBEATS_PREFIX)
-
     return {
         "title": title,
         "services": production_services,
-        "heartbeats": heartbeats,
     }
 
 

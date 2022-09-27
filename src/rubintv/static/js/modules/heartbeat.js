@@ -54,6 +54,10 @@ export class ChannelStatus {
 
   waitForNextHeartbeat () {
     setTimeout(() => {
+      if (this.service === 'allsky') {
+        console.log(`waitForNext(): ${JSON.stringify(this)} `)
+        console.log(`with interval: ${this.nextInterval}`)
+      }
       this.updateHeartbeatData()
     }, this.nextInterval * 1000)
   }
@@ -75,7 +79,7 @@ export class ChannelStatus {
 
   displayHeartbeatInfo () {
     const time = this.time
-      ? new Date(this.time * 1000).toLocaleString('en-US', { timeZone: 'UTC' }) + 'UTC'
+      ? new Date(this.time * 1000).toLocaleString('en-US', { timeZone: 'UTC' }) + ' UTC'
       : 'never'
 
     const next = this.isActive
