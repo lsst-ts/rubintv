@@ -489,15 +489,6 @@ h3 {
   margin-bottom: 0.3em;
 }
 
-.on-page-status {
-  padding: 1em;
-  margin: 1em 1em 1em auto;
-  background: #f0f0f0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
 .heartbeat {
   width: 32px;
   height: 32px;
@@ -512,6 +503,16 @@ h3 {
 .stopped .heartbeat {
   background: url(/rubintv/static/images/heartbeat_stopped.svg);
   animation: none;
+}
+
+.on-page-status {
+  margin: 1em 1em 1em auto;
+}
+.on-page-status .heartbeat {
+  background-image: none;
+}
+.on-page-status.active {
+  background-image: none;
 }
 
 .channel .heartbeat {
