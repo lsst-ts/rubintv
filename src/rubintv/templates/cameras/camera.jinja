@@ -15,12 +15,15 @@
     <nav id="per-image-menu" class="channel-menu" role="navigation">
       <h3>Per Image Channels: Current</h3>
       <ul class="channels flr">
-        {% for channel in camera.channels %}
-          {% if camera.channels[channel].label %}
-            <li class="channel">
-              <a  class="button button-large {{channel}}"
-                  href="/rubintv/{{ camera.slug }}/{{channel}}_current" target="_blank">
-                <span>{{ camera.channels[channel].name }}</span>
+        {% for channel in camera.channels.values() %}
+          {% if channel.label %}
+            <li class="channel service"
+                id="{{ channel.prefix }}"
+                data-dependent-on="{{ channel.service_dependency }}">
+              <a  class="button button-large {{ channel.simplename }}"
+                  href="/rubintv/{{ camera.slug }}/{{ channel.simplename }}_current" target="_blank">
+                <div class="heartbeat"></div>
+                <span>{{ channel.name }}</span>
               </a>
             </li>
           {% endif %}
@@ -45,6 +48,13 @@
     {% endif %}
   </div>
 
+  <div class="metadata-status">
+    <h4>metadata service:&nbsp;</h4>
+    <div class="service" id="{{ camera.slug }}_metadata">
+      <div class="heartbeat"></div>
+    </div>
+  </div>
+
     <section class="channel-day-data">
       {% include "cameras/data-table-header.jinja" %}
     </section>
@@ -53,4 +63,5 @@
 {% block footer_scripts %}
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
   <script type="module" src="{{ url('static', filename='js/refresh-daytable.js') }}"></script>
+  <script type="module" src="{{ url('static', filename='js/camera-status.js') }}"></script>
 {% endblock footer_scripts  %}

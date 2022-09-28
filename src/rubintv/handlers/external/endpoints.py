@@ -8,6 +8,7 @@ __all__ = [
 ]
 
 import json
+from dataclasses import asdict
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, Iterator, List, Optional
 
@@ -36,16 +37,25 @@ async def get_page(request: web.Request) -> dict[str, Any]:
 @routes.get("/admin")
 @template("admin.jinja")
 async def get_admin_page(request: web.Request) -> dict[str, Any]:
-    bucket = request.config_dict["rubintv/gcs_bucket"]
     title = build_title("Admin", request=request)
-
-    heartbeats = get_heartbeats(bucket, HEARTBEATS_PREFIX)
-
     return {
         "title": title,
         "services": production_services,
-        "heartbeats": heartbeats,
     }
+
+
+@routes.post("/reload_historical")
+async def reload_historical(request: web.Request) -> web.Response:
+    cams_with_history = [cam for cam in cameras.values() if cam.has_historical]
+    historical = request.config_dict["rubintv/historical_data"]
+    historical.reset()
+    latest = historical.get_most_recent_event(cams_with_history[0])
+    latest_dict = asdict(latest)
+    # datetime can't be serialized so replace with string
+    the_date = latest.cleanDate()
+    latest_dict["date"] = the_date
+    json_res = json.dumps({"most_recent_historical_event": latest_dict})
+    return web.Response(text=json_res, content_type="application/json")
 
 
 @routes.get("/admin/heartbeat/{heartbeat_prefix}")
@@ -75,9 +85,10 @@ def get_heartbeats(bucket: Bucket, prefix: str) -> List[Dict]:
     heartbeats = []
     for hb_blob in hb_blobs:
         try:
-            blob_content = hb_blob.download_as_string()
-        except NotFound as e:
-            print(f"Error: {hb_blob.name} not found.\n{e.errors()}")
+            the_blob = bucket.get_blob(hb_blob.name)
+            blob_content = the_blob.download_as_string()
+        except NotFound:
+            print(f"Error: {hb_blob.name} not found.")
         if not blob_content:
             continue
         hb = json.loads(blob_content)
@@ -383,23 +394,13 @@ def get_channel_resource_url(
 
 def get_metadata_json(
     bucket: Bucket, camera: Camera, a_date: date, logger: Any
-) -> str:
+) -> dict:
     date_str = a_date.strftime("%Y%m%d")
+    prefix = f"{camera.slug}_metadata/dayObs_{date_str}.json"
     metadata_json = "{}"
-    metadata_url = get_metadata_url(bucket.name, camera.slug, date_str)
-    try:
-        metadata_res = requests.get(metadata_url)
-        if metadata_res.status_code == 200:
-            metadata_json = metadata_res.text
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error retrieving from {metadata_url} with error: {e}")
-    return metadata_json
-
-
-def get_metadata_url(bucket_name: str, camera_slug: str, date_str: str) -> str:
-    url = f"https://storage.googleapis.com/{bucket_name}/"
-    url += f"{camera_slug}_metadata/dayObs_{date_str}.json"
-    return url
+    if blobs := list(bucket.list_blobs(prefix=prefix)):
+        metadata_json = blobs[0].download_as_string()
+    return json.loads(metadata_json)
 
 
 def month_names() -> List[str]:

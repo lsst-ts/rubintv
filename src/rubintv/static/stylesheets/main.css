@@ -314,6 +314,11 @@ h3 {
   pointer-events: none;
 }
 
+.metadata-status {
+  display: flex;
+  align-items: center;
+}
+
 .channel-grid-heading {
   background: #fff;
   padding-top: 1em;
@@ -378,7 +383,7 @@ h3 {
   background: #eee;
   padding: 1.2em 19px;
   border-radius: 20px;
-  margin-left: 1em;
+  margin: 0 1em;
 }
 
 .table-control-button::after {
@@ -455,27 +460,23 @@ h3 {
   padding: 1em;
   background: #e8e8e8;
 }
-
-.all-services, .services {
+.service-group .all-services, .service-group .services {
   display: flex;
   flex-direction: row;
   gap: 1em;
 }
-
-.all-services > * {
+.service-group .all-services > * {
   padding: 1em;
   border: 1px solid #fff;
 }
-.all-services > *:nth-child(2) {
+.service-group .all-services > *:nth-child(2) {
   margin-left: 2em;
 }
-
-.all-services h4 {
+.service-group .all-services h4 {
   text-align: center;
   margin-bottom: 0.5em;
 }
-
-.service {
+.service-group .service {
   background: #ddd;
   padding: 0.8em;
   display: flex;
@@ -484,43 +485,54 @@ h3 {
   border-radius: 6px;
   text-align: center;
 }
-.service.active .heartbeat {
-  background: url(/rubintv/static/images/heartbeat_active.svg);
-  animation: heartbeat 1.5s infinite;
-}
-.service.stopped .heartbeat {
-  background: url(/rubintv/static/images/heartbeat_stopped.svg);
-  animation: none;
+.service-group .service .heartbeat {
+  margin-bottom: 0.3em;
 }
 
 .heartbeat {
   width: 32px;
   height: 32px;
-  margin-bottom: 0.3em;
-  background: #fff;
   background-image: url(/rubintv/static/images/heartbeat_unknown.svg);
 }
 
-@keyframes heartbeat {
-  0% {
-    transform: scale(0.8);
-  }
-  5% {
-    transform: scale(0.9);
-  }
-  10% {
-    transform: scale(0.8);
-  }
-  15% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(0.8);
-  }
-  100% {
-    transform: scale(0.8);
-  }
+.active .heartbeat {
+  background: url(/rubintv/static/images/heartbeat_active.svg);
+  animation: heartbeat 1.5s infinite;
 }
+
+.stopped .heartbeat {
+  background: url(/rubintv/static/images/heartbeat_stopped.svg);
+  animation: none;
+}
+
+.on-page-status {
+  margin: 1em 1em 1em auto;
+}
+.on-page-status .heartbeat {
+  background-image: none;
+}
+.on-page-status.active {
+  background-image: none;
+}
+
+.channel .heartbeat {
+  margin: auto;
+  height: 50px;
+  width: 50px;
+  background-image: none;
+}
+.channel.active {
+  background-image: none;
+}
+.channel.stopped {
+  background-image: url(/rubintv/static/images/heartbeat_channel_stopped.svg);
+}
+
+.metadata-status .heartbeat {
+  height: 14px;
+  width: 14px;
+}
+
 @keyframes heartbeat {
   0% {
     transform: scale(1);
@@ -540,6 +552,21 @@ h3 {
   100% {
     transform: scale(1);
   }
+}
+#historicalReset {
+  display: flex;
+  align-items: center;
+}
+#historicalReset .pending, #historicalReset .done {
+  margin-left: 2px;
+  height: 20px;
+  width: 20px;
+}
+#historicalReset .pending img, #historicalReset .done img {
+  height: 100%;
+}
+#historicalReset .hidden {
+  display: none;
 }
 
 /*# sourceMappingURL=main.css.map */

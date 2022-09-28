@@ -1,4 +1,5 @@
 /* global jQuery */
+import { ChannelStatus } from './modules/heartbeat.js'
 
 (function ($) {
   const urlPath = document.location.pathname
@@ -29,6 +30,8 @@
       }
     })
   }
-
   setInterval(videoCheckLatest, 5000)
+
+  const status = new ChannelStatus('allsky')
+  console.log(JSON.stringify(status))
 })(jQuery)

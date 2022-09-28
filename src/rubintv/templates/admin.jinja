@@ -17,12 +17,12 @@ RubinTV Admin
         <div>
          <h4>Channels</h4>
           <div class="services channels">
-            {% for channel in services[group]['channels'] %}
-              <div class="service" id="{{ channel }}">
+            {% for channel in services[group]['channels'].values() %}
+              <div class="service" id="{{ channel.prefix }}">
                 <div class="heartbeat">
 
                 </div>
-                {{ services[group]['channels'][channel] }}
+                {{ channel.name }}
               </div>
             {% endfor %}
           </div>
@@ -46,15 +46,23 @@ RubinTV Admin
       {% endif %}
 
     </div>
-
-
   </div>
   {% endfor %}
-  <script type="application/json" id="heartbeats">
+  {# <script type="application/json" id="heartbeats">
     {{ heartbeats|tojson }}
-  </script>
+  </script> #}
+
+  <form action="reload_historical" method="POST" id="historicalReset">
+    <button>Reload All Historical Data</button>
+    <div class="pending hidden">
+      <img src="{{ url('static', filename='images/pending.gif') }}">
+    </div>
+    <div class="done hidden">✅</div>
+  </form>
+
 {% endblock content %}
 {% block footer_scripts %}
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script type=text/javascript src="{{ url('static', filename='js/modules/heartbeat.js') }}"></script>
+<script type=module src="{{ url('static', filename='js/admin-status.js') }}"></script>
+<script type=text/javascript src="{{ url('static', filename='js/modules/historical-reset.js') }}"></script>
 {% endblock footer_scripts %}
