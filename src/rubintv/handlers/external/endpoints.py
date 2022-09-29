@@ -286,7 +286,7 @@ async def get_historical(request: web.Request) -> dict[str, Any]:
 
         years = historical.get_camera_calendar(camera)
 
-        smrd = historical.get_second_most_recent_day(camera)
+        smrd = historical.get_most_recent_day(camera)
         smrd_dict = historical.get_events_for_date(camera, smrd)
         smrd_events = flatten_events_dict_into_list(camera, smrd_dict)
 

@@ -219,16 +219,11 @@ class HistoricalData:
             ]
         return days_events_dict
 
-    def get_second_most_recent_day(self, camera: Camera) -> datetime.date:
+    def get_most_recent_day(self, camera: Camera) -> datetime.date:
         camera_name = camera.slug
         events = self._get_events()[camera_name]["monitor"]
         most_recent = events[0].date
-        events = [event for event in events if not (event.date == most_recent)]
-        if events:
-            second_most = events[0].date.date()
-            return second_most
-        else:
-            return most_recent.date()
+        return most_recent.date()
 
     def get_most_recent_event(self, camera: Camera) -> Event:
         camera_name = camera.slug
