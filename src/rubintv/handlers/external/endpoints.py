@@ -47,7 +47,7 @@ async def get_admin_page(request: web.Request) -> dict[str, Any]:
 async def reload_historical(request: web.Request) -> web.Response:
     cams_with_history = [cam for cam in cameras.values() if cam.has_historical]
     historical = request.config_dict["rubintv/historical_data"]
-    historical.reset()
+    historical.reload()
     latest = historical.get_most_recent_event(cams_with_history[0])
     latest_dict = asdict(latest)
     # datetime can't be serialized so replace with string

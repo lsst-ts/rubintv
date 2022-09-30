@@ -107,7 +107,7 @@ class HistoricalData:
                 print(f"blobs found: {len(blobs)}")
         return blobs
 
-    def reset(self) -> None:
+    def reload(self) -> None:
         self._events = self._get_events(reset=True)
         self._lastCall = get_current_day_obs()
         return
@@ -220,6 +220,7 @@ class HistoricalData:
         return days_events_dict
 
     def get_most_recent_day(self, camera: Camera) -> datetime.date:
+        """Returns most recent day for which there is data in the bucket"""
         camera_name = camera.slug
         events = self._get_events()[camera_name]["monitor"]
         most_recent = events[0].date
