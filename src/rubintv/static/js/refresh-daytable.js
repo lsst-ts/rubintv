@@ -3,9 +3,9 @@ import { createTableControlUI, applySelected, loadMetadata, DefaultSelected } fr
 
 (function ($) {
   let meta = loadMetadata()
-  createTableControlUI(meta, $('#table-controls'), defaultSelected)
-  applySelected(meta, defaultSelected)
-  const selected = defaultSelected
+  createTableControlUI(meta, $('#table-controls'), DefaultSelected)
+  applySelected(meta, DefaultSelected)
+  const selected = DefaultSelected
 
   setInterval(function refreshTable () {
     const date = $('.the-date')[0].dataset.date
