@@ -386,7 +386,7 @@ def get_channel_resource_url(
     prefix = f"{channel.prefix}/dayObs_{date_str}"
     url = ""
     if blobs := list(bucket.list_blobs(prefix=prefix)):
-        url = blobs[0].name
+        url = blobs[0].public_url
     return url
 
 
