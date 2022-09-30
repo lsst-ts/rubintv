@@ -51,7 +51,7 @@ async def reload_historical(request: web.Request) -> web.Response:
     latest = historical.get_most_recent_event(cams_with_history[0])
     latest_dict = asdict(latest)
     # datetime can't be serialized so replace with string
-    the_date = latest.cleanDate()
+    the_date = latest.clean_date()
     latest_dict["date"] = the_date
     json_res = json.dumps({"most_recent_historical_event": latest_dict})
     return web.Response(text=json_res, content_type="application/json")
@@ -124,7 +124,7 @@ async def get_all_sky_current_update(request: web.Request) -> web.Response:
     json_dict = {
         "channel": channel_name,
         "url": current.url,
-        "date": current.cleanDate(),
+        "date": current.clean_date(),
         "seq": current.seq,
         "name": current.name,
     }
@@ -450,7 +450,7 @@ async def current(request: web.Request) -> dict[str, Any]:
             channel.prefix,
             bucket,
         )
-        the_date = event.cleanDate()
+        the_date = event.clean_date()
         seq = event.seq
         title = build_title(
             camera.name, f"Current {channel.name}", request=request
