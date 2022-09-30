@@ -421,22 +421,20 @@ async def events(request: web.Request) -> dict[str, Any]:
         )
         prefix = channel.prefix
         prefix_dashes = prefix.replace("_", "-")
-        whole_prefix = (
-            f"{prefix}/{prefix_dashes}_dayObs_{the_date}_seqNum_{seq}"
+        blob_name = (
+            f"{prefix}/{prefix_dashes}_dayObs_{the_date}_seqNum_{seq}.png"
         )
-        # empty URL string is handled in the template
-        url = ""
-        if blobs := list(bucket.list_blobs(prefix=whole_prefix)):
-            url = blobs[0].public_url
+        event = None
+        if blob := bucket.get_blob(blob_name):
+            event = Event(blob.public_url)
     logger.info("events", duration=timer.seconds)
     return {
         "title": title,
         "camera": camera,
-        "the_url": url,
+        "channel": channel.name,
+        "event": event,
         "date": the_date,
         "seq": seq,
-        "name": whole_prefix,
-        "channel": channel.name,
     }
 
 
@@ -452,6 +450,8 @@ async def current(request: web.Request) -> dict[str, Any]:
             channel.prefix,
             bucket,
         )
+        the_date = event.cleanDate()
+        seq = event.seq
         title = build_title(
             camera.name, f"Current {channel.name}", request=request
         )
@@ -461,6 +461,8 @@ async def current(request: web.Request) -> dict[str, Any]:
         "camera": camera,
         "event": event,
         "channel": channel.name,
+        "date": the_date,
+        "seq": seq,
     }
 
 
