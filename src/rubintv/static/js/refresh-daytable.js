@@ -1,8 +1,8 @@
 /* global jQuery */
-import { createTableControlUI, applySelected, loadMetadata, DefaultSelected } from './modules/table-control.js';
+import { createTableControlUI, applySelected, parseJsonFromDOM, DefaultSelected } from './modules/table-control.js';
 
 (function ($) {
-  let meta = loadMetadata()
+  let meta = parseJsonFromDOM('#table-metadata')
   createTableControlUI(meta, $('#table-controls'), DefaultSelected)
   applySelected(meta, DefaultSelected)
   const selected = DefaultSelected
@@ -13,7 +13,7 @@ import { createTableControlUI, applySelected, loadMetadata, DefaultSelected } fr
     $.get(urlPath + '/update/' + date, function (res) {
       $('.channel-day-data').html(res)
     }).done(function () {
-      meta = loadMetadata()
+      meta = parseJsonFromDOM('#table-metadata')
       applySelected(meta, selected)
       createTableControlUI(meta, $('#table-controls'), selected)
     }).fail(function () {
