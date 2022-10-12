@@ -1,5 +1,3 @@
-{% block day_data_per_day_channels %}
-{% endblock day_data_per_day_channels %}
 <div id="table-top"></div>
 <div class="channel-grid-heading">
   <h3 class="the-date" data-date="{{ date }}">Data for day: <span class="data">{{ date }}<span></h3>
@@ -26,4 +24,7 @@
   </table>
   <script type="application/json" id="table-metadata">
     {{ metadata|tojson }}
+  </script>
+  <script type="application/json" id="per-day-data">
+    {{ per_day|tojson }}
   </script>
