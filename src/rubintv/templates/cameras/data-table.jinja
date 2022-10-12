@@ -7,7 +7,7 @@
         <td class="grid-cell">
           {% if chan is not none %}
             <a  class="button button-table {{ chan.simplename }}"
-                href="{{ '/rubintv/' + camera.slug + '/' + chan.endpoint + '/' + event.cleanDate() + '/' + event.seq|string }}">
+                href="{{ '/rubintv/' + camera.slug + '/' + chan.endpoint + '/' + event.clean_date() + '/' + event.seq|string }}">
             </a>
           {% endif %}
         </td>

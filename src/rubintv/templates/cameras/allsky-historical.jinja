@@ -1,8 +1,10 @@
 {% extends "cameras/layout.jinja" %}
+{% block undertitle %}
+<h2>Historical Data: {{ movie.date.date() }}</h2>
+{% endblock undertitle %}
 {% block content %}
-<h2>Historical Data</h2>
 <div class="columns">
-  <section class="calendar">
+  <section class="calendar half-width">
 
       {% for year in years %}
         {% if year == year_to_display %}
@@ -19,7 +21,11 @@
                 </h5>
                 <div class="days">
                   {% for day in years[year][month] %}
-                    <div class="day" data-date="{{ year }}-{{ month }}-{{ day }}">{{ day }}</div>
+                    <a
+                      class="day"
+                      href="/rubintv/allsky/historical/{{ year }}-{{ month }}-{{ day }}">
+                      {{ day }}
+                    </a>
                   {% endfor %}
                 </div>  {# end of days #}
               </div> {# end of month #}
@@ -36,5 +42,5 @@
 {% endblock content %}
 {% block footer_scripts %}
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script type=text/javascript src="{{ url('static', filename='js/allsky-calendar.js') }}"></script>
+<script type=module src="{{ url('static', filename='js/allsky-calendar.js') }}"></script>
 {% endblock footer_scripts %}

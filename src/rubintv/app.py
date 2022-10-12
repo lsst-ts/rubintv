@@ -107,7 +107,7 @@ class HistoricalData:
                 print(f"blobs found: {len(blobs)}")
         return blobs
 
-    def reset(self) -> None:
+    def reload(self) -> None:
         self._events = self._get_events(reset=True)
         self._lastCall = get_current_day_obs()
         return
@@ -190,7 +190,7 @@ class HistoricalData:
             day: self.get_max_event_seq_for_date(
                 camera, datetime.date(year, month, day)
             )
-            for day in list(days)
+            for day in sorted(list(days))
         }
         return days_dict
 
@@ -219,18 +219,48 @@ class HistoricalData:
             ]
         return days_events_dict
 
-    def get_second_most_recent_day(self, camera: Camera) -> datetime.date:
+    def get_most_recent_day(self, camera: Camera) -> datetime.date:
+        """Returns most recent day for which there is data in the bucket"""
         camera_name = camera.slug
         events = self._get_events()[camera_name]["monitor"]
         most_recent = events[0].date
-        events = [event for event in events if not (event.date == most_recent)]
-        if events:
-            second_most = events[0].date.date()
-            return second_most
-        else:
-            return most_recent.date()
+        return most_recent.date()
 
     def get_most_recent_event(self, camera: Camera) -> Event:
         camera_name = camera.slug
         events = self._get_events()[camera_name]["monitor"]
         return events[0]
+
+    def get_camera_calendar(
+        self, camera: Camera
+    ) -> Dict[int, Dict[int, Dict[int, int]]]:
+        """Generates calendar for given Camera
+
+        Provides a dict of days and number of events, within a dict of months, within
+        a dict of years for every event for the given Camera.
+
+        Parameters
+        ----------
+
+        camera : `Camera`
+            The given Camera object
+
+        Returns
+        -------
+
+        years : `Dict[int, Dict[int, Dict[int, int]]]`
+            A data structure for the view to iterate over with years, months, days and num. of
+            events for that day for the given Camera
+
+        """
+        active_years = self.get_years(camera)
+        reverse_years = sorted(active_years, reverse=True)
+        years = {}
+        for year in reverse_years:
+            months = self.get_months_for_year(camera, year)
+            months_days = {
+                month: self.get_days_for_month_and_year(camera, month, year)
+                for month in months
+            }
+            years[year] = months_days
+        return years

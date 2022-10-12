@@ -24,6 +24,19 @@ const checkboxMapping = {
   Seeing: 'DIMM Seeing'
 }
 
+const defaultSelected = [
+  'exposure_time',
+  'observation_type',
+  'target_name',
+  'filter',
+  'disperser',
+  'airmass',
+  'time_begin_tai',
+  'Seeing'
+]
+
+export const DefaultSelected = defaultSelected
+
 export function loadMetadata () {
   const metaText = document.querySelector('#table-metadata').text
   return JSON.parse(metaText)

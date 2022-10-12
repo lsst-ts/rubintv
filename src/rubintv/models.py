@@ -49,7 +49,7 @@ class Event:
             seq = int(seq_str)
         return (name, prefix, datetime.strptime(date, "%Y-%m-%d"), seq)
 
-    def cleanDate(self) -> str:
+    def clean_date(self) -> str:
         return self.date.strftime("%Y-%m-%d")
 
     def __post_init__(self) -> None:

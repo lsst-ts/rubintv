@@ -1,8 +1,16 @@
 .calendar
-  width: 50%
+  width: 100%
   min-width: 600px
-  padding-top: 4em
+  padding-top: 2em
   margin-top: -2em
+  margin-bottom: 2em
+  display: flex
+  flex-direction: row
+  align-items: flex-start
+  gap: 10px
+  &.half-width
+    width: 50%
+    flex-direction: column
 
 .most-recent-year
   margin-bottom: 2em
@@ -20,6 +28,13 @@
     transform: rotate(180deg)
     display: inline-block
     width: 0.7em
+
+.year
+  flex-basis: 50%
+  padding: 1em
+  background: #fafafa
+.half-width > .year
+  flex-basis: 0
 
 .year.closed
   .year-title::before

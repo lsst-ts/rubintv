@@ -13,10 +13,12 @@
           </h5>
           <div class="days">
             {% for day in years[year][month] %}
-              <div class="day" data-date="{{ year }}-{{ month }}-{{ day }}">
+              <a
+                class="day"
+                href="/rubintv/{{ camera.slug }}/historical/{{ year }}-{{ month }}-{{ day }}">
                 <span class="day_num">{{ day }}</span>
                 <span class="num_evs">({{ years[year][month][day] }})</span>
-              </div>
+              </a>
             {% endfor %}
           </div>  {# end of days #}
         </div> {# end of month #}
