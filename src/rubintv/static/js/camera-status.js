@@ -15,7 +15,6 @@ import { ChannelStatus } from './modules/heartbeat.js'
       new ChannelStatus(d)])
   )
 
-  const stats = services
+  services
     .map(s => new ChannelStatus(s.id, dependencies[s.dependentOn]))
-  console.log(stats)
 })(jQuery)
