@@ -13,7 +13,7 @@ from datetime import date, datetime, timedelta
 from typing import Any, Dict, Iterator, List, Optional
 
 from aiohttp import web
-from aiohttp_jinja2 import render_template, template
+from aiohttp_jinja2 import render_string, render_template, template
 from google.api_core.exceptions import NotFound
 from google.cloud.storage import Bucket
 
@@ -223,8 +223,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
 
 
 @routes.get("/{camera}/update/{date}")
-@template("cameras/data-table-header.jinja")
-async def update_todays_table(request: web.Request) -> dict[str, Any]:
+async def update_todays_table(request: web.Request) -> web.Response:
     logger = request["safir/logger"]
     with Timer() as timer:
         camera = cameras[request.match_info["camera"]]
@@ -259,14 +258,24 @@ async def update_todays_table(request: web.Request) -> dict[str, Any]:
 
         metadata_json = get_metadata_json(bucket, camera, the_date, logger)
         per_day = get_per_day_channels(bucket, camera, the_date, logger)
+
+        context = {
+            "camera": camera,
+            "date": the_date,
+            "events": events,
+            "metadata": metadata_json,
+            "per_day": per_day,
+        }
+        table_html = render_string(
+            "cameras/data-table-header.jinja", request, context
+        )
+        per_day_html = render_string(
+            "cameras/per-day-channels.jinja", request, context
+        )
+        html_parts = {"table": table_html, "per_day": per_day_html}
+        json_res = json.dumps(html_parts)
     logger.info("update_todays_table", duration=timer.seconds)
-    return {
-        "camera": camera,
-        "date": the_date,
-        "events": events,
-        "metadata": metadata_json,
-        "per_day": per_day,
-    }
+    return web.Response(text=json_res, content_type="application/json")
 
 
 @routes.get("/{camera}/historical")

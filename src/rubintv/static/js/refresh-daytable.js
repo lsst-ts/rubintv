@@ -10,14 +10,19 @@ import { createTableControlUI, applySelected, parseJsonFromDOM, DefaultSelected 
   setInterval(function refreshTable () {
     const date = $('.the-date')[0].dataset.date
     const urlPath = document.location.pathname
-    $.get(urlPath + '/update/' + date, function (res) {
-      $('.channel-day-data').html(res)
-    }).done(function () {
-      meta = parseJsonFromDOM('#table-metadata')
-      applySelected(meta, selected)
-      createTableControlUI(meta, $('#table-controls'), selected)
-    }).fail(function () {
-      console.log("Couldn't reach server")
-    })
+    $.get(urlPath + '/update/' + date)
+      .done(function (htmlParts) {
+        console.log(htmlParts)
+        $('#per-night-menu').replaceWith(htmlParts.per_day)
+        $('.channel-day-data').html(htmlParts.table)
+        meta = parseJsonFromDOM('#table-metadata')
+        if (Object.keys(meta).length !== 0) {
+          applySelected(meta, selected)
+          createTableControlUI(meta, $('#table-controls'), selected)
+        }
+      })
+      .fail(function () {
+        console.log("Couldn't reach server")
+      })
   }, 5000)
 })(jQuery)
