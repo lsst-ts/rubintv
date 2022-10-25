@@ -17,6 +17,7 @@ from aiohttp_jinja2 import render_string, render_template, template
 from google.api_core.exceptions import NotFound
 from google.cloud.storage import Bucket
 
+from rubintv import __version__
 from rubintv.app import get_current_day_obs
 from rubintv.handlers import routes
 from rubintv.models import Camera, Channel, Event, cameras, production_services
@@ -40,6 +41,7 @@ async def get_admin_page(request: web.Request) -> dict[str, Any]:
     return {
         "title": title,
         "services": production_services,
+        "version": __version__,
     }
 
 
@@ -186,6 +188,17 @@ async def get_allsky_historical_movie(request: web.Request) -> dict[str, Any]:
     }
 
 
+def get_image_viewer_link(event: Event) -> str:
+    day_obs = event.clean_date().replace("-", "")
+    url = (
+        "http://ccs.lsst.org/FITSInfo/view.html?"
+        f"image=AT_O_{day_obs}_{event.seq:06}"
+        "&raft=R00&color=grey&bias=Simple+Overscan+Correction"
+        "&scale=Per-Segment&source=RubinTV"
+    )
+    return url
+
+
 @routes.get("/{camera}")
 async def get_recent_table(request: web.Request) -> web.Response:
     cam_name = request.match_info["camera"]
@@ -211,6 +224,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
             context = {
                 "title": title,
                 "camera": camera,
+                "viewer_link": get_image_viewer_link,
                 "date": the_date.strftime("%Y-%m-%d"),
                 "events": events,
                 "metadata": metadata_json,
@@ -261,6 +275,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
 
         context = {
             "camera": camera,
+            "viewer_link": get_image_viewer_link,
             "date": the_date,
             "events": events,
             "metadata": metadata_json,
@@ -306,6 +321,7 @@ async def get_historical(request: web.Request) -> dict[str, Any]:
     return {
         "title": title,
         "camera": camera,
+        "viewer_link": get_image_viewer_link,
         "year_to_display": year_to_display,
         "years": years,
         "month_names": month_names(),
@@ -341,6 +357,7 @@ async def get_historical_day_data(request: web.Request) -> dict[str, Any]:
     return {
         "title": title,
         "camera": camera,
+        "viewer_link": get_image_viewer_link,
         "years": years,
         "month_names": month_names(),
         "date": the_date,
