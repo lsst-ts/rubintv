@@ -54,10 +54,6 @@ export class ChannelStatus {
 
   waitForNextHeartbeat () {
     setTimeout(() => {
-      if (this.service === 'allsky') {
-        console.log(`waitForNext(): ${JSON.stringify(this)} `)
-        console.log(`with interval: ${this.nextInterval}`)
-      }
       this.updateHeartbeatData()
     }, this.nextInterval * 1000)
   }

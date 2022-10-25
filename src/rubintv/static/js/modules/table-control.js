@@ -37,8 +37,8 @@ const defaultSelected = [
 
 export const DefaultSelected = defaultSelected
 
-export function loadMetadata () {
-  const metaText = document.querySelector('#table-metadata').text
+export function parseJsonFromDOM (element) {
+  const metaText = document.querySelector(element).text
   return JSON.parse(metaText)
 }
 

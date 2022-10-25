@@ -153,6 +153,9 @@ h6 {
   height: 30px;
   border-radius: 10%;
 }
+.button-table.image-viewer-link {
+  background: url(/rubintv/static/images/image-viewer-link.svg);
+}
 
 a {
   text-decoration: none;
