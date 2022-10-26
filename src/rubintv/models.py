@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date
 from typing import Tuple
 
 
@@ -31,7 +31,7 @@ class Event:
     url: str
     name: str = field(init=False)
     prefix: str = field(init=False)
-    date: datetime = field(init=False)
+    obs_date: date = field(init=False)
     seq: int = field(init=False)
     chans: list = field(init=False)
 
@@ -41,19 +41,20 @@ class Event:
             "/"
         )  # We know the name is the last part of the URL
         nList = name.split(delimiter)
-        date = nList[2]
+        the_date = nList[2]
+        year, month, day = map(int, the_date.split("-"))
         seq_str = nList[4][:-4]  # Strip extension
         if seq_str == "final":
             seq = 99999
         else:
             seq = int(seq_str)
-        return (name, prefix, datetime.strptime(date, "%Y-%m-%d"), seq)
+        return (name, prefix, date(year, month, day), seq)
 
     def clean_date(self) -> str:
-        return self.date.strftime("%Y-%m-%d")
+        return self.obs_date.strftime("%Y-%m-%d")
 
     def __post_init__(self) -> None:
-        self.name, self.prefix, self.date, self.seq = self.parse_filename()
+        self.name, self.prefix, self.obs_date, self.seq = self.parse_filename()
         self.chans = []
 
 

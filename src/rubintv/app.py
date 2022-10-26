@@ -135,7 +135,7 @@ class HistoricalData:
             != []
         ]
         s_events = sorted(
-            all_events, key=lambda x: (x.date, x.seq), reverse=True
+            all_events, key=lambda x: (x.obs_date, x.seq), reverse=True
         )
         events_dict: Dict[str, Dict[str, List[Event]]] = {}
         cameras_with_history = [
@@ -154,7 +154,7 @@ class HistoricalData:
         camera_name = camera.slug
         years = set(
             [
-                event.date.year
+                event.obs_date.year
                 for event in self._get_events()[camera_name]["monitor"]
             ]
         )
@@ -164,9 +164,9 @@ class HistoricalData:
         camera_name = camera.slug
         months = set(
             [
-                event.date.month
+                event.obs_date.month
                 for event in self._get_events()[camera_name]["monitor"]
-                if event.date.year == year
+                if event.obs_date.year == year
             ]
         )
         reverse_months = sorted(months, reverse=True)
@@ -181,9 +181,10 @@ class HistoricalData:
         camera_name = camera.slug
         days = set(
             [
-                event.date.day
+                event.obs_date.day
                 for event in self._get_events()[camera_name]["monitor"]
-                if event.date.month == month and event.date.year == year
+                if event.obs_date.month == month
+                and event.obs_date.year == year
             ]
         )
         days_dict = {
@@ -199,7 +200,7 @@ class HistoricalData:
     ) -> int:
         camera_name = camera.slug
         cam_events = self._get_events()[camera_name]["monitor"]
-        days_events = [ev for ev in cam_events if ev.date.date() == a_date]
+        days_events = [ev for ev in cam_events if ev.obs_date == a_date]
         return days_events[0].seq
 
     def get_events_for_date(
@@ -215,7 +216,7 @@ class HistoricalData:
             days_events_dict[channel] = [
                 event
                 for event in events_dict[channel]
-                if event.date.date() == a_date
+                if event.obs_date == a_date
             ]
         return days_events_dict
 
@@ -223,8 +224,8 @@ class HistoricalData:
         """Returns most recent day for which there is data in the bucket"""
         camera_name = camera.slug
         events = self._get_events()[camera_name]["monitor"]
-        most_recent = events[0].date
-        return most_recent.date()
+        most_recent = events[0].obs_date
+        return most_recent
 
     def get_most_recent_event(self, camera: Camera) -> Event:
         camera_name = camera.slug
