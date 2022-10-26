@@ -104,7 +104,7 @@ class HistoricalData:
                 prefix = channel.prefix
                 print(f"Trying prefix: {prefix}")
                 blobs += list(self._bucket.list_blobs(prefix=prefix))
-                print(f"blobs found: {len(blobs)}")
+                print(f"Total blobs found: {len(blobs)}")
         return blobs
 
     def reload(self) -> None:
