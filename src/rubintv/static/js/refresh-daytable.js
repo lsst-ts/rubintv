@@ -12,7 +12,7 @@ import { createTableControlUI, applySelected, parseJsonFromDOM, DefaultSelected 
     const urlPath = document.location.pathname
     $.get(urlPath + '/update/' + date)
       .done(function (htmlParts) {
-        $('#per-night-menu').replaceWith(htmlParts.per_day)
+        $('#per-day-refreshable').html(htmlParts.per_day)
         $('.channel-day-data').html(htmlParts.table)
         meta = parseJsonFromDOM('#table-metadata')
         if (Object.keys(meta).length !== 0) {
