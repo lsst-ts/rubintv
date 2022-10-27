@@ -206,8 +206,25 @@ class HistoricalData:
     def get_events_for_date(
         self, camera: Camera, a_date: datetime.date
     ) -> Dict[str, List[Event]]:
-        """returns dict of events:
+        """Takes a Camera and date and returns a dict of list of Events, keyed by
+        Channel name
+
+        for e.g:
         { 'chan_name1': [Event 1, Event 2, ...], 'chan_name2': [...], ...}
+
+        Parameters
+        ----------
+
+        camera : `Camera`
+            The given Camera object
+
+        a_date : `datetime.date`
+            The date to find Events for
+
+        Returns
+        -------
+
+        days_events_dict : `Dict[str, List[Event]]`
         """
         camera_name = camera.slug
         events_dict = self._get_events()[camera_name]
@@ -221,13 +238,42 @@ class HistoricalData:
         return days_events_dict
 
     def get_most_recent_day(self, camera: Camera) -> datetime.date:
-        """Returns most recent day for which there is data in the bucket"""
+        """Returns most recent day for which there is data in the bucket for
+        the given Camera
+
+        Parameters
+        ----------
+
+        camera : `Camera`
+            The given Camera object
+
+        Returns
+        -------
+
+        most_recent : `datetime.date`
+            The date of the most recent day's Event
+        """
         camera_name = camera.slug
         events = self._get_events()[camera_name]["monitor"]
         most_recent = events[0].obs_date
         return most_recent
 
     def get_most_recent_event(self, camera: Camera) -> Event:
+        """Returns most recent Event for the given Camera
+
+        Parameters
+        ----------
+
+        camera : `Camera`
+            The given Camera object
+
+        Returns
+        -------
+
+        event : `Event`
+            The most recent Event for the given Camera
+
+        """
         camera_name = camera.slug
         events = self._get_events()[camera_name]["monitor"]
         return events[0]
@@ -235,10 +281,10 @@ class HistoricalData:
     def get_camera_calendar(
         self, camera: Camera
     ) -> Dict[int, Dict[int, Dict[int, int]]]:
-        """Generates calendar for given Camera
+        """Returns a dict representing a calendar for the given Camera
 
-        Provides a dict of days and number of events, within a dict of months, within
-        a dict of years for every event for the given Camera.
+        Provides a dict of days and number of Events, within a dict of months, within
+        a dict keyed by year for every Event for the given Camera.
 
         Parameters
         ----------
