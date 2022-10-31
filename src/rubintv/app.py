@@ -34,7 +34,7 @@ def create_app() -> web.Application:
 
     root_app = web.Application()
     root_app["safir/config"] = config
-    client = storage.Client.create_anonymous_client()
+    client = storage.Client()
     bucket = client.bucket("rubintv_data")
     root_app["rubintv/gcs_bucket"] = bucket
     root_app["rubintv/historical_data"] = HistoricalData(bucket)
