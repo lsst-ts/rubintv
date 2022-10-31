@@ -12,7 +12,7 @@ import jinja2
 from aiohttp import web
 from dateutil.tz import gettz
 from google.cloud import storage
-from google.cloud.storage import Bucket
+from google.cloud.storage import Blob, Bucket
 from safir.http import init_http_session
 from safir.logging import configure_logging
 from safir.metadata import setup_metadata
@@ -94,7 +94,15 @@ class HistoricalData:
         self._events = self._get_events()
         self._lastCall = get_current_day_obs()
 
-    def _get_blobs(self) -> List[Bucket]:
+    def _get_blobs(self) -> List[Blob]:
+        """Downloads Blob metadata from the Bucket for every Camera registered
+        as having historical data
+
+        Returns
+        -------
+        List[Blob]
+            A list of Blob objects
+        """
         blobs = []
         cameras_with_history = [
             cam for cam in cameras.values() if cam.has_historical
@@ -108,6 +116,7 @@ class HistoricalData:
         return blobs
 
     def reload(self) -> None:
+        """Reloads the historical data cache"""
         self._events = self._get_events(reset=True)
         self._lastCall = get_current_day_obs()
         return
@@ -115,6 +124,27 @@ class HistoricalData:
     def _get_events(
         self, reset: bool = False
     ) -> Dict[str, Dict[str, List[Event]]]:
+        """Returns a dict of dicts of sorted lists of Events
+
+        Either simply returns the cache of events or populates the cache before returning it.
+        It will (re)populate the cache if any of the following are True:\n
+        - There is no existing cache\n
+        - The day has rolled over\n
+        - reset is set to True
+
+
+        Parameters
+        ----------
+        reset : bool, optional
+            if True causes the cache of events to be reloaded, by default False
+
+        Returns
+        -------
+        Dict[str, Dict[str, List[Event]]]
+            The outer dict is keyed per camera,
+            the inner dict is keyed per channel and
+            list of Events is sorted by day and sequence number
+        """
         if not self._events or get_current_day_obs() > self._lastCall or reset:
             blobs = self._get_blobs()
             self._events = self._sort_events_from_blobs(blobs)
@@ -124,9 +154,24 @@ class HistoricalData:
     def _sort_events_from_blobs(
         self, blobs: List
     ) -> Dict[str, Dict[str, List[Event]]]:
-        """Returns a dict of dicts: an outer with key per camera
-        and the inner with a key per channel for that camera and a
-        corresponding list of events for each channel
+        """Returns a dict of dicts of sorted lists of Events
+
+        This method takes a list of Blobs, filters out any that don't match the
+        filetypes associated with camera events then recasts and sorts them as Events
+        by day and sequence number.
+        Those Events are then organised by channel and camera to which they belong.
+
+        Parameters
+        ----------
+        blobs : List
+            A list of blobs
+
+        Returns
+        -------
+        Dict[str, Dict[str, List[Event]]]
+            The outer dict is keyed per camera,
+            the inner dict is keyed per channel and
+            list of Events is sorted by day and sequence number
         """
         all_events = [
             Event(blob.public_url)
@@ -151,6 +196,18 @@ class HistoricalData:
         return events_dict
 
     def get_years(self, camera: Camera) -> List[int]:
+        """Returns a list of years for a given Camera in which there are Events in the bucket
+
+        Parameters
+        ----------
+        camera : Camera
+            The given Camera
+
+        Returns
+        -------
+        List[int]
+            A list of years
+        """
         camera_name = camera.slug
         years = set(
             [
@@ -161,6 +218,21 @@ class HistoricalData:
         return list(years)
 
     def get_months_for_year(self, camera: Camera, year: int) -> List[int]:
+        """Returns a list of months for the given Camera and year
+        for which there are Events in the bucket
+
+        Parameters
+        ----------
+        camera : Camera
+            The given Camera
+        year : int
+            The given year
+
+        Returns
+        -------
+        List[int]
+            List of month numbers (1...12)
+        """
         camera_name = camera.slug
         months = set(
             [
@@ -175,8 +247,26 @@ class HistoricalData:
     def get_days_for_month_and_year(
         self, camera: Camera, month: int, year: int
     ) -> Dict[int, int]:
-        """Returns a dict:
-        { day_num: num_events }
+        """Given a Camera, year and number of month returns a dict of all
+        the days that have a record of Events with the seq_num of the last
+        Event for each day.
+
+        The dict is keyed by each day number with the corresponding value
+        of the last sequence number of Events recorded that day
+
+        Parameters
+        ----------
+        camera : Camera
+            The given Camera
+        month : int
+            The given month (1...12)
+        year : int
+            The given year
+
+        Returns
+        -------
+        Dict[int, int]
+            A dict with day number for key and last seq_num for that day as value
         """
         camera_name = camera.slug
         days = set(
@@ -198,6 +288,21 @@ class HistoricalData:
     def get_max_event_seq_for_date(
         self, camera: Camera, a_date: datetime.date
     ) -> int:
+        """Takes a Camera and date and returns the highest sequence number
+        for Events recorded on that date (i.e. the last Event)
+
+        Parameters
+        ----------
+        camera : Camera
+            The given Camera
+        a_date : datetime.date
+            The given date
+
+        Returns
+        -------
+        int
+            The seq_num of the last Event for that Camera and day
+        """
         camera_name = camera.slug
         cam_events = self._get_events()[camera_name]["monitor"]
         days_events = [ev for ev in cam_events if ev.obs_date == a_date]
@@ -209,7 +314,7 @@ class HistoricalData:
         """Takes a Camera and date and returns a dict of list of Events, keyed by
         Channel name
 
-        for e.g:
+        General return value:
         { 'chan_name1': [Event 1, Event 2, ...], 'chan_name2': [...], ...}
 
         Parameters
@@ -283,8 +388,8 @@ class HistoricalData:
     ) -> Dict[int, Dict[int, Dict[int, int]]]:
         """Returns a dict representing a calendar for the given Camera
 
-        Provides a dict of days and number of Events, within a dict of months, within
-        a dict keyed by year for every Event for the given Camera.
+        Provides a dict of days and last seq_num of Events, within a dict of months, within
+        a dict keyed by year for the given Camera.
 
         Parameters
         ----------
