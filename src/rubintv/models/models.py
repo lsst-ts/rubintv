@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime, timedelta
 from typing import Tuple
+
+from dateutil.tz import gettz
 
 
 @dataclass
@@ -159,3 +161,12 @@ production_services = {
         },
     },
 }
+
+
+def get_current_day_obs() -> date:
+    """Get the current day_obs - the observatory rolls the date over at UTC-12"""
+    utc = gettz("UTC")
+    nowUtc = datetime.now().astimezone(utc)
+    offset = timedelta(hours=-12)
+    dayObs = (nowUtc + offset).date()
+    return dayObs

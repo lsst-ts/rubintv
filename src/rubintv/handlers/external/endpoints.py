@@ -18,9 +18,15 @@ from google.api_core.exceptions import NotFound
 from google.cloud.storage import Bucket
 
 from rubintv import __version__
-from rubintv.app import get_current_day_obs
 from rubintv.handlers import routes
-from rubintv.models import Camera, Channel, Event, cameras, production_services
+from rubintv.models.models import (
+    Camera,
+    Channel,
+    Event,
+    cameras,
+    get_current_day_obs,
+    production_services,
+)
 from rubintv.timer import Timer
 
 HEARTBEATS_PREFIX = "heartbeats"
