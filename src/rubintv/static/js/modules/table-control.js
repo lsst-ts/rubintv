@@ -1,14 +1,14 @@
 /* global $ */
 
 const defaultSelected = [
-  'exposure_time',
-  'observation_type',
-  'target_name',
-  'filter',
-  'disperser',
-  'airmass',
-  'time_begin_tai',
-  'Seeing'
+  'Exposure time',
+  'Image type',
+  'Target',
+  'Filter',
+  'Disperser',
+  'Airmass',
+  'TAI',
+  'DIMM Seeing'
 ]
 
 export const DefaultSelected = defaultSelected
