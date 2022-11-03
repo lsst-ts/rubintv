@@ -127,9 +127,9 @@ class HistoricalData:
         """Returns a dict of dicts of sorted lists of Events
 
         Either simply returns the cache of events or populates the cache before returning it.
-        It will (re)populate the cache if any of the following are True:\n
-        - There is no existing cache\n
-        - The day has rolled over\n
+        It will (re)populate the cache if any of the following are True:
+        - There is no existing cache
+        - The day has rolled over
         - reset is set to True
 
 
