@@ -30,7 +30,9 @@
         {% endfor %}
       </ul>
     </nav>
-    {% include "cameras/per-day-channels.jinja" %}
+    <div id="per-day-refreshable">
+      {% include "cameras/per-day-channels.jinja" %}
+    </div>
   </div>
 
   <div class="metadata-status">

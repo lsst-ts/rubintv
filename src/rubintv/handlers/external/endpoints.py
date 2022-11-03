@@ -216,10 +216,11 @@ async def get_recent_table(request: web.Request) -> web.Response:
         else:
             bucket = request.config_dict["rubintv/gcs_bucket"]
             events = get_most_recent_day_events(bucket, camera)
-            the_date = events[0].date
+            the_date = events[0].obs_date
 
             metadata_json = get_metadata_json(bucket, camera, the_date, logger)
             per_day = get_per_day_channels(bucket, camera, the_date, logger)
+
             template = "cameras/camera.jinja"
             context = {
                 "title": title,
@@ -230,7 +231,6 @@ async def get_recent_table(request: web.Request) -> web.Response:
                 "metadata": metadata_json,
                 "per_day": per_day,
             }
-
     logger.info("get_recent_table", duration=timer.seconds)
     response = render_template(template, request, context)
     return response
@@ -496,7 +496,7 @@ def get_most_recent_day_events(bucket: Bucket, camera: Camera) -> List[Event]:
     prefix = camera.channels["monitor"].prefix
     events = {}
     events["monitor"] = get_most_recent_events_for_prefix(prefix, bucket)
-    the_date = events["monitor"][0].date.date()
+    the_date = events["monitor"][0].obs_date
     events_dict = build_dict_with_remaining_channels(
         bucket, camera, events, the_date
     )
@@ -599,7 +599,7 @@ def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
         or el.public_url.endswith(".jpg")
         or el.public_url.endswith(".mp4")
     ]
-    sevents = sorted(events, key=lambda x: (x.date, x.seq), reverse=True)
+    sevents = sorted(events, key=lambda x: (x.obs_date, x.seq), reverse=True)
     return sevents
 
 
@@ -626,8 +626,10 @@ def get_most_recent_events_for_prefix(
             if not blobs:
                 raise TimeoutError(f"Timed out. No data found for {prefix}")
             all_events = get_sorted_events_from_blobs(blobs)
-            the_date = all_events[0].date
-            events = [event for event in all_events if event.date == the_date]
+            the_date = all_events[0].obs_date
+            events = [
+                event for event in all_events if event.obs_date == the_date
+            ]
         else:
             events = get_sorted_events_from_blobs(blobs)
     return events

@@ -1,38 +1,14 @@
 /* global $ */
 
-const checkboxMapping = {
-  id: 'Exposure id',
-  exposure_time: 'Exposure time',
-  dark_time: 'Darktime',
-  observation_type: 'Image type',
-  observation_reason: 'Observation reason',
-  day_obs: 'dayObs',
-  seq_num: 'seqNum',
-  group_id: 'Group id',
-  target_name: 'Target',
-  science_program: 'Science program',
-  tracking_ra: 'RA',
-  tracking_dec: 'Dec.',
-  sky_angle: 'Sky angle',
-  azimuth: 'Azimuth',
-  zenith_angle: 'Zenith angle',
-  time_begin_tai: 'TAI',
-  filter: 'Filter',
-  disperser: 'Disperser',
-  airmass: 'Airmass',
-  focus_z: 'Focus-Z',
-  Seeing: 'DIMM Seeing'
-}
-
 const defaultSelected = [
-  'exposure_time',
-  'observation_type',
-  'target_name',
-  'filter',
-  'disperser',
-  'airmass',
-  'time_begin_tai',
-  'Seeing'
+  'Exposure time',
+  'Image type',
+  'Target',
+  'Filter',
+  'Disperser',
+  'Airmass',
+  'TAI',
+  'DIMM Seeing'
 ]
 
 export const DefaultSelected = defaultSelected
@@ -48,10 +24,10 @@ export function applySelected (metaData, selection, sortable = false) {
   // empty object test- there's no data, just go home
   if (Object.keys(metaData).length === 0) return
 
-  selection.forEach(attribute => {
+  selection.forEach(name => {
+    const escapedName = _escapeName(name)
     const lastHeaderCall = $('.grid-title').last()
-    const el = $('<th>', { class: 'grid-title sideways ' + attribute })
-    const name = checkboxMapping[attribute] ? checkboxMapping[attribute] : attribute
+    const el = $('<th>', { class: 'grid-title sideways ' + escapedName })
     el.text(name)
     lastHeaderCall.after(el)
   })
@@ -59,10 +35,10 @@ export function applySelected (metaData, selection, sortable = false) {
   Object.entries(metaData).forEach(([seq, attributes]) => {
     const seqRow = $(`#seqno-${seq}`)
 
-    selection.forEach(attribute => {
+    selection.forEach(name => {
       const seqRowLastCell = seqRow.find('td').last()
-      const el = $('<td>', { class: 'meta grid-cell ' + attribute })
-      let val = attributes[attribute]
+      const el = $('<td>', { class: 'meta grid-cell ' + _escapeName(name) })
+      let val = attributes[name]
       if (typeof val === 'number') {
         val = (+val.toFixed(3))
       }
@@ -75,20 +51,25 @@ export function applySelected (metaData, selection, sortable = false) {
   }
 }
 
+function _escapeName (displayName) {
+  return displayName.toLowerCase().replaceAll(' ', '_')
+}
+
 export function createTableControlUI (metaData, $elementToAppendTo, selection) {
   // empty object test- there's no data, just go home
   if (Object.keys(metaData).length !== 0) {
     const panel = $('<div>', { class: 'table-panel' })
     panel.append($('<button>', { class: 'table-control-button', text: 'Add/Remove Columns' }))
     const controls = $('<div>', { class: 'table-controls' })
-    // get the first row of data for list of all available attrs
 
-    const attrs = metaData[Object.keys(metaData)[0]]
-    Object.keys(attrs).forEach(attr => {
-      const title = checkboxMapping[attr] ? checkboxMapping[attr] : attr
-      const label = $('<label>', { for: attr }).text(title)
-      const checkBox = $('<input>', { type: 'checkbox', id: attr, name: attr, value: 1 })
-      if (selection.includes(attr)) {
+    // get the set of all data for list of all available attrs
+    const allAttrs = Object.values(metaData).map(obj => Object.keys(obj)).flat()
+    const attrs = new Set(allAttrs)
+
+    attrs.forEach(title => {
+      const label = $('<label>', { for: title }).text(title)
+      const checkBox = $('<input>', { type: 'checkbox', id: title, name: title, value: 1 })
+      if (selection.includes(title)) {
         checkBox.attr('checked', true)
       }
       const control = $('<div>', { class: 'table-control' })
@@ -106,7 +87,7 @@ export function createTableControlUI (metaData, $elementToAppendTo, selection) {
     $(".table-control [type='checkbox']").change(function (e) {
       if (selection.includes(this.name)) {
         selection.splice(selection.indexOf(this.name), 1)
-        $('table .' + this.name).remove()
+        $('table .' + _escapeName(this.name)).remove()
       } else {
         selection.push(this.name)
         applySelected(metaData, [this.name])
