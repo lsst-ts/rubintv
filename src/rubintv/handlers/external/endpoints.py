@@ -10,7 +10,7 @@ __all__ = [
 import json
 from dataclasses import asdict
 from datetime import date, datetime, timedelta
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Optional
 
 from aiohttp import web
 from aiohttp_jinja2 import render_string, render_template, template
@@ -87,7 +87,7 @@ async def request_all_heartbeats(request: web.Request) -> web.Response:
     return web.Response(text=json_res, content_type="application/json")
 
 
-def get_heartbeats(bucket: Bucket, prefix: str) -> List[Dict]:
+def get_heartbeats(bucket: Bucket, prefix: str) -> list[dict]:
     hb_blobs = list(bucket.list_blobs(prefix=prefix))
     heartbeats = []
     for hb_blob in hb_blobs:
@@ -194,15 +194,18 @@ async def get_allsky_historical_movie(request: web.Request) -> dict[str, Any]:
     }
 
 
-def get_image_viewer_link(event: Event) -> str:
-    day_obs = event.clean_date().replace("-", "")
+def get_image_viewer_link(day_obs: date, seq_num: int) -> str:
     url = (
         "http://ccs.lsst.org/FITSInfo/view.html?"
-        f"image=AT_O_{day_obs}_{event.seq:06}"
+        f"image=AT_O_{day_obs}_{seq_num:06}"
         "&raft=R00&color=grey&bias=Simple+Overscan+Correction"
         "&scale=Per-Segment&source=RubinTV"
     )
     return url
+
+
+def get_event_page_link(camera: Camera, channel: Channel, event: Event) -> str:
+    return f"/rubintv/{camera.slug}/{channel.endpoint}/{event.clean_date()}/{event.seq}"
 
 
 @routes.get("/{camera}")
@@ -221,8 +224,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
             template = "cameras/not_online.jinja"
         else:
             bucket = request.config_dict["rubintv/gcs_bucket"]
-            events = get_most_recent_day_events(bucket, camera)
-            the_date = events[0].obs_date
+            the_date, events = get_most_recent_day_events(bucket, camera)
 
             metadata_json = get_metadata_json(bucket, camera, the_date, logger)
             per_day = get_per_day_channels(bucket, camera, the_date, logger)
@@ -231,11 +233,12 @@ async def get_recent_table(request: web.Request) -> web.Response:
             context = {
                 "title": title,
                 "camera": camera,
-                "viewer_link": get_image_viewer_link,
                 "date": the_date.strftime("%Y-%m-%d"),
                 "events": events,
                 "metadata": metadata_json,
                 "per_day": per_day,
+                "viewer_link": get_image_viewer_link,
+                "event_page_link": get_event_page_link,
             }
     logger.info("get_recent_table", duration=timer.seconds)
     response = render_template(template, request, context)
@@ -274,18 +277,20 @@ async def update_todays_table(request: web.Request) -> web.Response:
         events_dict = build_dict_with_remaining_channels(
             bucket, camera, recent_events, the_date
         )
-        events = flatten_events_dict_into_list(camera, events_dict)
+
+        events = make_table_rows_from_columns_by_seq(events_dict)
 
         metadata_json = get_metadata_json(bucket, camera, the_date, logger)
         per_day = get_per_day_channels(bucket, camera, the_date, logger)
 
         context = {
             "camera": camera,
-            "viewer_link": get_image_viewer_link,
             "date": the_date,
             "events": events,
             "metadata": metadata_json,
             "per_day": per_day,
+            "viewer_link": get_image_viewer_link,
+            "event_page_link": get_event_page_link,
         }
         table_html = render_string(
             "cameras/data-table-header.jinja", request, context
@@ -318,7 +323,7 @@ async def get_historical(request: web.Request) -> dict[str, Any]:
 
         smrd = historical.get_most_recent_day(camera)
         smrd_dict = historical.get_events_for_date(camera, smrd)
-        smrd_events = flatten_events_dict_into_list(camera, smrd_dict)
+        smrd_events = make_table_rows_from_columns_by_seq(smrd_dict)
 
         metadata_json = get_metadata_json(bucket, camera, smrd, logger)
         per_day = get_per_day_channels(bucket, camera, smrd, logger)
@@ -327,7 +332,6 @@ async def get_historical(request: web.Request) -> dict[str, Any]:
     return {
         "title": title,
         "camera": camera,
-        "viewer_link": get_image_viewer_link,
         "year_to_display": year_to_display,
         "years": years,
         "month_names": month_names(),
@@ -335,6 +339,8 @@ async def get_historical(request: web.Request) -> dict[str, Any]:
         "events": smrd_events,
         "metadata": metadata_json,
         "per_day": per_day,
+        "viewer_link": get_image_viewer_link,
+        "event_page_link": get_event_page_link,
     }
 
 
@@ -354,7 +360,7 @@ async def get_historical_day_data(request: web.Request) -> dict[str, Any]:
     year, month, day = [int(s) for s in date_str.split("-")]
     the_date = date(year, month, day)
     day_dict = historical.get_events_for_date(camera, the_date)
-    day_events = flatten_events_dict_into_list(camera, day_dict)
+    day_events = make_table_rows_from_columns_by_seq(day_dict)
 
     years = historical.get_camera_calendar(camera)
 
@@ -363,13 +369,14 @@ async def get_historical_day_data(request: web.Request) -> dict[str, Any]:
     return {
         "title": title,
         "camera": camera,
-        "viewer_link": get_image_viewer_link,
         "years": years,
         "month_names": month_names(),
         "date": the_date,
         "events": day_events,
         "metadata": metadata_json,
         "per_day": per_day,
+        "viewer_link": get_image_viewer_link,
+        "event_page_link": get_event_page_link,
     }
 
 
@@ -433,7 +440,7 @@ def get_metadata_json(
     return json.loads(metadata_json)
 
 
-def month_names() -> List[str]:
+def month_names() -> list[str]:
     return [date(2000, m, 1).strftime("%B") for m in list(range(1, 13))]
 
 
@@ -498,7 +505,9 @@ async def current(request: web.Request) -> dict[str, Any]:
     }
 
 
-def get_most_recent_day_events(bucket: Bucket, camera: Camera) -> List[Event]:
+def get_most_recent_day_events(
+    bucket: Bucket, camera: Camera
+) -> tuple[date, dict[int, dict[str, Event]]]:
     prefix = camera.channels["monitor"].prefix
     events = {}
     events["monitor"] = get_most_recent_events_for_prefix(prefix, bucket)
@@ -506,17 +515,17 @@ def get_most_recent_day_events(bucket: Bucket, camera: Camera) -> List[Event]:
     events_dict = build_dict_with_remaining_channels(
         bucket, camera, events, the_date
     )
-    todays_events = flatten_events_dict_into_list(camera, events_dict)
-    return todays_events
+    todays_events = make_table_rows_from_columns_by_seq(events_dict)
+    return (the_date, todays_events)
 
 
 def build_dict_with_remaining_channels(
     bucket: Bucket,
     camera: Camera,
-    events_dict: Dict[str, List[Event]],
+    events_dict: dict[str, list[Event]],
     the_date: date,
-) -> Dict[str, List[Event]]:
-    # creates a dict where key => List of events e.g.:
+) -> dict[str, list[Event]]:
+    # creates a dict where key => list of events e.g.:
     # {"monitor": [Event 1, Event 2 ...] , "im": [Event 2 ...] ... }
     for chan in camera.channels.keys():
         if chan == "monitor":
@@ -536,68 +545,22 @@ def seq_num_equal(
     return this_event.seq == that_event.seq
 
 
-def flatten_events_dict_into_list(camera: Camera, events: dict) -> List[Event]:
-    """Transforms the per_day_channels into lists per channel.
-
-    Takes a dict where the keys are as per_day_channels keys and each
-    corresponding value is a list of events from that channel. Flattens into
-    one list of events where each channel is represented in the event object's
-    channel list (or None if it doesn't exist for that event seq num) i.e:
-    from: {"monitor": [Event 1, Event 2 ...] , "im": [Event 2 ...] ... }
-    to: [Event 1 (chans=['monitor', None, None, None]),
-         Event 2 (chans=['monitor', 'im', None, None], ... ]
-
-    Parameters
-    ----------
-    events : `dict`
-        The dict of events. See above for details.
-
-    Returns
-    -------
-    event_list : `list`
-        The list of events, per channel
-
-    """
-    nonevent = Event(
-        """https://storage.googleapis.com/rubintv_data/
-    auxtel_monitor/auxtel-monitor_dayObs_2022-02-15_seqNum_0.png"""
-    )
-    # make an iterator out of each channel's list of events
-    chan_iters: List[Iterator] = [iter(li) for li in events.values()]
-    # store the channel names in order to use in the loop
-    chan_lookup = list(camera.channels.keys())
-    # make a list with the first event in each channel list
-    each_chan: List[Any] = [next(it, nonevent) for it in chan_iters]
-    seq_list = [ev.seq for ev in each_chan]
-    event_list = []
-
-    while True:
-        seq_list = [ev.seq for ev in each_chan]
-        if max(seq_list) == 0:
-            break
-
-        highest_seq_index = seq_list.index(max(seq_list))
-        key_event = each_chan[highest_seq_index]
-        # make a list for each channel- true if seq num matches highest
-        # event seq num, false otherwise
-        list_of_matches = [
-            seq_num_equal(key_event, other_event) for other_event in each_chan
-        ]
-        key_event.chans = [
-            (matches and camera.channels[chan_lookup[i]]) or None
-            for i, matches in enumerate(list_of_matches)
-        ]
-        event_list.append(key_event)
-        # if there was a match, move that channel's image list iterator to the
-        # next one
-        for i, it in enumerate(chan_iters):
-            if list_of_matches[i]:
-                each_chan[i] = next(it, nonevent)
-
-    return event_list
+def make_table_rows_from_columns_by_seq(
+    events_dict: dict,
+) -> dict[int, dict[str, Event]]:
+    d: dict[int, dict[str, Event]] = {}
+    # d == {seq: {chan1: event, chan2: event, ... }}
+    for chan in events_dict:
+        chan_events = events_dict[chan]
+        for e in chan_events:
+            if e.seq in d:
+                d[e.seq].update({chan: e})
+            else:
+                d.update({e.seq: {chan: e}})
+    return d
 
 
-def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
+def get_sorted_events_from_blobs(blobs: list) -> list[Event]:
     events = [
         Event(el.public_url)
         for el in blobs
@@ -612,11 +575,11 @@ def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
 def get_most_recent_events_for_prefix(
     prefix: str,
     bucket: Bucket,
-) -> List[Event]:
+) -> list[Event]:
     try_date = get_current_day_obs()
     timer = datetime.now()
     timeout = 3
-    blobs: List[Any] = []
+    blobs: list[Any] = []
     try_date += timedelta(1)  # add a day as to not start with yesterday
     while not blobs:
         try_date = try_date - timedelta(1)  # no blobs? try the day defore
@@ -644,7 +607,7 @@ def get_most_recent_events_for_prefix(
 def get_all_events_for_prefix(
     prefix: str,
     bucket: Bucket,
-) -> List[Event]:
+) -> list[Event]:
     blobs = list(bucket.list_blobs(prefix=prefix))
     return blobs
 
