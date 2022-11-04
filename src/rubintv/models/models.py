@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
-from typing import Tuple
 
 from dateutil.tz import gettz
 
@@ -35,9 +34,8 @@ class Event:
     prefix: str = field(init=False)
     obs_date: date = field(init=False)
     seq: int = field(init=False)
-    chans: list = field(init=False)
 
-    def parse_filename(self, delimiter: str = "_") -> Tuple:
+    def parse_filename(self, delimiter: str = "_") -> tuple:
         cleaned_up_url = self.url.split("rubintv_data/")[-1]
         prefix, name = cleaned_up_url.split(
             "/"
@@ -57,7 +55,6 @@ class Event:
 
     def __post_init__(self) -> None:
         self.name, self.prefix, self.obs_date, self.seq = self.parse_filename()
-        self.chans = []
 
 
 cameras = {
