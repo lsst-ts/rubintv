@@ -8,8 +8,7 @@ __all__ = [
 ]
 
 import json
-from dataclasses import asdict
-from datetime import date, datetime, timedelta
+from datetime import date
 from typing import Any, Optional
 
 from aiohttp import web
@@ -19,6 +18,7 @@ from google.cloud.storage import Bucket
 
 from rubintv import __version__
 from rubintv.handlers import routes
+from rubintv.models.historicaldata import HistoricalData
 from rubintv.models.models import (
     Camera,
     Channel,
@@ -53,16 +53,9 @@ async def get_admin_page(request: web.Request) -> dict[str, Any]:
 
 @routes.post("/reload_historical")
 async def reload_historical(request: web.Request) -> web.Response:
-    cams_with_history = [cam for cam in cameras.values() if cam.has_historical]
     historical = request.config_dict["rubintv/historical_data"]
     historical.reload()
-    latest = historical.get_most_recent_event(cams_with_history[0])
-    latest_dict = asdict(latest)
-    # datetime can't be serialized so replace with string
-    the_date = latest.clean_date()
-    latest_dict["date"] = the_date
-    json_res = json.dumps({"most_recent_historical_event": latest_dict})
-    return web.Response(text=json_res, content_type="application/json")
+    return web.Response(text="OK", content_type="text/plain")
 
 
 @routes.get("/admin/heartbeat/{heartbeat_prefix}")
@@ -108,12 +101,13 @@ def get_heartbeats(bucket: Bucket, prefix: str) -> list[dict]:
 @template("cameras/allsky.jinja")
 async def get_all_sky_current(request: web.Request) -> dict[str, Any]:
     title = build_title("All Sky", request=request)
+    historical = request.config_dict["rubintv/historical_data"]
     bucket = request.config_dict["rubintv/gcs_bucket"]
     camera = cameras["allsky"]
-    image_prefix = camera.channels["image"].prefix
-    current = get_current_event(image_prefix, bucket)
-    movie_prefix = camera.channels["monitor"].prefix
-    movie = get_current_event(movie_prefix, bucket)
+    image_channel = camera.channels["image"]
+    current = get_current_event(camera, image_channel, bucket, historical)
+    movie_channel = camera.channels["movie"]
+    movie = get_current_event(camera, movie_channel, bucket, historical)
     return {
         "title": title,
         "camera": camera,
@@ -125,10 +119,11 @@ async def get_all_sky_current(request: web.Request) -> dict[str, Any]:
 @routes.get("/allsky/update/{channel}")
 async def get_all_sky_current_update(request: web.Request) -> web.Response:
     bucket = request.config_dict["rubintv/gcs_bucket"]
+    historical = request.config_dict["rubintv/historical_data"]
     camera = cameras["allsky"]
     channel_name = request.match_info["channel"]
-    prefix = camera.channels[channel_name].prefix
-    current = get_current_event(prefix, bucket)
+    channel = camera.channels[channel_name]
+    current = get_current_event(camera, channel, bucket, historical)
     json_dict = {
         "channel": channel_name,
         "url": current.url,
@@ -144,7 +139,7 @@ async def get_all_sky_current_update(request: web.Request) -> web.Response:
 @template("cameras/allsky-historical.jinja")
 async def get_allsky_historical(request: web.Request) -> dict[str, Any]:
     title = build_title("All Sky", "Historical", request=request)
-    historical = request.config_dict["rubintv/historical_data"]
+    historical: HistoricalData = request.config_dict["rubintv/historical_data"]
     logger = request["safir/logger"]
 
     with Timer() as timer:
@@ -153,7 +148,8 @@ async def get_allsky_historical(request: web.Request) -> dict[str, Any]:
         years = historical.get_camera_calendar(camera)
         most_recent_year = next(iter(years.keys()))
 
-        movie = historical.get_most_recent_event(camera)
+        channel = camera.channels["movie"]
+        movie = historical.get_most_recent_event(camera, channel)
 
     logger.info("get_allsky_historical", duration=timer.seconds)
     return {
@@ -182,7 +178,7 @@ async def get_allsky_historical_movie(request: web.Request) -> dict[str, Any]:
         all_events = historical.get_events_for_date(camera, the_date)
 
         years = historical.get_camera_calendar(camera)
-        movie = all_events["monitor"][0]
+        movie = all_events["movie"][0]
     logger.info("get_allsky_historical_movie", duration=timer.seconds)
     return {
         "title": title,
@@ -224,7 +220,11 @@ async def get_recent_table(request: web.Request) -> web.Response:
             template = "cameras/not_online.jinja"
         else:
             bucket = request.config_dict["rubintv/gcs_bucket"]
-            the_date, events = get_most_recent_day_events(bucket, camera)
+            historical = request.config_dict["rubintv/historical_data"]
+
+            the_date, events = get_most_recent_day_events(
+                bucket, camera, historical
+            )
 
             metadata_json = get_metadata_json(bucket, camera, the_date, logger)
             per_day = get_per_day_channels(bucket, camera, the_date, logger)
@@ -258,7 +258,8 @@ async def update_todays_table(request: web.Request) -> web.Response:
         # if the actual date is greater than displayed on the page
         # get the data from today if there is any
         current_day = get_current_day_obs()
-        lookup_prefix = camera.channels["monitor"].prefix
+        primary_channel = list(camera.channels)[0]
+        lookup_prefix = camera.channels[primary_channel].prefix
         if the_date < current_day:
             prefix = get_prefix_from_date(lookup_prefix, current_day)
             blobs = list(bucket.list_blobs(prefix=prefix))
@@ -273,7 +274,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
             the_date = current_day
 
         recent_events = {}
-        recent_events["monitor"] = get_sorted_events_from_blobs(blobs)
+        recent_events[primary_channel] = get_sorted_events_from_blobs(blobs)
         events_dict = build_dict_with_remaining_channels(
             bucket, camera, recent_events, the_date
         )
@@ -484,11 +485,9 @@ async def current(request: web.Request) -> dict[str, Any]:
     with Timer() as timer:
         camera = cameras[request.match_info["camera"]]
         bucket = request.config_dict["rubintv/gcs_bucket"]
+        historical = request.config_dict["rubintv/historical_data"]
         channel = camera.channels[request.match_info["channel"]]
-        event = get_current_event(
-            channel.prefix,
-            bucket,
-        )
+        event = get_current_event(camera, channel, bucket, historical)
         the_date = event.clean_date()
         seq = event.seq
         title = build_title(
@@ -506,15 +505,21 @@ async def current(request: web.Request) -> dict[str, Any]:
 
 
 def get_most_recent_day_events(
-    bucket: Bucket, camera: Camera
+    bucket: Bucket, camera: Camera, historical: HistoricalData
 ) -> tuple[date, dict[int, dict[str, Event]]]:
-    prefix = camera.channels["monitor"].prefix
+    primary_channel = list(camera.channels)[0]
+    prefix = camera.channels[primary_channel].prefix
     events = {}
-    events["monitor"] = get_most_recent_events_for_prefix(prefix, bucket)
-    the_date = events["monitor"][0].obs_date
-    events_dict = build_dict_with_remaining_channels(
-        bucket, camera, events, the_date
-    )
+    primary_events = get_todays_events_for_prefix(prefix, bucket)
+    if primary_events:
+        events[primary_channel] = primary_events
+        the_date = primary_events[0].obs_date
+        events_dict = build_dict_with_remaining_channels(
+            bucket, camera, events, the_date
+        )
+    else:
+        the_date = historical.get_most_recent_day(camera)
+        events_dict = historical.get_events_for_date(camera, the_date)
     todays_events = make_table_rows_from_columns_by_seq(events_dict)
     return (the_date, todays_events)
 
@@ -527,8 +532,9 @@ def build_dict_with_remaining_channels(
 ) -> dict[str, list[Event]]:
     # creates a dict where key => list of events e.g.:
     # {"monitor": [Event 1, Event 2 ...] , "im": [Event 2 ...] ... }
-    for chan in camera.channels.keys():
-        if chan == "monitor":
+    primary_channel = list(camera.channels)[0]
+    for chan in camera.channels:
+        if chan == primary_channel:
             continue
         prefix = camera.channels[chan].prefix
         new_prefix = get_prefix_from_date(prefix, the_date)
@@ -572,35 +578,16 @@ def get_sorted_events_from_blobs(blobs: list) -> list[Event]:
     return sevents
 
 
-def get_most_recent_events_for_prefix(
+def get_todays_events_for_prefix(
     prefix: str,
     bucket: Bucket,
 ) -> list[Event]:
-    try_date = get_current_day_obs()
-    timer = datetime.now()
-    timeout = 3
-    blobs: list[Any] = []
-    try_date += timedelta(1)  # add a day as to not start with yesterday
-    while not blobs:
-        try_date = try_date - timedelta(1)  # no blobs? try the day defore
-        new_prefix = get_prefix_from_date(prefix, try_date)
-        blobs = list(bucket.list_blobs(prefix=new_prefix))
-        elapsed = datetime.now() - timer
-        if elapsed.seconds > timeout:
-            print(
-                f"Looking back for blobs timed out within {timeout} seconds...\n"
-                + f"Retrieving whole list for {prefix}"
-            )
-            blobs = get_all_events_for_prefix(prefix, bucket)
-            if not blobs:
-                raise TimeoutError(f"Timed out. No data found for {prefix}")
-            all_events = get_sorted_events_from_blobs(blobs)
-            the_date = all_events[0].obs_date
-            events = [
-                event for event in all_events if event.obs_date == the_date
-            ]
-        else:
-            events = get_sorted_events_from_blobs(blobs)
+    today = get_current_day_obs()
+    new_prefix = get_prefix_from_date(prefix, today)
+    events = []
+    blobs = list(bucket.list_blobs(prefix=new_prefix))
+    if blobs:
+        events = get_sorted_events_from_blobs(blobs)
     return events
 
 
@@ -613,11 +600,17 @@ def get_all_events_for_prefix(
 
 
 def get_current_event(
-    prefix: str,
+    camera: Camera,
+    channel: Channel,
     bucket: Bucket,
+    historical: HistoricalData,
 ) -> Event:
-    events = get_most_recent_events_for_prefix(prefix, bucket)
-    return events[0]
+    events = get_todays_events_for_prefix(channel.prefix, bucket)
+    if events:
+        latest = events[0]
+    else:
+        latest = historical.get_most_recent_event(camera, channel)
+    return latest
 
 
 def get_prefix_from_date(prefix: str, a_date: date) -> str:

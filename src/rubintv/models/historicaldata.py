@@ -3,7 +3,13 @@ from typing import Dict, List
 
 from google.cloud.storage import Blob, Bucket
 
-from rubintv.models.models import Camera, Event, cameras, get_current_day_obs
+from rubintv.models.models import (
+    Camera,
+    Channel,
+    Event,
+    cameras,
+    get_current_day_obs,
+)
 
 
 class HistoricalData:
@@ -135,10 +141,11 @@ class HistoricalData:
             A list of years
         """
         camera_name = camera.slug
+        primary_channel = list(camera.channels)[0]
         years = set(
             [
                 event.obs_date.year
-                for event in self._get_events()[camera_name]["monitor"]
+                for event in self._get_events()[camera_name][primary_channel]
             ]
         )
         return list(years)
@@ -160,10 +167,11 @@ class HistoricalData:
             List of month numbers (1...12)
         """
         camera_name = camera.slug
+        primary_channel = list(camera.channels)[0]
         months = set(
             [
                 event.obs_date.month
-                for event in self._get_events()[camera_name]["monitor"]
+                for event in self._get_events()[camera_name][primary_channel]
                 if event.obs_date.year == year
             ]
         )
@@ -195,10 +203,11 @@ class HistoricalData:
             A dict with day number for key and last seq_num for that day as value
         """
         camera_name = camera.slug
+        primary_channel = list(camera.channels)[0]
         days = set(
             [
                 event.obs_date.day
-                for event in self._get_events()[camera_name]["monitor"]
+                for event in self._get_events()[camera_name][primary_channel]
                 if event.obs_date.month == month
                 and event.obs_date.year == year
             ]
@@ -228,7 +237,8 @@ class HistoricalData:
             The seq_num of the last Event for that Camera and day
         """
         camera_name = camera.slug
-        cam_events = self._get_events()[camera_name]["monitor"]
+        primary_channel = list(camera.channels)[0]
+        cam_events = self._get_events()[camera_name][primary_channel]
         days_events = [ev for ev in cam_events if ev.obs_date == a_date]
         return days_events[0].seq
 
@@ -283,11 +293,12 @@ class HistoricalData:
             The date of the most recent day's Event
         """
         camera_name = camera.slug
-        events = self._get_events()[camera_name]["monitor"]
+        primary_channel = list(camera.channels)[0]
+        events = self._get_events()[camera_name][primary_channel]
         most_recent = events[0].obs_date
         return most_recent
 
-    def get_most_recent_event(self, camera: Camera) -> Event:
+    def get_most_recent_event(self, camera: Camera, channel: Channel) -> Event:
         """Returns most recent Event for the given Camera
 
         Parameters
@@ -295,6 +306,9 @@ class HistoricalData:
 
         camera : `Camera`
             The given Camera object
+
+        channel : `Channel`
+            A Channel of the given camera
 
         Returns
         -------
@@ -304,7 +318,8 @@ class HistoricalData:
 
         """
         camera_name = camera.slug
-        events = self._get_events()[camera_name]["monitor"]
+        channel_name = channel.simplename
+        events = self._get_events()[camera_name][channel_name]
         return events[0]
 
     def get_camera_calendar(
