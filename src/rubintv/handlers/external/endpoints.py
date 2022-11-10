@@ -549,8 +549,12 @@ def get_most_recent_day_events(
             bucket, camera, events, the_date
         )
     else:
-        the_date = historical.get_most_recent_day(camera)
-        events_dict = historical.get_events_for_date(camera, the_date)
+        if camera.has_historical:
+            the_date = historical.get_most_recent_day(camera)
+            events_dict = historical.get_events_for_date(camera, the_date)
+        else:
+            the_date = get_current_day_obs()
+            events_dict = {}
     todays_events = make_table_rows_from_columns_by_seq(events_dict)
     return (the_date, todays_events)
 
