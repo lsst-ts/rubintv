@@ -1,44 +1,55 @@
 /* global $ */
-
-const defaultSelected = [
-  'Exposure time',
-  'Image type',
-  'Target',
-  'Filter',
-  'Disperser',
-  'Airmass',
-  'TAI',
-  'DIMM Seeing'
-]
-
-export const DefaultSelected = defaultSelected
-
-export function parseJsonFromDOM (element) {
-  const metaText = document.querySelector(element).text
-  return JSON.parse(metaText)
-}
-
 let controlsOpen = false
 
-export function applySelected (metaData, selection, sortable = false) {
+export function initTable (refreshCallback, periodInSecs, defaultSelected) {
+  const defaults = defaultSelected
+  let meta = parseJsonFromDOM('#table-metadata')
+  createTableControlUI(meta, $('#table-controls'), defaultSelected, defaults)
+  applySelected(meta, defaultSelected)
+  const selected = defaultSelected
+
+  const refreshTable = function (callback, periodInSecs) {
+    setInterval(function () {
+      const date = $('.the-date')[0].dataset.date
+      const urlPath = document.location.pathname
+      $.get(urlPath + '/update/' + date)
+        .done(function (htmlParts) {
+          callback(htmlParts)
+          meta = parseJsonFromDOM('#table-metadata')
+          if (Object.keys(meta).length !== 0) {
+            applySelected(meta, selected)
+            createTableControlUI(meta, $('#table-controls'), selected, defaults)
+          }
+        })
+        .fail(function () {
+          console.log("Couldn't reach server")
+        })
+    }, periodInSecs * 1000)
+  }
+
+  refreshTable(refreshCallback, periodInSecs)
+}
+
+function applySelected (metaData, selection, sortable = false) {
   // empty object test- there's no data, just go home
   if (Object.keys(metaData).length === 0) return
 
-  selection.forEach(name => {
-    const escapedName = _escapeName(name)
+  Object.entries(selection).forEach(([n]) => {
+    const escapedName = _escapeName(n)
     const lastHeaderCall = $('.grid-title').last()
-    const el = $('<th>', { class: 'grid-title sideways ' + escapedName })
-    el.text(name)
+    const el = $('<th>', { class: `grid-title sideways ${escapedName}` })
+    el.text(n)
     lastHeaderCall.after(el)
   })
 
   Object.entries(metaData).forEach(([seq, attributes]) => {
     const seqRow = $(`#seqno-${seq}`)
 
-    selection.forEach(name => {
+    Object.entries(selection).forEach(([n, group]) => {
       const seqRowLastCell = seqRow.find('td').last()
-      const el = $('<td>', { class: 'meta grid-cell ' + _escapeName(name) })
-      let val = attributes[name]
+      const escapedName = _escapeName(n)
+      const el = $('<td>', { class: `meta grid-cell ${escapedName} ${group}` })
+      let val = attributes[n]
       if (typeof val === 'number') {
         val = (+val.toFixed(3))
       }
@@ -55,7 +66,7 @@ function _escapeName (displayName) {
   return displayName.toLowerCase().replaceAll(' ', '_')
 }
 
-export function createTableControlUI (metaData, $elementToAppendTo, selection) {
+function createTableControlUI (metaData, $elementToAppendTo, selection, defaults) {
   // empty object test- there's no data, just go home
   if (Object.keys(metaData).length !== 0) {
     const panel = $('<div>', { class: 'table-panel' })
@@ -69,7 +80,7 @@ export function createTableControlUI (metaData, $elementToAppendTo, selection) {
     attrs.forEach(title => {
       const label = $('<label>', { for: title }).text(title)
       const checkBox = $('<input>', { type: 'checkbox', id: title, name: title, value: 1 })
-      if (selection.includes(title)) {
+      if (Object.keys(selection).includes(title)) {
         checkBox.attr('checked', true)
       }
       const control = $('<div>', { class: 'table-control' })
@@ -85,11 +96,15 @@ export function createTableControlUI (metaData, $elementToAppendTo, selection) {
     }
 
     $(".table-control [type='checkbox']").change(function (e) {
-      if (selection.includes(this.name)) {
-        selection.splice(selection.indexOf(this.name), 1)
+      if (selection.prototype.hasOwnProperty.call(this.name)) {
+        selection.remove(this.name)
         $('table .' + _escapeName(this.name)).remove()
       } else {
-        selection.push(this.name)
+        let group = ''
+        if (defaults.prototype.hasOwnProperty.call(this.name)) {
+          group = defaults[this.name]
+        }
+        selection[this.name] = group
         applySelected(metaData, [this.name])
       }
     })
@@ -144,4 +159,9 @@ function addToTopBottomControls () {
     $(window).scrollTop(tableHeight)
   })
   $('.jump-buttons').append(toTop).append(toBottom)
+}
+
+function parseJsonFromDOM (element) {
+  const metaText = document.querySelector(element).text
+  return JSON.parse(metaText)
 }

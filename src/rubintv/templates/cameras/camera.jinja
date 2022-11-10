@@ -48,7 +48,8 @@
 {% endblock content %}
 
 {% block footer_scripts %}
+  {% set cam_js_filename = "js/refresh-daytable-" + camera.slug + ".js" %}
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script type="module" src="{{ url('static', filename='js/refresh-daytable.js') }}"></script>
+  <script type="module" src='{{ url("static", filename=cam_js_filename) }}'></script>
   <script type="module" src="{{ url('static', filename='js/camera-status.js') }}"></script>
 {% endblock footer_scripts  %}
