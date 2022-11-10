@@ -14,7 +14,9 @@
           {% endif %}
         </td>
     {% endfor %}
-    <td class="grid-cell">
-      <a class="button button-table image-viewer-link" href="{{ viewer_link(date, seq) }}"></a>
-    </td>
+    {% if camera.has_image_viewer %}
+      <td class="grid-cell">
+        <a class="button button-table image-viewer-link" href="{{ viewer_link(date, seq) }}"></a>
+      </td>
+    {% endif %}
 {% endfor %}

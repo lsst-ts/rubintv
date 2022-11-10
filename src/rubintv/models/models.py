@@ -23,6 +23,7 @@ class Camera:
     slug: str
     online: bool
     has_historical: bool = False
+    has_image_viewer: bool = False
     channels: dict[str, Channel] = field(default_factory=dict)
     per_day_channels: dict[str, Channel] = field(default_factory=dict)
 
@@ -59,7 +60,11 @@ class Event:
 
 cameras = {
     "auxtel": Camera(
-        name="AuxTel", slug="auxtel", online=True, has_historical=True
+        name="AuxTel",
+        slug="auxtel",
+        online=True,
+        has_historical=True,
+        has_image_viewer=True,
     ),
     "startracker": Camera(name="StarTracker", slug="startracker", online=True),
     "comcam": Camera(

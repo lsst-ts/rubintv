@@ -16,7 +16,11 @@
             <th class="grid-title gt-channel sideways">{{ channel['label'] }}</th>
           {% endif %}
         {% endfor %}
-        <th class="grid-title sideways">CCS Image Viewer</th>
+
+        {% if camera.has_image_viewer %}
+          <th class="grid-title sideways">CCS Image Viewer</th>
+        {% endif %}
+
       </tr>
     </thead>
     <tbody>
