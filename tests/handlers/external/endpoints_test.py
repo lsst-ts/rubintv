@@ -5,6 +5,9 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING
 
+import pytest
+from aiohttp import web
+
 from rubintv.app import create_app
 from rubintv.models.models import get_current_day_obs
 
@@ -12,6 +15,23 @@ if TYPE_CHECKING:
     from aiohttp.pytest_plugin.test_utils import TestClient
 
 
+@pytest.mark.asyncio
+async def request_heartbeat_for_auxtel_monitor(
+    aiohttp_client: TestClient,
+) -> None:
+    """Test GET /app-name/heartbeat/auxtel_monitor"""
+    app = create_app()
+    name = app["safir/config"].name
+    client = await aiohttp_client(app)
+
+    response: web.Response = await client.get(
+        f"/{name}/heartbeat/auxtel_monitor"
+    )
+    assert response.status == 200
+    assert response.content_type == "application/json"
+
+
+@pytest.mark.asyncio
 async def test_get_index(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/"""
     app = create_app()
@@ -22,6 +42,7 @@ async def test_get_index(aiohttp_client: TestClient) -> None:
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_admin_page(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/admin"""
     app = create_app()
@@ -32,6 +53,7 @@ async def test_admin_page(aiohttp_client: TestClient) -> None:
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_reload_historical(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/reload_historical
     Reloads all historical data from the bucket"""
@@ -40,21 +62,12 @@ async def test_reload_historical(aiohttp_client: TestClient) -> None:
     client = await aiohttp_client(app)
 
     response = await client.get(f"/{name}/reload_historical")
-    assert response.status == 200 and response.text == "OK"
+    assert response.status == 200
+    text = await response.text()
+    assert text == "OK"
 
 
-async def request_heartbeat_for_auxtel_monitor(
-    aiohttp_client: TestClient,
-) -> None:
-    """Test GET /app-name/heartbeat/auxtel_monitor"""
-    app = create_app()
-    name = app["safir/config"].name
-    client = await aiohttp_client(app)
-
-    response = await client.get(f"/{name}/heartbeat/auxtel_monitor")
-    assert response.status == 200 and json.loads(response.body)
-
-
+@pytest.mark.asyncio
 async def request_all_heartbeats(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/heartbeats"""
     app = create_app()
@@ -62,9 +75,11 @@ async def request_all_heartbeats(aiohttp_client: TestClient) -> None:
     client = await aiohttp_client(app)
 
     response = await client.get(f"/{name}/heartbeats")
-    assert response.status == 200 and json.loads(response.body)
+    assert response.status == 200
+    assert response.content_type == "application/json"
 
 
+@pytest.mark.asyncio
 async def request_heartbeat_for_unknown_channel(
     aiohttp_client: TestClient,
 ) -> None:
@@ -77,6 +92,7 @@ async def request_heartbeat_for_unknown_channel(
     assert response.status == 404
 
 
+@pytest.mark.asyncio
 async def test_get_allsky_page(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/allsky
     All Sky has its own page not based on the general camera
@@ -89,6 +105,7 @@ async def test_get_allsky_page(aiohttp_client: TestClient) -> None:
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_get_allsky_image_update(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/allsky/image"""
     app = create_app()
@@ -96,9 +113,11 @@ async def test_get_allsky_image_update(aiohttp_client: TestClient) -> None:
     client = await aiohttp_client(app)
 
     response = await client.get(f"/{name}/allsky/image")
-    assert response.status == 200 and json.loads(response.body)
+    assert response.status == 200
+    assert response.content_type == "application/json"
 
 
+@pytest.mark.asyncio
 async def test_get_allsky_movie_update(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/allsky/movie"""
     app = create_app()
@@ -106,9 +125,11 @@ async def test_get_allsky_movie_update(aiohttp_client: TestClient) -> None:
     client = await aiohttp_client(app)
 
     response = await client.get(f"/{name}/allsky/movie")
-    assert response.status == 200 and json.loads(response.body)
+    assert response.status == 200
+    assert response.content_type == "application/json"
 
 
+@pytest.mark.asyncio
 async def test_get_allsky_historical(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/allsky/historical"""
     app = create_app()
@@ -119,6 +140,7 @@ async def test_get_allsky_historical(aiohttp_client: TestClient) -> None:
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_get_allsky_movie_for_date(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/allsky/historical/2022-11-09"""
     app = create_app()
@@ -129,6 +151,7 @@ async def test_get_allsky_movie_for_date(aiohttp_client: TestClient) -> None:
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_get_allsky_movie_for_badly_formed_date(
     aiohttp_client: TestClient,
 ) -> None:
@@ -141,6 +164,7 @@ async def test_get_allsky_movie_for_badly_formed_date(
     assert response.status == 404
 
 
+@pytest.mark.asyncio
 async def test_get_camera_page(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/camera-name"""
     app = create_app()
@@ -151,6 +175,7 @@ async def test_get_camera_page(aiohttp_client: TestClient) -> None:
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_get_camera_page_fail(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/none"""
     app = create_app()
@@ -162,6 +187,7 @@ async def test_get_camera_page_fail(aiohttp_client: TestClient) -> None:
     assert response.status == 404
 
 
+@pytest.mark.asyncio
 async def test_get_camera_update_for_date(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/auxtel/update/{today}
     Should respond with two-part json object with keys 'table'
@@ -181,6 +207,7 @@ async def test_get_camera_update_for_date(aiohttp_client: TestClient) -> None:
     )
 
 
+@pytest.mark.asyncio
 async def test_camera_update_for_badly_formed_date(
     aiohttp_client: TestClient,
 ) -> None:
@@ -193,6 +220,7 @@ async def test_camera_update_for_badly_formed_date(
     assert response.status == 404
 
 
+@pytest.mark.asyncio
 async def test_camera_imevents(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/auxtel/imevents/2022-04-05"""
     app = create_app()
@@ -202,6 +230,7 @@ async def test_camera_imevents(aiohttp_client: TestClient) -> None:
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_camera_specevents(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/auxtel/specevents/2022-02-08/163"""
     app = create_app()
@@ -211,6 +240,7 @@ async def test_camera_specevents(aiohttp_client: TestClient) -> None:
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_camera_imcurrent(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/auxtel/im_current"""
     app = create_app()
@@ -220,6 +250,7 @@ async def test_camera_imcurrent(aiohttp_client: TestClient) -> None:
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_camera_speccurrent(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/auxtel/spec_current"""
     app = create_app()
@@ -229,6 +260,7 @@ async def test_camera_speccurrent(aiohttp_client: TestClient) -> None:
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_get_camera_historical(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/camera-name/historical"""
     app = create_app()
@@ -239,6 +271,7 @@ async def test_get_camera_historical(aiohttp_client: TestClient) -> None:
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_get_camera_historical_date(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/camera-name/historical/2022-02-23"""
     app = create_app()
@@ -249,6 +282,7 @@ async def test_get_camera_historical_date(aiohttp_client: TestClient) -> None:
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_get_camera_historical_for_badly_formed_date(
     aiohttp_client: TestClient,
 ) -> None:
