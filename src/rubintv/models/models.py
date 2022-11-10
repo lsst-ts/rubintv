@@ -61,6 +61,9 @@ cameras = {
     "auxtel": Camera(
         name="AuxTel", slug="auxtel", online=True, has_historical=True
     ),
+    "startracker": Camera(
+        name="StarTracker", slug="startracker", online=False
+    ),
     "comcam": Camera(
         name="ComCam", slug="comcam", online=True, has_historical=True
     ),
@@ -120,6 +123,33 @@ cameras["auxtel"].per_day_channels = {
         prefix="auxtel_movies",
         simplename="movie",
         label="Movie for ",
+    ),
+}
+
+cameras["startracker"].channels = {
+    "monitor": Channel(
+        name="StarTracker",
+        prefix="startracker",
+        simplename="startracker",
+        label="StarTracker",
+    ),
+    "analysis": Channel(
+        name="StarTracker Analysis",
+        prefix="startracker_analysis",
+        simplename="analysis",
+        label="Analysis",
+    ),
+    "wide": Channel(
+        name="StarTracker Wide",
+        prefix="startracker_wide",
+        simplename="wide",
+        label="Wide",
+    ),
+    "wide_analysis": Channel(
+        name="StarTracker Analysis",
+        prefix="startracker_wide_analysis",
+        simplename="wide_analysis",
+        label="Wide Analysis",
     ),
 }
 
