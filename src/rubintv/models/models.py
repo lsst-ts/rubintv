@@ -171,6 +171,10 @@ production_services = {
             "auxtel_isr_runner": "ISR Runner",
         },
     },
+    "startracker": {
+        "display_name": "StarTracker",
+        "channels": cameras["startracker"].channels,
+    },
     "allsky": {
         "display_name": "All Sky",
         "services": {
