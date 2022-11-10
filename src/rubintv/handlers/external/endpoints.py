@@ -71,8 +71,19 @@ async def reload_historical(request: web.Request) -> web.Response:
 
 @routes.get("/admin/heartbeat/{heartbeat_prefix}")
 async def request_heartbeat_for_channel(request: web.Request) -> web.Response:
-    bucket = request.config_dict["rubintv/gcs_bucket"]
+    all_services = []
+    for ps in production_services.values():
+        if "channels" in ps:
+            for chan in ps["channels"].values():
+                all_services.append(chan.prefix)
+        if "services" in ps:
+            for service in ps["services"]:
+                all_services.append(service)
     prefix = request.match_info["heartbeat_prefix"]
+    if prefix not in all_services:
+        raise web.HTTPNotFound()
+
+    bucket = request.config_dict["rubintv/gcs_bucket"]
     heartbeat_prefix = "/".join([HEARTBEATS_PREFIX, prefix])
     heartbeats = get_heartbeats(bucket, heartbeat_prefix)
     if heartbeats and len(heartbeats) == 1:
@@ -184,8 +195,9 @@ async def get_allsky_historical_movie(request: web.Request) -> dict[str, Any]:
         date_str = request.match_info["date_str"]
         title = build_title("All Sky", "Historical", date_str, request=request)
 
-        year, month, day = [int(s) for s in date_str.split("-")]
-        the_date = date(year, month, day)
+        the_date = extract_date_from_url_part(date_str)
+        year = the_date.year
+
         all_events = historical.get_events_for_date(camera, the_date)
 
         years = historical.get_camera_calendar(camera)
@@ -199,6 +211,15 @@ async def get_allsky_historical_movie(request: web.Request) -> dict[str, Any]:
         "month_names": month_names(),
         "movie": movie,
     }
+
+
+def extract_date_from_url_part(url_part: str) -> date:
+    try:
+        year, month, day = [int(s) for s in url_part.split("-")]
+        the_date = date(year, month, day)
+    except ValueError:
+        raise web.HTTPNotFound()
+    return the_date
 
 
 def get_image_viewer_link(day_obs: date, seq_num: int) -> str:
@@ -263,8 +284,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
         camera = cameras[request.match_info["camera"]]
         bucket = request.config_dict["rubintv/gcs_bucket"]
         date_str = request.match_info["date"]
-        year, month, day = [int(s) for s in date_str.split("-")]
-        the_date = date(year, month, day)
+        the_date = extract_date_from_url_part(date_str)
         blobs = []
         # if the actual date is greater than displayed on the page
         # get the data from today if there is any
@@ -367,10 +387,10 @@ async def get_historical_day_data(request: web.Request) -> dict[str, Any]:
     if not camera.has_historical:
         raise web.HTTPNotFound
     date_str = request.match_info["date_str"]
+
+    the_date = extract_date_from_url_part(date_str)
     title = build_title(camera.name, "Historical", date_str, request=request)
 
-    year, month, day = [int(s) for s in date_str.split("-")]
-    the_date = date(year, month, day)
     day_dict = historical.get_events_for_date(camera, the_date)
     day_events = make_table_rows_from_columns_by_seq(day_dict)
 
