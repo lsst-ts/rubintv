@@ -61,9 +61,7 @@ cameras = {
     "auxtel": Camera(
         name="AuxTel", slug="auxtel", online=True, has_historical=True
     ),
-    "startracker": Camera(
-        name="StarTracker", slug="startracker", online=False
-    ),
+    "startracker": Camera(name="StarTracker", slug="startracker", online=True),
     "comcam": Camera(
         name="ComCam", slug="comcam", online=True, has_historical=True
     ),
