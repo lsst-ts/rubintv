@@ -30,7 +30,7 @@ export function initTable (refreshCallback, periodInSecs, defaultSelected) {
   refreshTable(refreshCallback, periodInSecs)
 }
 
-function applySelected (metaData, selection, sortable = false) {
+export function applySelected (metaData, selection, sortable = false) {
   // empty object test- there's no data, just go home
   if (Object.keys(metaData).length === 0) return
 
@@ -76,7 +76,7 @@ function _escapeName (displayName) {
   return displayName.toLowerCase().replaceAll(' ', '_')
 }
 
-function createTableControlUI (metaData, $elementToAppendTo, selection, defaults) {
+export function createTableControlUI (metaData, $elementToAppendTo, selection, defaults) {
   // empty object test- there's no data, just go home
   if (Object.keys(metaData).length !== 0) {
     const panel = $('<div>', { class: 'table-panel' })
@@ -175,7 +175,7 @@ function addToTopBottomControls () {
   $('.jump-buttons').append(toTop).append(toBottom)
 }
 
-function parseJsonFromDOM (element) {
+export function parseJsonFromDOM (element) {
   const metaText = document.querySelector(element).text
   return JSON.parse(metaText)
 }
