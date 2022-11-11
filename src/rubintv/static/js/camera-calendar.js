@@ -5,7 +5,7 @@ import { auxtelDefaultSelected } from './models.js'
 
 (function ($) {
   const meta = parseJsonFromDOM('#table-metadata')
-  createTableControlUI(meta, $('.channel-grid-heading'), auxtelDefaultSelected)
+  createTableControlUI(meta, $('.channel-grid-heading'), auxtelDefaultSelected, auxtelDefaultSelected)
   applySelected(meta, auxtelDefaultSelected, true)
 
   applyYearControls()
