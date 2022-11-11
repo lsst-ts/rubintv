@@ -46,17 +46,17 @@ export function applySelected (metaData, selection, sortable = false) {
   // add table entries by row...
   Object.entries(metaData).forEach(([seq, attributes]) => {
     const seqRow = $(`#seqno-${seq}`)
-
     // ...and column
     Object.entries(selection).forEach(([attr, group]) => {
       const seqRowLastCell = seqRow.find('td').last()
       const escapedName = _escapeName(attr)
       // check for indicator attribute (i.e. starts with '_')
+      const indicator = `_${attr}`
       // eslint-disable-next-line no-prototype-builtins
-      if (attributes.hasOwnProperty(`_${attr}`)) {
+      if (attributes.hasOwnProperty(indicator)) {
         // add it to group for including in the class list
         // possible values include 'bad' and 'warning'
-        group += ` ${attributes[attr]}`
+        group += ` ${attributes[indicator]}`
       }
       const el = $('<td>', { class: `meta grid-cell ${escapedName} ${group}` })
       let val = attributes[attr]
