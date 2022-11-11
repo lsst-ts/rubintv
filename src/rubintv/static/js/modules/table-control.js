@@ -35,11 +35,11 @@ function applySelected (metaData, selection, sortable = false) {
   if (Object.keys(metaData).length === 0) return
 
   // add metadata headers to the table
-  Object.entries(selection).forEach(([n]) => {
-    const escapedName = _escapeName(n)
+  Object.entries(selection).forEach(([attr]) => {
+    const escapedName = _escapeName(attr)
     const lastHeaderCall = $('.grid-title').last()
     const el = $('<th>', { class: `grid-title sideways ${escapedName}` })
-    el.text(n)
+    el.text(attr)
     lastHeaderCall.after(el)
   })
 
@@ -48,11 +48,18 @@ function applySelected (metaData, selection, sortable = false) {
     const seqRow = $(`#seqno-${seq}`)
 
     // ...and column
-    Object.entries(selection).forEach(([n, group]) => {
+    Object.entries(selection).forEach(([attr, group]) => {
       const seqRowLastCell = seqRow.find('td').last()
-      const escapedName = _escapeName(n)
+      const escapedName = _escapeName(attr)
+      // check for indicator attribute (i.e. starts with '_')
+      // eslint-disable-next-line no-prototype-builtins
+      if (attributes.hasOwnProperty(`_${attr}`)) {
+        // add it to group for including in the class list
+        // possible values include 'bad' and 'warning'
+        group += ` ${attributes[attr]}`
+      }
       const el = $('<td>', { class: `meta grid-cell ${escapedName} ${group}` })
-      let val = attributes[n]
+      let val = attributes[attr]
       if (typeof val === 'number') {
         val = (+val.toFixed(3))
       }
@@ -78,7 +85,8 @@ function createTableControlUI (metaData, $elementToAppendTo, selection, defaults
 
     // get the set of all data for list of all available attrs
     const allAttrs = Object.values(metaData).map(obj => Object.keys(obj)).flat()
-    const attrs = new Set(allAttrs)
+    const attrsWithIndicators = new Set(allAttrs)
+    const attrs = Array.from(attrsWithIndicators).filter(el => el[0] !== '_')
 
     attrs.forEach(title => {
       const label = $('<label>', { for: title }).text(title)

@@ -395,6 +395,12 @@ h3 {
 .grid-cell.group-a {
   background-color: #e0e0e0;
 }
+.grid-cell.bad {
+  background-color: #ebab93;
+}
+.grid-cell.warning {
+  background-color: #f1f1a7;
+}
 
 .table-spacer {
   background: #fff;
