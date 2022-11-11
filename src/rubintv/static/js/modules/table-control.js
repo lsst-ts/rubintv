@@ -34,6 +34,7 @@ function applySelected (metaData, selection, sortable = false) {
   // empty object test- there's no data, just go home
   if (Object.keys(metaData).length === 0) return
 
+  // add metadata headers to the table
   Object.entries(selection).forEach(([n]) => {
     const escapedName = _escapeName(n)
     const lastHeaderCall = $('.grid-title').last()
@@ -42,9 +43,11 @@ function applySelected (metaData, selection, sortable = false) {
     lastHeaderCall.after(el)
   })
 
+  // add table entries by row...
   Object.entries(metaData).forEach(([seq, attributes]) => {
     const seqRow = $(`#seqno-${seq}`)
 
+    // ...and column
     Object.entries(selection).forEach(([n, group]) => {
       const seqRowLastCell = seqRow.find('td').last()
       const escapedName = _escapeName(n)
@@ -96,16 +99,19 @@ function createTableControlUI (metaData, $elementToAppendTo, selection, defaults
     }
 
     $(".table-control [type='checkbox']").change(function (e) {
-      if (selection.prototype.hasOwnProperty.call(this.name)) {
-        selection.remove(this.name)
-        $('table .' + _escapeName(this.name)).remove()
+      const attribute = this.name
+      // eslint-disable-next-line no-prototype-builtins
+      if (selection.hasOwnProperty(attribute)) {
+        delete selection[attribute]
+        $('table .' + _escapeName(attribute)).remove()
       } else {
         let group = ''
-        if (defaults.prototype.hasOwnProperty.call(this.name)) {
-          group = defaults[this.name]
+        // eslint-disable-next-line no-prototype-builtins
+        if (defaults.hasOwnProperty(attribute)) {
+          group = defaults[attribute]
         }
-        selection[this.name] = group
-        applySelected(metaData, [this.name])
+        selection[attribute] = group
+        applySelected(metaData, { [attribute]: group })
       }
     })
 
