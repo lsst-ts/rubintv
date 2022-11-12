@@ -5,8 +5,6 @@ import { startrackerDefaultSelected } from './models.js'
 
 (function ($) {
   const meta = parseJsonFromDOM('#table-metadata')
-  // createTableControlUI(meta, $('.channel-grid-heading'), auxtelDefaultSelected, auxtelDefaultSelected)
   applySelected(meta, startrackerDefaultSelected, true)
-
   applyYearControls()
 })(jQuery)
