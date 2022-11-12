@@ -66,7 +66,12 @@ cameras = {
         has_historical=True,
         has_image_viewer=True,
     ),
-    "startracker": Camera(name="StarTracker", slug="startracker", online=True),
+    "startracker": Camera(
+        name="StarTracker",
+        slug="startracker",
+        online=True,
+        has_historical=True,
+    ),
     "comcam": Camera(
         name="ComCam", slug="comcam", online=True, has_historical=True
     ),
@@ -130,9 +135,9 @@ cameras["auxtel"].per_day_channels = {
 }
 
 cameras["startracker"].channels = {
-    "monitor": Channel(
+    "startracker": Channel(
         name="StarTracker",
-        prefix="startracker",
+        prefix="startracker_raw",
         simplename="startracker",
         label="StarTracker",
     ),
@@ -144,12 +149,12 @@ cameras["startracker"].channels = {
     ),
     "wide": Channel(
         name="StarTracker Wide",
-        prefix="startracker_wide",
+        prefix="startracker_wide_raw",
         simplename="wide",
         label="Wide",
     ),
     "wide_analysis": Channel(
-        name="StarTracker Analysis",
+        name="StarTracker Wide Analysis",
         prefix="startracker_wide_analysis",
         simplename="wide_analysis",
         label="Wide Analysis",
