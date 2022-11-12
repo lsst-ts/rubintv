@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING
 
 import pytest
@@ -61,7 +60,7 @@ async def test_reload_historical(aiohttp_client: TestClient) -> None:
     name = app["safir/config"].name
     client = await aiohttp_client(app)
 
-    response = await client.get(f"/{name}/reload_historical")
+    response = await client.post(f"/{name}/reload_historical")
     assert response.status == 200
     text = await response.text()
     assert text == "OK"
@@ -107,24 +106,24 @@ async def test_get_allsky_page(aiohttp_client: TestClient) -> None:
 
 @pytest.mark.asyncio
 async def test_get_allsky_image_update(aiohttp_client: TestClient) -> None:
-    """Test GET /app-name/allsky/image"""
+    """Test GET /app-name/allsky/update/image"""
     app = create_app()
     name = app["safir/config"].name
     client = await aiohttp_client(app)
 
-    response = await client.get(f"/{name}/allsky/image")
+    response = await client.get(f"/{name}/allsky/update/image")
     assert response.status == 200
     assert response.content_type == "application/json"
 
 
 @pytest.mark.asyncio
 async def test_get_allsky_movie_update(aiohttp_client: TestClient) -> None:
-    """Test GET /app-name/allsky/movie"""
+    """Test GET /app-name/allsky/update/movie"""
     app = create_app()
     name = app["safir/config"].name
     client = await aiohttp_client(app)
 
-    response = await client.get(f"/{name}/allsky/movie")
+    response = await client.get(f"/{name}/allsky/update/movie")
     assert response.status == 200
     assert response.content_type == "application/json"
 
@@ -142,12 +141,12 @@ async def test_get_allsky_historical(aiohttp_client: TestClient) -> None:
 
 @pytest.mark.asyncio
 async def test_get_allsky_movie_for_date(aiohttp_client: TestClient) -> None:
-    """Test GET /app-name/allsky/historical/2022-11-09"""
+    """Test GET /app-name/allsky/historical/2022-11-10"""
     app = create_app()
     name = app["safir/config"].name
     client = await aiohttp_client(app)
 
-    response = await client.get(f"/{name}/allsky/historical/2022-11-09")
+    response = await client.get(f"/{name}/allsky/historical/2022-11-10")
     assert response.status == 200
 
 
@@ -199,12 +198,8 @@ async def test_get_camera_update_for_date(aiohttp_client: TestClient) -> None:
     day_obs = get_current_day_obs()
     # date object prints as YYYY-MM-DD
     response = await client.get(f"/{name}/update/{day_obs}")
-
-    json_res = json.loads(response.body)
-
-    assert response.status == 200 and (
-        "table" in json_res and "per_day" in json_res
-    )
+    assert response.status == 200
+    assert response.content_type == "application/json"
 
 
 @pytest.mark.asyncio
