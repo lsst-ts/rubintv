@@ -14,18 +14,20 @@ export function addToTable (metaData, headerGroups, sortable = false) {
     groupRow.append($('<th>', { scope: 'col' }))
   })
 
-  headerGroups.forEach((group, id) => {
-    const tr = $('<th>', { id: `group-${id}`, scope: 'colgroup', colspan: group.length, class: 'meta-group' })
+  Object.keys(headerGroups).forEach((group) => {
+    const span = headerGroups[group].length
+    const groupID = _escapeName(group)
+    const tr = $('<th>', { id: groupID, scope: 'colgroup', colspan: span, class: 'meta-group' })
+    tr.append($('<p>').text(group))
     tr.append($('<img>', { src: '/rubintv/static/images/meta-group.png' }))
     groupRow.append(tr)
   })
 
-  $('thead').append(groupRow)
+  $('thead').prepend(groupRow)
 
-  const headers = headerGroups.flat()
-  headerGroups.forEach((group, id) => {
-    const groupID = `group-${id}`
-    group.forEach((attr, i) => {
+  Object.keys(headerGroups).forEach((group) => {
+    const groupID = _escapeName(group)
+    headerGroups[group].forEach((attr) => {
       const escapedName = _escapeName(attr)
       const lastHeaderCall = $('.grid-title').last()
       const el = $('<th>', { class: `grid-title sideways ${escapedName}`, headers: groupID })
@@ -35,6 +37,7 @@ export function addToTable (metaData, headerGroups, sortable = false) {
   })
 
   // add table entries by row...
+  const headers = Object.values(headerGroups).flat()
   Object.entries(metaData).forEach(([seq, attributes]) => {
     const seqRow = $(`#seqno-${seq}`)
     // ...and column

@@ -213,13 +213,6 @@ h3
 		white-space: nowrap
 
 
-.meta-group
-	height: 20px
-	position: sticky
-	top: calc(13em - 10px)
-	img
-		width: 100%
-		height: 100%
 
 .grid-cell
 	background-color: #f0f0f0
@@ -238,8 +231,22 @@ h3
 	position: sticky
 	top: 4.4em
 
-.startracker .table-spacer
-	height: calc( 8em + 20px )
+.meta-group
+	height: 20px
+	position: relative
+	top: -3em
+	img
+		width: 100%
+		height: 100%
+
+.startracker
+	thead
+		position: sticky
+	.grouping
+		height: 6em
+	.grid-title
+		position: static
+
 
 .table-panel
 	background: #eee
