@@ -141,17 +141,17 @@ cameras["startracker"].channels = {
         simplename="startracker",
         label="StarTracker",
     ),
-    "analysis": Channel(
-        name="StarTracker Analysis",
-        prefix="startracker_analysis",
-        simplename="analysis",
-        label="Analysis",
-    ),
     "wide": Channel(
         name="StarTracker Wide",
         prefix="startracker_wide_raw",
         simplename="wide",
         label="Wide",
+    ),
+    "analysis": Channel(
+        name="StarTracker Analysis",
+        prefix="startracker_analysis",
+        simplename="analysis",
+        label="Analysis",
     ),
     "wide-analysis": Channel(
         name="StarTracker Wide Analysis",
