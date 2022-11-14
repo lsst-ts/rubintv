@@ -1,5 +1,22 @@
 @charset "UTF-8";
 @import "reset.css";
+body {
+  background-color: #fff;
+}
+
+.channel-grid-heading {
+  background-color: #fff;
+}
+
+.grid-cell {
+  background-color: #f0f0f0;
+  color: #000;
+}
+
+.table-spacer {
+  background-color: #fff;
+}
+
 .button.monitor {
   background-color: #F07F85;
 }
@@ -234,10 +251,6 @@ html {
   box-sizing: border-box;
 }
 
-body {
-  background-color: #fff;
-}
-
 .page-wrapper {
   margin: 30px 30px 30px;
 }
@@ -371,7 +384,6 @@ h3 {
 }
 
 .channel-grid-heading {
-  background: #fff;
   padding-top: 1em;
   position: sticky;
   top: 0;
@@ -412,7 +424,6 @@ h3 {
 }
 
 .grid-cell {
-  background-color: #f0f0f0;
   padding: 0.3em;
   vertical-align: middle;
   height: 42px;
@@ -425,7 +436,6 @@ h3 {
 }
 
 .table-spacer {
-  background: #fff;
   height: 8em;
   position: sticky;
   top: 4.4em;
@@ -443,6 +453,7 @@ h3 {
 
 .startracker thead {
   position: sticky;
+  top: 8.4em;
 }
 .startracker .grouping {
   height: 6em;
