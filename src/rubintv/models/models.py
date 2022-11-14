@@ -182,6 +182,9 @@ production_services = {
     "startracker": {
         "display_name": "StarTracker",
         "channels": cameras["startracker"].channels,
+        "services": {
+            "startracker_metadata": "Metadata",
+        },
     },
     "allsky": {
         "display_name": "All Sky",
