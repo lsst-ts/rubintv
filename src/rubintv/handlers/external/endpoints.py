@@ -20,7 +20,7 @@ __all__ = [
 
 import json
 from datetime import date
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 from aiohttp import web
 from aiohttp_jinja2 import render_string, render_template, template
@@ -46,14 +46,14 @@ HEARTBEATS_PREFIX = "heartbeats"
 @routes.get("")
 @routes.get("/")
 @template("home.jinja")
-async def get_page(request: web.Request) -> dict[str, Any]:
+async def get_page(request: web.Request) -> Dict[str, Any]:
     title = build_title(request=request)
     return {"title": title, "cameras": cameras}
 
 
 @routes.get("/admin")
 @template("admin.jinja")
-async def get_admin_page(request: web.Request) -> dict[str, Any]:
+async def get_admin_page(request: web.Request) -> Dict[str, Any]:
     title = build_title("Admin", request=request)
     return {
         "title": title,
@@ -69,9 +69,10 @@ async def reload_historical(request: web.Request) -> web.Response:
     return web.Response(text="OK", content_type="text/plain")
 
 
-@routes.get("/admin/heartbeat/{heartbeat_prefix}")
+@routes.get("/admin/heartbeat/{service_prefix}")
 async def request_heartbeat_for_channel(request: web.Request) -> web.Response:
     all_services = []
+    ps: Dict[str, Any]
     for ps in production_services.values():
         if "channels" in ps:
             for chan in ps["channels"].values():
@@ -79,7 +80,7 @@ async def request_heartbeat_for_channel(request: web.Request) -> web.Response:
         if "services" in ps:
             for service in ps["services"]:
                 all_services.append(service)
-    prefix = request.match_info["heartbeat_prefix"]
+    prefix = request.match_info["service_prefix"]
     if prefix not in all_services:
         raise web.HTTPNotFound()
 
@@ -102,7 +103,7 @@ async def request_all_heartbeats(request: web.Request) -> web.Response:
     return web.Response(text=json_res, content_type="application/json")
 
 
-def get_heartbeats(bucket: Bucket, prefix: str) -> list[dict]:
+def get_heartbeats(bucket: Bucket, prefix: str) -> List[Dict]:
     hb_blobs = list(bucket.list_blobs(prefix=prefix))
     heartbeats = []
     for hb_blob in hb_blobs:
@@ -121,7 +122,7 @@ def get_heartbeats(bucket: Bucket, prefix: str) -> list[dict]:
 
 @routes.get("/allsky")
 @template("cameras/allsky.jinja")
-async def get_all_sky_current(request: web.Request) -> dict[str, Any]:
+async def get_all_sky_current(request: web.Request) -> Dict[str, Any]:
     title = build_title("All Sky", request=request)
     historical = request.config_dict["rubintv/historical_data"]
     bucket = request.config_dict["rubintv/gcs_bucket"]
@@ -159,7 +160,7 @@ async def get_all_sky_current_update(request: web.Request) -> web.Response:
 
 @routes.get("/allsky/historical")
 @template("cameras/allsky-historical.jinja")
-async def get_allsky_historical(request: web.Request) -> dict[str, Any]:
+async def get_allsky_historical(request: web.Request) -> Dict[str, Any]:
     title = build_title("All Sky", "Historical", request=request)
     historical: HistoricalData = request.config_dict["rubintv/historical_data"]
     logger = request["safir/logger"]
@@ -186,7 +187,7 @@ async def get_allsky_historical(request: web.Request) -> dict[str, Any]:
 
 @routes.get("/allsky/historical/{date_str}")
 @template("cameras/allsky-historical.jinja")
-async def get_allsky_historical_movie(request: web.Request) -> dict[str, Any]:
+async def get_allsky_historical_movie(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]
     with Timer() as timer:
         camera = cameras["allsky"]
@@ -248,7 +249,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
     logger = request["safir/logger"]
     with Timer() as timer:
         if not camera.online:
-            context: dict[str, Any] = {"camera": camera}
+            context: Dict[str, Any] = {"camera": camera}
             template = "cameras/not_online.jinja"
         else:
             bucket = request.config_dict["rubintv/gcs_bucket"]
@@ -338,7 +339,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
 
 @routes.get("/{camera}/historical")
 @template("cameras/historical.jinja")
-async def get_historical(request: web.Request) -> dict[str, Any]:
+async def get_historical(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]
     with Timer() as timer:
         bucket = request.config_dict["rubintv/gcs_bucket"]
@@ -378,7 +379,7 @@ async def get_historical(request: web.Request) -> dict[str, Any]:
 
 @routes.get("/{camera}/historical/{date_str}")
 @template("cameras/historical.jinja")
-async def get_historical_day_data(request: web.Request) -> dict[str, Any]:
+async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]
     historical = request.config_dict["rubintv/historical_data"]
     bucket = request.config_dict["rubintv/gcs_bucket"]
@@ -414,7 +415,7 @@ async def get_historical_day_data(request: web.Request) -> dict[str, Any]:
 
 def get_per_day_channels(
     bucket: Bucket, camera: Camera, the_date: date, logger: Any
-) -> dict[str, str]:
+) -> Dict[str, str]:
     """Builds a dict of per-day channels to display
 
     Takes a bucket, camera and a given date and returns a dict of per-day
@@ -463,7 +464,7 @@ def get_channel_resource_url(
 
 def get_metadata_json(
     bucket: Bucket, camera: Camera, a_date: date, logger: Any
-) -> dict:
+) -> Dict:
     date_str = a_date.strftime("%Y%m%d")
     blob_name = f"{camera.slug}_metadata/dayObs_{date_str}.json"
     metadata_json = "{}"
@@ -472,13 +473,13 @@ def get_metadata_json(
     return json.loads(metadata_json)
 
 
-def month_names() -> list[str]:
+def month_names() -> List[str]:
     return [date(2000, m, 1).strftime("%B") for m in list(range(1, 13))]
 
 
 @routes.get("/{camera}/{channel}events/{date}/{seq}")
 @template("single_event.jinja")
-async def events(request: web.Request) -> dict[str, Any]:
+async def events(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]
     with Timer() as timer:
         bucket = request.config_dict["rubintv/gcs_bucket"]
@@ -511,7 +512,7 @@ async def events(request: web.Request) -> dict[str, Any]:
 
 @routes.get("/{camera}/{channel}_current")
 @template("current.jinja")
-async def current(request: web.Request) -> dict[str, Any]:
+async def current(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]
     with Timer() as timer:
         camera = cameras[request.match_info["camera"]]
@@ -562,9 +563,9 @@ def get_most_recent_day_events(
 def build_dict_with_remaining_channels(
     bucket: Bucket,
     camera: Camera,
-    events_dict: dict[str, list[Event]],
+    events_dict: Dict[str, list[Event]],
     the_date: date,
-) -> dict[str, list[Event]]:
+) -> Dict[str, list[Event]]:
     # creates a dict where key => list of events e.g.:
     # {"monitor": [Event 1, Event 2 ...] , "im": [Event 2 ...] ... }
     primary_channel = list(camera.channels)[0]
@@ -587,9 +588,9 @@ def seq_num_equal(
 
 
 def make_table_rows_from_columns_by_seq(
-    events_dict: dict,
-) -> dict[int, dict[str, Event]]:
-    d: dict[int, dict[str, Event]] = {}
+    events_dict: Dict,
+) -> Dict[int, dict[str, Event]]:
+    d: Dict[int, dict[str, Event]] = {}
     # d == {seq: {chan1: event, chan2: event, ... }}
     for chan in events_dict:
         chan_events = events_dict[chan]
@@ -601,7 +602,7 @@ def make_table_rows_from_columns_by_seq(
     return d
 
 
-def get_sorted_events_from_blobs(blobs: list) -> list[Event]:
+def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
     events = [
         Event(el.public_url)
         for el in blobs
@@ -616,7 +617,7 @@ def get_sorted_events_from_blobs(blobs: list) -> list[Event]:
 def get_todays_events_for_prefix(
     prefix: str,
     bucket: Bucket,
-) -> list[Event]:
+) -> List[Event]:
     today = get_current_day_obs()
     new_prefix = get_prefix_from_date(prefix, today)
     events = []
@@ -629,7 +630,7 @@ def get_todays_events_for_prefix(
 def get_all_events_for_prefix(
     prefix: str,
     bucket: Bucket,
-) -> list[Event]:
+) -> List[Event]:
     blobs = list(bucket.list_blobs(prefix=prefix))
     return blobs
 

@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
+from typing import Dict
 
 from dateutil.tz import gettz
 
@@ -24,8 +25,8 @@ class Camera:
     online: bool
     has_historical: bool = False
     has_image_viewer: bool = False
-    channels: dict[str, Channel] = field(default_factory=dict)
-    per_day_channels: dict[str, Channel] = field(default_factory=dict)
+    channels: Dict[str, Channel] = field(default_factory=dict)
+    per_day_channels: Dict[str, Channel] = field(default_factory=dict)
 
 
 @dataclass
