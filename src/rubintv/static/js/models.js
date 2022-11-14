@@ -12,11 +12,24 @@ export const auxtelDefaultSelected = [
   'DIMM Seeing'
 ]
 
-export const startrackerHeaders = [
-  'Alt',
-  'Az',
-  'Rot',
-  'Delta Alt',
-  'Delta Az',
-  'Delta Rot'
+// export const starTrackerHeaders = [
+//   'Alt',
+//   'Az',
+//   'Rot',
+//   'Delta Alt',
+//   'Delta Az',
+//   'Delta Rot'
+// ]
+
+export const starTrackerHeaders = [
+  [
+    'Alt',
+    'Az',
+    'Rot'
+  ],
+  [
+    'Delta Alt',
+    'Delta Az',
+    'Delta Rot'
+  ]
 ]

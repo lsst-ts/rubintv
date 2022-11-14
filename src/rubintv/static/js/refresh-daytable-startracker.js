@@ -1,11 +1,11 @@
 /* global jQuery */
 import { parseJsonFromDOM, refreshTable } from './modules/table-control.js'
 import { addToTable } from './modules/table-startracker.js'
-import { startrackerHeaders } from './models.js'
+import { starTrackerHeaders } from './models.js'
 
 (function ($) {
   const meta = parseJsonFromDOM('#table-metadata')
-  const headers = startrackerHeaders
+  const headers = starTrackerHeaders
   updateTable(meta, headers)
   refreshTable(starTrackerHtmlInject, updateTable, headers, 5)
 
