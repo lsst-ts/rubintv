@@ -1,13 +1,19 @@
-/* eslint-disable quote-props */
 /* global jQuery */
-
-import { initTable } from './modules/table-control.js'
-import { startrackerDefaultSelected } from './models.js'
+import { parseJsonFromDOM, refreshTable } from './modules/table-control.js'
+import { addToTable } from './modules/table-startracker.js'
+import { startrackerHeaders } from './models.js'
 
 (function ($) {
+  const meta = parseJsonFromDOM('#table-metadata')
+  const headers = startrackerHeaders
+  updateTable(meta, headers)
+  refreshTable(starTrackerHtmlInject, updateTable, headers, 5)
+
   function starTrackerHtmlInject (htmlParts) {
     $('.channel-day-data').html(htmlParts.table)
   }
 
-  initTable(starTrackerHtmlInject, 5, startrackerDefaultSelected)
+  function updateTable (meta, headers) {
+    addToTable(meta, headers)
+  }
 })(jQuery)
