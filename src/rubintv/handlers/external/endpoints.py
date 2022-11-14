@@ -75,7 +75,7 @@ async def request_heartbeat_for_channel(request: web.Request) -> web.Response:
     ps: Dict[str, Any]
     for ps in production_services.values():
         if "channels" in ps:
-            for chan in ps["channels"].values():
+            for chan in ps["channels"].values():  # type: ignore[attr-defined]
                 all_services.append(chan.prefix)
         if "services" in ps:
             for service in ps["services"]:
