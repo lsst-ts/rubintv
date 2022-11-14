@@ -197,7 +197,7 @@ async def test_get_camera_update_for_date(aiohttp_client: TestClient) -> None:
 
     day_obs = get_current_day_obs()
     # date object prints as YYYY-MM-DD
-    response = await client.get(f"/{name}/update/{day_obs}")
+    response = await client.get(f"/{name}/auxtel/update/{day_obs}")
     assert response.status == 200
     assert response.content_type == "application/json"
 
