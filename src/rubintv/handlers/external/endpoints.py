@@ -599,6 +599,9 @@ def make_table_rows_from_columns_by_seq(
                 d[e.seq].update({chan: e})
             else:
                 d.update({e.seq: {chan: e}})
+    d = {
+        k: v for k, v in sorted(d.items(), reverse=True)
+    }  # make sure the table is in order
     return d
 
 
