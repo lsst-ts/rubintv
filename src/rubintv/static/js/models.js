@@ -13,24 +13,32 @@ export const auxtelDefaultSelected = [
 ]
 
 export const starTrackerHeaders = {
-  'TMA': [
-    'Alt',
+  'Star Tracker': [
+    'Exposure Time',
+    'Ra',
+    'Dec',
     'Az',
-    'Rot'
+    'El',
   ],
-  'StarTracker': [
-    'Delta Alt',
-    'Delta Az',
-    'Delta Rot'
+  'Star Tracker Solution': [
+    'nSources',
+    'Calculated Ra',
+    'Calculated Dec',
+    'Delta Ra Arcsec',
+    'Delta Dec Arcsec',
   ],
-  'StarTracker Wide': [
-    'Alt2',
-    'Az2',
-    'Rot2'
+  'Star Tracker Wide': [
+    'Exposure Time wide',
+    'Ra wide',
+    'Dec wide',
+    'Az wide',
+    'El wide',
   ],
-  'Residuals': [
-    'Delta Alt2',
-    'Delta Az2',
-    'Delta Rot2'
-  ]
+  'Star Tracker Solve Wide': [
+    'nSources wide',
+    'Calculated Ra wide',
+    'Calculated Dec wide',
+    'Delta Ra Arcsec wide',
+    'Delta Dec Arcsec wide',
+  ],
 }
