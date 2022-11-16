@@ -29,7 +29,11 @@ from google.cloud.storage import Bucket
 
 from rubintv import __version__
 from rubintv.handlers import routes
-from rubintv.models.camera_assignment import cameras, production_services
+from rubintv.models.camera_assignment import (
+    cameras,
+    home_page_list,
+    production_services,
+)
 from rubintv.models.historicaldata import HistoricalData
 from rubintv.models.models import Camera, Channel, Event, get_current_day_obs
 from rubintv.timer import Timer
@@ -42,7 +46,11 @@ HEARTBEATS_PREFIX = "heartbeats"
 @template("home.jinja")
 async def get_page(request: web.Request) -> Dict[str, Any]:
     title = build_title(request=request)
-    return {"title": title, "cameras": cameras}
+    return {
+        "title": title,
+        "cameras": cameras,
+        "camera_display_list": home_page_list,
+    }
 
 
 @routes.get("/admin")

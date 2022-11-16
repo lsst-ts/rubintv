@@ -24,6 +24,11 @@ cameras = {
     "allsky": Camera(name="All Sky", slug="allsky", online=True),
 }
 
+home_page_list = {
+    "Telescope-mounted": ["auxtel", "comcam", "lsstcam"],
+    "Other cameras": ["allsky", "startracker", "startracker-wide"],
+}
+
 cameras["allsky"].channels = {
     "movie": Channel(
         name="Current Movie", prefix="all_sky_movies", simplename="movie"
