@@ -460,7 +460,7 @@ section {
 
 .startracker thead, .startracker-wide thead {
   position: sticky;
-  top: 8.4em;
+  top: 10.8em;
 }
 .startracker .grouping, .startracker-wide .grouping {
   height: 6em;
@@ -468,10 +468,13 @@ section {
 .startracker .grid-title, .startracker-wide .grid-title {
   position: static;
 }
-
-.startracker-wide thead {
-  top: 10.8em;
+.startracker .table-spacer, .startracker-wide .table-spacer {
+  height: 10em;
 }
+.startracker .meta-group, .startracker-wide .meta-group {
+  top: -5.4em;
+}
+
 .startracker-wide .table-spacer {
   height: 10em;
 }
