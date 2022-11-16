@@ -23,9 +23,14 @@ class Camera:
     name: str
     slug: str
     online: bool
+    metadata_slug: str = ""
     has_image_viewer: bool = False
     channels: Dict[str, Channel] = field(default_factory=dict)
     per_day_channels: Dict[str, Channel] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.metadata_slug:
+            self.metadata_slug = self.slug
 
 
 @dataclass

@@ -457,7 +457,7 @@ def get_metadata_json(
     bucket: Bucket, camera: Camera, a_date: date, logger: Any
 ) -> Dict:
     date_str = a_date.strftime("%Y%m%d")
-    blob_name = f"{camera.slug}_metadata/dayObs_{date_str}.json"
+    blob_name = f"{camera.metadata_slug}_metadata/dayObs_{date_str}.json"
     metadata_json = "{}"
     if blob := bucket.get_blob(blob_name):
         metadata_json = blob.download_as_string()

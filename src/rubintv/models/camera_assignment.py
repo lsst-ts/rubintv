@@ -15,7 +15,9 @@ cameras = {
     "startracker-wide": Camera(
         name="StarTracker Wide",
         slug="startracker-wide",
-        online="true",
+        online=True,
+        # shares metadata file with startracker
+        metadata_slug="startracker",
     ),
     "comcam": Camera(name="ComCam", slug="comcam", online=True),
     "lsstcam": Camera(name="LSSTCam", slug="lsstcam", online=False),
