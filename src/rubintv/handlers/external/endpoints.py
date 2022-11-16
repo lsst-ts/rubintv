@@ -339,8 +339,6 @@ async def get_historical(request: web.Request) -> Dict[str, Any]:
     with Timer() as timer:
         bucket = request.config_dict["rubintv/gcs_bucket"]
         camera = cameras[request.match_info["camera"]]
-        if not camera.has_historical:
-            raise web.HTTPNotFound()
         title = build_title(camera.name, "Historical", request=request)
         historical = request.config_dict["rubintv/historical_data"]
         active_years = historical.get_years(camera)
@@ -380,8 +378,6 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
     bucket = request.config_dict["rubintv/gcs_bucket"]
 
     camera = cameras[request.match_info["camera"]]
-    if not camera.has_historical:
-        raise web.HTTPNotFound
     date_str = request.match_info["date_str"]
 
     the_date = extract_date_from_url_part(date_str)
@@ -545,12 +541,9 @@ def get_most_recent_day_events(
             bucket, camera, events, the_date
         )
     else:
-        if camera.has_historical:
-            the_date = historical.get_most_recent_day(camera)
-            events_dict = historical.get_events_for_date(camera, the_date)
-        else:
-            the_date = get_current_day_obs()
-            events_dict = {}
+        the_date = historical.get_most_recent_day(camera)
+        events_dict = historical.get_events_for_date(camera, the_date)
+
     todays_events = make_table_rows_from_columns_by_seq(events_dict)
     return (the_date, todays_events)
 

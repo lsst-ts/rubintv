@@ -23,7 +23,6 @@ class Camera:
     name: str
     slug: str
     online: bool
-    has_historical: bool = False
     has_image_viewer: bool = False
     channels: Dict[str, Channel] = field(default_factory=dict)
     per_day_channels: Dict[str, Channel] = field(default_factory=dict)

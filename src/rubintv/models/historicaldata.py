@@ -31,10 +31,7 @@ class HistoricalData:
             A list of Blob objects
         """
         blobs = []
-        cameras_with_history = [
-            cam for cam in cameras.values() if cam.has_historical
-        ]
-        for cam in cameras_with_history:
+        for cam in cameras.values():
             for channel in cam.channels.values():
                 prefix = channel.prefix
                 print(f"Trying prefix: {prefix}")
@@ -110,10 +107,7 @@ class HistoricalData:
             all_events, key=lambda x: (x.obs_date, x.seq), reverse=True
         )
         events_dict: Dict[str, Dict[str, List[Event]]] = {}
-        cameras_with_history = [
-            cam for cam in cameras.values() if cam.has_historical
-        ]
-        for cam in cameras_with_history:
+        for cam in cameras.values():
             channels = cam.channels
             events_dict[cam.slug] = {}
             for channel in channels:
