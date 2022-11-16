@@ -147,6 +147,8 @@ async def get_all_sky_current_update(request: web.Request) -> web.Response:
     historical = request.config_dict["rubintv/historical_data"]
     camera = cameras["allsky"]
     channel_name = request.match_info["channel"]
+    logger = request.config_dict["safir/logger"]
+    logger.info("Available All Sky channels", camera.channels)
     channel = camera.channels[channel_name]
     current = get_current_event(camera, channel, bucket, historical)
     json_dict = {
