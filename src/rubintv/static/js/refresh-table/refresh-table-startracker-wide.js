@@ -1,7 +1,7 @@
 /* global jQuery */
-import { parseJsonFromDOM, refreshTable } from './modules/table-control.js'
-import { addToTable } from './modules/table-startracker.js'
-import { starTrackerWideHeaders } from './models.js'
+import { parseJsonFromDOM, refreshTable } from '../modules/table-control.js'
+import { addToTable } from '../modules/table-startracker.js'
+import { starTrackerWideHeaders } from '../models.js'
 
 (function ($) {
   const meta = parseJsonFromDOM('#table-metadata')

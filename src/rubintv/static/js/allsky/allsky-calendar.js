@@ -1,5 +1,5 @@
 /* global jQuery */
-import { applyYearControls } from './modules/calendar-controls.js'
+import { applyYearControls } from '../modules/calendar-controls.js'
 
 (function ($) {
   applyYearControls()

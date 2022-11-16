@@ -1,5 +1,5 @@
 /* global jQuery */
-import { ChannelStatus } from './modules/heartbeat.js'
+import { ChannelStatus } from '../modules/heartbeat.js'
 
 (function ($) {
   const urlPath = document.location.pathname

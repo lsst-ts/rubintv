@@ -1,7 +1,7 @@
 /* global jQuery */
-import { parseJsonFromDOM, createTableControlUI, refreshTable } from './modules/table-control.js'
-import { addToTable } from './modules/table-auxtel.js'
-import { auxtelDefaultSelected } from './models.js'
+import { parseJsonFromDOM, createTableControlUI, refreshTable } from '../modules/table-control.js'
+import { addToTable } from '../modules/table-auxtel.js'
+import { auxtelDefaultSelected } from '../models.js'
 
 (function ($) {
   const selected = auxtelDefaultSelected
