@@ -451,14 +451,14 @@ h3 {
   height: 100%;
 }
 
-.startracker thead {
+.startracker thead, .startracker-wide thead {
   position: sticky;
   top: 8.4em;
 }
-.startracker .grouping {
+.startracker .grouping, .startracker-wide .grouping {
   height: 6em;
 }
-.startracker .grid-title {
+.startracker .grid-title, .startracker-wide .grid-title {
   position: static;
 }
 

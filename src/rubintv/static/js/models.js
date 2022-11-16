@@ -18,30 +18,30 @@ export const starTrackerHeaders = {
     'Ra',
     'Dec',
     'Az',
-    'El',
+    'El'
   ],
   'Star Tracker Solution': [
     'nSources',
     'Calculated Ra',
     'Calculated Dec',
     'Delta Ra Arcsec',
-    'Delta Dec Arcsec',
+    'Delta Dec Arcsec'
   ]
 }
 
-export const startrackerWideHeaders = {
+export const starTrackerWideHeaders = {
   'Star Tracker Wide': [
     'Exposure Time wide',
     'Ra wide',
     'Dec wide',
     'Az wide',
-    'El wide',
+    'El wide'
   ],
   'Star Tracker Solve Wide': [
     'nSources wide',
     'Calculated Ra wide',
     'Calculated Dec wide',
     'Delta Ra Arcsec wide',
-    'Delta Dec Arcsec wide',
+    'Delta Dec Arcsec wide'
   ]
 }
