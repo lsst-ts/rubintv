@@ -29,15 +29,9 @@ from google.cloud.storage import Bucket
 
 from rubintv import __version__
 from rubintv.handlers import routes
+from rubintv.models.camera_assignment import cameras, production_services
 from rubintv.models.historicaldata import HistoricalData
-from rubintv.models.models import (
-    Camera,
-    Channel,
-    Event,
-    cameras,
-    get_current_day_obs,
-    production_services,
-)
+from rubintv.models.models import Camera, Channel, Event, get_current_day_obs
 from rubintv.timer import Timer
 
 HEARTBEATS_PREFIX = "heartbeats"
