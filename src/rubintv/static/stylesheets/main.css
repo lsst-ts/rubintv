@@ -462,6 +462,16 @@ h3 {
   position: static;
 }
 
+.startracker-wide thead {
+  top: 10.8em;
+}
+.startracker-wide .table-spacer {
+  height: 10em;
+}
+.startracker-wide .meta-group {
+  top: -5.4em;
+}
+
 .table-panel {
   background: #eee;
   padding: 1.2em 19px;
