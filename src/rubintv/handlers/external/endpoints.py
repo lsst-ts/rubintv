@@ -224,9 +224,10 @@ def extract_date_from_url_part(url_part: str) -> date:
 
 
 def get_image_viewer_link(day_obs: date, seq_num: int) -> str:
+    date_without_hyphens = str(day_obs).replace("-", "")
     url = (
         "http://ccs.lsst.org/FITSInfo/view.html?"
-        f"image=AT_O_{day_obs}_{seq_num:06}"
+        f"image=AT_O_{date_without_hyphens}_{seq_num:06}"
         "&raft=R00&color=grey&bias=Simple+Overscan+Correction"
         "&scale=Per-Segment&source=RubinTV"
     )
