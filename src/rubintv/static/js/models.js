@@ -25,7 +25,11 @@ export const starTrackerHeaders = {
     'Calculated Ra',
     'Calculated Dec',
     'Delta Ra Arcsec',
-    'Delta Dec Arcsec'
+    'Delta Dec Arcsec',
+    'Calculated Az',
+    'Calculated El',
+    'Delta Az Arcsec',
+    'Delta El Arcsec'
   ]
 }
 
@@ -42,6 +46,10 @@ export const starTrackerWideHeaders = {
     'Calculated Ra wide',
     'Calculated Dec wide',
     'Delta Ra Arcsec wide',
-    'Delta Dec Arcsec wide'
+    'Delta Dec Arcsec wide',
+    'Calculated Az wide',
+    'Calculated El wide',
+    'Delta Az Arcsec wide',
+    'Delta El Arcsec wide'
   ]
 }
