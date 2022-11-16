@@ -5,28 +5,21 @@ cameras = {
         name="AuxTel",
         slug="auxtel",
         online=True,
-        has_historical=True,
         has_image_viewer=True,
     ),
     "startracker": Camera(
         name="StarTracker",
         slug="startracker",
         online=True,
-        has_historical=True,
     ),
     "startracker-wide": Camera(
         name="StarTracker Wide",
         slug="startracker-wide",
         online="true",
-        has_historical=True,
     ),
-    "comcam": Camera(
-        name="ComCam", slug="comcam", online=True, has_historical=True
-    ),
+    "comcam": Camera(name="ComCam", slug="comcam", online=True),
     "lsstcam": Camera(name="LSSTCam", slug="lsstcam", online=False),
-    "allsky": Camera(
-        name="All Sky", slug="allsky", online=True, has_historical=True
-    ),
+    "allsky": Camera(name="All Sky", slug="allsky", online=True),
 }
 
 cameras["allsky"].channels = {
