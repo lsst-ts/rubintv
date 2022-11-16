@@ -14,6 +14,12 @@ cameras = {
         online=True,
         has_historical=True,
     ),
+    "startracker-wide": Camera(
+        name="StarTracker Wide",
+        slug="startracker-wide",
+        online="true",
+        has_historical=True,
+    ),
     "comcam": Camera(
         name="ComCam", slug="comcam", online=True, has_historical=True
     ),
@@ -83,23 +89,26 @@ cameras["startracker"].channels = {
         simplename="startracker",
         label="StarTracker",
     ),
-    "wide": Channel(
-        name="StarTracker Wide",
-        prefix="startracker_wide_raw",
-        simplename="wide",
-        label="Wide",
-    ),
     "analysis": Channel(
         name="StarTracker Analysis",
         prefix="startracker_analysis",
         simplename="analysis",
         label="Analysis",
     ),
-    "wide-analysis": Channel(
+}
+
+cameras["startracker-wide"].channels = {
+    "startracker-wide": Channel(
+        name="StarTracker Wide",
+        prefix="startracker_wide_raw",
+        simplename="startracker-wide",
+        label="ST Wide",
+    ),
+    "startracker-wide-analysis": Channel(
         name="StarTracker Wide Analysis",
         prefix="startracker_wide_analysis",
-        simplename="wide-analysis",
-        label="Wide Analysis",
+        simplename="startracker-wide-analysis",
+        label="ST Wide Analysis",
     ),
 }
 
