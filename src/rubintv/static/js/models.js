@@ -26,7 +26,10 @@ export const starTrackerHeaders = {
     'Calculated Dec',
     'Delta Ra Arcsec',
     'Delta Dec Arcsec',
-  ],
+  ]
+}
+
+export const startrackerWideHeaders = {
   'Star Tracker Wide': [
     'Exposure Time wide',
     'Ra wide',
@@ -40,5 +43,5 @@ export const starTrackerHeaders = {
     'Calculated Dec wide',
     'Delta Ra Arcsec wide',
     'Delta Dec Arcsec wide',
-  ],
+  ]
 }
