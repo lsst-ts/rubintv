@@ -48,6 +48,10 @@
 	border-radius: 10%
 	&.image-viewer-link
 		background: url(/rubintv/static/images/image-viewer-link.svg)
+	&.copy
+		background-image: url(/rubintv/static/images/copy-to-clipboard.svg)
+		width: 16px
+		height: 16px
 
 a
 	text-decoration: none
@@ -250,13 +254,18 @@ section
 	.meta-group
 		top: -5.4em
 
-.startracker-wide
+.copy-to-cb
+	background-color: transparent
+	display: flex
+	justify-content: center
+	align-items: center
 
-	.table-spacer
-		height: 10em
-	.meta-group
-		top: -5.4em
-
+.copied
+	position: fixed
+	padding: 0.5em
+	border: 1px solid green
+	border-radius: 6px
+	background-color: #fff
 
 .table-panel
 	background: #eee

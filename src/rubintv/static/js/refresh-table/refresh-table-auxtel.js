@@ -6,6 +6,7 @@ import { auxtelDefaultSelected } from '../models.js'
 (function ($) {
   const selected = auxtelDefaultSelected
   const meta = parseJsonFromDOM('#table-metadata')
+
   updateTableAndControls(meta, selected)
   refreshTable(injectHTML, updateTableAndControls, selected, 5)
 
