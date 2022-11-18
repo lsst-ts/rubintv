@@ -1,5 +1,5 @@
 /* global jQuery */
-import { parseJsonFromDOM, createTableControlUI, refreshTable } from '../modules/table-control.js'
+import { parseJsonFromDOM, createTableControlUI, refreshTable, addDownloadMetadataButton } from '../modules/table-control.js'
 import { addToTable } from '../modules/table-auxtel.js'
 import { auxtelDefaultSelected } from '../models.js'
 
@@ -17,6 +17,7 @@ import { auxtelDefaultSelected } from '../models.js'
 
   function updateTableAndControls (meta, selected) {
     addToTable(meta, selected)
+    addDownloadMetadataButton(meta)
     createTableControlUI(meta, $('#table-controls'), selected, addToTable)
   }
 })(jQuery)

@@ -142,3 +142,20 @@ export function indicatorForAttr (attributes, attr) {
   }
   return flag
 }
+
+export function addDownloadMetadataButton (meta) {
+  const button = $('<button>', { class: 'button button-small download-metadata' }).text('Download Metadata')
+  $('#table-controls').after(button)
+
+  const camera = $('body').attr('class')
+  const theDate = $('.the-date')[0].dataset.date
+  button.click(function () {
+    const a = document.createElement('a')
+    const blob = new Blob([JSON.stringify(meta)])
+    const url = window.URL.createObjectURL(blob)
+    a.href = url
+    a.download = `${camera}_${theDate}.json`
+    a.click()
+    URL.revokeObjectURL(blob)
+  })
+}
