@@ -148,8 +148,8 @@ async def get_all_sky_current_update(request: web.Request) -> web.Response:
     camera = cameras["allsky"]
     channel_name = request.match_info["channel"]
 
-    logger = request["safir/logger"]
-    logger.info("Available All Sky channels", channels=camera.channels.keys())
+    if channel_name not in camera.channels:
+        raise web.HTTPNotFound
 
     channel = camera.channels[channel_name]
     current = get_current_event(camera, channel, bucket, historical)
@@ -205,7 +205,12 @@ async def get_allsky_historical_movie(request: web.Request) -> Dict[str, Any]:
         the_date = extract_date_from_url_part(date_str)
         year = the_date.year
 
-        all_events = historical.get_events_for_date(camera, the_date)
+        all_events: Dict[str, List[Event]] = historical.get_events_for_date(
+            camera, the_date
+        )
+        # check if any events in the arrays in the dict
+        if not [v for values in all_events.values() for v in values]:
+            raise web.HTTPNotFound
 
         years = historical.get_camera_calendar(camera)
         movie = all_events["movie"][0]
@@ -396,6 +401,10 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
     title = build_title(camera.name, "Historical", date_str, request=request)
 
     day_dict = historical.get_events_for_date(camera, the_date)
+    # check if any events in the arrays in the dict
+    if not [v for values in day_dict.values() for v in values]:
+        raise web.HTTPNotFound
+
     day_events = make_table_rows_from_columns_by_seq(day_dict)
 
     years = historical.get_camera_calendar(camera)
