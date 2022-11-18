@@ -43,7 +43,8 @@ export function addToTable (metaData, selection, sortable = false) {
 
   $('.button.copy').click(function () {
     const seq = $(this).data('seq')
-    const dayObs = $('.the-date').attr('data-date')
+    const dateStr = $('.the-date').attr('data-date')
+    const dayObs = dateStr.replaceAll('-', '')
     const dataStr = `dataID = {"day_obs": ${dayObs}, "seq_num": ${seq}, "detector": 0}`
     navigator.clipboard.writeText(dataStr)
     const responseMsg = $('<div>', { class: 'copied' }).text(`Copied row ${seq} to clipboard`)
