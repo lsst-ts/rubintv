@@ -17,20 +17,23 @@ export const starTrackerHeaders = {
     'Exposure Time',
     'Ra',
     'Dec',
-    'Az',
-    'El'
+    'Alt',
+    'Az'
   ],
   'Star Tracker Solution': [
     'nSources',
+    'nSources filtered',
     'Calculated Ra',
     'Calculated Dec',
     'Delta Ra Arcsec',
     'Delta Dec Arcsec',
-    'Calculated Az',
     'Calculated Alt',
-    'Delta Az Arcsec',
+    'Calculated Az',
     'Delta Alt Arcsec',
-    'Delta Rot Arcsec'
+    'Delta Az Arcsec',
+    'Delta Rot Arcsec',
+    'RMS scatter arcsec',
+    'RMS scatter pixels'
   ]
 }
 
@@ -39,19 +42,22 @@ export const starTrackerWideHeaders = {
     'Exposure Time wide',
     'Ra wide',
     'Dec wide',
-    'Az wide',
-    'El wide'
+    'Alt wide',
+    'Az wide'
   ],
   'Star Tracker Solve Wide': [
     'nSources wide',
+    'nSources filtered wide',
     'Calculated Ra wide',
     'Calculated Dec wide',
     'Delta Ra Arcsec wide',
     'Delta Dec Arcsec wide',
-    'Calculated Az wide',
     'Calculated Alt wide',
-    'Delta Az Arcsec wide',
+    'Calculated Az wide',
     'Delta Alt Arcsec wide',
-    'Delta Rot Arcsec wide'
+    'Delta Az Arcsec wide',
+    'Delta Rot Arcsec wide',
+    'RMS scatter arcsec wide',
+    'RMS scatter pixels wide'
   ]
 }
