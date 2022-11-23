@@ -45,9 +45,9 @@ export function addToTable (metaData, selection, sortable = false) {
     const seq = $(this).data('seq')
     const dateStr = $('.the-date').attr('data-date')
     const dayObs = dateStr.replaceAll('-', '')
-    const dataStr = `dataID = {"day_obs": ${dayObs}, "seq_num": ${seq}, "detector": 0}`
+    const dataStr = `dataId = {"day_obs": ${dayObs}, "seq_num": ${seq}, "detector": 0}`
     navigator.clipboard.writeText(dataStr)
-    const responseMsg = $('<div>', { class: 'copied' }).text(`Copied row ${seq} to clipboard`)
+    const responseMsg = $('<div>', { class: 'copied' }).text(`DataId for ${seq} copied to clipboard`)
     const pos = this.getBoundingClientRect()
     responseMsg.css({ top: pos.y - (pos.height / 2), left: pos.x + (pos.width + 8) })
     $('body').append(responseMsg)
