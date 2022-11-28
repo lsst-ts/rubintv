@@ -1,82 +1,40 @@
-from dataclasses import dataclass, field
-from datetime import date
-from typing import Tuple
-
-
-@dataclass
-class Channel:
-    name: str
-    prefix: str
-    simplename: str
-    label: str = ""
-    endpoint: str = field(init=False)
-    service_dependency: str = ""
-
-    def __post_init__(self) -> None:
-        self.endpoint = self.simplename + "events"
-
-
-@dataclass
-class Camera:
-    name: str
-    slug: str
-    online: bool
-    has_historical: bool = False
-    channels: dict[str, Channel] = field(default_factory=dict)
-    per_day_channels: dict[str, Channel] = field(default_factory=dict)
-
-
-@dataclass
-class Event:
-    url: str
-    name: str = field(init=False)
-    prefix: str = field(init=False)
-    obs_date: date = field(init=False)
-    seq: int = field(init=False)
-    chans: list = field(init=False)
-
-    def parse_filename(self, delimiter: str = "_") -> Tuple:
-        cleaned_up_url = self.url.split("rubintv_data/")[-1]
-        prefix, name = cleaned_up_url.split(
-            "/"
-        )  # We know the name is the last part of the URL
-        nList = name.split(delimiter)
-        the_date = nList[2]
-        year, month, day = map(int, the_date.split("-"))
-        seq_str = nList[4][:-4]  # Strip extension
-        if seq_str == "final":
-            seq = 99999
-        else:
-            seq = int(seq_str)
-        return (name, prefix, date(year, month, day), seq)
-
-    def clean_date(self) -> str:
-        return self.obs_date.strftime("%Y-%m-%d")
-
-    def __post_init__(self) -> None:
-        self.name, self.prefix, self.obs_date, self.seq = self.parse_filename()
-        self.chans = []
-
+from .models import Camera, Channel
 
 cameras = {
     "auxtel": Camera(
-        name="AuxTel", slug="auxtel", online=True, has_historical=True
+        name="AuxTel",
+        slug="auxtel",
+        online=True,
+        has_image_viewer=True,
     ),
-    "comcam": Camera(
-        name="ComCam", slug="comcam", online=True, has_historical=True
+    "startracker": Camera(
+        name="StarTracker",
+        slug="startracker",
+        online=True,
     ),
+    "startracker-wide": Camera(
+        name="StarTracker Wide",
+        slug="startracker-wide",
+        online=True,
+        # shares metadata file with startracker
+        metadata_slug="startracker",
+    ),
+    "comcam": Camera(name="ComCam", slug="comcam", online=True),
     "lsstcam": Camera(name="LSSTCam", slug="lsstcam", online=False),
-    "allsky": Camera(
-        name="All Sky", slug="allsky", online=True, has_historical=True
-    ),
+    "allsky": Camera(name="All Sky", slug="allsky", online=True),
+}
+
+home_page_list = {
+    "Telescope-mounted": ["auxtel", "comcam", "lsstcam"],
+    "Other cameras": ["allsky", "startracker", "startracker-wide"],
 }
 
 cameras["allsky"].channels = {
+    "movie": Channel(
+        name="Current Movie", prefix="all_sky_movies", simplename="movie"
+    ),
     "image": Channel(
         name="Current Image", prefix="all_sky_current", simplename="image"
-    ),
-    "monitor": Channel(
-        name="Current Movie", prefix="all_sky_movies", simplename="movie"
     ),
 }
 
@@ -124,6 +82,36 @@ cameras["auxtel"].per_day_channels = {
     ),
 }
 
+cameras["startracker"].channels = {
+    "startracker": Channel(
+        name="StarTracker",
+        prefix="startracker_raw",
+        simplename="startracker",
+        label="StarTracker",
+    ),
+    "analysis": Channel(
+        name="StarTracker Analysis",
+        prefix="startracker_analysis",
+        simplename="analysis",
+        label="Analysis",
+    ),
+}
+
+cameras["startracker-wide"].channels = {
+    "startracker-wide": Channel(
+        name="StarTracker Wide",
+        prefix="startracker_wide_raw",
+        simplename="startracker-wide",
+        label="ST Wide",
+    ),
+    "startracker-wide-analysis": Channel(
+        name="StarTracker Wide Analysis",
+        prefix="startracker_wide_analysis",
+        simplename="startracker-wide-analysis",
+        label="ST Wide Analysis",
+    ),
+}
+
 cameras["comcam"].channels = {
     "monitor": Channel(
         name="Central CCD Monitor",
@@ -140,6 +128,13 @@ production_services = {
         "services": {
             "auxtel_metadata": "Metadata",
             "auxtel_isr_runner": "ISR Runner",
+        },
+    },
+    "startracker": {
+        "display_name": "StarTracker",
+        "channels": cameras["startracker"].channels,
+        "services": {
+            "startracker_metadata": "Metadata",
         },
     },
     "allsky": {

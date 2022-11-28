@@ -1,61 +1,29 @@
 /* global $ */
-
-const defaultSelected = [
-  'Exposure time',
-  'Image type',
-  'Target',
-  'Filter',
-  'Disperser',
-  'Airmass',
-  'TAI',
-  'DIMM Seeing'
-]
-
-export const DefaultSelected = defaultSelected
-
-export function parseJsonFromDOM (element) {
-  const metaText = document.querySelector(element).text
-  return JSON.parse(metaText)
-}
-
 let controlsOpen = false
 
-export function applySelected (metaData, selection, sortable = false) {
-  // empty object test- there's no data, just go home
-  if (Object.keys(metaData).length === 0) return
-
-  selection.forEach(name => {
-    const escapedName = _escapeName(name)
-    const lastHeaderCall = $('.grid-title').last()
-    const el = $('<th>', { class: 'grid-title sideways ' + escapedName })
-    el.text(name)
-    lastHeaderCall.after(el)
-  })
-
-  Object.entries(metaData).forEach(([seq, attributes]) => {
-    const seqRow = $(`#seqno-${seq}`)
-
-    selection.forEach(name => {
-      const seqRowLastCell = seqRow.find('td').last()
-      const el = $('<td>', { class: 'meta grid-cell ' + _escapeName(name) })
-      let val = attributes[name]
-      if (typeof val === 'number') {
-        val = (+val.toFixed(3))
-      }
-      el.text(val)
-      seqRowLastCell.after(el)
-    })
-  })
-  if (sortable) {
-    makeTableSortable()
-  }
+export function refreshTable (injectHTMLCallback, doUpdatingCallback, selected, periodInSecs) {
+  setInterval(function () {
+    const date = $('.the-date')[0].dataset.date
+    const urlPath = document.location.pathname
+    $.get(urlPath + '/update/' + date)
+      .done(function (htmlParts) {
+        injectHTMLCallback(htmlParts)
+        const meta = parseJsonFromDOM('#table-metadata')
+        if (Object.keys(meta).length !== 0) {
+          doUpdatingCallback(meta, selected)
+        }
+      })
+      .fail(function () {
+        console.log("Couldn't reach server")
+      })
+  }, periodInSecs * 1000)
 }
 
 function _escapeName (displayName) {
   return displayName.toLowerCase().replaceAll(' ', '_')
 }
 
-export function createTableControlUI (metaData, $elementToAppendTo, selection) {
+export function createTableControlUI (metaData, $elementToAppendTo, selection, applySelectedCallback) {
   // empty object test- there's no data, just go home
   if (Object.keys(metaData).length !== 0) {
     const panel = $('<div>', { class: 'table-panel' })
@@ -64,7 +32,8 @@ export function createTableControlUI (metaData, $elementToAppendTo, selection) {
 
     // get the set of all data for list of all available attrs
     const allAttrs = Object.values(metaData).map(obj => Object.keys(obj)).flat()
-    const attrs = new Set(allAttrs)
+    const attrsWithIndicators = new Set(allAttrs)
+    const attrs = Array.from(attrsWithIndicators).filter(el => el[0] !== '_')
 
     attrs.forEach(title => {
       const label = $('<label>', { for: title }).text(title)
@@ -90,7 +59,7 @@ export function createTableControlUI (metaData, $elementToAppendTo, selection) {
         $('table .' + _escapeName(this.name)).remove()
       } else {
         selection.push(this.name)
-        applySelected(metaData, [this.name])
+        applySelectedCallback(metaData, [this.name])
       }
     })
 
@@ -107,7 +76,7 @@ export function createTableControlUI (metaData, $elementToAppendTo, selection) {
   addToTopBottomControls($elementToAppendTo)
 }
 
-function makeTableSortable () {
+export function makeTableSortable () {
   document.querySelectorAll('th').forEach(thElem => {
     let asc = true
     const index = Array.from(thElem.parentNode.children).indexOf(thElem)
@@ -144,4 +113,49 @@ function addToTopBottomControls () {
     $(window).scrollTop(tableHeight)
   })
   $('.jump-buttons').append(toTop).append(toBottom)
+}
+
+export function parseJsonFromDOM (element) {
+  const metaText = document.querySelector(element).text
+  return JSON.parse(metaText)
+}
+
+export function createTableCell (attributes, attr, ...classes) {
+  const classString = classes.join(' ')
+  const el = $('<td>', { class: `meta grid-cell ${classString}` })
+  let val = attributes[attr]
+  if (typeof val === 'number') {
+    val = (+val.toFixed(3))
+  }
+  el.text(val)
+  return el
+}
+
+export function indicatorForAttr (attributes, attr) {
+  const indicator = `_${attr}`
+  let flag = ''
+  // eslint-disable-next-line no-prototype-builtins
+  if (attributes.hasOwnProperty(indicator)) {
+    // add it to group for including in the class list
+    // possible values include 'bad' and 'warning'
+    flag = ` ${attributes[indicator]}`
+  }
+  return flag
+}
+
+export function addDownloadMetadataButton (meta) {
+  const button = $('<button>', { class: 'button button-small download-metadata' }).text('Download Metadata')
+  $('#table-controls').after(button)
+
+  const camera = $('body').attr('class')
+  const theDate = $('.the-date')[0].dataset.date
+  button.click(function () {
+    const a = document.createElement('a')
+    const blob = new Blob([JSON.stringify(meta)])
+    const url = window.URL.createObjectURL(blob)
+    a.href = url
+    a.download = `${camera}_${theDate}.json`
+    a.click()
+    URL.revokeObjectURL(blob)
+  })
 }

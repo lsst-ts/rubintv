@@ -12,6 +12,7 @@
 </section>
 {% endblock content %}
 {% block footer_scripts %}
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script type=module src="{{ url('static', filename='js/camera-calendar.js') }}"></script>
+  {% set cam_js_filename = "js/camera-calendar/camera-calendar-" + camera.slug + ".js" %}
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script type=module src="{{ url('static', filename=cam_js_filename) }}"></script>
 {% endblock footer_scripts %}

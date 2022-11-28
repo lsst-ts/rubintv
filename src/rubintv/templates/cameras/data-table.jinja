@@ -1,18 +1,22 @@
-{% for event in events %}
-  <tr id="seqno-{{ event.seq }}">
+{% for seq in events %}
+  <tr id="seqno-{{ seq }}">
     <td class="grid-cell">
-      {{event.seq}}
+      {{ seq }}
     </td>
-    {% for chan in event.chans %}
+    {% for chan in camera.channels %}
         <td class="grid-cell">
-          {% if chan is not none %}
-            <a  class="button button-table {{ chan.simplename }}"
-                href="{{ '/rubintv/' + camera.slug + '/' + chan.endpoint + '/' + event.clean_date() + '/' + event.seq|string }}">
-            </a>
+          {% if events[seq][chan] %}
+            {% set event = events[seq][chan] %}
+            {% set chan = camera.channels[chan] %}
+              <a  class="button button-table {{ chan.simplename }}"
+                  href="{{ event_page_link(camera, chan, event) }}">
+              </a>
           {% endif %}
         </td>
     {% endfor %}
-    <td class="grid-cell">
-      <a class="button button-table image-viewer-link" href="{{ viewer_link(event) }}"></a>
-    </td>
+    {% if camera.has_image_viewer %}
+      <td class="grid-cell">
+        <a class="button button-table image-viewer-link" href="{{ viewer_link(date, seq) }}"></a>
+      </td>
+    {% endif %}
 {% endfor %}

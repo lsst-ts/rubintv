@@ -1,15 +1,21 @@
 {% extends "layout.jinja" %}
 {% block content %}
-  <h2 class="page-title">Cameras</h2>
-  <nav class="camera-menu">
-    <ul class="cameras flr">
-      {% for camera in cameras.values() %}
-        <li>
-          <a class="button button-large" href="/rubintv/{{ camera.slug }}">{{ camera.name }}</a>
-        </li>
-      {% endfor %}
-    </ul>
-  </nav>
+{% for section in camera_display_list %}
+  <section>
+    <h2 class="section-title">{{ section }}</h2>
+    <nav class="camera-menu">
+      <ul class="cameras flr">
+        {% for cam in camera_display_list[section] %}
+          <li>
+            <a class="button button-large" href="/rubintv/{{ cameras[cam].slug }}">
+              {{ cameras[cam].name }}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </section>
+{% endfor %}
 {% endblock content %}
 {% block further %}
   <div class="admin-access">

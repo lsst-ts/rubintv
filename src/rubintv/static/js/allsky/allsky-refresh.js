@@ -1,5 +1,5 @@
 /* global jQuery */
-import { ChannelStatus } from './modules/heartbeat.js'
+import { ChannelStatus } from '../modules/heartbeat.js'
 
 (function ($) {
   const urlPath = document.location.pathname
@@ -19,9 +19,9 @@ import { ChannelStatus } from './modules/heartbeat.js'
 
   const videoCheckLatest = function () {
     const video = currentMovie.find('video')[0]
-    $.get(urlPath + '/update/monitor', function (data) {
+    $.get(urlPath + '/update/movie', function (data) {
       const currentMovieUrl = $(video).find('source').attr('src')
-      if (data.channel === 'monitor' && data.url !== currentMovieUrl) {
+      if (data.channel === 'movie' && data.url !== currentMovieUrl) {
         $(video).find('source').attr({ src: data.url })
         currentMovie.find('.movie-date').text(data.date)
         currentMovie.find('.movie-number').text(data.seq)

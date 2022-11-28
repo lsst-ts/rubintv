@@ -1,5 +1,82 @@
 @charset "UTF-8";
 @import "reset.css";
+body {
+  background-color: #fff;
+}
+
+.channel-grid-heading {
+  background-color: #fff;
+}
+
+.grid-cell {
+  background-color: #f0f0f0;
+  color: #000;
+}
+
+.table-spacer {
+  background-color: #fff;
+}
+
+.button.monitor {
+  background-color: #F07F85;
+}
+
+.button.mount {
+  background-color: #F0C87F;
+}
+
+.button.spec {
+  background-color: #7F85F0;
+}
+
+.button.im {
+  background-color: #7FF094;
+}
+
+.button.historical {
+  background-color: #262534;
+  color: #fff;
+}
+
+.button.movie {
+  background-color: #83daee;
+  text-align: center;
+}
+
+.button.admin {
+  background-color: #999;
+}
+
+.button.startracker {
+  background-color: #58528b;
+  color: #fff;
+}
+
+.button.analysis {
+  background-color: #ba528f;
+}
+
+.button.startracker-wide {
+  background-color: #fc6465;
+}
+
+.button.startracker-wide-analysis {
+  background-color: #fda529;
+}
+
+.grid-cell.group-a {
+  background-color: #e0e0e0;
+}
+.grid-cell.bad {
+  background-color: #ebab93;
+}
+.grid-cell.warning {
+  background-color: #f1f1a7;
+}
+.grid-cell.ok {
+  background-color: #b3f1a7;
+}
+
 .calendar {
   width: 100%;
   min-width: 600px;
@@ -62,12 +139,11 @@
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: flex-start;
+  gap: 8px;
 }
 
 .month {
-  flex-basis: calc(33% - 1em);
-  margin-bottom: 1em;
-  margin-right: 1em;
+  flex-basis: calc(33.33% - 8px);
 }
 
 .days {
@@ -156,6 +232,11 @@ h6 {
 .button-table.image-viewer-link {
   background: url(/rubintv/static/images/image-viewer-link.svg);
 }
+.button-table.copy {
+  background-image: url(/rubintv/static/images/copy-to-clipboard.svg);
+  width: 16px;
+  height: 16px;
+}
 
 a {
   text-decoration: none;
@@ -169,44 +250,10 @@ a:hover {
   box-shadow: none;
 }
 
-.button.monitor {
-  background-color: #F07F85;
-}
-
-.button.mount {
-  background-color: #F0C87F;
-}
-
-.button.spec {
-  background-color: #7F85F0;
-}
-
-.button.im {
-  background-color: #7FF094;
-}
-
-.button.historical {
-  background-color: #262534;
-  color: #fff;
-}
-
-.button.movie {
-  background-color: #83daee;
-  text-align: center;
-}
-
-.button.admin {
-  background-color: #999;
-}
-
 html {
   font-family: "Rubik", sans-serif;
   font-size: 16px;
   box-sizing: border-box;
-}
-
-body {
-  background-color: #fff;
 }
 
 .page-wrapper {
@@ -271,6 +318,13 @@ h2 {
 h3 {
   font-size: 1.4em;
   margin-bottom: 0.5em;
+}
+
+section {
+  margin-bottom: 4em;
+  padding-bottom: 2em;
+  border-bottom: 1px solid #dcdcdc;
+  width: fit-content;
 }
 
 .columns {
@@ -341,8 +395,12 @@ h3 {
   align-items: center;
 }
 
+.download-metadata {
+  margin-left: 1em;
+  height: 42px;
+}
+
 .channel-grid-heading {
-  background: #fff;
   padding-top: 1em;
   position: sticky;
   top: 0;
@@ -372,17 +430,17 @@ h3 {
 .grid-title {
   text-align: left;
   position: sticky;
-  top: 11em;
+  top: 13em;
+  font-size: 14px;
 }
 .grid-title.sideways {
   max-width: 40px;
-  transform: rotate(315deg);
-  transform-origin: 7px -2px;
+  transform: rotate(330deg);
+  transform-origin: 0 0;
   white-space: nowrap;
 }
 
 .grid-cell {
-  background-color: #f0f0f0;
   padding: 0.3em;
   vertical-align: middle;
   height: 42px;
@@ -395,10 +453,51 @@ h3 {
 }
 
 .table-spacer {
-  background: #fff;
   height: 8em;
   position: sticky;
   top: 4.4em;
+}
+
+.meta-group {
+  height: 20px;
+  position: relative;
+  top: -3em;
+}
+.meta-group img {
+  width: 100%;
+  height: 100%;
+}
+
+.startracker thead, .startracker-wide thead {
+  position: sticky;
+  top: 10.8em;
+}
+.startracker .grouping, .startracker-wide .grouping {
+  height: 6em;
+}
+.startracker .grid-title, .startracker-wide .grid-title {
+  position: static;
+}
+.startracker .table-spacer, .startracker-wide .table-spacer {
+  height: 10em;
+}
+.startracker .meta-group, .startracker-wide .meta-group {
+  top: -5.4em;
+}
+
+.copy-to-cb {
+  background-color: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.copied {
+  position: fixed;
+  padding: 0.5em;
+  border: 1px solid green;
+  border-radius: 6px;
+  background-color: #fff;
 }
 
 .table-panel {

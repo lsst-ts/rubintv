@@ -1,12 +1,10 @@
 {% extends "cameras/layout.jinja" %}
 
 {% block undertitle %}
-  {% if camera.has_historical %}
-    <a class="button historical" href="/rubintv/{{camera.slug}}/historical">
-      Historical data
-      <img src="{{ url('static', filename='images/history-line.svg') }}">
-    </a>
-{% endif %}
+  <a class="button historical" href="/rubintv/{{camera.slug}}/historical">
+    Historical data
+    <img src="{{ url('static', filename='images/history-line.svg') }}">
+  </a>
 {% endblock undertitle %}
 
 {% block content %}
@@ -37,7 +35,7 @@
 
   <div class="metadata-status">
     <h4>metadata service:&nbsp;</h4>
-    <div class="service" id="{{ camera.slug }}_metadata">
+    <div class="service" id="{{ camera.metadata_slug }}_metadata">
       <div class="heartbeat"></div>
     </div>
   </div>
@@ -48,7 +46,8 @@
 {% endblock content %}
 
 {% block footer_scripts %}
+  {% set cam_js_filename = "js/refresh-table/refresh-table-" + camera.slug + ".js" %}
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script type="module" src="{{ url('static', filename='js/refresh-daytable.js') }}"></script>
+  <script type="module" src='{{ url("static", filename=cam_js_filename) }}'></script>
   <script type="module" src="{{ url('static', filename='js/camera-status.js') }}"></script>
 {% endblock footer_scripts  %}

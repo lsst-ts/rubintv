@@ -2,15 +2,25 @@
 
 __all__ = [
     "get_page",
+    "get_admin_page",
+    "reload_historical",
+    "request_heartbeat_for_channel",
+    "request_all_heartbeats",
+    "get_all_sky_current",
+    "get_all_sky_current_update",
+    "get_allsky_historical",
+    "get_allsky_historical_movie",
     "get_recent_table",
+    "update_todays_table",
+    "get_historical",
+    "get_historical_day_data",
     "events",
     "current",
 ]
 
 import json
-from dataclasses import asdict
-from datetime import date, datetime, timedelta
-from typing import Any, Dict, Iterator, List, Optional
+from datetime import date
+from typing import Any, Dict, List, Optional
 
 from aiohttp import web
 from aiohttp_jinja2 import render_string, render_template, template
@@ -18,9 +28,14 @@ from google.api_core.exceptions import NotFound
 from google.cloud.storage import Bucket
 
 from rubintv import __version__
-from rubintv.app import get_current_day_obs
 from rubintv.handlers import routes
-from rubintv.models import Camera, Channel, Event, cameras, production_services
+from rubintv.models.camera_assignment import (
+    cameras,
+    home_page_list,
+    production_services,
+)
+from rubintv.models.historicaldata import HistoricalData
+from rubintv.models.models import Camera, Channel, Event, get_current_day_obs
 from rubintv.timer import Timer
 
 HEARTBEATS_PREFIX = "heartbeats"
@@ -29,14 +44,18 @@ HEARTBEATS_PREFIX = "heartbeats"
 @routes.get("")
 @routes.get("/")
 @template("home.jinja")
-async def get_page(request: web.Request) -> dict[str, Any]:
+async def get_page(request: web.Request) -> Dict[str, Any]:
     title = build_title(request=request)
-    return {"title": title, "cameras": cameras}
+    return {
+        "title": title,
+        "cameras": cameras,
+        "camera_display_list": home_page_list,
+    }
 
 
 @routes.get("/admin")
 @template("admin.jinja")
-async def get_admin_page(request: web.Request) -> dict[str, Any]:
+async def get_admin_page(request: web.Request) -> Dict[str, Any]:
     title = build_title("Admin", request=request)
     return {
         "title": title,
@@ -47,22 +66,27 @@ async def get_admin_page(request: web.Request) -> dict[str, Any]:
 
 @routes.post("/reload_historical")
 async def reload_historical(request: web.Request) -> web.Response:
-    cams_with_history = [cam for cam in cameras.values() if cam.has_historical]
     historical = request.config_dict["rubintv/historical_data"]
     historical.reload()
-    latest = historical.get_most_recent_event(cams_with_history[0])
-    latest_dict = asdict(latest)
-    # datetime can't be serialized so replace with string
-    the_date = latest.clean_date()
-    latest_dict["date"] = the_date
-    json_res = json.dumps({"most_recent_historical_event": latest_dict})
-    return web.Response(text=json_res, content_type="application/json")
+    return web.Response(text="OK", content_type="text/plain")
 
 
-@routes.get("/admin/heartbeat/{heartbeat_prefix}")
+@routes.get("/admin/heartbeat/{service_prefix}")
 async def request_heartbeat_for_channel(request: web.Request) -> web.Response:
+    all_services = []
+    ps: Dict[str, Any]
+    for ps in production_services.values():
+        if "channels" in ps:
+            for chan in ps["channels"].values():  # type: ignore[attr-defined]
+                all_services.append(chan.prefix)
+        if "services" in ps:
+            for service in ps["services"]:
+                all_services.append(service)
+    prefix = request.match_info["service_prefix"]
+    if prefix not in all_services:
+        raise web.HTTPNotFound()
+
     bucket = request.config_dict["rubintv/gcs_bucket"]
-    prefix = request.match_info["heartbeat_prefix"]
     heartbeat_prefix = "/".join([HEARTBEATS_PREFIX, prefix])
     heartbeats = get_heartbeats(bucket, heartbeat_prefix)
     if heartbeats and len(heartbeats) == 1:
@@ -100,14 +124,15 @@ def get_heartbeats(bucket: Bucket, prefix: str) -> List[Dict]:
 
 @routes.get("/allsky")
 @template("cameras/allsky.jinja")
-async def get_all_sky_current(request: web.Request) -> dict[str, Any]:
+async def get_all_sky_current(request: web.Request) -> Dict[str, Any]:
     title = build_title("All Sky", request=request)
+    historical = request.config_dict["rubintv/historical_data"]
     bucket = request.config_dict["rubintv/gcs_bucket"]
     camera = cameras["allsky"]
-    image_prefix = camera.channels["image"].prefix
-    current = get_current_event(image_prefix, bucket)
-    movie_prefix = camera.channels["monitor"].prefix
-    movie = get_current_event(movie_prefix, bucket)
+    image_channel = camera.channels["image"]
+    current = get_current_event(camera, image_channel, bucket, historical)
+    movie_channel = camera.channels["movie"]
+    movie = get_current_event(camera, movie_channel, bucket, historical)
     return {
         "title": title,
         "camera": camera,
@@ -119,10 +144,15 @@ async def get_all_sky_current(request: web.Request) -> dict[str, Any]:
 @routes.get("/allsky/update/{channel}")
 async def get_all_sky_current_update(request: web.Request) -> web.Response:
     bucket = request.config_dict["rubintv/gcs_bucket"]
+    historical = request.config_dict["rubintv/historical_data"]
     camera = cameras["allsky"]
     channel_name = request.match_info["channel"]
-    prefix = camera.channels[channel_name].prefix
-    current = get_current_event(prefix, bucket)
+
+    if channel_name not in camera.channels:
+        raise web.HTTPNotFound
+
+    channel = camera.channels[channel_name]
+    current = get_current_event(camera, channel, bucket, historical)
     json_dict = {
         "channel": channel_name,
         "url": current.url,
@@ -136,9 +166,9 @@ async def get_all_sky_current_update(request: web.Request) -> web.Response:
 
 @routes.get("/allsky/historical")
 @template("cameras/allsky-historical.jinja")
-async def get_allsky_historical(request: web.Request) -> dict[str, Any]:
+async def get_allsky_historical(request: web.Request) -> Dict[str, Any]:
     title = build_title("All Sky", "Historical", request=request)
-    historical = request.config_dict["rubintv/historical_data"]
+    historical: HistoricalData = request.config_dict["rubintv/historical_data"]
     logger = request["safir/logger"]
 
     with Timer() as timer:
@@ -147,7 +177,8 @@ async def get_allsky_historical(request: web.Request) -> dict[str, Any]:
         years = historical.get_camera_calendar(camera)
         most_recent_year = next(iter(years.keys()))
 
-        movie = historical.get_most_recent_event(camera)
+        channel = camera.channels["movie"]
+        movie = historical.get_most_recent_event(camera, channel)
 
     logger.info("get_allsky_historical", duration=timer.seconds)
     return {
@@ -162,7 +193,7 @@ async def get_allsky_historical(request: web.Request) -> dict[str, Any]:
 
 @routes.get("/allsky/historical/{date_str}")
 @template("cameras/allsky-historical.jinja")
-async def get_allsky_historical_movie(request: web.Request) -> dict[str, Any]:
+async def get_allsky_historical_movie(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]
     with Timer() as timer:
         camera = cameras["allsky"]
@@ -171,12 +202,18 @@ async def get_allsky_historical_movie(request: web.Request) -> dict[str, Any]:
         date_str = request.match_info["date_str"]
         title = build_title("All Sky", "Historical", date_str, request=request)
 
-        year, month, day = [int(s) for s in date_str.split("-")]
-        the_date = date(year, month, day)
-        all_events = historical.get_events_for_date(camera, the_date)
+        the_date = extract_date_from_url_part(date_str)
+        year = the_date.year
+
+        all_events: Dict[str, List[Event]] = historical.get_events_for_date(
+            camera, the_date
+        )
+        # check if any events in the arrays in the dict
+        if not [v for values in all_events.values() for v in values]:
+            raise web.HTTPNotFound
 
         years = historical.get_camera_calendar(camera)
-        movie = all_events["monitor"][0]
+        movie = all_events["movie"][0]
     logger.info("get_allsky_historical_movie", duration=timer.seconds)
     return {
         "title": title,
@@ -188,15 +225,28 @@ async def get_allsky_historical_movie(request: web.Request) -> dict[str, Any]:
     }
 
 
-def get_image_viewer_link(event: Event) -> str:
-    day_obs = event.clean_date().replace("-", "")
+def extract_date_from_url_part(url_part: str) -> date:
+    try:
+        year, month, day = [int(s) for s in url_part.split("-")]
+        the_date = date(year, month, day)
+    except ValueError:
+        raise web.HTTPNotFound()
+    return the_date
+
+
+def get_image_viewer_link(day_obs: date, seq_num: int) -> str:
+    date_without_hyphens = str(day_obs).replace("-", "")
     url = (
         "http://ccs.lsst.org/FITSInfo/view.html?"
-        f"image=AT_O_{day_obs}_{event.seq:06}"
+        f"image=AT_O_{date_without_hyphens}_{seq_num:06}"
         "&raft=R00&color=grey&bias=Simple+Overscan+Correction"
         "&scale=Per-Segment&source=RubinTV"
     )
     return url
+
+
+def get_event_page_link(camera: Camera, channel: Channel, event: Event) -> str:
+    return f"/rubintv/{camera.slug}/{channel.endpoint}/{event.clean_date()}/{event.seq}"
 
 
 @routes.get("/{camera}")
@@ -211,12 +261,15 @@ async def get_recent_table(request: web.Request) -> web.Response:
     logger = request["safir/logger"]
     with Timer() as timer:
         if not camera.online:
-            context: dict[str, Any] = {"camera": camera}
+            context: Dict[str, Any] = {"camera": camera}
             template = "cameras/not_online.jinja"
         else:
             bucket = request.config_dict["rubintv/gcs_bucket"]
-            events = get_most_recent_day_events(bucket, camera)
-            the_date = events[0].obs_date
+            historical = request.config_dict["rubintv/historical_data"]
+
+            the_date, events = get_most_recent_day_events(
+                bucket, camera, historical
+            )
 
             metadata_json = get_metadata_json(bucket, camera, the_date, logger)
             per_day = get_per_day_channels(bucket, camera, the_date, logger)
@@ -225,11 +278,12 @@ async def get_recent_table(request: web.Request) -> web.Response:
             context = {
                 "title": title,
                 "camera": camera,
-                "viewer_link": get_image_viewer_link,
                 "date": the_date.strftime("%Y-%m-%d"),
                 "events": events,
                 "metadata": metadata_json,
                 "per_day": per_day,
+                "viewer_link": get_image_viewer_link,
+                "event_page_link": get_event_page_link,
             }
     logger.info("get_recent_table", duration=timer.seconds)
     response = render_template(template, request, context)
@@ -243,13 +297,13 @@ async def update_todays_table(request: web.Request) -> web.Response:
         camera = cameras[request.match_info["camera"]]
         bucket = request.config_dict["rubintv/gcs_bucket"]
         date_str = request.match_info["date"]
-        year, month, day = [int(s) for s in date_str.split("-")]
-        the_date = date(year, month, day)
+        the_date = extract_date_from_url_part(date_str)
         blobs = []
         # if the actual date is greater than displayed on the page
         # get the data from today if there is any
         current_day = get_current_day_obs()
-        lookup_prefix = camera.channels["monitor"].prefix
+        primary_channel = list(camera.channels)[0]
+        lookup_prefix = camera.channels[primary_channel].prefix
         if the_date < current_day:
             prefix = get_prefix_from_date(lookup_prefix, current_day)
             blobs = list(bucket.list_blobs(prefix=prefix))
@@ -264,22 +318,24 @@ async def update_todays_table(request: web.Request) -> web.Response:
             the_date = current_day
 
         recent_events = {}
-        recent_events["monitor"] = get_sorted_events_from_blobs(blobs)
+        recent_events[primary_channel] = get_sorted_events_from_blobs(blobs)
         events_dict = build_dict_with_remaining_channels(
             bucket, camera, recent_events, the_date
         )
-        events = flatten_events_dict_into_list(camera, events_dict)
+
+        events = make_table_rows_from_columns_by_seq(events_dict)
 
         metadata_json = get_metadata_json(bucket, camera, the_date, logger)
         per_day = get_per_day_channels(bucket, camera, the_date, logger)
 
         context = {
             "camera": camera,
-            "viewer_link": get_image_viewer_link,
             "date": the_date,
             "events": events,
             "metadata": metadata_json,
             "per_day": per_day,
+            "viewer_link": get_image_viewer_link,
+            "event_page_link": get_event_page_link,
         }
         table_html = render_string(
             "cameras/data-table-header.jinja", request, context
@@ -295,13 +351,11 @@ async def update_todays_table(request: web.Request) -> web.Response:
 
 @routes.get("/{camera}/historical")
 @template("cameras/historical.jinja")
-async def get_historical(request: web.Request) -> dict[str, Any]:
+async def get_historical(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]
     with Timer() as timer:
         bucket = request.config_dict["rubintv/gcs_bucket"]
         camera = cameras[request.match_info["camera"]]
-        if not camera.has_historical:
-            raise web.HTTPNotFound()
         title = build_title(camera.name, "Historical", request=request)
         historical = request.config_dict["rubintv/historical_data"]
         active_years = historical.get_years(camera)
@@ -312,7 +366,7 @@ async def get_historical(request: web.Request) -> dict[str, Any]:
 
         smrd = historical.get_most_recent_day(camera)
         smrd_dict = historical.get_events_for_date(camera, smrd)
-        smrd_events = flatten_events_dict_into_list(camera, smrd_dict)
+        smrd_events = make_table_rows_from_columns_by_seq(smrd_dict)
 
         metadata_json = get_metadata_json(bucket, camera, smrd, logger)
         per_day = get_per_day_channels(bucket, camera, smrd, logger)
@@ -321,7 +375,6 @@ async def get_historical(request: web.Request) -> dict[str, Any]:
     return {
         "title": title,
         "camera": camera,
-        "viewer_link": get_image_viewer_link,
         "year_to_display": year_to_display,
         "years": years,
         "month_names": month_names(),
@@ -329,26 +382,30 @@ async def get_historical(request: web.Request) -> dict[str, Any]:
         "events": smrd_events,
         "metadata": metadata_json,
         "per_day": per_day,
+        "viewer_link": get_image_viewer_link,
+        "event_page_link": get_event_page_link,
     }
 
 
 @routes.get("/{camera}/historical/{date_str}")
 @template("cameras/historical.jinja")
-async def get_historical_day_data(request: web.Request) -> dict[str, Any]:
+async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]
     historical = request.config_dict["rubintv/historical_data"]
     bucket = request.config_dict["rubintv/gcs_bucket"]
 
     camera = cameras[request.match_info["camera"]]
-    if not camera.has_historical:
-        raise web.HTTPNotFound
     date_str = request.match_info["date_str"]
+
+    the_date = extract_date_from_url_part(date_str)
     title = build_title(camera.name, "Historical", date_str, request=request)
 
-    year, month, day = [int(s) for s in date_str.split("-")]
-    the_date = date(year, month, day)
     day_dict = historical.get_events_for_date(camera, the_date)
-    day_events = flatten_events_dict_into_list(camera, day_dict)
+    # check if any events in the arrays in the dict
+    if not [v for values in day_dict.values() for v in values]:
+        raise web.HTTPNotFound
+
+    day_events = make_table_rows_from_columns_by_seq(day_dict)
 
     years = historical.get_camera_calendar(camera)
 
@@ -357,19 +414,20 @@ async def get_historical_day_data(request: web.Request) -> dict[str, Any]:
     return {
         "title": title,
         "camera": camera,
-        "viewer_link": get_image_viewer_link,
         "years": years,
         "month_names": month_names(),
         "date": the_date,
         "events": day_events,
         "metadata": metadata_json,
         "per_day": per_day,
+        "viewer_link": get_image_viewer_link,
+        "event_page_link": get_event_page_link,
     }
 
 
 def get_per_day_channels(
     bucket: Bucket, camera: Camera, the_date: date, logger: Any
-) -> dict[str, str]:
+) -> Dict[str, str]:
     """Builds a dict of per-day channels to display
 
     Takes a bucket, camera and a given date and returns a dict of per-day
@@ -418,9 +476,9 @@ def get_channel_resource_url(
 
 def get_metadata_json(
     bucket: Bucket, camera: Camera, a_date: date, logger: Any
-) -> dict:
+) -> Dict:
     date_str = a_date.strftime("%Y%m%d")
-    blob_name = f"{camera.slug}_metadata/dayObs_{date_str}.json"
+    blob_name = f"{camera.metadata_slug}_metadata/dayObs_{date_str}.json"
     metadata_json = "{}"
     if blob := bucket.get_blob(blob_name):
         metadata_json = blob.download_as_string()
@@ -433,7 +491,7 @@ def month_names() -> List[str]:
 
 @routes.get("/{camera}/{channel}events/{date}/{seq}")
 @template("single_event.jinja")
-async def events(request: web.Request) -> dict[str, Any]:
+async def events(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]
     with Timer() as timer:
         bucket = request.config_dict["rubintv/gcs_bucket"]
@@ -466,16 +524,14 @@ async def events(request: web.Request) -> dict[str, Any]:
 
 @routes.get("/{camera}/{channel}_current")
 @template("current.jinja")
-async def current(request: web.Request) -> dict[str, Any]:
+async def current(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]
     with Timer() as timer:
         camera = cameras[request.match_info["camera"]]
         bucket = request.config_dict["rubintv/gcs_bucket"]
+        historical = request.config_dict["rubintv/historical_data"]
         channel = camera.channels[request.match_info["channel"]]
-        event = get_current_event(
-            channel.prefix,
-            bucket,
-        )
+        event = get_current_event(camera, channel, bucket, historical)
         the_date = event.clean_date()
         seq = event.seq
         title = build_title(
@@ -492,28 +548,38 @@ async def current(request: web.Request) -> dict[str, Any]:
     }
 
 
-def get_most_recent_day_events(bucket: Bucket, camera: Camera) -> List[Event]:
-    prefix = camera.channels["monitor"].prefix
+def get_most_recent_day_events(
+    bucket: Bucket, camera: Camera, historical: HistoricalData
+) -> tuple[date, dict[int, dict[str, Event]]]:
+    primary_channel = list(camera.channels)[0]
+    prefix = camera.channels[primary_channel].prefix
     events = {}
-    events["monitor"] = get_most_recent_events_for_prefix(prefix, bucket)
-    the_date = events["monitor"][0].obs_date
-    events_dict = build_dict_with_remaining_channels(
-        bucket, camera, events, the_date
-    )
-    todays_events = flatten_events_dict_into_list(camera, events_dict)
-    return todays_events
+    primary_events = get_todays_events_for_prefix(prefix, bucket)
+    if primary_events:
+        events[primary_channel] = primary_events
+        the_date = primary_events[0].obs_date
+        events_dict = build_dict_with_remaining_channels(
+            bucket, camera, events, the_date
+        )
+    else:
+        the_date = historical.get_most_recent_day(camera)
+        events_dict = historical.get_events_for_date(camera, the_date)
+
+    todays_events = make_table_rows_from_columns_by_seq(events_dict)
+    return (the_date, todays_events)
 
 
 def build_dict_with_remaining_channels(
     bucket: Bucket,
     camera: Camera,
-    events_dict: Dict[str, List[Event]],
+    events_dict: Dict[str, list[Event]],
     the_date: date,
-) -> Dict[str, List[Event]]:
-    # creates a dict where key => List of events e.g.:
+) -> Dict[str, list[Event]]:
+    # creates a dict where key => list of events e.g.:
     # {"monitor": [Event 1, Event 2 ...] , "im": [Event 2 ...] ... }
-    for chan in camera.channels.keys():
-        if chan == "monitor":
+    primary_channel = list(camera.channels)[0]
+    for chan in camera.channels:
+        if chan == primary_channel:
             continue
         prefix = camera.channels[chan].prefix
         new_prefix = get_prefix_from_date(prefix, the_date)
@@ -530,65 +596,22 @@ def seq_num_equal(
     return this_event.seq == that_event.seq
 
 
-def flatten_events_dict_into_list(camera: Camera, events: dict) -> List[Event]:
-    """Transforms the per_day_channels into lists per channel.
-
-    Takes a dict where the keys are as per_day_channels keys and each
-    corresponding value is a list of events from that channel. Flattens into
-    one list of events where each channel is represented in the event object's
-    channel list (or None if it doesn't exist for that event seq num) i.e:
-    from: {"monitor": [Event 1, Event 2 ...] , "im": [Event 2 ...] ... }
-    to: [Event 1 (chans=['monitor', None, None, None]),
-         Event 2 (chans=['monitor', 'im', None, None], ... ]
-
-    Parameters
-    ----------
-    events : `dict`
-        The dict of events. See above for details.
-
-    Returns
-    -------
-    event_list : `list`
-        The list of events, per channel
-
-    """
-    nonevent = Event(
-        """https://storage.googleapis.com/rubintv_data/
-    auxtel_monitor/auxtel-monitor_dayObs_2022-02-15_seqNum_0.png"""
-    )
-    # make an iterator out of each channel's list of events
-    chan_iters: List[Iterator] = [iter(li) for li in events.values()]
-    # store the channel names in order to use in the loop
-    chan_lookup = list(camera.channels.keys())
-    # make a list with the first event in each channel list
-    each_chan: List[Any] = [next(it, nonevent) for it in chan_iters]
-    seq_list = [ev.seq for ev in each_chan]
-    event_list = []
-
-    while True:
-        seq_list = [ev.seq for ev in each_chan]
-        if max(seq_list) == 0:
-            break
-
-        highest_seq_index = seq_list.index(max(seq_list))
-        key_event = each_chan[highest_seq_index]
-        # make a list for each channel- true if seq num matches highest
-        # event seq num, false otherwise
-        list_of_matches = [
-            seq_num_equal(key_event, other_event) for other_event in each_chan
-        ]
-        key_event.chans = [
-            (matches and camera.channels[chan_lookup[i]]) or None
-            for i, matches in enumerate(list_of_matches)
-        ]
-        event_list.append(key_event)
-        # if there was a match, move that channel's image list iterator to the
-        # next one
-        for i, it in enumerate(chan_iters):
-            if list_of_matches[i]:
-                each_chan[i] = next(it, nonevent)
-
-    return event_list
+def make_table_rows_from_columns_by_seq(
+    events_dict: Dict,
+) -> Dict[int, dict[str, Event]]:
+    d: Dict[int, dict[str, Event]] = {}
+    # d == {seq: {chan1: event, chan2: event, ... }}
+    for chan in events_dict:
+        chan_events = events_dict[chan]
+        for e in chan_events:
+            if e.seq in d:
+                d[e.seq].update({chan: e})
+            else:
+                d.update({e.seq: {chan: e}})
+    d = {
+        k: v for k, v in sorted(d.items(), reverse=True)
+    }  # make sure the table is in order
+    return d
 
 
 def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
@@ -603,35 +626,16 @@ def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
     return sevents
 
 
-def get_most_recent_events_for_prefix(
+def get_todays_events_for_prefix(
     prefix: str,
     bucket: Bucket,
 ) -> List[Event]:
-    try_date = get_current_day_obs()
-    timer = datetime.now()
-    timeout = 3
-    blobs: List[Any] = []
-    try_date += timedelta(1)  # add a day as to not start with yesterday
-    while not blobs:
-        try_date = try_date - timedelta(1)  # no blobs? try the day defore
-        new_prefix = get_prefix_from_date(prefix, try_date)
-        blobs = list(bucket.list_blobs(prefix=new_prefix))
-        elapsed = datetime.now() - timer
-        if elapsed.seconds > timeout:
-            print(
-                f"Looking back for blobs timed out within {timeout} seconds...\n"
-                + f"Retrieving whole list for {prefix}"
-            )
-            blobs = get_all_events_for_prefix(prefix, bucket)
-            if not blobs:
-                raise TimeoutError(f"Timed out. No data found for {prefix}")
-            all_events = get_sorted_events_from_blobs(blobs)
-            the_date = all_events[0].obs_date
-            events = [
-                event for event in all_events if event.obs_date == the_date
-            ]
-        else:
-            events = get_sorted_events_from_blobs(blobs)
+    today = get_current_day_obs()
+    new_prefix = get_prefix_from_date(prefix, today)
+    events = []
+    blobs = list(bucket.list_blobs(prefix=new_prefix))
+    if blobs:
+        events = get_sorted_events_from_blobs(blobs)
     return events
 
 
@@ -644,11 +648,17 @@ def get_all_events_for_prefix(
 
 
 def get_current_event(
-    prefix: str,
+    camera: Camera,
+    channel: Channel,
     bucket: Bucket,
+    historical: HistoricalData,
 ) -> Event:
-    events = get_most_recent_events_for_prefix(prefix, bucket)
-    return events[0]
+    events = get_todays_events_for_prefix(channel.prefix, bucket)
+    if events:
+        latest = events[0]
+    else:
+        latest = historical.get_most_recent_event(camera, channel)
+    return latest
 
 
 def get_prefix_from_date(prefix: str, a_date: date) -> str:

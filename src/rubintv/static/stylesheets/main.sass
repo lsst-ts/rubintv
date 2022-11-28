@@ -1,4 +1,5 @@
 @import "reset.css"
+@import "colours"
 @import "calendar"
 
 .flr
@@ -47,6 +48,10 @@
 	border-radius: 10%
 	&.image-viewer-link
 		background: url(/rubintv/static/images/image-viewer-link.svg)
+	&.copy
+		background-image: url(/rubintv/static/images/copy-to-clipboard.svg)
+		width: 16px
+		height: 16px
 
 a
 	text-decoration: none
@@ -57,30 +62,11 @@ a
 .button:hover
 	box-shadow: none
 
-.button.monitor
-	background-color: #F07F85
-.button.mount
-	background-color: #F0C87F
-.button.spec
-	background-color: #7F85F0
-.button.im
-	background-color: #7FF094
-.button.historical
-	background-color: #262534
-	color: #fff
-.button.movie
-	background-color: #83daee
-	text-align: center
-.button.admin
-	background-color: #999
 
 html
 	font-family: "Rubik", sans-serif
 	font-size: 16px
 	box-sizing: border-box
-
-body
-	background-color: #fff
 
 .page-wrapper
 	margin: 30px 30px 30px
@@ -136,6 +122,12 @@ h2
 h3
 	font-size: 1.4em
 	margin-bottom: 0.5em
+
+section
+	margin-bottom: 4em
+	padding-bottom: 2em
+	border-bottom: 1px solid #dcdcdc
+	width: fit-content
 
 .columns
 	display: flex
@@ -193,8 +185,11 @@ h3
 	display: flex
 	align-items: center
 
+.download-metadata
+	margin-left: 1em
+	height: 42px
+
 .channel-grid-heading
-	background: #fff
 	padding-top: 1em
 	position: sticky
 	top: 0
@@ -219,15 +214,15 @@ h3
 .grid-title
 	text-align: left
 	position: sticky
-	top: 11em
+	top: 13em
+	font-size: 14px
 	&.sideways
 		max-width: 40px
-		transform: rotate(315deg)
-		transform-origin: 7px -2px
+		transform: rotate(330deg)
+		transform-origin: 0 0
 		white-space: nowrap
 
 .grid-cell
-	background-color: #f0f0f0
 	padding: 0.3em
 	vertical-align: middle
 	height: 42px
@@ -237,12 +232,44 @@ h3
 		flex-direction: column
 		justify-content: center
 
-
 .table-spacer
-	background: #fff
 	height: 8em
 	position: sticky
 	top: 4.4em
+
+.meta-group
+	height: 20px
+	position: relative
+	top: -3em
+	img
+		width: 100%
+		height: 100%
+
+.startracker, .startracker-wide
+	thead
+		position: sticky
+		top: 10.8em
+	.grouping
+		height: 6em
+	.grid-title
+		position: static
+	.table-spacer
+		height: 10em
+	.meta-group
+		top: -5.4em
+
+.copy-to-cb
+	background-color: transparent
+	display: flex
+	justify-content: center
+	align-items: center
+
+.copied
+	position: fixed
+	padding: 0.5em
+	border: 1px solid green
+	border-radius: 6px
+	background-color: #fff
 
 .table-panel
 	background: #eee
