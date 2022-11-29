@@ -1,0 +1,141 @@
+Locations:
+  summit:
+    name: Summit
+    cameras:
+      Telescope Mounted: [ auxtel, comcam, lsstcam ]
+      Other Cameras: [ allsky, startracker, startracker-wide ]
+
+  tucson:
+    name: Tucson
+    cameras:
+      Cameras: [ allsky, startracker, startracker-wide ]
+
+  slac:
+    name: SLAC
+    cameras:
+      Cameras: [ ir2, ts8 ]
+
+
+
+Cameras:
+  auxtel:
+    name: AuxTel
+    online: True
+    has_image_viewer: True
+    channels:
+      # if no explicit 'label' use 'name'
+      monitor:
+        name: Monitor
+        prefix: auxtel_monitor
+        service_dependency: auxtel_isr_runner
+      im:
+        name: Image Analysis
+        label: ImAnalysis
+        prefix: summit_imexam
+        service_dependency: auxtel_isr_runner
+      spec:
+        name: Spectrum
+        prefix: summit_specexam
+        service_dependency: auxtel_isr_runner
+      mount:
+        name: Mount
+        prefix: auxtel_mount_torques
+
+    per_day_channels:
+      movie:
+        name: Tonight's Movie
+        prefix: auxtel_movies
+        label: "Movie for "
+
+
+  startracker:
+    name: StarTracker
+    online: True
+    channels:
+      startracker:
+        name: StarTracker
+        prefix: startracker_raw
+      analysis:
+        name: Analysis
+        prefix: startracker_analysis
+
+
+  startracker-wide:
+    name: StarTracker Wide
+    online: True
+    metadata_slug: startracker
+    channels:
+      startracker-wide:
+        name: StarTracker Wide
+        prefix: startracker_wide_raw
+        label: ST Wide
+      startracker-wide-analysis:
+        name: Wide Analysis
+        prefix: startracker_wide_analysis
+        label: ST Wide Analysis
+
+
+  allsky:
+    name: All Sky
+    online: True
+    channels:
+      movie:
+        name: Current Movie
+        prefix: all_sky_movies
+      image:
+        name: Current Image
+        prefix: all_sky_current
+
+
+  comcam:
+    name: ComCam
+    online: True
+    channels:
+      monitor:
+        name: Central CCD Monitor
+        prefix: comcam_monitor
+        label: Monitor
+
+
+  lsstcam:
+    name: LSSTCam
+    online: False
+
+
+  ir2:
+    name: IR2
+    online: False
+
+
+  ts8:
+    name: TS8
+    online: False
+
+
+
+Services:
+  auxtel:
+    display_name: AuxTel
+    channels: auxtel
+    services:
+      auxtel_metadata: Metadata
+      auxtel_isr_runner: ISR Runner
+
+  startracker:
+    display_name: StarTracker
+    channels: startracker
+    services:
+      startracker_metadata: Metadata
+
+  allsky:
+    display_name: All Sky
+    services:
+      allsky: All Sky
+
+  comcam:
+    display_name: ComCam
+    channels: comcam
+  misc:
+    display_name: Misc Services
+    services:
+      backgroundService: Background

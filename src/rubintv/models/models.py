@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
-from typing import Dict
 
 from dateutil.tz import gettz
 
@@ -9,28 +8,45 @@ from dateutil.tz import gettz
 class Channel:
     name: str
     prefix: str
-    simplename: str
+    simplename: str = ""
     label: str = ""
-    endpoint: str = field(init=False)
     service_dependency: str = ""
 
     def __post_init__(self) -> None:
-        self.endpoint = self.simplename + "events"
+        if self.label == "":
+            self.label = self.name
+
+    @property
+    def endpoint(self) -> str:
+        return self.simplename + "events"
 
 
 @dataclass
 class Camera:
     name: str
-    slug: str
     online: bool
+    _slug: str = field(init=False, repr=False)
     metadata_slug: str = ""
     has_image_viewer: bool = False
-    channels: Dict[str, Channel] = field(default_factory=dict)
-    per_day_channels: Dict[str, Channel] = field(default_factory=dict)
+    channels: dict[str, Channel] = field(default_factory=dict)
+    per_day_channels: dict[str, Channel] = field(default_factory=dict)
 
-    def __post_init__(self) -> None:
+    @property
+    def slug(self) -> str:
+        return self._slug
+
+    @slug.setter
+    def slug(self, slug: str) -> None:
+        self._slug = slug
         if not self.metadata_slug:
-            self.metadata_slug = self.slug
+            self.metadata_slug = slug
+
+
+@dataclass
+class Location:
+    name: str
+    slug: str = ""
+    camera_groups: dict[str, list[str]] = field(default_factory=dict)
 
 
 @dataclass

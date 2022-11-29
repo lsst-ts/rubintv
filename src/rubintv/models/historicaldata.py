@@ -3,8 +3,8 @@ from typing import Dict, List
 
 from google.cloud.storage import Blob, Bucket
 
-from rubintv.models.camera_assignment import cameras
 from rubintv.models.models import Camera, Channel, Event, get_current_day_obs
+from rubintv.models.models_assignment import cameras
 
 
 class HistoricalData:

@@ -1,0 +1,26 @@
+{% extends "layout.jinja" %}
+{% block content %}
+  <section>
+    <h2 class="section-title">{{ location }}</h2>
+    <nav class="location-menu">
+      <ul class="locations flr">
+        {% for loc in locations.values() %}
+          <li>
+            <a class="button button-large" href="/rubintv/{{ loc.slug }}">
+              {{ loc.name }}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </section>
+{% endblock content %}
+{% block further %}
+  <div class="admin-access">
+    <a
+      class="button button-small admin"
+      href="/rubintv/admin">
+      Admin
+    </a>
+  </div>
+{% endblock further %}

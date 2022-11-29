@@ -29,13 +29,13 @@ from google.cloud.storage import Bucket
 
 from rubintv import __version__
 from rubintv.handlers import routes
-from rubintv.models.camera_assignment import (
-    cameras,
-    home_page_list,
-    production_services,
-)
 from rubintv.models.historicaldata import HistoricalData
 from rubintv.models.models import Camera, Channel, Event, get_current_day_obs
+from rubintv.models.models_assignment import (
+    cameras,
+    locations,
+    production_services,
+)
 from rubintv.timer import Timer
 
 HEARTBEATS_PREFIX = "heartbeats"
@@ -43,13 +43,12 @@ HEARTBEATS_PREFIX = "heartbeats"
 
 @routes.get("")
 @routes.get("/")
-@template("home.jinja")
+@template("location_home.jinja")
 async def get_page(request: web.Request) -> Dict[str, Any]:
     title = build_title(request=request)
     return {
         "title": title,
-        "cameras": cameras,
-        "camera_display_list": home_page_list,
+        "locations": locations,
     }
 
 
@@ -77,7 +76,7 @@ async def request_heartbeat_for_channel(request: web.Request) -> web.Response:
     ps: Dict[str, Any]
     for ps in production_services.values():
         if "channels" in ps:
-            for chan in ps["channels"].values():  # type: ignore[attr-defined]
+            for chan in ps["channels"].values():
                 all_services.append(chan.prefix)
         if "services" in ps:
             for service in ps["services"]:
