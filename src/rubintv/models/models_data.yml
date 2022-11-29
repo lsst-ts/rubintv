@@ -6,6 +6,13 @@ Locations:
       Cameras: [ ir2, ts8 ]
     services: []
 
+  tucson:
+    name: Tucson
+    bucket: rubintv_data_tts
+    camera_groups:
+      Cameras: [ auxtel ]
+    services: [ auxtel, misc ]
+
   summit:
     name: Summit
     bucket: rubintv_data
@@ -13,13 +20,6 @@ Locations:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
       Other Cameras: [ allsky, startracker, startracker-wide ]
     services: [ auxtel, startracker, allsky, comcam, misc ]
-
-  tucson:
-    name: Tucson
-    bucket: rubintv_data_tts
-    camera_groups:
-      Cameras: [ auxtel ]
-    services: [ auxtel, misc ]
 
 
 Cameras:
