@@ -1,4 +1,7 @@
 {% extends "layout.jinja" %}
+{% block undertitle %}
+  {{ location.name }}
+{% endblock undertitle %}
 {% block content %}
 {% set loc_slug = location.slug %}
 {% for group_name, cam_names in location.camera_groups.items() %}
