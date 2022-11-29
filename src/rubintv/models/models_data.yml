@@ -18,8 +18,8 @@ Locations:
     name: Tucson
     bucket: rubintv_data_tts
     camera_groups:
-      Cameras: [ auxtel, comcam, lsstcam ]
-    services: [ auxtel, comcam, misc ]
+      Cameras: [ auxtel ]
+    services: [ auxtel, misc ]
 
 
 Cameras:
