@@ -28,18 +28,17 @@ export function addToTable (metaData, selection, sortable = false) {
   })
 
   // add empty column to table header for 'copy to clipboard'
-  if ($('.grid-title #ctbEmpty').length === 0) {
+  if ($('#ctbEmpty').length === 0) {
     $('.grid-title').first().after($('<th>', { id: 'ctbEmpty' }))
+    // add copy to clipboard buttons to grid
+    $('tr[id^="seqno-"]').each(function () {
+      const seq = this.id.split('-').pop()
+      const copyButton = $('<td class="grid-cell copy-to-cb">')
+        .append($('<button>', { class: 'button button-table copy' }).data('seq', seq))
+      $(this).find('td').first()
+        .after(copyButton)
+    })
   }
-
-  // add copy to clipboard buttons to grid
-  $('tr[id^="seqno-"]').each(function () {
-    const seq = this.id.split('-').pop()
-    const copyButton = $('<td class="grid-cell copy-to-cb">')
-      .append($('<button>', { class: 'button button-table copy' }).data('seq', seq))
-    $(this).find('td').first()
-      .after(copyButton)
-  })
 
   $('.button.copy').click(function () {
     const seq = $(this).data('seq')
