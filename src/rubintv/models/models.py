@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 
@@ -67,7 +68,8 @@ class Event:
     seq: int = field(init=False)
 
     def parse_filename(self, delimiter: str = "_") -> tuple:
-        cleaned_up_url = self.url.split("rubintv_data/")[-1]
+        regex = r"\/rubintv[_\w]+\/"
+        cleaned_up_url = re.split(regex, self.url)[-1]
         prefix, name = cleaned_up_url.split(
             "/"
         )  # We know the name is the last part of the URL
