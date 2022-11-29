@@ -109,7 +109,7 @@ Cameras:
 
   ir2:
     name: IR2
-    online: True
+    online: False
 
 
   ts8:
