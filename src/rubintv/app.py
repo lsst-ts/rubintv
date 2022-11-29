@@ -16,6 +16,7 @@ from safir.middleware import bind_logger
 from rubintv.config import Configuration
 from rubintv.handlers import init_external_routes, init_internal_routes
 from rubintv.models.historicaldata import HistoricalData
+from rubintv.models.models_assignment import locations
 
 
 def create_app() -> web.Application:
@@ -26,13 +27,18 @@ def create_app() -> web.Application:
         log_level=config.log_level,
         name=config.logger_name,
     )
-
     root_app = web.Application()
     root_app["safir/config"] = config
+
     client = storage.Client()
-    bucket = client.bucket("rubintv_data")
-    root_app["rubintv/gcs_bucket"] = bucket
-    root_app["rubintv/historical_data"] = HistoricalData(bucket)
+    bucket_names = {loc.slug: loc.bucket for loc in locations.values()}
+    for location, bucket_name in bucket_names.items():
+        bucket = client.bucket(bucket_name)
+        root_app[f"rubintv/buckets/{location}"] = bucket
+        root_app[f"rubintv/cached_data/{location}"] = HistoricalData(
+            location, bucket
+        )
+
     root_app["rubintv/site_title"] = "RubinTV Display"
     setup_metadata(package_name="rubintv", app=root_app)
     setup_middleware(root_app)

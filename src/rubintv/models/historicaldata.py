@@ -1,10 +1,19 @@
 from datetime import date
 from typing import Dict, List
 
+from google.api_core.exceptions import NotFound
 from google.cloud.storage import Blob, Bucket
 
-from rubintv.models.models import Camera, Channel, Event, get_current_day_obs
-from rubintv.models.models_assignment import cameras
+from rubintv.models.models import (
+    Camera,
+    Channel,
+    Event,
+    Location,
+    get_current_day_obs,
+)
+from rubintv.models.models_assignment import cameras, locations
+
+# import pickle
 
 
 class HistoricalData:
@@ -15,9 +24,15 @@ class HistoricalData:
     making a request for the full data for each operation.
     """
 
-    def __init__(self, bucket: Bucket) -> None:
+    def __init__(self, location_name: str, bucket: Bucket) -> None:
+        self._location: Location = locations[location_name]
         self._bucket = bucket
         self._events = {}
+        # TODO: remove below before PR
+        # if location_name == "summit":
+        #     datafile = open('/Users/ugy/data_pickle','rb')
+        #     self._events = pickle.load(datafile)
+        # else:
         self._events = self._get_events()
         self._lastCall = get_current_day_obs()
 
@@ -30,12 +45,17 @@ class HistoricalData:
         List[Blob]
             A list of Blob objects
         """
+        print(f"Getting blobs for location: {self._location.name}")
         blobs = []
-        for cam in cameras.values():
+        for cam_name in self._location.all_cameras():
+            cam = cameras[cam_name]
             for channel in cam.channels.values():
                 prefix = channel.prefix
                 print(f"Trying prefix: {prefix}")
-                blobs += list(self._bucket.list_blobs(prefix=prefix))
+                try:
+                    blobs += list(self._bucket.list_blobs(prefix=prefix))
+                except NotFound:
+                    print(f"Bucket retrieval error. {self._bucket} not found")
                 print(f"Total blobs found: {len(blobs)}")
         return blobs
 

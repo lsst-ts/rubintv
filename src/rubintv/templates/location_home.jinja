@@ -1,25 +1,28 @@
 {% extends "layout.jinja" %}
 {% block content %}
+{% set loc_slug = location.slug %}
+{% for group_name, cam_names in location.camera_groups.items() %}
   <section>
-    <h2 class="section-title">{{ location }}</h2>
-    <nav class="location-menu">
-      <ul class="locations flr">
-        {% for loc in locations.values() %}
+    <h2 class="section-title">{{ group_name }}</h2>
+    <nav class="camera-menu">
+      <ul class="cameras flr">
+        {% for cam_name in cam_names %}
           <li>
-            <a class="button button-large" href="/rubintv/{{ loc.slug }}">
-              {{ loc.name }}
+            <a class="button button-large" href="/rubintv/{{ loc_slug }}/{{ cameras[cam_name].slug }}">
+              {{ cameras[cam_name].name }}
             </a>
           </li>
         {% endfor %}
       </ul>
     </nav>
   </section>
+{% endfor %}
 {% endblock content %}
 {% block further %}
   <div class="admin-access">
     <a
       class="button button-small admin"
-      href="/rubintv/admin">
+      href="/rubintv/{{ location.slug }}/admin">
       Admin
     </a>
   </div>

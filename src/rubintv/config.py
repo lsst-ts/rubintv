@@ -35,7 +35,7 @@ class Configuration:
     """
 
     bucket_name: str = os.getenv("RUBINTV_BUCKET_NAME", "rubintv_data")
-    """The bucket name from which to retriev data.
+    """The bucket name from which to retrieve data.
 
     Set with the ``RUBINTV_BUCKET_NAME`` environment variable.
     """

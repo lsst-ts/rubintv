@@ -45,8 +45,17 @@ class Camera:
 @dataclass
 class Location:
     name: str
+    bucket: str
+    services: list[str]
     slug: str = ""
     camera_groups: dict[str, list[str]] = field(default_factory=dict)
+
+    def all_cameras(self) -> list[str]:
+        all_cams: list[str] = []
+        for cam_list in self.camera_groups.values():
+            for cam in cam_list:
+                all_cams.append(cam)
+        return all_cams
 
 
 @dataclass

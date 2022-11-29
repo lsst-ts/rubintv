@@ -1,20 +1,25 @@
 Locations:
+  slac:
+    name: SLAC
+    bucket: rubintv_data_slac
+    camera_groups:
+      Cameras: [ ir2, ts8 ]
+    services: []
+
   summit:
     name: Summit
-    cameras:
+    bucket: rubintv_data
+    camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
       Other Cameras: [ allsky, startracker, startracker-wide ]
+    services: [ auxtel, startracker, allsky, comcam, misc ]
 
   tucson:
     name: Tucson
-    cameras:
-      Cameras: [ allsky, startracker, startracker-wide ]
-
-  slac:
-    name: SLAC
-    cameras:
-      Cameras: [ ir2, ts8 ]
-
+    bucket: rubintv_data_tts
+    camera_groups:
+      Cameras: [ auxtel, comcam, lsstcam ]
+    services: [ auxtel, comcam, misc ]
 
 
 Cameras:
@@ -104,7 +109,7 @@ Cameras:
 
   ir2:
     name: IR2
-    online: False
+    online: True
 
 
   ts8:
@@ -135,6 +140,7 @@ Services:
   comcam:
     display_name: ComCam
     channels: comcam
+
   misc:
     display_name: Misc Services
     services:
