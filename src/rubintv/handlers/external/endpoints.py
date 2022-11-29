@@ -624,6 +624,7 @@ async def current(request: web.Request) -> Dict[str, Any]:
     logger.info("current", duration=timer.seconds)
     return {
         "title": title,
+        "location": location,
         "camera": camera,
         "event": event,
         "channel": channel.name,
