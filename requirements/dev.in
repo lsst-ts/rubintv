@@ -15,4 +15,4 @@ pytest
 pytest-aiohttp
 python-dateutil
 types-python-dateutil
-types-requests
+types-PyYAML
