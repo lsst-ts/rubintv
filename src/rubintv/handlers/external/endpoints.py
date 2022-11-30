@@ -163,6 +163,7 @@ def get_heartbeats(bucket: Bucket, prefix: str) -> List[Dict]:
 @routes.get("/summit/allsky")
 @template("cameras/allsky.jinja")
 async def get_all_sky_current(request: web.Request) -> Dict[str, Any]:
+    location = locations["summit"]
     title = build_title("Summit", "All Sky", request=request)
     historical = request.config_dict["rubintv/cached_data/summit"]
     bucket = request.config_dict["rubintv/buckets/summit"]
@@ -173,6 +174,7 @@ async def get_all_sky_current(request: web.Request) -> Dict[str, Any]:
     movie = get_current_event(camera, movie_channel, bucket, historical)
     return {
         "title": title,
+        "location": location,
         "camera": camera,
         "current": current,
         "movie": movie,
@@ -205,6 +207,7 @@ async def get_all_sky_current_update(request: web.Request) -> web.Response:
 @routes.get("/summit/allsky/historical")
 @template("cameras/allsky-historical.jinja")
 async def get_allsky_historical(request: web.Request) -> Dict[str, Any]:
+    location = locations["summit"]
     title = build_title("Summit", "All Sky", "Historical", request=request)
     historical: HistoricalData = request.config_dict[
         "rubintv/cached_data/summit"
@@ -223,6 +226,7 @@ async def get_allsky_historical(request: web.Request) -> Dict[str, Any]:
     logger.info("get_allsky_historical", duration=timer.seconds)
     return {
         "title": title,
+        "location": location,
         "camera": camera,
         "year_to_display": most_recent_year,
         "years": years,
@@ -236,6 +240,7 @@ async def get_allsky_historical(request: web.Request) -> Dict[str, Any]:
 async def get_allsky_historical_movie(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]
     with Timer() as timer:
+        location = locations["summit"]
         camera = cameras["allsky"]
         historical = request.config_dict["rubintv/cached_data/summit"]
 
@@ -259,6 +264,7 @@ async def get_allsky_historical_movie(request: web.Request) -> Dict[str, Any]:
     logger.info("get_allsky_historical_movie", duration=timer.seconds)
     return {
         "title": title,
+        "location": location,
         "camera": camera,
         "years": years,
         "year_to_display": year,
@@ -557,7 +563,7 @@ def get_metadata_json(
     blob_name = f"{camera.metadata_slug}_metadata/dayObs_{date_str}.json"
     metadata_json = "{}"
     if blob := bucket.get_blob(blob_name):
-        metadata_json = blob.download_as_string()
+        metadata_json = blob.download_as_bytes()
     return json.loads(metadata_json)
 
 
