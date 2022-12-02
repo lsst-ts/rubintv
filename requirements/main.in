@@ -15,3 +15,4 @@ jinja2
 safir<2
 python-dateutil
 dacite
+PyYAML
