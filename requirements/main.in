@@ -8,7 +8,8 @@
 aiodns
 aiohttp
 aiohttp-jinja2
-cchardet
+# TODO: replace below before PR
+# cchardet
 click
 google-cloud-storage
 jinja2
