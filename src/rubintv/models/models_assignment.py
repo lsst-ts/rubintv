@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any
 
 import yaml
@@ -6,7 +7,7 @@ from dacite import from_dict
 from .models import Camera, Location
 
 # TODO: find a better way of locating yaml file
-with open("src/rubintv/models/models_data.yml", "r") as file:
+with open(Path(__file__).parent / "models_data.yml", "r") as file:
     d = yaml.safe_load(file)
 
 cameras = {}
