@@ -71,3 +71,7 @@ def create_app(minimal_data_load: bool = False) -> web.Application:
 def setup_middleware(app: web.Application) -> None:
     """Add middleware to the application."""
     app.middlewares.append(bind_logger)
+
+
+def create_app_light() -> web.Application:
+    return create_app(minimal_data_load=True)

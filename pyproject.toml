@@ -50,6 +50,12 @@ description = Run the development server with auto-reload for code changes.
 usedevelop = true
 commands = adev runserver -vvvvv --app-factory create_app src/rubintv/app.py
 passenv = GOOGLE_APPLICATION_CREDENTIALS
+
+[testenv:run-light]
+description = Run the development server with auto-reload for code changes and minimal data load.
+usedevelop = true
+commands = adev runserver -vvvvv --app-factory create_app_light src/rubintv/app.py
+passenv = GOOGLE_APPLICATION_CREDENTIALS
 """
 
 [tool.coverage.run]
