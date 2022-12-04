@@ -12,8 +12,7 @@ from rubintv.models.models import (
     get_current_day_obs,
 )
 from rubintv.models.models_assignment import cameras, locations
-
-# import pickle
+from rubintv.models.models_helpers import get_prefix_from_date
 
 
 class HistoricalData:
@@ -24,17 +23,63 @@ class HistoricalData:
     making a request for the full data for each operation.
     """
 
-    def __init__(self, location_name: str, bucket: Bucket) -> None:
-        self._location: Location = locations[location_name]
+    def __init__(
+        self, location_name: str, bucket: Bucket, minimal_data_load: bool
+    ) -> None:
+        location: Location = locations[location_name]
+        self._location = location
         self._bucket = bucket
         self._events = {}
-        # TODO: remove below before PR
-        # if location_name == "summit":
-        #     datafile = open('/Users/ugy/data_pickle','rb')
-        #     self._events = pickle.load(datafile)
-        # else:
-        self._events = self._get_events()
+        if not minimal_data_load:
+            self._events = self._get_events()
+        else:
+            self._events = self._get_most_recent_events_by_location()
         self._lastCall = get_current_day_obs()
+
+    def _get_most_recent_events_by_location(
+        self,
+    ) -> Dict[str, Dict[str, List[Event]]]:
+        """Returns only the most recent events for a Location. Used when only needing
+        a light-weight cache of data to test the app
+
+        Parameters
+        ----------
+        location : Location
+            The Location object representing the camera site e.g. Summit
+        bucket : Bucket
+            The GCS bucket to retrive blobs from
+
+        Returns
+        -------
+        Dict[str, Dict[str, List[Event]]]
+            The outer dict is keyed per camera,
+            the inner dict is keyed per channel and
+            list of Events is sorted by day and sequence number
+        """
+        blobs = []
+        print()
+        print(self._location.name)
+        print("------")
+        print(self._location.all_cameras())
+        for cam_name in self._location.all_cameras():
+            camera: Camera = cameras[cam_name]
+            print(f"Trying for: {camera.name}")
+            if not camera.online:
+                continue
+            # date for which there are blobs in
+            the_date = date(2022, 11, 28)
+            channel: Channel
+            for channel in camera.channels.values():
+                prefix = get_prefix_from_date(channel.prefix, the_date)
+                try:
+                    found_blobs = list(self._bucket.list_blobs(prefix=prefix))
+                    print(f"channel: {channel.name} found {len(found_blobs)}")
+                    blobs += found_blobs
+                except NotFound:
+                    print(
+                        f"Bucket retrieval error. {self._bucket.name} not found"
+                    )
+        return self._sort_events_from_blobs(blobs)
 
     def _get_blobs(self) -> List[Blob]:
         """Downloads Blob metadata from the Bucket for every Camera registered
@@ -55,7 +100,9 @@ class HistoricalData:
                 try:
                     blobs += list(self._bucket.list_blobs(prefix=prefix))
                 except NotFound:
-                    print(f"Bucket retrieval error. {self._bucket} not found")
+                    print(
+                        f"Bucket retrieval error. {self._bucket.name} not found"
+                    )
                 print(f"Total blobs found: {len(blobs)}")
         return blobs
 
