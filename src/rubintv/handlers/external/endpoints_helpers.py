@@ -3,6 +3,7 @@ from datetime import date
 from typing import Any, Dict, List
 
 from aiohttp import web
+from google.api_core.exceptions import NotFound
 from google.cloud.storage.client import Bucket
 
 from rubintv.models.historicaldata import HistoricalData, get_current_day_obs
@@ -25,28 +26,10 @@ __all__ = [
     "get_sorted_events_from_blobs",
     "get_todays_events_for_prefix",
     "get_current_event",
+    "get_heartbeats",
     "build_title",
+    "get_night_reports_page_link",
 ]
-
-
-def get_image_viewer_link(day_obs: date, seq_num: int) -> str:
-    date_without_hyphens = str(day_obs).replace("-", "")
-    url = (
-        "http://ccs.lsst.org/FITSInfo/view.html?"
-        f"image=AT_O_{date_without_hyphens}_{seq_num:06}"
-        "&raft=R00&color=grey&bias=Simple+Overscan+Correction"
-        "&scale=Per-Segment&source=RubinTV"
-    )
-    return url
-
-
-def get_event_page_link(
-    location: Location, camera: Camera, channel: Channel, event: Event
-) -> str:
-    return (
-        f"/rubintv/{location.slug}/{camera.slug}/{channel.endpoint}/"
-        f"{event.clean_date()}/{event.seq}"
-    )
 
 
 def extract_date_from_url_part(url_part: str) -> date:
@@ -228,9 +211,61 @@ def get_current_event(
     return latest
 
 
+def get_heartbeats(bucket: Bucket, prefix: str) -> List[Dict]:
+    hb_blobs = list(bucket.list_blobs(prefix=prefix))
+    heartbeats = []
+    for hb_blob in hb_blobs:
+        try:
+            the_blob = bucket.get_blob(hb_blob.name)
+            blob_content = the_blob.download_as_string()
+        except NotFound:
+            print(f"Error: {hb_blob.name} not found.")
+        if not blob_content:
+            continue
+        hb = json.loads(blob_content)
+        hb["url"] = hb_blob.name
+        heartbeats.append(hb)
+    return heartbeats
+
+
 def build_title(*title_parts: str, request: web.Request) -> str:
     title = request.config_dict["rubintv/site_title"]
     to_append = " - ".join(title_parts)
     if to_append:
         title += " - " + to_append
     return title
+
+
+def get_image_viewer_link(day_obs: date, seq_num: int) -> str:
+    date_without_hyphens = str(day_obs).replace("-", "")
+    url = (
+        "http://ccs.lsst.org/FITSInfo/view.html?"
+        f"image=AT_O_{date_without_hyphens}_{seq_num:06}"
+        "&raft=R00&color=grey&bias=Simple+Overscan+Correction"
+        "&scale=Per-Segment&source=RubinTV"
+    )
+    return url
+
+
+def get_event_page_link(
+    location: Location, camera: Camera, channel: Channel, event: Event
+) -> str:
+    return (
+        f"/rubintv/{location.slug}/{camera.slug}/{channel.endpoint}/"
+        f"{event.clean_date()}/{event.seq}"
+    )
+
+
+def get_night_reports_page_link(
+    location: Location, camera: Camera, request: web.Request
+) -> str:
+    link_url = ""
+    if camera.night_reports_prefix:
+        app_name = request.config_dict["safir/config"].name
+        link_url = (
+            f"/{app_name}/{location.slug}/{camera.slug}/night_reports/current"
+        )
+    return link_url
+
+
+# def get_night_reports_events

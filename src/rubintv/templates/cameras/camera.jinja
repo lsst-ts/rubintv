@@ -8,30 +8,40 @@
 {% endblock undertitle %}
 
 {% block content %}
-  <div class="columns">
-
-    <nav id="per-image-menu" class="channel-menu" role="navigation">
-      <h3>Per Image Channels: Current</h3>
-      <ul class="channels flr">
-        {% for channel in camera.channels.values() %}
-          {% if channel.label %}
-            <li class="channel service"
-                id="{{ channel.prefix }}"
-                data-dependent-on="{{ channel.service_dependency }}">
-              <a  class="button button-large {{ channel.simplename }}"
-                  href="/rubintv/{{ location.slug }}/{{ camera.slug }}/{{ channel.simplename }}_current" target="_blank">
-                <div class="heartbeat"></div>
-                <span>{{ channel.name }}</span>
-              </a>
-            </li>
-          {% endif %}
-        {% endfor %}
-      </ul>
-    </nav>
+  <section class="columns">
+    {% if night_reports_link %}
+      <div id="night_reports_link">
+        <h3>Night Reports Page</h3>
+        <a href="{{ night_reports_link }}" class="button button-large night-reports">
+          Night Reports
+        </a>
+      </div>
+    {% endif %}
     <div id="per-day-refreshable">
       {% include "cameras/per-day-channels.jinja" %}
     </div>
-  </div>
+  </section>
+
+  <section>
+    <nav id="per-image-menu" class="channel-menu" role="navigation">
+      <h3>Per Image Channels: Current</h3>
+        <ul class="channels flr">
+          {% for channel in camera.channels.values() %}
+            {% if channel.label %}
+              <li class="channel service"
+                  id="{{ channel.prefix }}"
+                  data-dependent-on="{{ channel.service_dependency }}">
+                <a  class="button button-large {{ channel.simplename }}"
+                    href="/rubintv/{{ location.slug }}/{{ camera.slug }}/{{ channel.simplename }}_current" target="_blank">
+                  <div class="heartbeat"></div>
+                  <span>{{ channel.name }}</span>
+                </a>
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </nav>
+  </section>
 
   <div class="metadata-status">
     <h4>metadata service:&nbsp;</h4>

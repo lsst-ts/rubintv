@@ -52,6 +52,9 @@ Cameras:
         prefix: auxtel_movies
         label: "Movie for "
 
+    night_reports_prefix: auxtel_night_reports
+
+
 
   startracker:
     name: StarTracker
@@ -106,16 +109,13 @@ Cameras:
     name: LSSTCam
     online: False
 
-
   ir2:
     name: IR2
     online: False
 
-
   ts8:
     name: TS8
     online: False
-
 
 
 Services:

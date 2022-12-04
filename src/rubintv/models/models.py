@@ -4,6 +4,8 @@ from datetime import date, datetime, timedelta
 
 from dateutil.tz import gettz
 
+from rubintv.models.models_helpers import string_int_to_date
+
 
 @dataclass
 class Channel:
@@ -31,6 +33,7 @@ class Camera:
     has_image_viewer: bool = False
     channels: dict[str, Channel] = field(default_factory=dict)
     per_day_channels: dict[str, Channel] = field(default_factory=dict)
+    night_reports_prefix: str = ""
 
     @property
     def slug(self) -> str:
@@ -88,6 +91,28 @@ class Event:
 
     def __post_init__(self) -> None:
         self.name, self.prefix, self.obs_date, self.seq = self.parse_filename()
+
+
+@dataclass
+class Night_Report_Event:
+    url: str
+    prefix: str
+    timestamp: int
+    simplename: str = field(init=False)
+    name: str = field(init=False)
+    obs_date: date = field(init=False)
+
+    def parse_filename(self) -> tuple:
+        parts = self.url.split(self.prefix + "/")[-1]
+        # use spread in case of extended names later on
+        d, *n = parts.split("/")
+        obs_date = string_int_to_date(d)
+        simplename = "_".join(n).split(".")[0]
+        name = simplename.replace("_", " ").title()
+        return (simplename, name, obs_date)
+
+    def __post_init__(self) -> None:
+        self.simplename, self.name, self.obs_date = self.parse_filename()
 
 
 def get_current_day_obs() -> date:

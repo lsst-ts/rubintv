@@ -23,8 +23,6 @@ from typing import Any, Dict, List
 
 from aiohttp import web
 from aiohttp_jinja2 import render_string, render_template, template
-from google.api_core.exceptions import NotFound
-from google.cloud.storage import Bucket
 
 from rubintv import __version__
 from rubintv.handlers import routes
@@ -35,9 +33,11 @@ from rubintv.handlers.external.endpoints_helpers import (
     find_location,
     get_current_event,
     get_event_page_link,
+    get_heartbeats,
     get_image_viewer_link,
     get_metadata_json,
     get_most_recent_day_events,
+    get_night_reports_page_link,
     get_per_day_channels,
     get_prefix_from_date,
     get_sorted_events_from_blobs,
@@ -140,23 +140,6 @@ async def request_all_heartbeats(request: web.Request) -> web.Response:
     heartbeats = get_heartbeats(bucket, HEARTBEATS_PREFIX)
     json_res = json.dumps(heartbeats)
     return web.Response(text=json_res, content_type="application/json")
-
-
-def get_heartbeats(bucket: Bucket, prefix: str) -> List[Dict]:
-    hb_blobs = list(bucket.list_blobs(prefix=prefix))
-    heartbeats = []
-    for hb_blob in hb_blobs:
-        try:
-            the_blob = bucket.get_blob(hb_blob.name)
-            blob_content = the_blob.download_as_string()
-        except NotFound:
-            print(f"Error: {hb_blob.name} not found.")
-        if not blob_content:
-            continue
-        hb = json.loads(blob_content)
-        hb["url"] = hb_blob.name
-        heartbeats.append(hb)
-    return heartbeats
 
 
 @routes.get("/summit/allsky")
@@ -278,10 +261,9 @@ async def get_recent_table(request: web.Request) -> web.Response:
     cam_name = request.match_info["camera"]
     if cam_name not in location.all_cameras():
         raise web.HTTPNotFound()
-
     camera = cameras[cam_name]
-
     title = build_title(location.name, camera.name, request=request)
+
     logger = request["safir/logger"]
     with Timer() as timer:
         if not camera.online:
@@ -300,6 +282,9 @@ async def get_recent_table(request: web.Request) -> web.Response:
             metadata_json = get_metadata_json(bucket, camera, the_date, logger)
             per_day = get_per_day_channels(bucket, camera, the_date, logger)
 
+            night_reports_link = get_night_reports_page_link(
+                location, camera, request
+            )
             template = "cameras/camera.jinja"
             context = {
                 "title": title,
@@ -311,6 +296,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
                 "per_day": per_day,
                 "viewer_link": get_image_viewer_link,
                 "event_page_link": get_event_page_link,
+                "night_reports_link": night_reports_link,
             }
     logger.info("get_recent_table", duration=timer.seconds)
     response = render_template(template, request, context)
@@ -383,6 +369,27 @@ async def update_todays_table(request: web.Request) -> web.Response:
         json_res = json.dumps(html_parts)
     logger.info("update_todays_table", duration=timer.seconds)
     return web.Response(text=json_res, content_type="application/json")
+
+
+@routes.get("/{location}/{camera}/night_reports/current")
+@template("cameras/night-reports.jinja")
+async def get_night_reports(request: web.Request) -> dict[str, Any]:
+    location_name = request.match_info["location"]
+    location = find_location(location_name, request)
+
+    cam_name = request.match_info["camera"]
+    if cam_name not in location.all_cameras():
+        raise web.HTTPNotFound()
+    camera = cameras[cam_name]
+    title = build_title(
+        location.name, camera.name, "Night Reports", request=request
+    )
+    # events = get_night_report_events()
+    return {
+        "title": title,
+        "location": location,
+        "camera": camera,
+    }
 
 
 @routes.get("/{location}/{camera}/historical")
