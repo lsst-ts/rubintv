@@ -1,18 +1,19 @@
-from pathlib import Path
 from typing import Any
 
 import yaml
 from dacite import from_dict
+from from_root import from_here
 
 from .models import Camera, Location
 
-# TODO: find a better way of locating yaml file
-with open(Path(__file__).parent / "models_data.yml", "r") as file:
+models_file_path = from_here("models_data.yml")
+with open(models_file_path, "r") as file:
     d = yaml.safe_load(file)
 
 cameras = {}
 d_cameras = d["Cameras"]
 for cam_name, cam in d_cameras.items():
+    # makes Camera objects from dictionaries
     cam = from_dict(Camera, cam)
     cam.slug = cam_name
     # insert lowercase Channel name as 'simplename'
