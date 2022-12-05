@@ -1,0 +1,11 @@
+<h3 class="the-date" data-date="{{ date }}">Night reports for: <span class="data">{{ date }}</span></h3>
+<div id="night-events">
+  {% for event in events %}
+    <figure class="event">
+      <img src="{{ event.url }}?t={{ event.timestamp }}">
+      <figcaption>
+        {{ event.name }}
+      </figcaption>
+    </figure>
+  {% endfor %}
+</div>

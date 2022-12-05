@@ -94,7 +94,7 @@ class Event:
 
 
 @dataclass
-class Night_Report_Event:
+class Night_Reports_Event:
     url: str
     prefix: str
     timestamp: int

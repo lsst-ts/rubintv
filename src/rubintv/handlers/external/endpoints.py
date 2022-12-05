@@ -37,6 +37,7 @@ from rubintv.handlers.external.endpoints_helpers import (
     get_image_viewer_link,
     get_metadata_json,
     get_most_recent_day_events,
+    get_night_reports_events,
     get_night_reports_page_link,
     get_per_day_channels,
     get_prefix_from_date,
@@ -371,7 +372,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
     return web.Response(text=json_res, content_type="application/json")
 
 
-@routes.get("/{location}/{camera}/night_reports/current")
+@routes.get("/{location}/{camera}/night_reports")
 @template("cameras/night-reports.jinja")
 async def get_night_reports(request: web.Request) -> dict[str, Any]:
     location_name = request.match_info["location"]
@@ -384,11 +385,48 @@ async def get_night_reports(request: web.Request) -> dict[str, Any]:
     title = build_title(
         location.name, camera.name, "Night Reports", request=request
     )
-    # events = get_night_report_events()
+
+    bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
+    day_obs = get_current_day_obs()
+
+    events = get_night_reports_events(bucket, camera, day_obs)
     return {
         "title": title,
         "location": location,
         "camera": camera,
+        "date": day_obs,
+        "events": events,
+    }
+
+
+@routes.get("/{location}/{camera}/night_reports/update/{date}")
+@template("cameras/night-reports-events.jinja")
+async def update_night_reports(request: web.Request) -> dict[str, Any]:
+    location_name = request.match_info["location"]
+    location = find_location(location_name, request)
+
+    cam_name = request.match_info["camera"]
+    if cam_name not in location.all_cameras():
+        raise web.HTTPNotFound()
+    camera = cameras[cam_name]
+
+    bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
+
+    date_str = request.match_info["date"]
+    the_date = extract_date_from_url_part(date_str)
+    day_obs = get_current_day_obs()
+    message = ""
+    if the_date != day_obs:
+        the_date = day_obs
+        message = "It's a new day"
+
+    events = get_night_reports_events(bucket, camera, the_date)
+    return {
+        "location": location,
+        "camera": camera,
+        "date": the_date,
+        "events": events,
+        "message": message,
     }
 
 

@@ -4,10 +4,16 @@ from typing import Any, Dict, List
 
 from aiohttp import web
 from google.api_core.exceptions import NotFound
-from google.cloud.storage.client import Bucket
+from google.cloud.storage.client import Blob, Bucket
 
 from rubintv.models.historicaldata import HistoricalData, get_current_day_obs
-from rubintv.models.models import Camera, Channel, Event, Location
+from rubintv.models.models import (
+    Camera,
+    Channel,
+    Event,
+    Location,
+    Night_Reports_Event,
+)
 from rubintv.models.models_assignment import locations
 from rubintv.models.models_helpers import get_prefix_from_date
 
@@ -29,6 +35,7 @@ __all__ = [
     "get_heartbeats",
     "build_title",
     "get_night_reports_page_link",
+    "get_night_reports_events",
 ]
 
 
@@ -102,7 +109,7 @@ def get_channel_resource_url(
 def get_metadata_json(
     bucket: Bucket, camera: Camera, a_date: date, logger: Any
 ) -> Dict:
-    date_str = a_date.strftime("%Y%m%d")
+    date_str = date_without_hyphens(a_date)
     blob_name = f"{camera.metadata_slug}_metadata/dayObs_{date_str}.json"
     metadata_json = "{}"
     if blob := bucket.get_blob(blob_name):
@@ -236,11 +243,15 @@ def build_title(*title_parts: str, request: web.Request) -> str:
     return title
 
 
+def date_without_hyphens(a_date: date) -> str:
+    return str(a_date).replace("-", "")
+
+
 def get_image_viewer_link(day_obs: date, seq_num: int) -> str:
-    date_without_hyphens = str(day_obs).replace("-", "")
+    date_str = date_without_hyphens(day_obs)
     url = (
         "http://ccs.lsst.org/FITSInfo/view.html?"
-        f"image=AT_O_{date_without_hyphens}_{seq_num:06}"
+        f"image=AT_O_{date_str}_{seq_num:06}"
         "&raft=R00&color=grey&bias=Simple+Overscan+Correction"
         "&scale=Per-Segment&source=RubinTV"
     )
@@ -262,10 +273,43 @@ def get_night_reports_page_link(
     link_url = ""
     if camera.night_reports_prefix:
         app_name = request.config_dict["safir/config"].name
-        link_url = (
-            f"/{app_name}/{location.slug}/{camera.slug}/night_reports/current"
-        )
+        link_url = f"/{app_name}/{location.slug}/{camera.slug}/night_reports/"
     return link_url
 
 
-# def get_night_reports_events
+def get_night_reports_events(
+    bucket: Bucket, camera: Camera, day_obs: date
+) -> List[Night_Reports_Event]:
+    prefix = camera.night_reports_prefix
+    blobs = get_night_reports_blobs(bucket, prefix, day_obs)
+    events = [
+        Night_Reports_Event(b.public_url, prefix, int(b.time_created))
+        for b in blobs
+    ]
+    events.sort(key=lambda ev: ev.simplename)
+    return events
+
+
+def update_night_reports_events(
+    prev_event_stubs: Dict[str, str],
+    bucket: Bucket,
+    camera: Camera,
+    day_obs: date,
+) -> List[Night_Reports_Event]:
+    current_events = get_night_reports_events(bucket, camera, day_obs)
+    prefix = camera.night_reports_prefix
+    prev_events = [
+        Night_Reports_Event(url, prefix, int(timestamp))
+        for url, timestamp in prev_event_stubs.items()
+    ]
+    events = list(set(current_events) - set(prev_events))
+    return events
+
+
+def get_night_reports_blobs(
+    bucket: Bucket, prefix: str, day_obs: date
+) -> List[Blob]:
+    date_str = date_without_hyphens(day_obs)
+    prefix_with_date = "/".join([prefix, date_str])
+    blobs = list(bucket.list_blobs(prefix=prefix_with_date))
+    return blobs

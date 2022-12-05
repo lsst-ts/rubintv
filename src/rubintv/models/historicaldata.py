@@ -66,7 +66,7 @@ class HistoricalData:
             print(f"Trying for: {camera.name}")
             if not camera.online:
                 continue
-            # date for which there are blobs in
+            # date for which there are known to be blobs
             the_date = date(2022, 11, 28)
             channel: Channel
             for channel in camera.channels.values():
