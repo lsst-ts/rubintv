@@ -1,12 +1,12 @@
+from pathlib import Path
 from typing import Any
 
 import yaml
 from dacite import from_dict
-from from_root import from_here
 
 from .models import Camera, Location
 
-models_file_path = from_here("models_data.yml")
+models_file_path = Path(__file__).parent / "models_data.yml"
 with open(models_file_path, "r") as file:
     d = yaml.safe_load(file)
 
