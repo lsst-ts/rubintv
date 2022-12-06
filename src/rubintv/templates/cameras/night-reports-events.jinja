@@ -1,7 +1,14 @@
 <h3 class="the-date" data-date="{{ date }}">Night reports for: <span class="data">{{ date }}</span></h3>
 <div id="night-reports">
   <div class="dashboard">
-    <pre>{{ dashboard }}</pre>
+  {% if dashboard_data %}
+  <dl class="dashboard-list">
+    {% for k,v in dashboard_data.items() %}
+      <dd>k</dd>
+      <dt>v</dt>
+    {% endfor %}
+  </dl>
+  {% endif %}
     <script type="application/json" id="dashboard-json">
       {{ dashboard_json|tojson }}
     </script>
