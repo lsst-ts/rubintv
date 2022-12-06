@@ -76,6 +76,9 @@ body {
 .grid-cell.ok {
   background-color: #b3f1a7;
 }
+.grid-cell.measured {
+  background-color: #7dc8cf;
+}
 
 .calendar {
   width: 100%;
