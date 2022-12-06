@@ -15,7 +15,7 @@
             {% for day in years[year][month] %}
               <a
                 class="day"
-                href="/rubintv/{{ location.slug }}/{{ camera.slug }}/historical/{{ year }}-{{ month }}-{{ day }}">
+                href="/{{ app_name() }}/{{ location.slug }}/{{ camera.slug }}/historical/{{ year }}-{{ month }}-{{ day }}">
                 <span class="day_num">{{ day }}</span>
                 <span class="num_evs">({{ years[year][month][day] }})</span>
               </a>

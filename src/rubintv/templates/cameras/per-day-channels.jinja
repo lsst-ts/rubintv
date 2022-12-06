@@ -6,7 +6,7 @@
         <li class="channel">
           <a  class="button button-large {{ pd_channel_name }}"
               href="{{ per_day[pd_channel_name] }}">
-            <img src="/rubintv/static/images/{{ pd_channel_name }}.svg">
+            <img src="{{ url('static', filename='images/' + pd_channel_name + '.svg') }}">
             {{ camera.per_day_channels[pd_channel_name]['label'] }}
             <span class="date">
               {{ date }}

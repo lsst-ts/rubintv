@@ -259,10 +259,13 @@ def get_image_viewer_link(day_obs: date, seq_num: int) -> str:
 
 
 def get_event_page_link(
-    location: Location, camera: Camera, channel: Channel, event: Event
+    location: Location,
+    camera: Camera,
+    channel: Channel,
+    event: Event,
 ) -> str:
     return (
-        f"/rubintv/{location.slug}/{camera.slug}/{channel.endpoint}/"
+        f"/{location.slug}/{camera.slug}/{channel.endpoint}/"
         f"{event.clean_date()}/{event.seq}"
     )
 

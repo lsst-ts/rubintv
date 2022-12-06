@@ -1,7 +1,7 @@
 {% extends "cameras/layout.jinja" %}
 
 {% block undertitle %}
-  <a class="button historical" href="/rubintv/{{ location.slug }}/{{camera.slug}}/historical">
+  <a class="button historical" href="/{{ app_name() }}/{{ location.slug }}/{{camera.slug}}/historical">
     Historical data
     <img src="{{ url('static', filename='images/history-line.svg') }}">
   </a>
@@ -32,7 +32,7 @@
                   id="{{ channel.prefix }}"
                   data-dependent-on="{{ channel.service_dependency }}">
                 <a  class="button button-large {{ channel.simplename }}"
-                    href="/rubintv/{{ location.slug }}/{{ camera.slug }}/{{ channel.simplename }}_current" target="_blank">
+                    href="/{{ app_name() }}/{{ location.slug }}/{{ camera.slug }}/{{ channel.simplename }}_current" target="_blank">
                   <div class="heartbeat"></div>
                   <span>{{ channel.name }}</span>
                 </a>
