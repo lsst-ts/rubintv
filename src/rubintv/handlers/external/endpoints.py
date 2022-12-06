@@ -29,7 +29,7 @@ from rubintv.handlers import routes
 from rubintv.handlers.external.endpoints_helpers import (
     build_dict_with_remaining_channels,
     build_title,
-    extract_date_from_url_part,
+    date_from_url_part,
     find_location,
     get_current_event,
     get_event_page_link,
@@ -230,7 +230,7 @@ async def get_allsky_historical_movie(request: web.Request) -> Dict[str, Any]:
             "Summit", "All Sky", "Historical", date_str, request=request
         )
 
-        the_date = extract_date_from_url_part(date_str)
+        the_date = date_from_url_part(date_str)
         year = the_date.year
 
         all_events: Dict[str, List[Event]] = historical.get_events_for_date(
@@ -319,7 +319,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
 
         bucket = request.config_dict[f"rubintv/buckets/{location_name}"]
         date_str = request.match_info["date"]
-        the_date = extract_date_from_url_part(date_str)
+        the_date = date_from_url_part(date_str)
         blobs = []
         # if the actual date is greater than displayed on the page
         # get the data from today if there is any
@@ -389,13 +389,15 @@ async def get_night_reports(request: web.Request) -> dict[str, Any]:
     bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
     day_obs = get_current_day_obs()
 
-    events = get_night_reports_events(bucket, camera, day_obs)
+    events, dashboard_json = get_night_reports_events(bucket, camera, day_obs)
+
     return {
         "title": title,
         "location": location,
         "camera": camera,
         "date": day_obs,
         "events": events,
+        "dashboard_json": dashboard_json,
     }
 
 
@@ -413,7 +415,7 @@ async def update_night_reports(request: web.Request) -> dict[str, Any]:
     bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
 
     date_str = request.match_info["date"]
-    the_date = extract_date_from_url_part(date_str)
+    the_date = date_from_url_part(date_str)
     day_obs = get_current_day_obs()
     message = ""
     if the_date != day_obs:
@@ -489,7 +491,7 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
     camera = cameras[request.match_info["camera"]]
     date_str = request.match_info["date_str"]
 
-    the_date = extract_date_from_url_part(date_str)
+    the_date = date_from_url_part(date_str)
     title = build_title(
         location.slug, camera.name, "Historical", date_str, request=request
     )

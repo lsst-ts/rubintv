@@ -1,10 +1,10 @@
 {% extends "cameras/layout.jinja" %}
 {% block content %}
- <div id="night-events-update" class="columns">
+ <div id="night-reports-update">
     {% include "cameras/night-reports-events.jinja" %}
  </div>
 {% endblock content %}
 {% block footer_scripts %}
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script type=module src="{{ url('static', filename='js/night-reports/update-reports.js') }}"></script>
+{# <script type=module src="{{ url('static', filename='js/night-reports/update-reports.js') }}"></script> #}
 {% endblock footer_scripts %}

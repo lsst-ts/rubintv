@@ -1,6 +1,7 @@
 import json
+from dataclasses import asdict
 from datetime import date
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from aiohttp import web
 from google.api_core.exceptions import NotFound
@@ -20,7 +21,7 @@ from rubintv.models.models_helpers import get_prefix_from_date
 __all__ = [
     "get_image_viewer_link",
     "get_event_page_link",
-    "extract_date_from_url_part",
+    "date_from_url_part",
     "find_location",
     "get_per_day_channels",
     "get_channel_resource_url",
@@ -39,7 +40,7 @@ __all__ = [
 ]
 
 
-def extract_date_from_url_part(url_part: str) -> date:
+def date_from_url_part(url_part: str) -> date:
     try:
         year, month, day = [int(s) for s in url_part.split("-")]
         the_date = date(year, month, day)
@@ -279,7 +280,7 @@ def get_night_reports_page_link(
 
 def get_night_reports_events(
     bucket: Bucket, camera: Camera, day_obs: date
-) -> List[Night_Reports_Event]:
+) -> Tuple[List[Night_Reports_Event], str]:
     prefix = camera.night_reports_prefix
     blobs = get_night_reports_blobs(bucket, prefix, day_obs)
     events = [
@@ -287,23 +288,18 @@ def get_night_reports_events(
         for b in blobs
     ]
     events.sort(key=lambda ev: ev.simplename)
-    return events
 
+    json_files = []
+    plots = []
+    for e in events:
+        if e.file_ext in ["json"]:
+            json_files.append(asdict(e))
+        else:
+            plots.append(e)
 
-def update_night_reports_events(
-    prev_event_stubs: Dict[str, str],
-    bucket: Bucket,
-    camera: Camera,
-    day_obs: date,
-) -> List[Night_Reports_Event]:
-    current_events = get_night_reports_events(bucket, camera, day_obs)
-    prefix = camera.night_reports_prefix
-    prev_events = [
-        Night_Reports_Event(url, prefix, int(timestamp))
-        for url, timestamp in prev_event_stubs.items()
-    ]
-    events = list(set(current_events) - set(prev_events))
-    return events
+    json_data = json.dumps(json_files)
+
+    return (plots, json_data)
 
 
 def get_night_reports_blobs(

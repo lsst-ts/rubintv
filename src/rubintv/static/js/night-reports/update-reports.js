@@ -11,7 +11,7 @@
 
   function success (html) {
     if (html) {
-      $('#night-events-update').html(html)
+      $('#night-reports-update').html(html)
     }
   }
 })(jQuery)

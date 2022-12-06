@@ -101,18 +101,24 @@ class Night_Reports_Event:
     simplename: str = field(init=False)
     name: str = field(init=False)
     obs_date: date = field(init=False)
+    file_ext: str = field(init=False)
 
     def parse_filename(self) -> tuple:
         parts = self.url.split(self.prefix + "/")[-1]
         # use spread in case of extended names later on
         d, *n = parts.split("/")
         obs_date = string_int_to_date(d)
-        simplename = "_".join(n).split(".")[0]
+        simplename, file_ext = "_".join(n).split(".")
         name = simplename.replace("_", " ").title()
-        return (simplename, name, obs_date)
+        return (simplename, name, obs_date, file_ext)
 
     def __post_init__(self) -> None:
-        self.simplename, self.name, self.obs_date = self.parse_filename()
+        (
+            self.simplename,
+            self.name,
+            self.obs_date,
+            self.file_ext,
+        ) = self.parse_filename()
 
 
 def get_current_day_obs() -> date:
