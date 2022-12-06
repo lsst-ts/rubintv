@@ -703,4 +703,15 @@ section {
   display: none;
 }
 
+.dashboard-list {
+  list-style: none;
+  margin-bottom: 2em;
+}
+.dashboard-list li {
+  padding: 4px;
+}
+.dashboard-list li .key:after {
+  content: ":";
+}
+
 /*# sourceMappingURL=main.css.map */
