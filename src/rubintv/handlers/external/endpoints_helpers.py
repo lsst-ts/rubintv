@@ -284,7 +284,9 @@ def get_night_reports_events(
     prefix = camera.night_reports_prefix
     blobs = get_night_reports_blobs(bucket, prefix, day_obs)
     events = [
-        Night_Reports_Event(b.public_url, prefix, int(b.time_created))
+        Night_Reports_Event(
+            b.public_url, prefix, int(b.time_created.timestamp())
+        )
         for b in blobs
     ]
     events.sort(key=lambda ev: ev.simplename)
