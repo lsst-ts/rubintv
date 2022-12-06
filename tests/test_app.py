@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
-from aiohttp import web
 from bs4 import BeautifulSoup
 
 from rubintv.app import create_app
@@ -22,7 +21,7 @@ async def test_successful_app_creation(aiohttp_client: TestClient) -> None:
     name = app["safir/config"].name
     client = await aiohttp_client(app)
     title = app["rubintv/site_title"]
-    response: web.Response = await client.get(f"{name}/")
+    response = await client.get(f"{name}/")
     text = await response.text()
     assert title in text
 
@@ -33,7 +32,7 @@ async def test_home_page(aiohttp_client: TestClient) -> None:
     app = create_app(minimal_data_load=True)
     name = app["safir/config"].name
     client = await aiohttp_client(app)
-    response: web.Response = await client.get(f"{name}/")
+    response = await client.get(f"{name}/")
     html = await response.text()
     parsed = BeautifulSoup(html, "html.parser")
     location_slugs = [loc.slug for loc in locations.values()]
