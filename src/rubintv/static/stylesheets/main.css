@@ -253,6 +253,16 @@ a:hover {
   box-shadow: none;
 }
 
+/* Inline #2 | http://localhost:8000/rubintv */
+.site-host-display {
+  position: fixed;
+  top: 5px;
+  right: 5px;
+  padding: 9px;
+  background: aquamarine;
+  border-radius: 6px;
+}
+
 html {
   font-family: "Rubik", sans-serif;
   font-size: 16px;
