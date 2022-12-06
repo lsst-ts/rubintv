@@ -389,7 +389,8 @@ async def get_night_reports(request: web.Request) -> dict[str, Any]:
     bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
     day_obs = get_current_day_obs()
 
-    events, dashboard_json = get_night_reports_events(bucket, camera, day_obs)
+    events, dashboard_data = get_night_reports_events(bucket, camera, day_obs)
+    dashboard_json = json.dumps(dashboard_data)
 
     return {
         "title": title,
@@ -398,6 +399,7 @@ async def get_night_reports(request: web.Request) -> dict[str, Any]:
         "date": day_obs,
         "events": events,
         "dashboard_json": dashboard_json,
+        "dashboard_data": dashboard_data,
     }
 
 
@@ -422,7 +424,8 @@ async def update_night_reports(request: web.Request) -> dict[str, Any]:
         the_date = day_obs
         message = "It's a new day"
 
-    events, dashboard_json = get_night_reports_events(bucket, camera, the_date)
+    events, dashboard_data = get_night_reports_events(bucket, camera, the_date)
+    dashboard_json = json.dumps(dashboard_data)
 
     return {
         "location": location,
@@ -431,6 +434,7 @@ async def update_night_reports(request: web.Request) -> dict[str, Any]:
         "events": events,
         "message": message,
         "dashboard_json": dashboard_json,
+        "dashboard_data": dashboard_data,
     }
 
 

@@ -1,5 +1,4 @@
 import json
-from dataclasses import asdict
 from datetime import date
 from typing import Any, Dict, List, Tuple
 
@@ -283,24 +282,18 @@ def get_night_reports_events(
 ) -> Tuple[List[Night_Reports_Event], str]:
     prefix = camera.night_reports_prefix
     blobs = get_night_reports_blobs(bucket, prefix, day_obs)
-    events = [
-        Night_Reports_Event(
-            b.public_url, prefix, int(b.time_created.timestamp())
-        )
-        for b in blobs
-    ]
-    events.sort(key=lambda ev: ev.simplename)
-
-    json_files = []
     plots = []
-    for e in events:
-        if e.file_ext in ["json"]:
-            json_files.append(asdict(e))
+    json_data = ""
+    for blob in blobs:
+        if blob.public_url.endswith(".json"):
+            json_data = json.loads(blob.download_as_bytes())
         else:
-            plots.append(e)
-
-    json_data = json.dumps(json_files)
-
+            plots.append(
+                Night_Reports_Event(
+                    blob.public_url, prefix, int(blob.time_created.timestamp())
+                )
+            )
+    plots.sort(key=lambda ev: ev.simplename)
     return (plots, json_data)
 
 

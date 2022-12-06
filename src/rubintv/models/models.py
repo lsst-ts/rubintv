@@ -100,14 +100,18 @@ class Night_Reports_Event:
     timestamp: int
     simplename: str = field(init=False)
     name: str = field(init=False)
-    obs_date: date = field(init=False)
+    _obs_date: date = field(init=False)
     file_ext: str = field(init=False)
+
+    @property
+    def obs_date(self) -> date:
+        return string_int_to_date(self._obs_date)
 
     def parse_filename(self) -> tuple:
         parts = self.url.split(self.prefix + "/")[-1]
         # use spread in case of extended names later on
         d, *n = parts.split("/")
-        obs_date = string_int_to_date(d)
+        obs_date = d
         simplename, file_ext = "_".join(n).split(".")
         name = simplename.replace("_", " ").title()
         return (simplename, name, obs_date, file_ext)
@@ -116,7 +120,7 @@ class Night_Reports_Event:
         (
             self.simplename,
             self.name,
-            self.obs_date,
+            self._obs_date,
             self.file_ext,
         ) = self.parse_filename()
 

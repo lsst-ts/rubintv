@@ -2,12 +2,14 @@
 <div id="night-reports">
   <div class="dashboard">
   {% if dashboard_data %}
-  <dl class="dashboard-list">
-    {% for k,v in dashboard_data.items() %}
-      <dd>k</dd>
-      <dt>v</dt>
+  <ul class="dashboard-list">
+    {% for d in dashboard_data %}
+      <li>
+        <span class="key">{{ d }}</span>
+        <span class="value">{{ dashboard_data[d] }}</span>
+      </li>
     {% endfor %}
-  </dl>
+  </ul>
   {% endif %}
     <script type="application/json" id="dashboard-json">
       {{ dashboard_json|tojson }}
