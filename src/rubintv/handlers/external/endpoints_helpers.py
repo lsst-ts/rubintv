@@ -274,7 +274,7 @@ def get_night_reports_page_link(
     link_url = ""
     if camera.night_reports_prefix:
         app_name = request.config_dict["safir/config"].name
-        link_url = f"/{app_name}/{location.slug}/{camera.slug}/night_reports/"
+        link_url = f"/{app_name}/{location.slug}/{camera.slug}/night_reports"
     return link_url
 
 
