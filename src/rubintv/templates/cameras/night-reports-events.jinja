@@ -1,6 +1,7 @@
 <h3 class="the-date" data-date="{{ date }}">Night reports for: <span class="data">{{ date }}</span></h3>
 <div id="night-reports">
   <div class="dashboard">
+    <pre>{{ dashboard }}</pre>
     <script type="application/json" id="dashboard-json">
       {{ dashboard_json|tojson }}
     </script>
