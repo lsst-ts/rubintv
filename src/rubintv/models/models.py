@@ -100,7 +100,7 @@ class Night_Reports_Event:
     timestamp: int
     simplename: str = field(init=False)
     name: str = field(init=False)
-    _obs_date: date = field(init=False)
+    _obs_date: str = field(init=False)
     file_ext: str = field(init=False)
 
     @property
