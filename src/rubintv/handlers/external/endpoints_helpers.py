@@ -265,7 +265,7 @@ def get_event_page_link(
     event: Event,
 ) -> str:
     return (
-        f"/{location.slug}/{camera.slug}/{channel.endpoint}/"
+        f"{location.slug}/{camera.slug}/{channel.endpoint}/"
         f"{event.clean_date()}/{event.seq}"
     )
 

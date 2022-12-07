@@ -19,6 +19,7 @@ __all__ = [
 ]
 
 import json
+from datetime import date
 from typing import Any, Dict, List
 
 from aiohttp import web
@@ -57,7 +58,7 @@ HEARTBEATS_PREFIX = "heartbeats"
 
 
 @routes.get("")
-@routes.get("/")
+@routes.get("/", name="home")
 @template("home.jinja")
 async def get_page(request: web.Request) -> Dict[str, Any]:
     title = build_title(request=request)
@@ -67,7 +68,7 @@ async def get_page(request: web.Request) -> Dict[str, Any]:
     }
 
 
-@routes.get("/{location}")
+@routes.get("/{location}", name="location")
 @template("location_home.jinja")
 async def get_location_home(request: web.Request) -> Dict[str, Any]:
     location_name = request.match_info["location"]
@@ -76,7 +77,7 @@ async def get_location_home(request: web.Request) -> Dict[str, Any]:
     return {"title": title, "location": location, "cameras": cameras}
 
 
-@routes.get("/{location}/admin")
+@routes.get("/{location}/admin", name="admin")
 @template("admin.jinja")
 async def get_admin_page(request: web.Request) -> Dict[str, Any]:
     location_name = request.match_info["location"]
@@ -213,6 +214,7 @@ async def get_allsky_historical(request: web.Request) -> Dict[str, Any]:
         "years": years,
         "month_names": month_names(),
         "movie": movie,
+        "date": date,
     }
 
 
@@ -251,10 +253,11 @@ async def get_allsky_historical_movie(request: web.Request) -> Dict[str, Any]:
         "year_to_display": year,
         "month_names": month_names(),
         "movie": movie,
+        "date": date,
     }
 
 
-@routes.get("/{location}/{camera}")
+@routes.get("/{location}/{camera}", name="camera")
 async def get_recent_table(request: web.Request) -> web.Response:
     location_name = request.match_info["location"]
     location = find_location(location_name, request)
@@ -372,7 +375,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
     return web.Response(text=json_res, content_type="application/json")
 
 
-@routes.get("/{location}/{camera}/night_reports")
+@routes.get("/{location}/{camera}/night_reports", name="night_reports")
 @template("cameras/night-reports.jinja")
 async def get_night_reports(request: web.Request) -> dict[str, Any]:
     location_name = request.match_info["location"]
@@ -438,7 +441,7 @@ async def update_night_reports(request: web.Request) -> dict[str, Any]:
     }
 
 
-@routes.get("/{location}/{camera}/historical")
+@routes.get("/{location}/{camera}/historical", name="historical")
 @template("cameras/historical.jinja")
 async def get_historical(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]
@@ -481,10 +484,11 @@ async def get_historical(request: web.Request) -> Dict[str, Any]:
         "per_day": per_day,
         "viewer_link": get_image_viewer_link,
         "event_page_link": get_event_page_link,
+        "get_date": date,
     }
 
 
-@routes.get("/{location}/{camera}/historical/{date_str}")
+@routes.get("/{location}/{camera}/historical/{date_str}", name="hist_single")
 @template("cameras/historical.jinja")
 async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]
@@ -525,10 +529,11 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
         "per_day": per_day,
         "viewer_link": get_image_viewer_link,
         "event_page_link": get_event_page_link,
+        "get_date": date,
     }
 
 
-@routes.get("/{location}/{camera}/{channel}events/{date}/{seq}")
+@routes.get("/{location}/{camera}/{channel}events/{date}/{seq}", name="single")
 @template("single_event.jinja")
 async def events(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]
@@ -565,7 +570,7 @@ async def events(request: web.Request) -> Dict[str, Any]:
     }
 
 
-@routes.get("/{location}/{camera}/{channel}_current")
+@routes.get("/{location}/{camera}/{channel}_current", name="current")
 @template("current.jinja")
 async def current(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]

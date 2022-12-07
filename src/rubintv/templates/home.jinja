@@ -6,7 +6,7 @@
       <ul class="locations flr">
         {% for loc in locations.values() %}
           <li>
-            <a class="button button-large" href="/{{ app_name() }}/{{ loc.slug }}">
+            <a class="button button-large" href="{{ url('location', location=loc.slug) }}">
               {{ loc.name }}
             </a>
           </li>

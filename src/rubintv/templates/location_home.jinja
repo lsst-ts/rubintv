@@ -11,7 +11,7 @@
       <ul class="cameras flr">
         {% for cam_name in cam_names %}
           <li>
-            <a class="button button-large" href="/{{ app_name() }}/{{ loc_slug }}/{{ cameras[cam_name].slug }}">
+            <a class="button button-large" href="{{ url('camera', location=loc_slug, camera=cam_name) }}">
               {{ cameras[cam_name].name }}
             </a>
           </li>
@@ -25,7 +25,7 @@
   <div class="admin-access">
     <a
       class="button button-small admin"
-      href="/{{ app_name() }}/{{ location.slug }}/admin">
+      href="{{ url('admin', location=location.slug) }}">
       Admin
     </a>
   </div>

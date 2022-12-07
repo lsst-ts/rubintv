@@ -52,12 +52,6 @@ def create_app(minimal_data_load: bool = False) -> web.Application:
         loader=jinja2.FileSystemLoader(Path(__file__).parent / "templates"),
     )
 
-    def get_app_name() -> str:
-        return root_app["safir/config"].name
-
-    env = aiohttp_jinja2.get_env(sub_app)
-    env.globals.update(app_name=get_app_name)
-
     setup_middleware(sub_app)
     sub_app.add_routes(init_external_routes())
     sub_app.add_routes(
