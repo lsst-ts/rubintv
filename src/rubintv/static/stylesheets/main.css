@@ -356,12 +356,6 @@ section {
   flex-basis: 50%;
 }
 
-.sidebar {
-  flex-basis: 50%;
-  padding-top: 5.6em;
-  background: #fff;
-}
-
 .allsky-current-image, .allsky-current-movie {
   flex-basis: 50%;
 }
@@ -703,15 +697,37 @@ section {
   display: none;
 }
 
-.dashboard-list {
+.dashboard {
+  font-family: "Monaco", monospace, monospace;
+  margin: 2em 0;
+}
+.dashboard ul {
   list-style: none;
-  margin-bottom: 2em;
+  margin-bottom: 1em;
 }
-.dashboard-list li {
-  padding: 4px;
+.dashboard li {
+  border: 1px #555 solid;
+  border-radius: 6px;
+  padding: 11px 18px;
+  margin-bottom: 6px;
+  width: fit-content;
 }
-.dashboard-list li .key:after {
-  content: ":";
+.dashboard li:nth-of-type(2n - 1) {
+  background-color: #f0f0f0;
+}
+
+.plots-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2em;
+}
+
+.plot img {
+  width: 100%;
+  height: auto;
+}
+.plot figcaption {
+  margin-top: 0.5em;
 }
 
 /*# sourceMappingURL=main.css.map */

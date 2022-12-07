@@ -112,8 +112,8 @@ class Night_Reports_Event:
         # use spread in case of extended names later on
         d, *n = parts.split("/")
         obs_date = d
-        simplename, file_ext = "_".join(n).split(".")
-        name = simplename.replace("_", " ").title()
+        simplename, file_ext = ": ".join(n).split(".")
+        name = simplename.replace("_", " ")
         return (simplename, name, obs_date, file_ext)
 
     def __post_init__(self) -> None:

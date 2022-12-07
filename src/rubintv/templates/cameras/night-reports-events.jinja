@@ -1,26 +1,40 @@
 <h3 class="the-date" data-date="{{ date }}">Night reports for: <span class="data">{{ date }}</span></h3>
 <div id="night-reports">
   <div class="dashboard">
-  {% if dashboard_data %}
-  <ul class="dashboard-list">
-    {% for d in dashboard_data %}
-      <li>
-        <span class="key">{{ d }}</span>
-        <span class="value">{{ dashboard_data[d] }}</span>
-      </li>
-    {% endfor %}
-  </ul>
-  {% endif %}
-    <script type="application/json" id="dashboard-json">
-      {{ dashboard_json|tojson }}
-    </script>
+    {% if dashboard_data["text"] %}
+      <ul class="dashboard-text">
+      {% set text_list = dashboard_data["text"] %}
+      {% for text in text_list %}
+        <li>
+          {{ text }}
+        </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if dashboard_data["quantities"] %}
+      <ul class="dashboard-quantities">
+      {% set q_list = dashboard_data["quantities"] %}
+      {% for quantity, measurement in q_list.items() %}
+        <li>
+          {{ quantity }}: {{ measurement }}
+        </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
   </div>
-  {% for event in events %}
-    <figure class="event">
-      <img src="{{ event.url }}?t={{ event.timestamp }}">
-      <figcaption>
-        {{ event.name }}
-      </figcaption>
-    </figure>
-  {% endfor %}
+
+  <div class="plots-grid">
+    {% for plot in plots %}
+      <figure class="plot">
+        <a href="{{ plot.url }}">
+          <img src="{{ plot.url }}?t={{ plot.timestamp }}">
+        </a>
+        <figcaption>
+          {{ plot.name }}
+        </figcaption>
+      </figure>
+    {% endfor %}
+  </div>
+
 </div>

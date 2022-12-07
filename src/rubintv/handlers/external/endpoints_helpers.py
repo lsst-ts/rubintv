@@ -282,14 +282,15 @@ def get_night_reports_page_link(
 
 def get_night_reports_events(
     bucket: Bucket, camera: Camera, day_obs: date
-) -> Tuple[List[Night_Reports_Event], str]:
+) -> Tuple[List[Night_Reports_Event], Dict]:
     prefix = camera.night_reports_prefix
     blobs = get_night_reports_blobs(bucket, prefix, day_obs)
     plots = []
-    json_data = ""
+    json_data = {}
     for blob in blobs:
         if blob.public_url.endswith(".json"):
-            json_data = json.loads(blob.download_as_bytes())
+            json_raw_data = json.loads(blob.download_as_bytes())
+            json_data = process_raw_dashboard_data(json_raw_data)
         else:
             plots.append(
                 Night_Reports_Event(
@@ -307,3 +308,13 @@ def get_night_reports_blobs(
     prefix_with_date = "/".join([prefix, date_str])
     blobs = list(bucket.list_blobs(prefix=prefix_with_date))
     return blobs
+
+
+def process_raw_dashboard_data(
+    raw_data: Dict,
+) -> Dict[str, Any]:
+    text_part = [
+        v for k, v in sorted(raw_data.items()) if k.startswith("text_")
+    ]
+    quantity_part = {k: v for k, v in raw_data.items() if v not in text_part}
+    return {"text": text_part, "quantities": quantity_part}
