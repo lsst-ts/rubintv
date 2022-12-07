@@ -253,9 +253,9 @@ a:hover {
   box-shadow: none;
 }
 
-/* Inline #2 | http://localhost:8000/rubintv */
 .site-host-display {
   position: fixed;
+  z-index: 24;
   top: 5px;
   right: 5px;
   padding: 9px;
