@@ -261,6 +261,9 @@ a:hover {
   padding: 9px;
   background: aquamarine;
   border-radius: 6px;
+  font-size: 3em;
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 html {

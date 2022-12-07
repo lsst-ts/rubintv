@@ -4,7 +4,7 @@
     display.push('localhost')
   }
   if (window.location.pathname.includes('-dev')) {
-    display.push('dev')
+    display.push('development')
   }
   if (display.length > 0) {
     const displayEl = document.createElement('div')
