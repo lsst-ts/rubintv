@@ -427,14 +427,14 @@ async def update_night_reports(request: web.Request) -> dict[str, Any]:
         the_date = day_obs
         message = "It's a new day"
 
-    events, dashboard_data = get_night_reports_events(bucket, camera, the_date)
+    plots, dashboard_data = get_night_reports_events(bucket, camera, day_obs)
     dashboard_json = json.dumps(dashboard_data)
 
     return {
         "location": location,
         "camera": camera,
         "date": the_date,
-        "events": events,
+        "plots": plots,
         "message": message,
         "dashboard_json": dashboard_json,
         "dashboard_data": dashboard_data,
