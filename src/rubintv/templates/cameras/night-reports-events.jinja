@@ -6,7 +6,9 @@
       {% set text_list = dashboard_data["text"] %}
       {% for text in text_list %}
         <li>
-          {{ text }}
+          {% for line in text %}
+            <p>{{ line }}</p>
+          {% endfor %}
         </li>
       {% endfor %}
     </ul>

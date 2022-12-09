@@ -316,5 +316,6 @@ def process_raw_dashboard_data(
     text_part = [
         v for k, v in sorted(raw_data.items()) if k.startswith("text_")
     ]
-    quantity_part = {k: v for k, v in raw_data.items() if v not in text_part}
-    return {"text": text_part, "quantities": quantity_part}
+    quantity = {k: v for k, v in raw_data.items() if v not in text_part}
+    text = [line.split("\n") for line in text_part]
+    return {"text": text, "quantities": quantity}
