@@ -79,6 +79,30 @@ body {
 .grid-cell.measured {
   background-color: #7dc8cf;
 }
+.grid-cell.u_color {
+  background-color: #E2D7FF;
+}
+.grid-cell.g_color {
+  background-color: #E7FFD7;
+}
+.grid-cell.r_color {
+  background-color: #FFD7D7;
+}
+.grid-cell.i_color {
+  background-color: #D7F3FF;
+}
+.grid-cell.z_color {
+  background-color: #FFD7FF;
+}
+.grid-cell.y_color {
+  background-color: #FFEED7;
+}
+.grid-cell.white_color {
+  background-color: #fefefe;
+}
+.grid-cell.rainbow_color {
+  background: linear-gradient(90deg, #fec8c9 0%, #f5dece 16%, #f5f8cd 28%, #e0f5d1 50%, #c9d2fe 66%, #dcddfe 83%, #f1dafe 100%);
+}
 
 .calendar {
   width: 100%;
@@ -541,6 +565,7 @@ section {
 
 .table-controls {
   display: none;
+  grid-template-columns: 1fr 1fr;
   position: absolute;
   padding: 20px;
   margin: -3px -21px;
@@ -559,7 +584,7 @@ section {
 }
 
 .table-panel.open .table-controls {
-  display: block;
+  display: grid;
 }
 .table-panel.open .table-control-button::after {
   transform: rotate(180deg);

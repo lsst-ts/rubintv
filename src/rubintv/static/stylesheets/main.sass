@@ -306,6 +306,7 @@ section
 
 .table-controls
 	display: none
+	grid-template-columns: 1fr 1fr
 	position: absolute
 	padding: 20px
 	margin: -3px -21px
@@ -322,7 +323,7 @@ section
 
 .table-panel.open
 	.table-controls
-		display: block
+		display: grid
 	.table-control-button::after
 		transform: rotate(180deg)
 
