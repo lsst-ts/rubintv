@@ -210,14 +210,27 @@ h6 {
   justify-content: end;
   text-decoration: none;
   box-shadow: 2.5px 2.5px 4px rgba(0, 0, 0, 0.26);
-  transition: box-shadow 0.2s;
+  transition: 0.2s;
   padding: 0.5em;
+}
+.button:hover {
+  box-shadow: none;
 }
 
 .button-large {
   width: 200px;
   height: 144px;
-  padding: 1.5em;
+  padding: 1em 1.2em;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.button-large.logo:not([style*=".svg"]) {
+  color: #fff;
+  text-shadow: 1px 1px 3px #000;
+  background-size: cover;
+}
+.button-large:hover {
+  transform: scale(0.992);
 }
 
 .button-small {
@@ -247,10 +260,6 @@ a {
 }
 a:hover {
   text-decoration: underline;
-}
-
-.button:hover {
-  box-shadow: none;
 }
 
 .site-host-display {

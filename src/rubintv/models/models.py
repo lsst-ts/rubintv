@@ -52,6 +52,7 @@ class Location:
     bucket: str
     services: list[str]
     slug: str = ""
+    logo: str = ""
     camera_groups: dict[str, list[str]] = field(default_factory=dict)
 
     def all_cameras(self) -> list[str]:

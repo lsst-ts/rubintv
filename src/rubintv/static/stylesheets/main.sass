@@ -28,13 +28,24 @@
 	justify-content: end
 	text-decoration: none
 	box-shadow: 2.5px 2.5px 4px rgba(0, 0, 0, 0.26)
-	transition: box-shadow 0.2s
+	transition: 0.2s
 	padding: 0.5em
+	&:hover
+		box-shadow: none
 
 .button-large
 	width: 200px
 	height: 144px
-	padding: 1.5em
+	padding: 1em 1.2em
+	&.logo
+	background-position: center
+	background-repeat: no-repeat
+	&.logo:not([style*='.svg'])
+		color: #fff
+		text-shadow: 1px 1px 3px #000
+		background-size: cover
+	&:hover
+		transform: scale(0.992)
 
 .button-small
 	padding: 1em
@@ -53,14 +64,12 @@
 		width: 16px
 		height: 16px
 
+
 a
 	text-decoration: none
 	display: block
 	&:hover
 		text-decoration: underline
-
-.button:hover
-	box-shadow: none
 
 
 .site-host-display

@@ -2,6 +2,7 @@ Locations:
   slac:
     name: SLAC
     bucket: rubintv_data_slac
+    logo: SLAC_Logo.svg
     camera_groups:
       Cameras: [ ir2, ts8 ]
     services: []
@@ -9,6 +10,7 @@ Locations:
   tucson:
     name: Tucson
     bucket: rubintv_data_tts
+    logo: cactus.svg
     camera_groups:
       Cameras: [ auxtel ]
     services: [ auxtel, misc ]
@@ -16,6 +18,7 @@ Locations:
   summit:
     name: Summit
     bucket: rubintv_data
+    logo: Summit.jpg
     camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
       Other Cameras: [ allsky, startracker, startracker-wide ]

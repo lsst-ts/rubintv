@@ -6,7 +6,10 @@
       <ul class="locations flr">
         {% for loc in locations.values() %}
           <li>
-            <a class="button button-large" href="{{ url('location', location=loc.slug) }}">
+            <a
+                class="button button-large logo"
+                href="{{ url('location', location=loc.slug) }}"
+                style="background-image: url({{ url('static', filename='images/' + loc.logo) }})">
               {{ loc.name }}
             </a>
           </li>
