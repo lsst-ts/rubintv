@@ -38,8 +38,8 @@
 	height: 144px
 	padding: 1em 1.2em
 	&.logo
-	background-position: center
-	background-repeat: no-repeat
+		background-position: center
+		background-repeat: no-repeat
 	&.logo:not([style*='.svg'])
 		color: #fff
 		text-shadow: 1px 1px 3px #000
@@ -291,7 +291,7 @@ section
 
 .table-panel
 	background: #eee
-	padding: 1.2em 19px
+	padding: 0.8em 19px
 	border-radius: 20px
 	margin: 0 1em
 
@@ -308,18 +308,26 @@ section
 	display: none
 	grid-template-columns: 1fr 1fr
 	position: absolute
-	padding: 20px
-	margin: -3px -21px
-	border: 2px #fff solid
+	padding: 3px 3px 20px
+	margin: 20px -21px
 	border-top: none
-	background: #eee
+	background: #fff
+	box-shadow: 3px 2px 6px rgba(0,0,0,0.2)
 	label
 		padding: 3px 0px
 		display: flex
 		flex-direction: row
 		align-items: center
-		&:hover
-			background: #ddd
+		user-select: none
+
+.table-control
+	padding: 2px 1em
+	&:hover
+		background: #ddd
+	&.toggle
+		background: #6d6d6d
+		color: #fff
+		border-radius: 0 0 6px
 
 .table-panel.open
 	.table-controls

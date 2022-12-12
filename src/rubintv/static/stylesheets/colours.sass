@@ -39,6 +39,12 @@ body
 	background-color: #fda529
 
 
+$filters: ("u_color": #d9f3fd, "g_color": #e7fdd9, "r_color": #fdd7d7, "i_color": #e2d9fd, "z_color": #fdd9fd, "y_color": #ffeed9)
+
+@each $name, $color in $filters
+	.grid-cell.#{$name}
+		background-color: lighten($color, 40%)
+
 .grid-cell
 	&.group-a
 		background-color: #e0e0e0
@@ -50,18 +56,7 @@ body
 		background-color: #b3f1a7
 	&.measured
 		background-color: #7dc8cf
-	&.u_color
-		background-color: #E2D7FF
-	&.g_color
-		background-color: #E7FFD7
-	&.r_color
-		background-color: #FFD7D7
-	&.i_color
-		background-color: #D7F3FF
-	&.z_color
-		background-color: #FFD7FF
-	&.y_color
-		background-color: #FFEED7
+
 	&.white_color
 		background-color: #fefefe
 	&.rainbow_color
