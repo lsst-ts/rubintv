@@ -222,16 +222,18 @@ def get_heartbeats(bucket: Bucket, prefix: str) -> List[Dict]:
     hb_blobs = list(bucket.list_blobs(prefix=prefix))
     heartbeats = []
     for hb_blob in hb_blobs:
+        blob_content = None
         try:
             the_blob = bucket.get_blob(hb_blob.name)
-            blob_content = the_blob.download_as_string()
+            blob_content = the_blob.download_as_bytes()
         except NotFound:
             print(f"Error: {hb_blob.name} not found.")
         if not blob_content:
             continue
-        hb = json.loads(blob_content)
-        hb["url"] = hb_blob.name
-        heartbeats.append(hb)
+        else:
+            hb = json.loads(blob_content)
+            hb["url"] = hb_blob.name
+            heartbeats.append(hb)
     return heartbeats
 
 
