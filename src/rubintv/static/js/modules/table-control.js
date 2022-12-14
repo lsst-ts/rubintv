@@ -7,14 +7,23 @@ import {
 export class TableControls {
   constructor (defaultAttrs, metaData, elementToAppendTo, drawToTableCallback) {
     this.defaultAttrs = defaultAttrs
-    this.selected = defaultAttrs
     this.metaData = metaData
     this.attributes = this.getAttributesFrom(metaData)
+    this.selected = this.retrieveSelected() || defaultAttrs
     this.elementToAppendTo = elementToAppendTo
     this.drawToTableCallback = drawToTableCallback
 
     this.controlsOpen = false
     this.toggleAll = false
+  }
+
+  retrieveSelected () {
+    const retrieved = localStorage.selected
+    return (retrieved && JSON.parse(retrieved))
+  }
+
+  storeSelected (selected) {
+    localStorage.selected = JSON.stringify(selected)
   }
 
   updateMetadata (metaData) {
@@ -36,7 +45,7 @@ export class TableControls {
     const button = _elWithAttrs('button', { class: 'table-control-button', text: 'Add/Remove Columns' })
     panel.appendChild(button)
 
-    const toggleAllLabel = _elWithAttrs('label', { for: 'toggle-all', text: 'Toggle all/default' })
+    const toggleAllLabel = _elWithAttrs('label', { for: 'toggle-all', text: 'Toggle all' })
     const toggleAllBox = _elWithAttrs('input', { type: 'checkbox', id: 'toggle-all', name: 'toggle-all', value: 1 })
     if (this.toggleAll) { toggleAllBox.checked = true }
     const control = _elWithClass('div', 'table-control toggle')
@@ -131,6 +140,7 @@ export class TableControls {
         this.drawToTableCallback(this.metaData, [thisEl.name])
       }
     }
+    this.storeSelected(this.selected)
   }
 
   drawJumpButtonControls () {
