@@ -6,13 +6,12 @@
 <section class="calendar">
   {% include "cameras/calendar.jinja" %}
 </section>
-<section class="channel-day-data">
+<section id="channel-day-data">
   {% include "cameras/per-day-channels.jinja" %}
   {% include "cameras/data-table-header.jinja" %}
 </section>
 {% endblock content %}
 {% block footer_scripts %}
   {% set cam_js_filename = "js/camera-calendar/camera-calendar-" + camera.slug + ".js" %}
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
   <script type=module src="{{ url('static', filename=cam_js_filename) }}"></script>
 {% endblock footer_scripts %}

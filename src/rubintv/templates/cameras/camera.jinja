@@ -50,14 +50,13 @@
     </div>
   </div>
 
-    <section class="channel-day-data">
+    <section id="channel-day-data">
       {% include "cameras/data-table-header.jinja" %}
     </section>
 {% endblock content %}
 
 {% block footer_scripts %}
   {% set cam_js_filename = "js/refresh-table/refresh-table-" + camera.slug + ".js" %}
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
   <script type="module" src='{{ url("static", filename=cam_js_filename) }}'></script>
   <script type="module" src="{{ url('static', filename='js/camera-status.js') }}"></script>
 {% endblock footer_scripts  %}

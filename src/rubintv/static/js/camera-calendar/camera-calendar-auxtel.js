@@ -1,13 +1,14 @@
-/* global jQuery */
-import { createTableControlUI, parseJsonFromDOM, addDownloadMetadataButton } from '../modules/table-control.js'
+import { TableControls } from '../modules/table-control.js'
+import { parseJsonFromDOM } from '../modules/utils.js'
 import { auxtelDefaultSelected } from '../models.js'
 import { addToTable } from '../modules/table-auxtel.js'
 import { applyYearControls } from '../modules/calendar-controls.js'
 
-(function ($) {
+window.addEventListener('DOMContentLoaded', () => {
   const meta = parseJsonFromDOM('#table-metadata')
-  createTableControlUI(meta, $('.channel-grid-heading'), auxtelDefaultSelected, addToTable)
-  addDownloadMetadataButton(meta)
-  addToTable(meta, auxtelDefaultSelected, true)
+  const tableUI = new TableControls(auxtelDefaultSelected, meta, '.channel-grid-heading', addToTable)
+  tableUI.updateMetadata(meta)
+  tableUI.draw()
+  addToTable(meta, auxtelDefaultSelected)
   applyYearControls()
-})(jQuery)
+})

@@ -1,5 +1,5 @@
 /* global $ */
-import { makeTableSortable, createTableCell, indicatorForAttr } from './table-control.js'
+import { makeTableSortable, createTableCell, indicatorForAttr, _escapeName } from './utils.js'
 
 // headerGroups is an array of arrays
 export function addToTable (metaData, headerGroups, sortable = false) {
@@ -53,8 +53,4 @@ export function addToTable (metaData, headerGroups, sortable = false) {
   if (sortable) {
     makeTableSortable()
   }
-}
-
-function _escapeName (displayName) {
-  return displayName.toLowerCase().replaceAll(' ', '_')
 }

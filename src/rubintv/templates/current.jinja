@@ -1,5 +1,4 @@
 {% extends "single_event.jinja" %}
 {% block footer_scripts %}
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script type=text/javascript src="{{ url('static', filename='js/refresh-current.js') }}"></script>
+<script type=module src="{{ url('static', filename='js/refresh-current.js') }}"></script>
 {% endblock footer_scripts %}

@@ -1,17 +1,17 @@
-/* global jQuery */
+import { _getById, getHtml } from '../modules/utils.js'
 
-(function ($) {
+window.addEventListener('DOMContentLoaded', function () {
   setInterval(updateEvents, 5000)
 
   function updateEvents () {
-    const theDate = $('[data-date]').attr('data-date')
+    const theDate = _getById('the-date').dataset.date
     const url = window.location + '/update/' + theDate
-    $.get(url, success, 'html')
+    getHtml(url).then(success)
   }
 
   function success (html) {
     if (html) {
-      $('#night-reports-update').html(html)
+      _getById('night-reports-update').innerHTML = html
     }
   }
-})(jQuery)
+})

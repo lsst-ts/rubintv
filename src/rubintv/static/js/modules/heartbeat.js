@@ -1,4 +1,4 @@
-/* global $ */
+import { getJson, _getById } from './utils.js'
 
 // heartbeat data structure:
 // {
@@ -17,7 +17,7 @@ export class ChannelStatus {
   constructor (service, dependency = null) {
     this.service = service
     this.dependency = dependency
-    this.$el = $(`#${this.service}`)
+    this.el = _getById(this.service)
     this.time = 0
     this.next = 0
     this.updateHeartbeatData()
@@ -62,12 +62,12 @@ export class ChannelStatus {
     this.alive = false
     const self = this
 
-    $.get(`admin/heartbeat/${this.service}`, (heartbeat) => {
-      if (!$.isEmptyObject(heartbeat)) {
+    getJson(`admin/heartbeat/${this.service}`).then(heartbeat => {
+      if (Object.keys(heartbeat).length > 0) {
         self.consumeHeartbeat(heartbeat)
         this.alive = true
       }
-    }).always(() => {
+    }).finally(() => {
       self.displayStatus(this.alive)
       self.waitForNextHeartbeat()
     })
@@ -82,14 +82,18 @@ export class ChannelStatus {
       ? new Date(this.next * 1000).toLocaleString('en-US', { timeZone: 'UTC' })
       : new Date((this.nowTimestamp + this.RETRY) * 1000).toLocaleString('en-US', { timeZone: 'UTC' })
 
-    this.$el.attr({ title: `last heartbeat at: ${time}\nnext check at: ${next} UTC` })
+    this.el.setAttribute('title', `last heartbeat at: ${time}\nnext check at: ${next} UTC`)
   }
 
   displayStatus (alive = true) {
+    // some classes have no display on a page so skip
+    // if there's no page element
+    if (!this.el) return
     if (alive) {
-      this.$el.removeClass('stopped').addClass(this.status)
+      this.el.classList.remove('stopped')
+      this.el.classList.add(this.status)
     } else {
-      this.$el.removeClass('stopped active')
+      this.el.classList.remove('stopped', 'active')
     }
     this.displayHeartbeatInfo()
   }

@@ -1,7 +1,6 @@
-/* global jQuery */
 import { ChannelStatus } from './modules/heartbeat.js'
 
-(function ($) {
+window.addEventListener('DOMContentLoaded', function () {
   const services = Array.from(document.querySelectorAll('.service')
     .values())
     // eslint-disable-next-line no-new-object
@@ -17,4 +16,4 @@ import { ChannelStatus } from './modules/heartbeat.js'
 
   services
     .map(s => new ChannelStatus(s.id, dependencies[s.dependentOn]))
-})(jQuery)
+})

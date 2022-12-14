@@ -1,31 +1,32 @@
-/* global jQuery */
 import { ChannelStatus } from '../modules/heartbeat.js'
+import { getJson } from '../modules/utils.js'
 
-(function ($) {
+window.addEventListener('DOMContentLoaded', () => {
   const urlPath = document.location.pathname
-  const currentImage = $('.current-still')
-  const currentMovie = $('.current-movie')
+  const currentImage = document.querySelector('.current-still')
+  const currentMovie = document.querySelector('.current-movie')
 
   setInterval(function refresh () {
-    $.get(urlPath + '/update/image', function (data) {
+    getJson(urlPath + '/update/image').then(data => {
       if (data.channel === 'image') {
-        currentImage.find('img').attr({ src: data.url })
-        currentImage.find('a').attr({ href: data.url })
-        currentImage.find('.subheader h3').text(`${data.date} : Image ${data.seq}`)
-        currentImage.find('.desc').text(data.name)
+        currentImage.querySelector('img').setAttribute('src', data.url)
+        currentImage.querySelector('a').setAttribute('href', data.url)
+        currentImage.querySelector('.subheader h3').textContent = `${data.date} : Image ${data.seq}`
+        currentImage.querySelector('.desc').textContent = data.name
       }
     })
   }, 5000)
 
   const videoCheckLatest = function () {
-    const video = currentMovie.find('video')[0]
-    $.get(urlPath + '/update/movie', function (data) {
-      const currentMovieUrl = $(video).find('source').attr('src')
+    const video = currentMovie.querySelector('video')
+    getJson(urlPath + '/update/movie').then(data => {
+      const source = video.querySelector('source')
+      const currentMovieUrl = source.getAttribute('src')
       if (data.channel === 'movie' && data.url !== currentMovieUrl) {
-        $(video).find('source').attr({ src: data.url })
-        currentMovie.find('.movie-date').text(data.date)
-        currentMovie.find('.movie-number').text(data.seq)
-        currentMovie.find('.desc').text(data.name)
+        source.setAttribute('src', data.url)
+        currentMovie.querySelector('.movie-date').textContent(data.date)
+        currentMovie.querySelector('.movie-number').textContent(data.seq)
+        currentMovie.querySelector('.desc').textContent(data.name)
         video.load()
       }
     })
@@ -34,4 +35,4 @@ import { ChannelStatus } from '../modules/heartbeat.js'
 
   const status = new ChannelStatus('allsky')
   console.log(JSON.stringify(status))
-})(jQuery)
+})

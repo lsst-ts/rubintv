@@ -1,9 +1,12 @@
-/* global jQuery */
+import { _elWithAttrs, getHtml, _getById } from './modules/utils.js'
 
-(function ($) {
+window.addEventListener('DOMContentLoaded', function () {
   setInterval(function () {
-    $.get(window.location.href, function (html) {
-      $('#refresher').replaceWith($(html).find('#refresher'))
+    getHtml(window.location.href).then(htmlString => {
+      const temp = _elWithAttrs('div')
+      temp.innerHTML = htmlString
+      const replacementHtml = temp.querySelector('#refresher').innerHTML
+      _getById('refresher').innerHTML = replacementHtml
     })
   }, 5000)
-})(jQuery)
+})
