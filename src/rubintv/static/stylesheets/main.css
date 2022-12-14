@@ -713,10 +713,12 @@ section {
   width: 50px;
   background-image: none;
 }
-.channel.active {
+
+.channel.active .heartbeat {
   background-image: none;
 }
-.channel.stopped {
+
+.channel.stopped .heartbeat {
   background-image: url(/rubintv/static/images/heartbeat_channel_stopped.svg);
 }
 
