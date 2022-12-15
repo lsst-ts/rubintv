@@ -1,6 +1,6 @@
 import { _getById, getHtml } from '../modules/utils.js'
 
-window.addEventListener('DOMContentLoaded', function () {
+window.addEventListener('load', function () {
   setInterval(updateEvents, 5000)
 
   function updateEvents () {

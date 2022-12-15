@@ -4,7 +4,7 @@ import { auxtelDefaultSelected } from '../models.js'
 import { addToTable } from '../modules/table-auxtel.js'
 import { applyYearControls } from '../modules/calendar-controls.js'
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('load', () => {
   const meta = parseJsonFromDOM('#table-metadata')
   const tableUI = new TableControls(auxtelDefaultSelected, meta, '.channel-grid-heading', addToTable)
   tableUI.updateMetadata(meta)

@@ -4,16 +4,16 @@ export function refreshTableLoop (injectHTMLCallback, doUpdatingCallback, select
   setInterval(function () {
     const date = _getById('the-date').dataset.date
     const urlPath = document.location.pathname
-    getJson(urlPath + '/update/' + date)
-      .then((htmlParts) => {
-        injectHTMLCallback(htmlParts)
-        const meta = parseJsonFromDOM('#table-metadata')
-        if (Object.keys(meta).length !== 0) {
-          doUpdatingCallback(meta, selected)
-        }
-      })
-      .catch(() => {
-        console.log("Couldn't reach server")
+    const promise = getJson(urlPath + '/update/' + date)
+    promise.then((htmlParts) => {
+      injectHTMLCallback(htmlParts)
+      const meta = parseJsonFromDOM('#table-metadata')
+      if (Object.keys(meta).length !== 0) {
+        doUpdatingCallback(meta, selected)
+      }
+    })
+      .catch((e) => {
+        console.warn("Couldn't reach server: Unable to refresh table")
       })
   }, periodInSecs * 1000)
 }

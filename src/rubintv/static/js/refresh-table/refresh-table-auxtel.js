@@ -4,7 +4,7 @@ import { addToTable } from '../modules/table-auxtel.js'
 import { refreshTableLoop } from '../modules/table-refresher.js'
 import { auxtelDefaultSelected } from '../models.js'
 
-window.addEventListener('DOMContentLoaded', function () {
+window.addEventListener('load', function () {
   const meta = parseJsonFromDOM('#table-metadata')
 
   const tableControls = new TableControls(auxtelDefaultSelected, meta, '#table-controls', addToTable)

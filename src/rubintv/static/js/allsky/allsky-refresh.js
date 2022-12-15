@@ -1,7 +1,7 @@
 import { ChannelStatus } from '../modules/heartbeat.js'
 import { getJson } from '../modules/utils.js'
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('load', () => {
   const urlPath = document.location.pathname
   const currentImage = document.querySelector('.current-still')
   const currentMovie = document.querySelector('.current-movie')

@@ -3,7 +3,7 @@ import { addToTable } from '../modules/table-startracker.js'
 import { starTrackerWideHeaders } from '../models.js'
 import { refreshTableLoop } from '../modules/table-refresher.js'
 
-window.addEventListener('DOMContentLoaded', function () {
+window.addEventListener('load', function () {
   const meta = parseJsonFromDOM('#table-metadata')
   const headers = starTrackerWideHeaders
 

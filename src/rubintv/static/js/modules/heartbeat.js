@@ -62,7 +62,8 @@ export class ChannelStatus {
     this.alive = false
     const self = this
 
-    getJson(`admin/heartbeat/${this.service}`).then(heartbeat => {
+    const promise = getJson(`admin/heartbeat/${this.service}`)
+    promise.then(heartbeat => {
       if (Object.keys(heartbeat).length > 0) {
         self.consumeHeartbeat(heartbeat)
         this.alive = true
@@ -70,6 +71,8 @@ export class ChannelStatus {
     }).finally(() => {
       self.displayStatus(this.alive)
       self.waitForNextHeartbeat()
+    }).catch((e) => {
+      console.warn("Couldn't reach server: Unable to retrieve heartbeats")
     })
   }
 
