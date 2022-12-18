@@ -465,14 +465,14 @@ async def get_historical(request: web.Request) -> Dict[str, Any]:
 
         years = historical.get_camera_calendar(camera)
 
-        smrd = historical.get_most_recent_day(camera)
-        smrd_dict = historical.get_events_for_date(camera, smrd)
-        metadata_json = get_metadata_json(bucket, camera, smrd)
-        smrd_events = make_table_rows_from_columns_by_seq(
-            smrd_dict, metadata_json
+        day_obs = historical.get_most_recent_day(camera)
+        mrd_dict = historical.get_events_for_date(camera, day_obs)
+        metadata_json = get_metadata_json(bucket, camera, day_obs)
+        mrd_events = make_table_rows_from_columns_by_seq(
+            mrd_dict, metadata_json
         )
 
-        per_day = get_per_day_channels(bucket, camera, smrd, logger)
+        per_day = get_per_day_channels(bucket, camera, day_obs, logger)
 
     logger.info("get_historical", duration=timer.seconds)
     return {
@@ -482,8 +482,8 @@ async def get_historical(request: web.Request) -> Dict[str, Any]:
         "year_to_display": year_to_display,
         "years": years,
         "month_names": month_names(),
-        "date": smrd,
-        "events": smrd_events,
+        "date": day_obs,
+        "events": mrd_events,
         "metadata": metadata_json,
         "per_day": per_day,
         "viewer_link": get_image_viewer_link,
