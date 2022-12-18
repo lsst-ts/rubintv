@@ -283,7 +283,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
                 bucket, camera, historical
             )
 
-            metadata_json = get_metadata_json(bucket, camera, the_date, logger)
+            metadata_json = get_metadata_json(bucket, camera, the_date)
             per_day = get_per_day_channels(bucket, camera, the_date, logger)
 
             night_reports_link = get_night_reports_page_link(
@@ -348,9 +348,11 @@ async def update_todays_table(request: web.Request) -> web.Response:
             bucket, camera, recent_events, the_date
         )
 
-        events = make_table_rows_from_columns_by_seq(events_dict)
+        metadata_json = get_metadata_json(bucket, camera, the_date)
+        events = make_table_rows_from_columns_by_seq(
+            events_dict, metadata_json
+        )
 
-        metadata_json = get_metadata_json(bucket, camera, the_date, logger)
         per_day = get_per_day_channels(bucket, camera, the_date, logger)
 
         context = {
@@ -465,9 +467,11 @@ async def get_historical(request: web.Request) -> Dict[str, Any]:
 
         smrd = historical.get_most_recent_day(camera)
         smrd_dict = historical.get_events_for_date(camera, smrd)
-        smrd_events = make_table_rows_from_columns_by_seq(smrd_dict)
+        metadata_json = get_metadata_json(bucket, camera, smrd)
+        smrd_events = make_table_rows_from_columns_by_seq(
+            smrd_dict, metadata_json
+        )
 
-        metadata_json = get_metadata_json(bucket, camera, smrd, logger)
         per_day = get_per_day_channels(bucket, camera, smrd, logger)
 
     logger.info("get_historical", duration=timer.seconds)
@@ -511,12 +515,12 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
     if not [v for values in day_dict.values() for v in values]:
         raise web.HTTPNotFound
 
-    day_events = make_table_rows_from_columns_by_seq(day_dict)
+    metadata_json = get_metadata_json(bucket, camera, the_date)
+    day_events = make_table_rows_from_columns_by_seq(day_dict, metadata_json)
 
     years = historical.get_camera_calendar(camera)
 
     per_day = get_per_day_channels(bucket, camera, the_date, logger)
-    metadata_json = get_metadata_json(bucket, camera, the_date, logger)
     return {
         "title": title,
         "location": location,

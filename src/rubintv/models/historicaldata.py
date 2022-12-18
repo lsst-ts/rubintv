@@ -67,7 +67,7 @@ class HistoricalData:
             if not camera.online:
                 continue
             # date for which there are known to be blobs
-            the_date = date(2022, 11, 28)
+            the_date = date(2022, 12, 15)
             channel: Channel
             for channel in camera.channels.values():
                 prefix = get_prefix_from_date(channel.prefix, the_date)

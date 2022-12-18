@@ -106,9 +106,7 @@ def get_channel_resource_url(
     return url
 
 
-def get_metadata_json(
-    bucket: Bucket, camera: Camera, a_date: date, logger: Any
-) -> Dict:
+def get_metadata_json(bucket: Bucket, camera: Camera, a_date: date) -> Dict:
     date_str = date_without_hyphens(a_date)
     blob_name = f"{camera.metadata_slug}_metadata/dayObs_{date_str}.json"
     metadata_json = "{}"
@@ -141,7 +139,7 @@ def build_dict_with_remaining_channels(
 
 
 def make_table_rows_from_columns_by_seq(
-    events_dict: Dict,
+    events_dict: Dict, metadata: Dict
 ) -> Dict[int, dict[str, Event]]:
     d: Dict[int, dict[str, Event]] = {}
     # d == {seq: {chan1: event, chan2: event, ... }}
@@ -152,9 +150,13 @@ def make_table_rows_from_columns_by_seq(
                 d[e.seq].update({chan: e})
             else:
                 d.update({e.seq: {chan: e}})
-    d = {
-        k: v for k, v in sorted(d.items(), reverse=True)
-    }  # make sure the table is in order
+    # add an empty row for sequence numbers found only in metadata
+    for seq_str in metadata:
+        seq = int(seq_str)
+        if seq not in d:
+            d[seq] = {}
+    # make sure the table is in order
+    d = {k: v for k, v in sorted(d.items(), reverse=True)}
     return d
 
 
@@ -175,7 +177,8 @@ def get_most_recent_day_events(
         the_date = historical.get_most_recent_day(camera)
         events_dict = historical.get_events_for_date(camera, the_date)
 
-    todays_events = make_table_rows_from_columns_by_seq(events_dict)
+    metadata = get_metadata_json(bucket, camera, the_date)
+    todays_events = make_table_rows_from_columns_by_seq(events_dict, metadata)
     return (the_date, todays_events)
 
 
