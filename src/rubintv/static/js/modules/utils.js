@@ -62,8 +62,21 @@ const cyrb53 = (str, seed = 0) => {
   return 4294967296 * (2097151 & h2) + (h1 >>> 0)
 }
 
-export function _escapeName (displayName) {
-  return 'c_' + cyrb53(displayName)
+function hashCacher (_attrName) {
+  const cache = {}
+  return function (attrName) {
+    if (cache[attrName]) {
+      return cache[attrName]
+    }
+    const result = cyrb53(attrName)
+    cache[attrName] = result
+    return result
+  }
+}
+
+const cachedHash = hashCacher()
+export function _escapeName (attrName) {
+  return 'c_' + cachedHash(attrName)
 }
 
 export function parseJsonFromDOM (element) {
