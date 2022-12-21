@@ -118,10 +118,10 @@ Cameras:
     channels:
       focal_plane_mosiac:
         name: Focal Plane Mosiac
-        prefix: focal_plane_mosiac
+        prefix: ir2_focal_plane_mosiac
       noise_map:
         name: Noise Map
-        prefix: noise_map
+        prefix: ir2_noise_map
 
   ts8:
     name: TS8
@@ -129,10 +129,10 @@ Cameras:
     channels:
       focal_plane_mosiac:
         name: Focal Plane Mosiac
-        prefix: focal_plane_mosiac
+        prefix: ts8_focal_plane_mosiac
       noise_map:
         name: Noise Map
-        prefix: noise_map
+        prefix: ts8_noise_map
 
 
 Services:
