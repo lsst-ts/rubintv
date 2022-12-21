@@ -172,10 +172,12 @@ def get_most_recent_day_events(
         if events_found:
             events[channel] = events_found
             the_date = obs_date
-    if not events and not metadata:
-        the_date = historical.get_most_recent_day(camera)
-        events = historical.get_events_for_date(camera, the_date)
-        metadata = get_metadata_json(bucket, camera, the_date)
+    if not events:
+        the_date = obs_date
+        if not metadata:
+            the_date = historical.get_most_recent_day(camera)
+            events = historical.get_events_for_date(camera, the_date)
+            metadata = get_metadata_json(bucket, camera, the_date)
 
     todays_events = make_table_rows_from_columns_by_seq(events, metadata)
     return (the_date, todays_events)
