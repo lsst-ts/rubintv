@@ -59,3 +59,5 @@ export const starTrackerWideHeaders = {
     'RMS scatter pixels wide'
   ]
 }
+
+export const slacDefault = {}

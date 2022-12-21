@@ -9,12 +9,18 @@ export class TableControls {
     this.defaultAttrs = defaultAttrs
     this.metaData = metaData
     this.attributes = this.getAttributesFrom(metaData)
-    this.selected = this.retrieveSelected() || defaultAttrs
+    const saved = this.retrieveSelected()
+    this.selected = saved ? this.union(saved, defaultAttrs) : defaultAttrs
     this.elementToAppendTo = elementToAppendTo
     this.drawToTableCallback = drawToTableCallback
 
     this.controlsOpen = false
     this.toggleAll = false
+    this.draw()
+  }
+
+  union (arrayA, arrayB) {
+    return Array.from(new Set(arrayA.concat(arrayB)))
   }
 
   retrieveSelected () {
@@ -34,7 +40,7 @@ export class TableControls {
   getAttributesFrom (metaData) {
     // get the set of all data for list of all available attrs
     const allAttrs = Object.values(metaData).map(obj => Object.keys(obj)).flat()
-    const attrsWithIndicators = new Set(allAttrs)
+    const attrsWithIndicators = new Set(this.defaultAttrs.concat(allAttrs))
     // filter out the indicators
     return Array.from(attrsWithIndicators).filter(el => el[0] !== '_')
   }

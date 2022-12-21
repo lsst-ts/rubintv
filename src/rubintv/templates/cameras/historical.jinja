@@ -12,6 +12,6 @@
 </section>
 {% endblock content %}
 {% block footer_scripts %}
-  {% set cam_js_filename = "js/camera-calendar/camera-calendar-" + camera.slug + ".js" %}
+  {% set cam_js_filename = "js/historical/historical-" + camera.slug + ".js" %}
   <script type=module src="{{ url('static', filename=cam_js_filename) }}"></script>
 {% endblock footer_scripts %}
