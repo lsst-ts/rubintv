@@ -8,8 +8,6 @@ window.addEventListener('load', function () {
   const meta = parseJsonFromDOM('#table-metadata')
 
   const tableControls = new TableControls(slacDefault, meta, '#table-controls', addToTable)
-  tableControls.updateMetadata(meta)
-  tableControls.draw()
   addToTable(meta, tableControls.selected)
 
   refreshTableLoop(injectHTML, updateTableAndControls, 5)
