@@ -12,7 +12,6 @@ window.addEventListener('load', function () {
   tableControls.draw()
   addToTable(meta, auxtelDefaultSelected)
 
-  updateTableAndControls(meta)
   refreshTableLoop(injectHTML, updateTableAndControls, 5)
 
   function injectHTML (htmlParts) {
