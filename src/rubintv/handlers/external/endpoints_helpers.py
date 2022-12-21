@@ -108,6 +108,7 @@ def get_channel_resource_url(
 
 def get_metadata_json(bucket: Bucket, camera: Camera, a_date: date) -> Dict:
     date_str = date_without_hyphens(a_date)
+    print(f"using, {camera.metadata_slug} for the slug")
     blob_name = f"{camera.metadata_slug}_metadata/dayObs_{date_str}.json"
     metadata_json = "{}"
     if blob := bucket.get_blob(blob_name):
