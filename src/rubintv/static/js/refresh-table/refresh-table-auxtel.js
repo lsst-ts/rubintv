@@ -8,9 +8,12 @@ window.addEventListener('load', function () {
   const meta = parseJsonFromDOM('#table-metadata')
 
   const tableControls = new TableControls(auxtelDefaultSelected, meta, '#table-controls', addToTable)
+  tableControls.updateMetadata(meta)
+  tableControls.draw()
+  addToTable(meta, auxtelDefaultSelected)
 
   updateTableAndControls(meta)
-  refreshTableLoop(injectHTML, updateTableAndControls, auxtelDefaultSelected, 5)
+  refreshTableLoop(injectHTML, updateTableAndControls, 5)
 
   function injectHTML (htmlParts) {
     _getById('per-day-refreshable').innerHTML = htmlParts.per_day
