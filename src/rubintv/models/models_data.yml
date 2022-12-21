@@ -125,7 +125,14 @@ Cameras:
 
   ts8:
     name: TS8
-    online: False
+    online: True
+    channels:
+      focal_plane_mosiac:
+        name: Focal Plane Mosiac
+        prefix: focal_plane_mosiac
+      noise_map:
+        name: Noise Map
+        prefix: noise_map
 
 
 Services:
