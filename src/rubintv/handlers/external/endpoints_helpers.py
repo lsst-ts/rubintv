@@ -30,7 +30,7 @@ __all__ = [
     "make_table_rows_from_columns_by_seq",
     "get_most_recent_day_events",
     "get_sorted_events_from_blobs",
-    "get_todays_events_for_prefix",
+    "get_events_for_prefix_and_date",
     "get_current_event",
     "get_heartbeats",
     "build_title",
@@ -163,22 +163,21 @@ def make_table_rows_from_columns_by_seq(
 def get_most_recent_day_events(
     bucket: Bucket, camera: Camera, historical: HistoricalData
 ) -> tuple[date, dict[int, dict[str, Event]]]:
-    primary_channel = list(camera.channels)[0]
-    prefix = camera.channels[primary_channel].prefix
+    obs_date = get_current_day_obs()
+    metadata = get_metadata_json(bucket, camera, obs_date)
     events = {}
-    primary_events = get_todays_events_for_prefix(prefix, bucket)
-    if primary_events:
-        events[primary_channel] = primary_events
-        the_date = primary_events[0].obs_date
-        events_dict = build_dict_with_remaining_channels(
-            bucket, camera, events, the_date
-        )
-    else:
+    for channel in camera.channels:
+        prefix = camera.channels[channel].prefix
+        events_found = get_events_for_prefix_and_date(prefix, obs_date, bucket)
+        if events_found:
+            events[channel] = events_found
+            the_date = obs_date
+    if not events and not metadata:
         the_date = historical.get_most_recent_day(camera)
-        events_dict = historical.get_events_for_date(camera, the_date)
+        events = historical.get_events_for_date(camera, the_date)
+        metadata = get_metadata_json(bucket, camera, the_date)
 
-    metadata = get_metadata_json(bucket, camera, the_date)
-    todays_events = make_table_rows_from_columns_by_seq(events_dict, metadata)
+    todays_events = make_table_rows_from_columns_by_seq(events, metadata)
     return (the_date, todays_events)
 
 
@@ -194,12 +193,12 @@ def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
     return sevents
 
 
-def get_todays_events_for_prefix(
+def get_events_for_prefix_and_date(
     prefix: str,
+    the_date: date,
     bucket: Bucket,
 ) -> List[Event]:
-    today = get_current_day_obs()
-    new_prefix = get_prefix_from_date(prefix, today)
+    new_prefix = get_prefix_from_date(prefix, the_date)
     events = []
     blobs = list(bucket.list_blobs(prefix=new_prefix))
     if blobs:
@@ -213,7 +212,8 @@ def get_current_event(
     bucket: Bucket,
     historical: HistoricalData,
 ) -> Event:
-    events = get_todays_events_for_prefix(channel.prefix, bucket)
+    day_obs = get_current_day_obs()
+    events = get_events_for_prefix_and_date(channel.prefix, day_obs, bucket)
     if events:
         latest = events[0]
     else:

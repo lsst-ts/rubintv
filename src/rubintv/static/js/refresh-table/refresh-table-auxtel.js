@@ -10,7 +10,7 @@ window.addEventListener('load', function () {
   const tableControls = new TableControls(auxtelDefaultSelected, meta, '#table-controls', addToTable)
   tableControls.updateMetadata(meta)
   tableControls.draw()
-  addToTable(meta, auxtelDefaultSelected)
+  addToTable(meta, tableControls.selected)
 
   refreshTableLoop(injectHTML, updateTableAndControls, 5)
 

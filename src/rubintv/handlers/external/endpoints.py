@@ -28,7 +28,6 @@ from aiohttp_jinja2 import render_string, render_template, template
 from rubintv import __version__
 from rubintv.handlers import routes
 from rubintv.handlers.external.endpoints_helpers import (
-    build_dict_with_remaining_channels,
     build_title,
     date_from_url_part,
     find_location,
@@ -41,8 +40,6 @@ from rubintv.handlers.external.endpoints_helpers import (
     get_night_reports_events,
     get_night_reports_page_link,
     get_per_day_channels,
-    get_prefix_from_date,
-    get_sorted_events_from_blobs,
     make_table_rows_from_columns_by_seq,
     month_names,
 )
@@ -321,38 +318,15 @@ async def update_todays_table(request: web.Request) -> web.Response:
         camera = cameras[cam_name]
 
         bucket = request.config_dict[f"rubintv/buckets/{location_name}"]
-        date_str = request.match_info["date"]
-        the_date = date_from_url_part(date_str)
-        blobs = []
-        # if the actual date is greater than displayed on the page
-        # get the data from today if there is any
-        current_day = get_current_day_obs()
-        primary_channel = list(camera.channels)[0]
-        lookup_prefix = camera.channels[primary_channel].prefix
-        if the_date < current_day:
-            prefix = get_prefix_from_date(lookup_prefix, current_day)
-            blobs = list(bucket.list_blobs(prefix=prefix))
-        # if there's no data from a more recent day then return the refreshed
-        # table from today
-        if not blobs:
-            prefix = get_prefix_from_date(lookup_prefix, the_date)
-            blobs = list(bucket.list_blobs(prefix=prefix))
-        # if there was data from more recent than displayed, store the date
-        # so it can be displayed instead
-        else:
-            the_date = current_day
+        historical = request.config_dict[
+            f"rubintv/cached_data/{location_name}"
+        ]
 
-        recent_events = {}
-        recent_events[primary_channel] = get_sorted_events_from_blobs(blobs)
-        events_dict = build_dict_with_remaining_channels(
-            bucket, camera, recent_events, the_date
+        the_date, events = get_most_recent_day_events(
+            bucket, camera, historical
         )
 
         metadata_json = get_metadata_json(bucket, camera, the_date)
-        events = make_table_rows_from_columns_by_seq(
-            events_dict, metadata_json
-        )
-
         per_day = get_per_day_channels(bucket, camera, the_date, logger)
 
         context = {

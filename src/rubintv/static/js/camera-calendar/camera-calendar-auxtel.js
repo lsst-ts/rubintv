@@ -9,6 +9,6 @@ window.addEventListener('load', () => {
   const tableUI = new TableControls(auxtelDefaultSelected, meta, '.channel-grid-heading', addToTable)
   tableUI.updateMetadata(meta)
   tableUI.draw()
-  addToTable(meta, auxtelDefaultSelected)
+  addToTable(meta, tableUI.selected)
   applyYearControls()
 })
