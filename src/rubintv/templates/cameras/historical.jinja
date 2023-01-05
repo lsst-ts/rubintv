@@ -7,11 +7,14 @@
   {% include "cameras/calendar.jinja" %}
 </section>
 <section id="channel-day-data">
-  {% include "cameras/per-day-channels.jinja" %}
+  <div class="columns">
+    {% include "cameras/historical-night-reports-link.jinja" %}
+    {% include "cameras/per-day-channels.jinja" %}
+  </div>
   {% include "cameras/data-table-header.jinja" %}
 </section>
 {% endblock content %}
 {% block footer_scripts %}
-  {% set cam_js_filename = "js/historical/historical-" + camera.slug + ".js" %}
-  <script type=module src="{{ url('static', filename=cam_js_filename) }}"></script>
+  {% set filename = "js/hist/historical-" + camera.slug + ".js" %}
+  <script type=module src="{{ url('static', filename=filename) }}"></script>
 {% endblock footer_scripts %}

@@ -1,5 +1,4 @@
-/* global $ */
-import { makeTableSortable, createTableCell, indicatorForAttr, _escapeName } from './utils.js'
+import { makeTableSortable, createTableCell, indicatorForAttr, _escapeName, _elWithAttrs, _getById } from './utils.js'
 
 // headerGroups is an array of arrays
 export function addToTable (metaData, headerGroups, sortable = false) {
@@ -8,30 +7,34 @@ export function addToTable (metaData, headerGroups, sortable = false) {
   // add metadata group headers to the table
   // fill out the headers for the new row with blanks
   // one for each existing channel (and seq num)
-  const tableRow = $('.channel-grid tr')
-  const groupRow = $('<tr>', { id: 'grouping' })
-  Array.from(tableRow.find('th')).forEach(th => {
-    groupRow.append($('<th>', { scope: 'col' }))
+  const tableRow = document.querySelector('.channel-grid tr')
+  const groupRow = _elWithAttrs('tr', { id: 'grouping' })
+  Array.from(tableRow.querySelectorAll('th')).forEach(() => {
+    groupRow.append(_elWithAttrs('th', { scope: 'col' }))
   })
 
   Object.keys(headerGroups).forEach((group) => {
     const span = headerGroups[group].length
     const groupID = _escapeName(group)
-    const tr = $('<th>', { id: groupID, scope: 'colgroup', colspan: span, class: 'meta-group' })
-    tr.append($('<p>').text(group))
-    tr.append($('<img>', { src: '/rubintv/static/images/meta-group.png' }))
+    const tr = _elWithAttrs('th',
+      { id: groupID, scope: 'colgroup', colspan: span, class: 'meta-group' }
+    )
+    tr.append(_elWithAttrs('p', { text: group }))
+    tr.append(_elWithAttrs('img', { src: '/rubintv/static/images/meta-group.png' }))
     groupRow.append(tr)
   })
 
-  $('thead').prepend(groupRow)
+  document.querySelector('thead').prepend(groupRow)
 
   Object.keys(headerGroups).forEach((group) => {
     const groupID = _escapeName(group)
     headerGroups[group].forEach((attr) => {
       const escapedName = _escapeName(attr)
-      const lastHeaderCall = $('.grid-title').last()
-      const el = $('<th>', { class: `grid-title sideways ${escapedName}`, headers: groupID })
-      el.text(attr)
+      const lastHeaderCall = Array.from(document.querySelectorAll('.grid-title')).pop()
+      const el = _elWithAttrs('th',
+        { class: `grid-title sideways ${escapedName}`, headers: groupID }
+      )
+      el.textContent = attr
       lastHeaderCall.after(el)
     })
   })
@@ -39,10 +42,10 @@ export function addToTable (metaData, headerGroups, sortable = false) {
   // add table entries by row...
   const headers = Object.values(headerGroups).flat()
   Object.entries(metaData).forEach(([seq, attributes]) => {
-    const seqRow = $(`#seqno-${seq}`)
+    const seqRow = _getById(`seqno-${seq}`)
     // ...and column
     headers.forEach(attr => {
-      const seqRowLastCell = seqRow.find('td').last()
+      const seqRowLastCell = seqRow.querySelectorAll('td:last-child')[0]
       const escapedName = _escapeName(attr)
       // check for indicator attribute (i.e. starts with '_')
       const flag = indicatorForAttr(attributes, attr)

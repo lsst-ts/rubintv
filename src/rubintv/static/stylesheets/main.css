@@ -115,6 +115,7 @@ body {
   margin-bottom: 2em;
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 10px;
 }
@@ -144,7 +145,8 @@ body {
 }
 
 .year {
-  flex-basis: 50%;
+  flex-basis: calc(50% - 10px);
+  box-sizing: border-box;
   padding: 1em;
   background: #fafafa;
 }
@@ -387,9 +389,8 @@ section {
 .columns {
   display: flex;
   flex-direction: row;
-}
-.columns > * {
-  padding-right: 2em;
+  gap: 2em;
+  margin-bottom: 2em;
 }
 
 #per-image-menu {

@@ -99,6 +99,7 @@ class Night_Reports_Event:
     url: str
     prefix: str
     timestamp: int
+    blobname: str = ""
     simplename: str = field(init=False)
     name: str = field(init=False)
     _obs_date: str = field(init=False)

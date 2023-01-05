@@ -10,7 +10,7 @@ export function addToTable (metaData, selection, sortable = false) {
     const escapedName = _escapeName(attr)
     const lastHeaderCall = Array.from(document.querySelectorAll('.grid-title')).pop()
     const el = _elWithClass('th', `grid-title sideways ${escapedName}`)
-    el.appendChild(document.createTextNode(attr))
+    el.textContent = attr
     lastHeaderCall.after(el)
   })
 

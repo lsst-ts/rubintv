@@ -1,10 +1,9 @@
-import { getJson, _getById, parseJsonFromDOM } from './utils.js'
+import { getJson, parseJsonFromDOM } from './utils.js'
 
 export function refreshTableLoop (injectHTMLCallback, doUpdatingCallback, periodInSecs) {
   setInterval(function () {
-    const date = _getById('the-date').dataset.date
     const urlPath = document.location.pathname
-    const promise = getJson(urlPath + '/update/' + date)
+    const promise = getJson(urlPath + '/update')
     promise.then((htmlParts) => {
       injectHTMLCallback(htmlParts)
       const meta = parseJsonFromDOM('#table-metadata')
@@ -12,8 +11,8 @@ export function refreshTableLoop (injectHTMLCallback, doUpdatingCallback, period
         doUpdatingCallback(meta)
       }
     })
-      .catch((e) => {
-        console.warn("Couldn't reach server: Unable to refresh table")
-      })
+    promise.catch((e) => {
+      console.warn("Couldn't reach server: Unable to refresh table")
+    })
   }, periodInSecs * 1000)
 }

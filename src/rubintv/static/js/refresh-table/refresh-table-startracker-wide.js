@@ -3,18 +3,18 @@ import { addToTable } from '../modules/table-startracker.js'
 import { starTrackerWideHeaders } from '../models.js'
 import { refreshTableLoop } from '../modules/table-refresher.js'
 
-window.addEventListener('load', function () {
+document.addEventListener('DOMContentLoaded', function () {
   const meta = parseJsonFromDOM('#table-metadata')
   const headers = starTrackerWideHeaders
 
-  updateTable(meta, headers)
-  refreshTableLoop(starTrackerHtmlInject, updateTable, headers, 5)
+  updateTable(meta)
+  refreshTableLoop(starTrackerHtmlInject, updateTable, 5)
 
   function starTrackerHtmlInject (htmlParts) {
     _getById('channel-day-data').innerHTML = htmlParts.table
   }
 
-  function updateTable (meta, headers) {
+  function updateTable (meta) {
     addToTable(meta, headers)
   }
 })

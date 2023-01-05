@@ -9,6 +9,7 @@ from rubintv.models.models import (
     Channel,
     Event,
     Location,
+    Night_Reports_Event,
     get_current_day_obs,
 )
 from rubintv.models.models_assignment import cameras, locations
@@ -30,10 +31,12 @@ class HistoricalData:
         self._location = location
         self._bucket = bucket
         self._events = {}
+        self._night_reports = {}
         if not minimal_data_load:
             self._events = self._get_events()
         else:
             self._events = self._get_most_recent_events_by_location()
+        self._night_reports = self._scrape_night_reports()
         self._lastCall = get_current_day_obs()
 
     def _get_most_recent_events_by_location(
@@ -57,10 +60,6 @@ class HistoricalData:
             list of Events is sorted by day and sequence number
         """
         blobs = []
-        print()
-        print(self._location.name)
-        print("------")
-        print(self._location.all_cameras())
         for cam_name in self._location.all_cameras():
             camera: Camera = cameras[cam_name]
             print(f"Trying for: {camera.name}")
@@ -109,8 +108,74 @@ class HistoricalData:
     def reload(self) -> None:
         """Reloads the historical data cache"""
         self._events = self._get_events(reset=True)
-        self._lastCall = get_current_day_obs()
         return
+
+    def _scrape_night_reports(
+        self,
+    ) -> Dict[str, Dict[str, List[Night_Reports_Event]]]:
+        """Downloads and builds a cache of Night Report Events
+
+        Returns
+        -------
+        Dict[str, Dict[str, List[Night_Reports_Event]]]
+            A two dimensional dictionary with outer key camera name and
+            inner key the date (as a date object) which co-identify
+            a list of Night Reports Events objects
+        """
+        night_reports: Dict[str, Dict] = {}
+        for cam_name in self._location.all_cameras():
+            cam: Camera = cameras[cam_name]
+            if cam.night_reports_prefix:
+                prefix = cam.night_reports_prefix
+                print(f"Retrieving night reports for {prefix}")
+                blobs = list(self._bucket.list_blobs(prefix=prefix))
+                if blobs:
+                    night_reports[cam_name] = {}
+                    for blob in blobs:
+                        report = Night_Reports_Event(
+                            blob.public_url,
+                            prefix,
+                            int(blob.time_created.timestamp()),
+                            blobname=blob.name,
+                        )
+                        the_date = report.obs_date
+                        if the_date in night_reports[cam_name]:
+                            night_reports[cam_name][the_date].append(report)
+                        else:
+                            night_reports[cam_name].update(
+                                {the_date: [report]}
+                            )
+                    print(f"Found {len(night_reports[cam_name])} reports")
+        return night_reports
+
+    def get_night_reports_for(
+        self, camera: Camera, obs_date: date
+    ) -> List[Night_Reports_Event]:
+        """Returns a list of Night Reports Objects for the camera and date
+
+        Parameters
+        ----------
+        camera : Camera
+            The given Camera
+        obs_date : date
+            The given date
+
+        Returns
+        -------
+        List[Night_Reports_Event]
+            A list of Night Reports Events in time order
+        """
+        the_date = str(obs_date)
+        reports = []
+        if (
+            camera.slug in self._night_reports
+            and the_date in self._night_reports[camera.slug]
+        ):
+            reports = sorted(
+                self._night_reports[camera.slug][the_date],
+                key=lambda x: x.timestamp,
+            )
+        return reports
 
     def _get_events(
         self, reset: bool = False
@@ -136,7 +201,7 @@ class HistoricalData:
             the inner dict is keyed per channel and
             list of Events is sorted by day and sequence number
         """
-        if not self._events or get_current_day_obs() > self._lastCall or reset:
+        if reset or not self._events or get_current_day_obs() > self._lastCall:
             blobs = self._get_blobs()
             self._events = self._sort_events_from_blobs(blobs)
             self._lastCall = get_current_day_obs()

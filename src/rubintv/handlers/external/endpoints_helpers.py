@@ -34,8 +34,8 @@ __all__ = [
     "get_current_event",
     "get_heartbeats",
     "build_title",
-    "get_night_reports_page_link",
     "get_night_reports_events",
+    "get_historical_night_reports_events",
 ]
 
 
@@ -108,7 +108,6 @@ def get_channel_resource_url(
 
 def get_metadata_json(bucket: Bucket, camera: Camera, a_date: date) -> Dict:
     date_str = date_without_hyphens(a_date)
-    print(f"using, {camera.metadata_slug} for the slug")
     blob_name = f"{camera.metadata_slug}_metadata/dayObs_{date_str}.json"
     metadata_json = "{}"
     if blob := bucket.get_blob(blob_name):
@@ -278,14 +277,19 @@ def get_event_page_link(
     )
 
 
-def get_night_reports_page_link(
-    location: Location, camera: Camera, request: web.Request
-) -> str:
-    link_url = ""
-    if camera.night_reports_prefix:
-        app_name = request.config_dict["safir/config"].name
-        link_url = f"/{app_name}/{location.slug}/{camera.slug}/night_reports"
-    return link_url
+def get_historical_night_reports_events(
+    bucket: Bucket, reports_list: List[Night_Reports_Event]
+) -> Tuple[List[Night_Reports_Event], Dict]:
+    plots = []
+    json_data = {}
+    for r in reports_list:
+        if r.file_ext == "json":
+            blob = bucket.blob(r.blobname)
+            json_raw_data = json.loads(blob.download_as_bytes())
+            json_data = process_raw_dashboard_data(json_raw_data)
+        else:
+            plots.append(r)
+    return plots, json_data
 
 
 def get_night_reports_events(
