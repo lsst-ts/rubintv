@@ -229,7 +229,7 @@ def get_heartbeats(bucket: Bucket, prefix: str) -> List[Dict]:
     for hb_blob in hb_blobs:
         blob_content = None
         try:
-            the_blob = bucket.get_blob(hb_blob.name)
+            the_blob = bucket.blob(hb_blob.name)
             blob_content = the_blob.download_as_bytes()
         except NotFound:
             print(f"Error: {hb_blob.name} not found.")

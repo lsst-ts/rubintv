@@ -35,15 +35,15 @@ class HistoricalData:
         if not minimal_data_load:
             self._events = self._get_events()
         else:
-            self._events = self._get_most_recent_events_by_location()
+            self._events = self._get_single_date_events_for_location()
         self._night_reports = self._scrape_night_reports()
         self._lastCall = get_current_day_obs()
 
-    def _get_most_recent_events_by_location(
+    def _get_single_date_events_for_location(
         self,
     ) -> Dict[str, Dict[str, List[Event]]]:
-        """Returns only the most recent events for a Location. Used when only needing
-        a light-weight cache of data to test the app
+        """Returns minimal events for a Location for a hard-coded date in the method.
+        Used when only needing a light-weight cache of data to test the app
 
         Parameters
         ----------

@@ -60,4 +60,4 @@ export const starTrackerWideHeaders = {
   ]
 }
 
-export const slacDefault = {}
+export const slacDefault = []

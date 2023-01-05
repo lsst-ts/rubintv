@@ -8,7 +8,6 @@ import pytest
 from aiohttp import web
 
 from rubintv.app import create_app
-from rubintv.models.models import get_current_day_obs
 
 if TYPE_CHECKING:
     from aiohttp.pytest_plugin.test_utils import TestClient
@@ -96,7 +95,7 @@ async def test_get_allsky_page(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/summit/allsky
     All Sky has its own page not based on the general camera
     page template or endpoint"""
-    app = create_app(minimal_data_load=True)
+    app = create_app()
     name = app["safir/config"].name
     client = await aiohttp_client(app)
 
@@ -107,7 +106,7 @@ async def test_get_allsky_page(aiohttp_client: TestClient) -> None:
 @pytest.mark.asyncio
 async def test_get_allsky_image_update(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/summit/allsky/update/image"""
-    app = create_app(minimal_data_load=True)
+    app = create_app()
     name = app["safir/config"].name
     client = await aiohttp_client(app)
 
@@ -141,12 +140,12 @@ async def test_get_allsky_historical(aiohttp_client: TestClient) -> None:
 
 @pytest.mark.asyncio
 async def test_get_allsky_movie_for_date(aiohttp_client: TestClient) -> None:
-    """Test GET /app-name/summit/allsky/historical/2022-11-28"""
+    """Test GET /app-name/summit/allsky/historical/2022-12-15"""
     app = create_app(minimal_data_load=True)
     name = app["safir/config"].name
     client = await aiohttp_client(app)
 
-    response = await client.get(f"/{name}/summit/allsky/historical/2022-11-28")
+    response = await client.get(f"/{name}/summit/allsky/historical/2022-12-15")
     assert response.status == 200
 
 
@@ -189,32 +188,17 @@ async def test_get_camera_page_fail(aiohttp_client: TestClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_camera_update_for_date(aiohttp_client: TestClient) -> None:
-    """Test GET /app-name/summit/auxtel/update/{today}
+async def test_get_camera_update(aiohttp_client: TestClient) -> None:
+    """Test GET /app-name/summit/auxtel/update/
     Should respond with two-part json object with keys 'table'
     and 'per-day'"""
     app = create_app(minimal_data_load=True)
     name = app["safir/config"].name
     client = await aiohttp_client(app)
 
-    day_obs = get_current_day_obs()
-    # date object prints as YYYY-MM-DD
-    response = await client.get(f"/{name}/summit/auxtel/update/{day_obs}")
+    response = await client.get(f"/{name}/summit/auxtel/update")
     assert response.status == 200
     assert response.content_type == "application/json"
-
-
-@pytest.mark.asyncio
-async def test_camera_update_for_badly_formed_date(
-    aiohttp_client: TestClient,
-) -> None:
-    """Test GET /app-name/summit/auxtel/update/111-111-111"""
-    app = create_app(minimal_data_load=True)
-    name = app["safir/config"].name
-    client = await aiohttp_client(app)
-
-    response = await client.get(f"/{name}/summit/auxtel/update/111-111-111")
-    assert response.status == 404
 
 
 @pytest.mark.asyncio
@@ -244,7 +228,7 @@ async def test_camera_specevents(aiohttp_client: TestClient) -> None:
 @pytest.mark.asyncio
 async def test_camera_imcurrent(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/summit/auxtel/im_current"""
-    app = create_app(minimal_data_load=True)
+    app = create_app()
     name = app["safir/config"].name
     client = await aiohttp_client(app)
     response = await client.get(f"/{name}/summit/auxtel/im_current")
