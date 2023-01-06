@@ -122,6 +122,7 @@ Cameras:
       noise_map:
         name: Noise Map
         prefix: ir2_noise_map
+    logo: slac_lsstcam.png
 
   ts8:
     name: TS8
@@ -133,6 +134,7 @@ Cameras:
       noise_map:
         name: Noise Map
         prefix: ts8_noise_map
+    logo: ts8.png
 
 
 Services:

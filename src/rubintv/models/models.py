@@ -30,6 +30,7 @@ class Camera:
     online: bool
     _slug: str = field(init=False, repr=False)
     metadata_slug: str = ""
+    logo: str = ""
     has_image_viewer: bool = False
     channels: dict[str, Channel] = field(default_factory=dict)
     per_day_channels: dict[str, Channel] = field(default_factory=dict)
