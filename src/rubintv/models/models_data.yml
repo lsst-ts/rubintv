@@ -4,7 +4,7 @@ Locations:
     bucket: rubintv_data_slac
     logo: SLAC_Logo.svg
     camera_groups:
-      Cameras: [ ir2, ts8 ]
+      Cameras: [ slac_lsstcam, ts8 ]
     services: []
 
   tucson:
