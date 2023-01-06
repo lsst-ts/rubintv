@@ -112,7 +112,7 @@ class HistoricalData:
 
     def _scrape_night_reports(
         self,
-    ) -> Dict[str, Dict[str, List[Night_Reports_Event]]]:
+    ) -> Dict[str, Dict[date, List[Night_Reports_Event]]]:
         """Downloads and builds a cache of Night Report Events
 
         Returns
@@ -165,14 +165,13 @@ class HistoricalData:
         List[Night_Reports_Event]
             A list of Night Reports Events in time order
         """
-        the_date = str(obs_date)
         reports = []
         if (
             camera.slug in self._night_reports
-            and the_date in self._night_reports[camera.slug]
+            and obs_date in self._night_reports[camera.slug]
         ):
             reports = sorted(
-                self._night_reports[camera.slug][the_date],
+                self._night_reports[camera.slug][obs_date],
                 key=lambda x: x.timestamp,
             )
         return reports

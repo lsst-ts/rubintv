@@ -112,8 +112,8 @@ Cameras:
     name: LSSTCam
     online: False
 
-  ir2:
-    name: IR2
+  slac_lsstcam:
+    name: LSSTCam
     online: True
     channels:
       focal_plane_mosiac:
