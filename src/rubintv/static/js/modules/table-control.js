@@ -6,11 +6,11 @@ import {
 
 export class TableControls {
   constructor (defaultAttrs, metaData, elementToAppendTo, drawToTableCallback) {
+    this.camera = document.querySelector('body').className
     this.defaultAttrs = defaultAttrs
-    this.metaData = metaData
-    this.attributes = this.getAttributesFrom(metaData)
+    this.updateMetadata(metaData)
     const saved = this.retrieveSelected()
-    this.selected = saved ? this.union(saved, defaultAttrs) : defaultAttrs
+    this.selected = saved ? saved : defaultAttrs
     this.elementToAppendTo = elementToAppendTo
     this.drawToTableCallback = drawToTableCallback
 
@@ -19,17 +19,23 @@ export class TableControls {
     this.draw()
   }
 
+  orderSelected () {
+    let fromTheDefaults = this.defaultAttrs.filter(attr => this.selected.includes(attr))
+    let notInDefaults = this.selected.filter(attr => !this.defaultAttrs.includes(attr))
+    this.selected = fromTheDefaults.concat(notInDefaults)
+  }
+
   union (arrayA, arrayB) {
     return Array.from(new Set(arrayA.concat(arrayB)))
   }
 
   retrieveSelected () {
-    const retrieved = localStorage.selected
+    const retrieved = localStorage[this.camera]
     return (retrieved && JSON.parse(retrieved))
   }
 
   storeSelected (selected) {
-    localStorage.selected = JSON.stringify(selected)
+    localStorage[this.camera] = JSON.stringify(selected)
   }
 
   updateMetadata (metaData) {
@@ -41,7 +47,7 @@ export class TableControls {
     // get the set of all data for list of all available attrs
     const allAttrs = Object.values(metaData).map(obj => Object.keys(obj)).flat()
     const attrsWithIndicators = new Set(this.defaultAttrs.concat(allAttrs))
-    // filter out the indicators
+    // filter out the indicators (first char is '_')
     return Array.from(attrsWithIndicators).filter(el => el[0] !== '_')
   }
 
@@ -51,20 +57,14 @@ export class TableControls {
     const button = _elWithAttrs('button', { class: 'table-control-button', text: 'Add/Remove Columns' })
     panel.appendChild(button)
 
-    const toggleAllLabel = _elWithAttrs('label', { for: 'toggle-all', text: 'Toggle all' })
-    const toggleAllBox = _elWithAttrs('input', { type: 'checkbox', id: 'toggle-all', name: 'toggle-all', value: 1 })
-    if (this.toggleAll) { toggleAllBox.checked = true }
-    const control = _elWithClass('div', 'table-control toggle')
-    toggleAllLabel.prepend(toggleAllBox)
-    control.append(toggleAllLabel)
-    controls.prepend(control)
-
     this.attributes.forEach(title => {
       const label = _elWithAttrs('label', { for: title, text: title })
       const checkBox = _elWithAttrs('input', { type: 'checkbox', id: title, name: title, value: 1 })
+
       if (this.selected.includes(title)) {
         checkBox.setAttribute('checked', true)
       }
+
       const control = _elWithClass('div', 'table-control')
       label.prepend(checkBox)
       control.append(label)
@@ -100,56 +100,14 @@ export class TableControls {
 
   handleCheckboxChange (e) {
     const thisEl = e.target
-    if (thisEl.name === 'toggle-all') {
-      this.handleToggleAllChange(thisEl)
+    if (this.selected.includes(thisEl.name)) {
+      this.selected.splice(this.selected.indexOf(thisEl.name), 1)
     } else {
-      if (this.selected.includes(thisEl.name)) {
-        this.selected.splice(this.selected.indexOf(thisEl.name), 1)
-        removeColumnFromTableFor(thisEl.name)
-      } else {
-        this.selected.push(thisEl.name)
-        this.drawToTableCallback(this.metaData, [thisEl.name])
-      }
+      this.selected.push(thisEl.name)
     }
+    this.orderSelected()
+    this.drawToTableCallback(this.metaData, this.selected)
     this.storeSelected(this.selected)
-  }
-
-  handleToggleAllChange (toggleBox) {
-    if (toggleBox.checked) {
-      const notYetSelected = []
-      // find those not selected yet
-      this.attributes.forEach((attr) => {
-        !this.selected.includes(attr) && notYetSelected.push(attr)
-      })
-      // add them to the table
-      this.drawToTableCallback(this.metaData, notYetSelected)
-      // check their boxes
-      notYetSelected.forEach(attr => {
-        _getById(attr).checked = true
-      })
-      // add them to 'selected'
-      this.selected = this.selected.concat(notYetSelected)
-      this.toggleAll = true
-    } else {
-      // makes sure _all_ metadata attributes are removed
-      // some may be defined as default but not be in the metadata
-      const allAttrs = Array.from(new Set(this.attributes.concat(this.defaultAttrs)))
-      allAttrs.forEach(attr => {
-        removeColumnFromTableFor(attr)
-        // uncheck all boxes
-        if (_getById(attr)) {
-          _getById(attr).checked = false
-        }
-      })
-      this.selected = this.defaultAttrs
-      this.selected.forEach(attr => {
-        if (_getById(attr)) {
-          _getById(attr).checked = true
-        }
-      })
-      this.drawToTableCallback(this.metaData, this.selected)
-      this.toggleAll = false
-    }
   }
 
   drawJumpButtonControls () {

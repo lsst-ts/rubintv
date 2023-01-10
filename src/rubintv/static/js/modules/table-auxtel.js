@@ -3,13 +3,16 @@ import {
 } from './utils.js'
 
 export function addToTable (metaData, selection, sortable = false) {
-  // empty object test- there's no data, just go home
-  if (Object.keys(metaData).length === 0) return
+  // remove existing table
+  [...document.querySelectorAll('.meta')].forEach(gridElement => {
+    gridElement.remove()
+  })
+
   // add metadata headers to the table
   selection.forEach(attr => {
     const escapedName = _escapeName(attr)
     const lastHeaderCall = Array.from(document.querySelectorAll('.grid-title')).pop()
-    const el = _elWithClass('th', `grid-title sideways ${escapedName}`)
+    const el = _elWithClass('th', `grid-title sideways meta ${escapedName}`)
     el.textContent = attr
     lastHeaderCall.after(el)
   })

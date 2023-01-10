@@ -3,8 +3,10 @@ import {
 } from './utils.js'
 
 export function addToTable (metaData, selection, sortable = false) {
-  // empty object test- there's no data, just go home
-  if (Object.keys(metaData).length === 0) return
+  // remove existing table
+  [...document.querySelectorAll('.meta')].forEach(gridElement => {
+    gridElement.remove()
+  })
   // add metadata headers to the table
   selection.forEach(attr => {
     const escapedName = _escapeName(attr)
