@@ -1,5 +1,10 @@
 import { ChannelStatus } from './modules/heartbeat.js'
 
+window.addEventListener('popstate', function () {
+  console.log('come from back')
+  this.window.dispatchEvent('DOMContentLoaded')
+})
+
 window.addEventListener('DOMContentLoaded', function () {
   const services = Array.from(document.querySelectorAll('.service'))
     .map(s => {
