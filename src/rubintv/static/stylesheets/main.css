@@ -17,6 +17,20 @@ body {
   background-color: #fff;
 }
 
+.button.historical {
+  background-color: #262534;
+  color: #fff;
+}
+
+.button.movie {
+  background-color: #83daee;
+  text-align: center;
+}
+
+.button.admin {
+  background-color: #999;
+}
+
 .button.monitor {
   background-color: #F07F85;
 }
@@ -33,23 +47,8 @@ body {
   background-color: #7FF094;
 }
 
-.button.historical {
-  background-color: #262534;
-  color: #fff;
-}
-
-.button.movie {
-  background-color: #83daee;
-  text-align: center;
-}
-
-.button.admin {
-  background-color: #999;
-}
-
 .button.startracker {
   background-color: #58528b;
-  color: #fff;
 }
 
 .button.analysis {
@@ -62,6 +61,14 @@ body {
 
 .button.startracker-wide-analysis {
   background-color: #fda529;
+}
+
+.button.focal_plane_mosiac {
+  background-color: #6fe9ba;
+}
+
+.button.noise_map {
+  background-color: #e771a8;
 }
 
 .grid-cell.u_color {

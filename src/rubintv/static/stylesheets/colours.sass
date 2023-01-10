@@ -1,61 +1,59 @@
+@function map-collect($maps...)
+  $collection: ()
+  @each $map in $maps
+    $collection: map-merge($collection, $map)
+  @return $collection
+
 body
-	background-color: #fff
+  background-color: #fff
 
 .channel-grid-heading
-	background-color: #fff
+  background-color: #fff
 
 .grid-cell
-	background-color: #f0f0f0
-	color: #000
+  background-color: #f0f0f0
+  color: #000
 
 .table-spacer
-	background-color: #fff
+  background-color: #fff
 
-.button.monitor
-	background-color: #F07F85
-.button.mount
-	background-color: #F0C87F
-.button.spec
-	background-color: #7F85F0
-.button.im
-	background-color: #7FF094
 .button.historical
-	background-color: #262534
-	color: #fff
+  background-color: #262534
+  color: #fff
 .button.movie
-	background-color: #83daee
-	text-align: center
+  background-color: #83daee
+  text-align: center
 .button.admin
-	background-color: #999
+  background-color: #999
 
-.button.startracker
-	background-color: #58528b
-	color: #fff
-.button.analysis
-	background-color: #ba528f
-.button.startracker-wide
-	background-color: #fc6465
-.button.startracker-wide-analysis
-	background-color: #fda529
+$auxtel: ("monitor":#F07F85, "mount": #F0C87F, "spec": #7F85F0, "im": #7FF094)
+$startracker: ("startracker": #58528b, "analysis": #ba528f, "startracker-wide": #fc6465, "startracker-wide-analysis": #fda529)
+$slac: ("focal_plane_mosiac": #6fe9ba, "noise_map": #e771a8)
+
+$buttons: map_collect($auxtel, $startracker, $slac)
+@each $name, $colour in $buttons
+  .button.#{$name}
+    background-color: $colour
+
 
 
 $filters: ("u_color": #d9f3fd, "g_color": #e7fdd9, "r_color": #fdd7d7, "i_color": #e2d9fd, "z_color": #fdd9fd, "y_color": #ffeed9)
 
 @each $name, $color in $filters
-	.grid-cell.#{$name}
-		background-color: lighten($color, 40%)
+  .grid-cell.#{$name}
+    background-color: lighten($color, 40%)
 
 .grid-cell
-	&.bad
-		background-color: #ebab93
-	&.warning
-		background-color: #f1f1a7
-	&.ok
-		background-color: #b3f1a7
-	&.measured
-		background-color: #7dc8cf
+  &.bad
+    background-color: #ebab93
+  &.warning
+    background-color: #f1f1a7
+  &.ok
+    background-color: #b3f1a7
+  &.measured
+    background-color: #7dc8cf
 
-	&.white_color
-		background-color: #fefefe
-	&.rainbow_color
-		background: linear-gradient(270deg, #fec8c9 0%, #f5dece 16%, #f5f8cd 28%, #e0f5d1 50%, #c9d2fe 66%, #dcddfe 83%, #f1dafe 100%)
+  &.white_color
+    background-color: #fefefe
+  &.rainbow_color
+    background: linear-gradient(270deg, #fec8c9 0%, #f5dece 16%, #f5f8cd 28%, #e0f5d1 50%, #c9d2fe 66%, #dcddfe 83%, #f1dafe 100%)
