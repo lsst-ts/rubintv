@@ -11,7 +11,8 @@ import { getJson, _getById } from './utils.js'
 
 export class ChannelStatus {
   // time in secs to try downloading heartbeat again after stale
-  RETRY = 120
+  NETWORK_ALLOWANCE = 60
+  RETRY = 30
   // time in secs to query all blobs to bring in missing services
 
   constructor (service, dependency = null) {
@@ -30,7 +31,7 @@ export class ChannelStatus {
   }
 
   get isActive () {
-    const thisActive = this.next > this.nowTimestamp
+    const thisActive = (this.next + this.NETWORK_ALLOWANCE) > this.nowTimestamp
     if (!this.dependency) {
       return thisActive
     }

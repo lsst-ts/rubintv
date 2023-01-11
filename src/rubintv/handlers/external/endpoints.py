@@ -128,7 +128,7 @@ async def request_heartbeat_for_channel(request: web.Request) -> web.Response:
     bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
     heartbeat_prefix = "/".join([HEARTBEATS_PREFIX, prefix])
     heartbeats = get_heartbeats(bucket, heartbeat_prefix)
-    if heartbeats and len(heartbeats) == 1:
+    if heartbeats:
         hb_json = heartbeats[0]
     else:
         hb_json = {}
