@@ -11,7 +11,7 @@ import { getJson, _getById } from './utils.js'
 
 export class ChannelStatus {
   // time in secs to try downloading heartbeat again after stale
-  NETWORK_ALLOWANCE = 60
+  NETWORK_ALLOWANCE = 0
   RETRY = 30
   // time in secs to query all blobs to bring in missing services
 
@@ -84,7 +84,7 @@ export class ChannelStatus {
 
     const next = this.isActive
       ? new Date(this.next * 1000).toLocaleString('en-US', { timeZone: 'UTC' })
-      : new Date((this.nowTimestamp + this.RETRY) * 1000).toLocaleString('en-US', { timeZone: 'UTC' })
+      : new Date((this.nowTimestamp + this.RETRY) * 1000).toLocaleString('en-US', { timeZone: 'UTC' }) + ' retrying'
 
     this.el.setAttribute('title', `last heartbeat at: ${time}\nnext check at: ${next} UTC`)
   }
