@@ -9,14 +9,14 @@
 
 {% block content %}
   <div class="columns">
-    {% if camera.night_reports_prefix %}
+    {# {% if camera.night_reports_prefix %}
       <div id="night_reports_link">
         <h3>Night Reports Page</h3>
         <a href="{{ url('night_reports', location=location.slug, camera=camera.slug) }}" class="button button-large night-reports">
           Night Reports
         </a>
       </div>
-  {% endif %}
+    {% endif %} #}
     <div id="per-day-refreshable">
       {% include "cameras/per-day-channels.jinja" %}
     </div>
