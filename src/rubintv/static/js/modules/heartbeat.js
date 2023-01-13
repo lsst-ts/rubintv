@@ -21,9 +21,8 @@ export class ChannelStatus {
   RETRY = 30
   // time in secs to query all blobs to bring in missing services
 
-  constructor (service, dependency = null) {
+  constructor (service) {
     this.service = service
-    this.dependency = dependency
     this.el = _getById(this.service)
     this.time = 0
     this.next = 0
@@ -39,8 +38,6 @@ export class ChannelStatus {
     promise
       .then(heartbeat => {
         this.consumeHeartbeat(heartbeat)
-        console.log(`found heartbeat for ${this.service}`)
-        console.log(`next at ${timestampToDateUTC(this.next)}`)
         alive = true
       })
       .finally(() => {
@@ -102,11 +99,7 @@ export class ChannelStatus {
 
   get isActive () {
     const thisActive = (this.next + this.NETWORK_ALLOWANCE) > this.nowTimestamp
-    if (!this.dependency) {
-      return thisActive
-    }
-    console.log(this.dependency)
-    return thisActive && this.dependency.isActive
+    return thisActive
   }
 
   get status () {
