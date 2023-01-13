@@ -39,12 +39,12 @@ export class ChannelStatus {
     promise
       .then(heartbeat => {
         this.consumeHeartbeat(heartbeat)
-        this.active = this.isActive
         console.log(`found heartbeat for ${this.service}`)
         console.log(`next at ${timestampToDateUTC(this.next)}`)
         alive = true
       })
       .finally(() => {
+        this.active = this.isActive
         this.displayStatus(alive)
         this.waitForNextHeartbeat()
       })
