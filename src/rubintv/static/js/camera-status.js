@@ -1,10 +1,14 @@
 import { ChannelStatus } from './modules/heartbeat.js'
 
-window.addEventListener('DOMContentLoaded', function () {
-  const services = Array.from(document.querySelectorAll('.service'))
-    .map(s => {
-      return { id: s.id, dependentOn: s.dataset.dependentOn }
-    })
+window.addEventListener('load', function () {
+  const serviceEls = Array.from(document.querySelectorAll('.service'))
+  serviceEls.forEach((el) => {
+    el.classList.remove('stopped', 'active')
+  })
+
+  const services = serviceEls.map(s => {
+    return { id: s.id, dependentOn: s.dataset.dependentOn }
+  })
 
   // boil down dependency names
   const dependenciesNames = Array.from(

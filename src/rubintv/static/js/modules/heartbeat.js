@@ -9,6 +9,11 @@ import { getJson, _getById } from './utils.js'
 // }
 // timestamp is seconds since epoch (Jan 1, 1970)
 
+function timestampToDateUTC (timestamp) {
+  const d = new Date(timestamp * 1000).toLocaleString('en-US', { timeZone: 'UTC' })
+  return d
+}
+
 export class ChannelStatus {
   // time in secs to try downloading heartbeat again after stale
   NETWORK_ALLOWANCE = 0
@@ -21,29 +26,31 @@ export class ChannelStatus {
     this.el = _getById(this.service)
     this.time = 0
     this.next = 0
+    this.active = true
     this.updateHeartbeatData()
   }
 
-  get nextInterval () {
-    return (this.isActive)
-      ? this.next - this.nowTimestamp
-      : this.RETRY
-  }
+  updateHeartbeatData () {
+    let alive = false
 
-  get isActive () {
-    const thisActive = (this.next + this.NETWORK_ALLOWANCE) > this.nowTimestamp
-    if (!this.dependency) {
-      return thisActive
-    }
-    return thisActive && this.dependency.isActive
-  }
+    const promise = getJson(`admin/heartbeat/${this.service}`)
 
-  get status () {
-    return this.isActive ? 'active' : 'stopped'
-  }
-
-  get nowTimestamp () {
-    return Math.round(Date.now() / 1000)
+    promise
+      .then(heartbeat => {
+        this.consumeHeartbeat(heartbeat)
+        this.active = this.isActive
+        console.log(`found heartbeat for ${this.service}`)
+        console.log(`next at ${timestampToDateUTC(this.next)}`)
+        alive = true
+      })
+      .finally(() => {
+        this.displayStatus(alive)
+        this.waitForNextHeartbeat()
+      })
+      .catch((e) => {
+        console.error(e)
+        console.warn(`Couldn't reach server: Unable to retrieve heartbeats for ${this.service}`)
+      })
   }
 
   consumeHeartbeat (heartbeat) {
@@ -51,42 +58,6 @@ export class ChannelStatus {
     this.time = heartbeat.currTime
     this.next = heartbeat.nextExpected
     this.errors = heartbeat.errors
-  }
-
-  waitForNextHeartbeat () {
-    setTimeout(() => {
-      this.updateHeartbeatData()
-    }, this.nextInterval * 1000)
-  }
-
-  updateHeartbeatData () {
-    this.alive = false
-    const self = this
-
-    const promise = getJson(`admin/heartbeat/${this.service}`)
-    promise.then(heartbeat => {
-      if (Object.keys(heartbeat).length > 0) {
-        self.consumeHeartbeat(heartbeat)
-        this.alive = true
-      }
-    }).finally(() => {
-      self.displayStatus(this.alive)
-      self.waitForNextHeartbeat()
-    }).catch((e) => {
-      console.warn("Couldn't reach server: Unable to retrieve heartbeats")
-    })
-  }
-
-  displayHeartbeatInfo () {
-    const time = this.time
-      ? new Date(this.time * 1000).toLocaleString('en-US', { timeZone: 'UTC' }) + ' UTC'
-      : 'never'
-
-    const next = this.isActive
-      ? new Date(this.next * 1000).toLocaleString('en-US', { timeZone: 'UTC' })
-      : new Date((this.nowTimestamp + this.RETRY) * 1000).toLocaleString('en-US', { timeZone: 'UTC' }) + ' retrying'
-
-    this.el.setAttribute('title', `last heartbeat at: ${time}\nnext check at: ${next} UTC`)
   }
 
   displayStatus (alive = true) {
@@ -100,5 +71,47 @@ export class ChannelStatus {
       this.el.classList.remove('stopped', 'active')
     }
     this.displayHeartbeatInfo()
+  }
+
+  displayHeartbeatInfo () {
+    const time = this.time
+      ? timestampToDateUTC(this.time) + ' UTC'
+      : 'never'
+
+    const next = this.active
+      ? timestampToDateUTC(this.next)
+      : timestampToDateUTC(this.nowTimestamp + this.RETRY)
+
+    const retrying = !this.active ? 'Retrying\n' : ''
+
+    this.el.setAttribute('title', `${retrying}last heartbeat at: ${time}\nnext check at: ${next} UTC`)
+  }
+
+  waitForNextHeartbeat () {
+    setTimeout(() => {
+      this.updateHeartbeatData()
+    }, this.nextInterval * 1000)
+  }
+
+  get nextInterval () {
+    return (this.active)
+      ? this.next - this.nowTimestamp
+      : this.RETRY
+  }
+
+  get isActive () {
+    const thisActive = (this.next + this.NETWORK_ALLOWANCE) > this.nowTimestamp
+    if (!this.dependency) {
+      return thisActive
+    }
+    return thisActive && this.dependency.isActive
+  }
+
+  get status () {
+    return this.active ? 'active' : 'stopped'
+  }
+
+  get nowTimestamp () {
+    return Math.round(Date.now() / 1000)
   }
 }
