@@ -1,10 +1,13 @@
 import { ChannelStatus } from './modules/heartbeat.js'
 
-window.addEventListener('pageshow', function () {
+window.addEventListener('pageshow', function (e) {
   const serviceEls = Array.from(document.querySelectorAll('.service'))
-  serviceEls.forEach((el) => {
-    el.classList.remove('stopped', 'active')
-  })
+
+  if (e.persisted) {
+    serviceEls.forEach((el) => {
+      el.classList.remove('stopped', 'active')
+    })
+  }
 
   const services = serviceEls.map(s => {
     return { id: s.id, dependentOn: s.dataset.dependentOn }
@@ -28,5 +31,13 @@ window.addEventListener('pageshow', function () {
 
   services.map(s => {
     return new ChannelStatus(s.id, dependencies[s.dependentOn])
+  })
+})
+
+window.addEventListener('unload', function () {
+  console.log('unloading page...')
+  const serviceEls = Array.from(document.querySelectorAll('.service'))
+  serviceEls.forEach((el) => {
+    el.classList.remove('stopped', 'active')
   })
 })

@@ -105,6 +105,7 @@ export class ChannelStatus {
     if (!this.dependency) {
       return thisActive
     }
+    console.log(this.dependency)
     return thisActive && this.dependency.isActive
   }
 
