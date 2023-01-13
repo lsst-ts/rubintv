@@ -10,6 +10,7 @@ import { getJson, _getById } from './utils.js'
 // timestamp is seconds since epoch (Jan 1, 1970)
 
 function timestampToDateUTC (timestamp) {
+  // Date takes timestamp in milliseconds
   const d = new Date(timestamp * 1000).toLocaleString('en-US', { timeZone: 'UTC' })
   return d
 }

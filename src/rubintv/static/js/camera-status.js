@@ -1,6 +1,6 @@
 import { ChannelStatus } from './modules/heartbeat.js'
 
-window.addEventListener('load', function () {
+window.addEventListener('pageshow', function () {
   const serviceEls = Array.from(document.querySelectorAll('.service'))
   serviceEls.forEach((el) => {
     el.classList.remove('stopped', 'active')
