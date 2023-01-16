@@ -58,5 +58,5 @@
 {% block footer_scripts %}
   {% set cam_js_filename = "js/refresh-table/refresh-table-" + camera.slug + ".js" %}
   <script type="module" src='{{ url("static", filename=cam_js_filename) }}'></script>
-  <script type="module" src="{{ url('static', filename='js/camera-status.js') }}"></script>
+  <script type="module" src="{{ url('static', filename='js/heartbeats.js') }}"></script>
 {% endblock footer_scripts  %}

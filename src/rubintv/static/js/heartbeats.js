@@ -3,12 +3,6 @@ import { _getById } from './modules/utils.js'
 window.addEventListener('pageshow', function (e) {
   const serviceEls = Array.from(document.querySelectorAll('.service'))
 
-  if (e.persisted) {
-    serviceEls.forEach((el) => {
-      el.classList.remove('stopped', 'active')
-    })
-  }
-
   const services = serviceEls.map(s => {
     return { id: s.id, dependentOn: s.dataset.dependentOn }
   })
@@ -40,8 +34,7 @@ window.addEventListener('pageshow', function (e) {
       const depActive = hasDependent ? heartbeats[s.dependentOn].active : true
       const status = hb.active && depActive ? 'active' : 'stopped'
 
-      // console.log(hb.curr)
-      let msg = `last heartbeat at: ${timestampToDateUTC(hb.curr)}`
+      let msg = `last heartbeat at: ${timestampToDateUTC(hb.curr)} UTC`
       msg = msg.concat(`\nnext check at: ${timestampToDateUTC(hb.next)} UTC`)
       if (!depActive) {
         msg = msg.concat(`\nDependency: ${s.dependentOn} is stopped`)

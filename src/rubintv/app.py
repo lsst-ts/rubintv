@@ -5,12 +5,13 @@ __all__ = ["create_app"]
 import asyncio
 import json
 import time
+import weakref
 from pathlib import Path
 from typing import Any, AsyncGenerator, Dict, List
 
 import aiohttp_jinja2
 import jinja2
-from aiohttp import web
+from aiohttp import WSCloseCode, web
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from google.cloud.storage.client import Bucket
@@ -93,7 +94,10 @@ def create_app_light() -> web.Application:
 async def heartbeat_polling_init(app: web.Application) -> AsyncGenerator:
     """Initialise a loop for polling the heartbeats in the bucket"""
     app["heartbeats_poller"] = asyncio.create_task(poll_for_heartbeats(app))
+    app["websockets"] = weakref.WeakSet()
     yield
+    for ws in set(app["websockets"]):
+        await ws.close(code=WSCloseCode.GOING_AWAY, message="Server shutdown")
     app["heartbeats_poller"].cancel()
     await app["heartbeats_poller"]
 
@@ -105,8 +109,8 @@ async def poll_for_heartbeats(app: web.Application) -> None:
             # just use summit bucket to start
             bucket = app["rubintv/buckets/summit"]
             heartbeats_json_arr = get_heartbeats(bucket, HEARTBEATS_PREFIX)
+            print(f"Found {len(heartbeats_json_arr)}")
             heartbeats = process_heartbeats(heartbeats_json_arr)
-            print(heartbeats)
             app["heartbeats"] = heartbeats
             await asyncio.sleep(30)
     except asyncio.exceptions.CancelledError:
