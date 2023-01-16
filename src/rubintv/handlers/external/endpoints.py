@@ -18,6 +18,7 @@ __all__ = [
     "current",
 ]
 
+import asyncio
 import json
 from datetime import date
 from typing import Any, Dict, List
@@ -68,6 +69,20 @@ async def get_page(request: web.Request) -> Dict[str, Any]:
         "title": title,
         "locations": locations,
     }
+
+
+@routes.get("/heartbeats_ws")
+async def websocket_handler(request: web.Request) -> web.WebSocketResponse:
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+    heartbeats = request.config_dict["heartbeats"]
+    await ws.send_json(heartbeats)
+    while True:
+        while request.config_dict["heartbeats"] == heartbeats:
+            await asyncio.sleep(3)
+        heartbeats = request.config_dict["heartbeats"]
+        # hb_json = json.dumps(heartbeats)
+        await ws.send_json(heartbeats)
 
 
 @routes.get("/{location}", name="location")
