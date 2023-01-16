@@ -3,7 +3,9 @@
   RubinTV -
 {% endblock title %}
 {% block subtitle %}
-<a href="{{ url('location', location=location.slug) }}">
+<a  id="location"
+    data-location="{{ location.slug }}"
+    href="{{ url('location', location=location.slug) }}">
   {{ location.name }}
 </a>
 -

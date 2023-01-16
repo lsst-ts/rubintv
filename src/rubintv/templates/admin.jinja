@@ -7,7 +7,10 @@ RubinTV Admin
 {% endblock subtitle %}
 
 {% block content %}
-  <h2>Service status</h2>
+  <h2 id="location"
+      data-location="{{ location.slug }}">
+    {{ location.name }} service status
+  </h2>
   {% for group in services %}
   <div class="service-group {{ group }}">
     <h3>

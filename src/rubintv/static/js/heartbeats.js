@@ -1,10 +1,12 @@
 import { _getById } from './modules/utils.js'
 
 window.addEventListener('pageshow', function (e) {
-  const serviceEls = Array.from(document.querySelectorAll('.service'))
+  const location = _getById('location').dataset.location
 
+  // scrape relevent services from page
+  const serviceEls = Array.from(document.querySelectorAll('.service'))
   const services = serviceEls.map(s => {
-    return { id: s.id, dependentOn: s.dataset.dependentOn }
+    return { id: s.id, el: s, dependentOn: s.dataset.dependentOn }
   })
 
   // boil down dependency names
@@ -16,19 +18,27 @@ window.addEventListener('pageshow', function (e) {
     )
   )
 
+  // init websocket listener
   const protocol = this.document.protocol
   const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:'
   // use origin to include port
   const hostname = this.document.location.origin.split('//')[1]
   const appName = this.document.location.pathname.split('/')[1]
-  const wsUrl = `${wsProtocol}//${hostname}/${appName}/heartbeats_ws`
+  const wsUrl = `${wsProtocol}//${hostname}/${appName}/${location}/heartbeats_ws`
 
-  const webSocket = new WebSocket(wsUrl)
-  webSocket.onmessage = (event) => {
+  let retry
+  let webSocket = new WebSocket(wsUrl)
+
+  webSocket.onopen = () => {
+    console.log('Listening for heartbeats...')
+  }
+
+  webSocket.onmessage = heartbeatHandler
+
+  function heartbeatHandler (event) {
     const heartbeats = JSON.parse(event.data)
     services.forEach(s => {
       const hb = heartbeats[s.id]
-      const el = _getById(s.id)
 
       const hasDependent = s.dependentOn && dependenciesNames.includes(s.dependentOn)
       const depActive = hasDependent ? heartbeats[s.dependentOn].active : true
@@ -39,10 +49,30 @@ window.addEventListener('pageshow', function (e) {
       if (!depActive) {
         msg = msg.concat(`\nDependency: ${s.dependentOn} is stopped`)
       }
-      el.classList.remove('active', 'stopped')
-      el.classList.add(status)
-      el.setAttribute('title', msg)
+
+      s.el.classList.remove('active', 'stopped')
+      s.el.classList.add(status)
+      s.el.setAttribute('title', msg)
     })
+  }
+
+  webSocket.onclose = () => {
+    let count = 0
+    retry = this.setInterval(() => {
+      try {
+        webSocket = new WebSocket(wsUrl)
+        console.log(`count is ${count}`)
+        webSocket.onopen = () => {
+          this.clearInterval(retry)
+          webSocket.onmessage = heartbeatHandler
+          console.log('Listening for heartbeats...')
+        }
+      } catch (error) {
+        console.error('Websocket closed. Trying to reopen...')
+      } finally {
+        count++
+      }
+    }, 5000)
   }
 
   function timestampToDateUTC (timestamp) {

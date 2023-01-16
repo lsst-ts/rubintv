@@ -71,24 +71,6 @@ async def get_page(request: web.Request) -> Dict[str, Any]:
     }
 
 
-@routes.get("/heartbeats_ws")
-async def websocket_handler(request: web.Request) -> web.WebSocketResponse:
-    ws = web.WebSocketResponse()
-    await ws.prepare(request)
-    heartbeats = request.config_dict["heartbeats"]
-    request.config_dict["websockets"].add(ws)
-    try:
-        await ws.send_json(heartbeats)
-        while True:
-            while request.config_dict["heartbeats"] == heartbeats:
-                await asyncio.sleep(10)
-            heartbeats = request.config_dict["heartbeats"]
-            await ws.send_json(heartbeats)
-    finally:
-        request.config_dict["websockets"].discard(ws)
-        return ws
-
-
 @routes.get("/{location}", name="location")
 @template("location_home.jinja")
 async def get_location_home(request: web.Request) -> Dict[str, Any]:
@@ -96,6 +78,30 @@ async def get_location_home(request: web.Request) -> Dict[str, Any]:
     location = find_location(location_name, request)
     title = build_title(location.name, request=request)
     return {"title": title, "location": location, "cameras": cameras}
+
+
+@routes.get("/{location}/heartbeats_ws")
+async def websocket_handler(request: web.Request) -> web.WebSocketResponse:
+    location_name = request.match_info["location"]
+    location = find_location(location_name, request)
+    heartbeats = request.config_dict[f"heartbeats/{location.slug}"]
+
+    ws = web.WebSocketResponse()
+    request.config_dict["websockets"].add(ws)
+    await ws.prepare(request)
+    try:
+        await ws.send_json(heartbeats)
+        while True:
+            while (
+                request.config_dict[f"heartbeats/{location.slug}"]
+                == heartbeats
+            ):
+                await asyncio.sleep(10)
+            heartbeats = request.config_dict[f"heartbeats/{location.slug}"]
+            await ws.send_json(heartbeats)
+    finally:
+        request.config_dict["websockets"].discard(ws)
+        return ws
 
 
 @routes.get("/{location}/admin", name="admin")
