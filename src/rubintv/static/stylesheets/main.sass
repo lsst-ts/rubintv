@@ -94,10 +94,46 @@ html
 .page-wrapper
 	margin: 30px 30px 30px
 
-header
+.in-memoriam
 	display: flex
-	align-items: stretch
+	flex-direction: row
+	margin-top: 0.8em
+	margin-left: -1em
+	width: max-content
+	color: #000
+	&:hover
+		text-decoration: none
+		p
+			background: #ddd
+	p
+		font-size: 0.8em
+		margin-left: -1em
+		margin-right: -1em
+		padding: 1em
+		text-align: center
+		background: #eee
+		transition: 0.3s
+		border-radius: 20px
+		border: 3px solid #578147
+	img
+		height: 48px
+		width: auto
+		z-index: 2
+		margin-top: auto
+		margin-bottom: 0
+		transform: scale(-1,1)
+		&:first-of-type
+			transform: scale(1)
+			margin-top: 0
+			margin-bottom: auto
+
+
+header
 	margin-bottom: 2em
+
+	.header-wrap
+		display: flex
+		align-items: stretch
 
 	.logo
 		width: auto

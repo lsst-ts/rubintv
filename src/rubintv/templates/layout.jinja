@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.cdnfonts.com/css/rubik" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:ital@0;1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url('static', filename='stylesheets/main.css') }}">
     <link rel="icon" href="{{ url('static', filename='images/favicon.png') }}">
     <title>{{ title }}</title>
@@ -16,22 +18,34 @@
 <body class="{{ body_class }}">
     <div class="page-wrapper">
         <header>
-            <a href="{{ url('home') }}" title="home">
-                <img class="logo" src="{{ url('static', filename='images/logos/Rubin_Logo.png') }}">
-            </a>
-            <div class="title">
-               <h1>
-                    {% block title %}
-                        RubinTV Image Display Service
-                    {% endblock title %}
-                    {% block subtitle %}
-                    {% endblock subtitle %}
-                </h1>
-                {% block undertitle %}
-                {% endblock undertitle %}
+            <div class="header-wrap">
+                <a href="{{ url('home') }}" title="home">
+                    <img class="logo" src="{{ url('static', filename='images/logos/Rubin_Logo_grey.jpg') }}">
+                </a>
+                <div class="title">
+                <h1>
+                        {% block title %}
+                            RubinTV Image Display Service
+                        {% endblock title %}
+                        {% block subtitle %}
+                        {% endblock subtitle %}
+                    </h1>
+                    {% block undertitle %}
+                    {% endblock undertitle %}
+                </div>
+                {% block allsky_status %}
+                {% endblock allsky_status %}
             </div>
-            {% block allsky_status %}
-            {% endblock allsky_status %}
+            {% block message %}
+                <a class="in-memoriam" href="https://community.lsst.org/t/remembering-simon-krughoff/7344">
+                    <img src="{{ url('static', filename='images/flowers.svg') }}">
+                        <p>
+                            In memory of Simon Krughoff 1974-2023<br><br>
+                            Who, among his many contributions to the project,<br>helped launch RubinTV
+                        </p>
+                    <img src="{{ url('static', filename='images/flowers.svg') }}">
+                </a>
+            {% endblock message %}
         </header>
         {% block content %}
         {% endblock content %}
