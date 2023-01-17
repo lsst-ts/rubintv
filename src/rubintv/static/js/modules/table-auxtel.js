@@ -1,24 +1,28 @@
-/* global $ */
-import { makeTableSortable, createTableCell, indicatorForAttr } from './table-control.js'
+import {
+  createTableCell, indicatorForAttr, _getById, _elWithAttrs, _elWithClass, makeTableSortable, _escapeName
+} from './utils.js'
 
 export function addToTable (metaData, selection, sortable = false) {
-  // empty object test- there's no data, just go home
-  if (Object.keys(metaData).length === 0) return
+  // remove existing table
+  [...document.querySelectorAll('.meta')].forEach(gridElement => {
+    gridElement.remove()
+  })
+
   // add metadata headers to the table
   selection.forEach(attr => {
     const escapedName = _escapeName(attr)
-    const lastHeaderCall = $('.grid-title').last()
-    const el = $('<th>', { class: `grid-title sideways ${escapedName}` })
-    el.text(attr)
+    const lastHeaderCall = Array.from(document.querySelectorAll('.grid-title')).pop()
+    const el = _elWithClass('th', `grid-title sideways meta ${escapedName}`)
+    el.textContent = attr
     lastHeaderCall.after(el)
   })
 
   // add table entries by row...
   Object.entries(metaData).forEach(([seq, attributes]) => {
-    const seqRow = $(`#seqno-${seq}`)
+    const seqRow = _getById(`seqno-${seq}`)
     // ...and column
     selection.forEach(attr => {
-      const seqRowLastCell = seqRow.find('td').last()
+      const seqRowLastCell = seqRow.querySelectorAll('td:last-child')[0]
       const escapedName = _escapeName(attr)
       // check for indicator attribute (i.e. starts with '_')
       const flag = indicatorForAttr(attributes, attr)
@@ -28,39 +32,39 @@ export function addToTable (metaData, selection, sortable = false) {
   })
 
   // add empty column to table header for 'copy to clipboard'
-  if ($('.grid-title #ctbEmpty').length === 0) {
-    $('.grid-title').first().after($('<th>', { id: 'ctbEmpty' }))
+  if (!_getById('ctbEmpty')) {
+    const ctbColumnHeader = _elWithAttrs('th', { id: 'ctbEmpty' })
+    // place it after the first column
+    document.querySelector('.grid-title').after(ctbColumnHeader)
+    // add copy to clipboard buttons to grid
+    Array.from(document.querySelectorAll('tr[id^="seqno-"]')).forEach((row) => {
+      const seq = row.id.split('-').pop()
+      const cell = _elWithClass('td', 'grid-cell copy-to-cb')
+      const button = _elWithClass('button', 'button button-table copy')
+      button.setAttribute('data-seq', seq)
+      cell.appendChild(button)
+      row.querySelector('td').after(cell)
+    })
   }
 
-  // add copy to clipboard buttons to grid
-  $('tr[id^="seqno-"]').each(function () {
-    const seq = this.id.split('-').pop()
-    const copyButton = $('<td class="grid-cell copy-to-cb">')
-      .append($('<button>', { class: 'button button-table copy' }).data('seq', seq))
-    $(this).find('td').first()
-      .after(copyButton)
-  })
-
-  $('.button.copy').click(function () {
-    const seq = $(this).data('seq')
-    const dateStr = $('.the-date').attr('data-date')
-    const dayObs = dateStr.replaceAll('-', '')
-    const dataStr = `dataId = {"day_obs": ${dayObs}, "seq_num": ${seq}, "detector": 0}`
-    navigator.clipboard.writeText(dataStr)
-    const responseMsg = $('<div>', { class: 'copied' }).text(`DataId for ${seq} copied to clipboard`)
-    const pos = this.getBoundingClientRect()
-    responseMsg.css({ top: pos.y - (pos.height / 2), left: pos.x + (pos.width + 8) })
-    $('body').append(responseMsg)
-    responseMsg.delay(500).animate({ opacity: 0 }, 800, function () {
-      $(this).remove()
+  Array.from(document.querySelectorAll('.button.copy')).forEach(button => {
+    button.addEventListener('click', function () {
+      const seq = this.dataset.seq
+      const dateStr = _getById('the-date').dataset.date
+      const dayObs = dateStr.replaceAll('-', '')
+      const dataStr = `dataId = {"day_obs": ${dayObs}, "seq_num": ${seq}, "detector": 0}`
+      navigator.clipboard.writeText(dataStr)
+      const responseMsg = _elWithAttrs('div', { class: 'copied', text: `DataId for ${seq} copied to clipboard` })
+      const pos = this.getBoundingClientRect()
+      responseMsg.setAttribute('style', `top: ${pos.y - (pos.height / 2)}px; left: ${pos.x + (pos.width + 8)}px`)
+      responseMsg.addEventListener('animationend', () => {
+        responseMsg.remove()
+      })
+      document.body.append(responseMsg)
     })
   })
 
   if (sortable) {
     makeTableSortable()
   }
-}
-
-function _escapeName (displayName) {
-  return displayName.toLowerCase().replaceAll(' ', '_')
 }

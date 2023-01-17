@@ -1,20 +1,23 @@
-/* global jQuery */
 import { ChannelStatus } from './modules/heartbeat.js'
 
-(function ($) {
-  const services = Array.from(document.querySelectorAll('.service')
-    .values())
-    // eslint-disable-next-line no-new-object
-    .map(s => new Object({ id: s.id, dependentOn: s.dataset.dependentOn }))
-  const dependenciesNames = Array.from(new Set(services.map(s => s.dependentOn)))
-    // eslint-disable-next-line eqeqeq
-    .filter(d => !(d === '' || typeof d === 'undefined'))
+window.addEventListener('pageshow', function (e) {
+  const serviceEls = Array.from(document.querySelectorAll('.service'))
 
-  const dependencies = Object.fromEntries(
-    dependenciesNames.map(d => [d,
-      new ChannelStatus(d)])
-  )
+  if (e.persisted) {
+    serviceEls.forEach((el) => {
+      el.classList.remove('stopped', 'active')
+    })
+  }
 
-  services
-    .map(s => new ChannelStatus(s.id, dependencies[s.dependentOn]))
-})(jQuery)
+  serviceEls.map(s => {
+    return new ChannelStatus(s.id)
+  })
+})
+
+window.addEventListener('unload', function () {
+  console.log('unloading page...')
+  const serviceEls = Array.from(document.querySelectorAll('.service'))
+  serviceEls.forEach((el) => {
+    el.classList.remove('stopped', 'active')
+  })
+})

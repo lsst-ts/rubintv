@@ -3,7 +3,11 @@
   RubinTV -
 {% endblock title %}
 {% block subtitle %}
-<a href="/rubintv/{{ camera.slug }}">
+<a href="{{ url('location', location=location.slug) }}">
+  {{ location.name }}
+</a>
+-
+<a href="{{ url('camera', location=location.slug, camera=camera.slug) }}">
   {{ camera.name }}
 </a>
 {% endblock subtitle %}

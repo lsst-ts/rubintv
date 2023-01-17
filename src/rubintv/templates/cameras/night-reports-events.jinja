@@ -1,0 +1,42 @@
+<h3 id="the-date" data-date="{{ date }}">Night reports for: <span class="data">{{ date }}</span></h3>
+<div id="night-reports">
+  <div class="dashboard">
+    {% if dashboard_data["text"] %}
+      <ul class="dashboard-text">
+      {% set text_list = dashboard_data["text"] %}
+      {% for text in text_list %}
+        <li>
+          {% for line in text %}
+            <p>{{ line }}</p>
+          {% endfor %}
+        </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if dashboard_data["quantities"] %}
+      <ul class="dashboard-quantities">
+      {% set q_list = dashboard_data["quantities"] %}
+      {% for quantity, measurement in q_list.items() %}
+        <li>
+          {{ quantity }}: {{ measurement }}
+        </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+
+  <div class="plots-grid">
+    {% for plot in plots %}
+      <figure class="plot">
+        <a href="{{ plot.url }}">
+          <img src="{{ plot.url }}?t={{ plot.timestamp }}">
+        </a>
+        <figcaption>
+          {{ plot.name }}
+        </figcaption>
+      </figure>
+    {% endfor %}
+  </div>
+
+</div>

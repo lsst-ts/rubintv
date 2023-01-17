@@ -1,0 +1,42 @@
+{% extends "layout.jinja" %}
+{% block undertitle %}
+  {{ location.name }}
+{% endblock undertitle %}
+{% block content %}
+{% set loc_slug = location.slug %}
+{% for group_name, cam_names in location.camera_groups.items() %}
+  <section>
+    <h2 class="section-title">{{ group_name }}</h2>
+    <nav class="camera-menu">
+      <ul class="cameras flr">
+        {% for cam_name in cam_names %}
+          <li>
+            {% set camera = cameras[cam_name] %}
+            {% if camera.logo %}
+              <a
+                class="button button-large logo"
+                href="{{ url('camera', location=loc_slug, camera=cam_name) }}"
+                style="background-image: url({{ url('static', filename='images/logos/' + camera.logo) }})">
+                {{ camera.name }}
+              </a>
+            {% else %}
+              <a class="button button-large" href="{{ url('camera', location=loc_slug, camera=cam_name) }}">
+                {{ camera.name }}
+              </a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </section>
+{% endfor %}
+{% endblock content %}
+{% block further %}
+  <div class="admin-access">
+    <a
+      class="button button-small admin"
+      href="{{ url('admin', location=location.slug) }}">
+      Admin
+    </a>
+  </div>
+{% endblock further %}

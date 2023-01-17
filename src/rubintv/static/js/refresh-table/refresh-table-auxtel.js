@@ -1,23 +1,26 @@
-/* global jQuery */
-import { parseJsonFromDOM, createTableControlUI, refreshTable, addDownloadMetadataButton } from '../modules/table-control.js'
+import { parseJsonFromDOM, _getById } from '../modules/utils.js'
+import { TableControls } from '../modules/table-control.js'
 import { addToTable } from '../modules/table-auxtel.js'
+import { refreshTableLoop } from '../modules/table-refresher.js'
 import { auxtelDefaultSelected } from '../models.js'
 
-(function ($) {
-  const selected = auxtelDefaultSelected
+window.addEventListener('load', function () {
   const meta = parseJsonFromDOM('#table-metadata')
 
-  updateTableAndControls(meta, selected)
-  refreshTable(injectHTML, updateTableAndControls, selected, 5)
+  const tableControls = new TableControls(auxtelDefaultSelected, meta, '#table-controls', addToTable)
+  addToTable(meta, tableControls.selected)
+
+  refreshTableLoop(injectHTML, updateTableAndControls, 5)
 
   function injectHTML (htmlParts) {
-    $('#per-day-refreshable').html(htmlParts.per_day)
-    $('.channel-day-data').html(htmlParts.table)
+    _getById('per-day-refreshable').innerHTML = htmlParts.per_day
+    _getById('channel-day-data').innerHTML = htmlParts.table
   }
 
-  function updateTableAndControls (meta, selected) {
+  function updateTableAndControls (meta) {
+    tableControls.updateMetadata(meta)
+    tableControls.draw()
+    const selected = tableControls.selected
     addToTable(meta, selected)
-    addDownloadMetadataButton(meta)
-    createTableControlUI(meta, $('#table-controls'), selected, addToTable)
   }
-})(jQuery)
+})

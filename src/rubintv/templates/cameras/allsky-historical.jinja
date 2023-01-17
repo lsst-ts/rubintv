@@ -21,9 +21,10 @@
                 </h5>
                 <div class="days">
                   {% for day in years[year][month] %}
+                    {% set date_str = date(year, month, day)|string %}
                     <a
                       class="day"
-                      href="/rubintv/allsky/historical/{{ year }}-{{ month }}-{{ day }}">
+                      href="{{ url('hist_single', location=location.slug, camera=camera.slug, date_str=date_str) }}">
                       {{ day }}
                     </a>
                   {% endfor %}
@@ -41,6 +42,5 @@
 </div>
 {% endblock content %}
 {% block footer_scripts %}
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script type=module src="{{ url('static', filename='js/allsky/allsky-calendar.js') }}"></script>
+  <script type="module" src="{{ url('static', filename='js/hist/historical-allsky.js') }}"></script>
 {% endblock footer_scripts %}

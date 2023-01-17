@@ -17,6 +17,20 @@ body {
   background-color: #fff;
 }
 
+.button.historical {
+  background-color: #262534;
+  color: #fff;
+}
+
+.button.movie {
+  background-color: #83daee;
+  text-align: center;
+}
+
+.button.admin {
+  background-color: #999;
+}
+
 .button.monitor {
   background-color: #F07F85;
 }
@@ -33,23 +47,8 @@ body {
   background-color: #7FF094;
 }
 
-.button.historical {
-  background-color: #262534;
-  color: #fff;
-}
-
-.button.movie {
-  background-color: #83daee;
-  text-align: center;
-}
-
-.button.admin {
-  background-color: #999;
-}
-
 .button.startracker {
   background-color: #58528b;
-  color: #fff;
 }
 
 .button.analysis {
@@ -64,9 +63,38 @@ body {
   background-color: #fda529;
 }
 
-.grid-cell.group-a {
-  background-color: #e0e0e0;
+.button.focal_plane_mosiac {
+  background-color: #6fe9ba;
 }
+
+.button.noise_map {
+  background-color: #e771a8;
+}
+
+.grid-cell.u_color {
+  background-color: white;
+}
+
+.grid-cell.g_color {
+  background-color: white;
+}
+
+.grid-cell.r_color {
+  background-color: white;
+}
+
+.grid-cell.i_color {
+  background-color: white;
+}
+
+.grid-cell.z_color {
+  background-color: white;
+}
+
+.grid-cell.y_color {
+  background-color: white;
+}
+
 .grid-cell.bad {
   background-color: #ebab93;
 }
@@ -75,6 +103,15 @@ body {
 }
 .grid-cell.ok {
   background-color: #b3f1a7;
+}
+.grid-cell.measured {
+  background-color: #7dc8cf;
+}
+.grid-cell.white_color {
+  background-color: #fefefe;
+}
+.grid-cell.rainbow_color {
+  background: linear-gradient(270deg, #fec8c9 0%, #f5dece 16%, #f5f8cd 28%, #e0f5d1 50%, #c9d2fe 66%, #dcddfe 83%, #f1dafe 100%);
 }
 
 .calendar {
@@ -85,6 +122,7 @@ body {
   margin-bottom: 2em;
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 10px;
 }
@@ -114,7 +152,8 @@ body {
 }
 
 .year {
-  flex-basis: 50%;
+  flex-basis: calc(50% - 10px);
+  box-sizing: border-box;
   padding: 1em;
   background: #fafafa;
 }
@@ -207,14 +246,29 @@ h6 {
   justify-content: end;
   text-decoration: none;
   box-shadow: 2.5px 2.5px 4px rgba(0, 0, 0, 0.26);
-  transition: box-shadow 0.2s;
+  transition: 0.2s;
   padding: 0.5em;
+}
+.button:hover {
+  box-shadow: none;
 }
 
 .button-large {
   width: 200px;
   height: 144px;
-  padding: 1.5em;
+  padding: 1em 1.2em;
+}
+.button-large.logo {
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.button-large.logo:not([style*=".svg"]) {
+  color: #fff;
+  text-shadow: 1px 1px 3px #000;
+  background-size: cover;
+}
+.button-large:hover {
+  transform: scale(0.992);
 }
 
 .button-small {
@@ -246,8 +300,20 @@ a:hover {
   text-decoration: underline;
 }
 
-.button:hover {
-  box-shadow: none;
+.site-host-display {
+  position: fixed;
+  z-index: 24;
+  top: 5px;
+  right: 5px;
+  padding: 9px;
+  background-color: aquamarine;
+  border-radius: 6px;
+  font-size: 3em;
+  opacity: 0.7;
+  pointer-events: none;
+}
+.site-host-display.development {
+  background-color: burlywood;
 }
 
 html {
@@ -260,10 +326,51 @@ html {
   margin: 30px 30px 30px;
 }
 
+.in-memoriam {
+  display: flex;
+  flex-direction: row;
+  margin-top: 0.8em;
+  margin-left: -1em;
+  width: max-content;
+  color: #000;
+}
+.in-memoriam:hover {
+  text-decoration: none;
+}
+.in-memoriam:hover p {
+  background: #ddd;
+}
+.in-memoriam p {
+  font-size: 0.8em;
+  margin-left: -1em;
+  margin-right: -1em;
+  padding: 1em;
+  text-align: center;
+  background: #eee;
+  transition: 0.3s;
+  border-radius: 20px;
+  border: 3px solid #578147;
+}
+.in-memoriam img {
+  height: 48px;
+  width: auto;
+  z-index: 2;
+  margin-top: auto;
+  margin-bottom: 0;
+  transform: scale(-1, 1);
+}
+.in-memoriam img:first-of-type {
+  transform: scale(1);
+  margin-top: 0;
+  margin-bottom: auto;
+}
+
 header {
+  margin-bottom: 2em;
+}
+header .header-wrap {
   display: flex;
   align-items: stretch;
-  margin-bottom: 2em;
 }
 header .logo {
   width: auto;
@@ -330,9 +437,8 @@ section {
 .columns {
   display: flex;
   flex-direction: row;
-}
-.columns > * {
-  padding-right: 2em;
+  gap: 2em;
+  margin-bottom: 2em;
 }
 
 #per-image-menu {
@@ -341,12 +447,6 @@ section {
 
 .channel-day-data {
   flex-basis: 50%;
-}
-
-.sidebar {
-  flex-basis: 50%;
-  padding-top: 5.6em;
-  background: #fff;
 }
 
 .allsky-current-image, .allsky-current-movie {
@@ -498,11 +598,21 @@ section {
   border: 1px solid green;
   border-radius: 6px;
   background-color: #fff;
+  animation: fadeout 0.8s linear 0.5s;
 }
 
+@keyframes fadeout {
+  0% {
+    opacity: 100%;
+  }
+  100% {
+    opacity: 0%;
+  }
+}
 .table-panel {
+  position: relative;
   background: #eee;
-  padding: 1.2em 19px;
+  padding: 0.8em 19px;
   border-radius: 20px;
   margin: 0 1em;
 }
@@ -519,25 +629,37 @@ section {
 
 .table-controls {
   display: none;
+  grid-template-columns: 1fr 1fr;
   position: absolute;
-  padding: 20px;
-  margin: -3px -21px;
-  border: 2px #fff solid;
+  padding: 3px 3px 20px;
+  margin: 20px -21px;
   border-top: none;
-  background: #eee;
+  background: #fff;
+  box-shadow: 3px 2px 6px rgba(0, 0, 0, 0.2);
 }
 .table-controls label {
   padding: 3px 0px;
   display: flex;
   flex-direction: row;
   align-items: center;
+  user-select: none;
 }
-.table-controls label:hover {
+
+.table-control {
+  padding: 2px 1em;
+  width: max-content;
+}
+.table-control:hover {
   background: #ddd;
+}
+.table-control.toggle {
+  background: #6d6d6d;
+  color: #fff;
+  border-radius: 0 0 6px;
 }
 
 .table-panel.open .table-controls {
-  display: block;
+  display: grid;
 }
 .table-panel.open .table-control-button::after {
   transform: rotate(180deg);
@@ -642,10 +764,12 @@ section {
   width: 50px;
   background-image: none;
 }
-.channel.active {
+
+.channel.active .heartbeat {
   background-image: none;
 }
-.channel.stopped {
+
+.channel.stopped .heartbeat {
   background-image: url(/rubintv/static/images/heartbeat_channel_stopped.svg);
 }
 
@@ -688,6 +812,39 @@ section {
 }
 #historicalReset .hidden {
   display: none;
+}
+
+.dashboard {
+  font-family: "Monaco", monospace, monospace;
+  margin: 2em 0;
+}
+.dashboard ul {
+  list-style: none;
+  margin-bottom: 1em;
+}
+.dashboard li {
+  border: 1px #555 solid;
+  border-radius: 6px;
+  padding: 11px 18px;
+  margin-bottom: 6px;
+  width: fit-content;
+}
+.dashboard li:nth-of-type(2n - 1) {
+  background-color: #f0f0f0;
+}
+
+.plots-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2em;
+}
+
+.plot img {
+  width: 100%;
+  height: auto;
+}
+.plot figcaption {
+  margin-top: 0.5em;
 }
 
 /*# sourceMappingURL=main.css.map */

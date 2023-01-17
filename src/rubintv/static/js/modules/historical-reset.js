@@ -1,18 +1,19 @@
-/* global $ */
+import { simplePost, _getById } from './utils.js'
 
 function historicalReset () {
-  const $form = $('#historicalReset')
-  $form.click(function (e) {
+  const form = _getById('historicalReset')
+  form.addEventListener('click', function (e) {
     e.preventDefault()
     // hide 'done' in case button is pressed again
-    $form.find('.done').addClass('hidden')
-    $form.find('.pending').removeClass('hidden')
-    const promise = $.post('reload_historical', function (data) {
+    form.querySelector('.done').classList.add('hidden')
+    form.querySelector('.pending').classList.remove('hidden')
+
+    simplePost('reload_historical').then(data => {
       console.log(`${data}: reload success`)
-    })
-    promise.done(function () {
-      $form.find('.pending').addClass('hidden')
-      $form.find('.done').removeClass('hidden')
+      form.querySelector('.pending').classList.add('hidden')
+      form.querySelector('.done').classList.remove('hidden')
+    }).catch((err) => {
+      console.log(`Couldn't reload historical date: ${err}`)
     })
   })
 }

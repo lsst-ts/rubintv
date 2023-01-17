@@ -1,6 +1,5 @@
-/* global jQuery */
 import { applyYearControls } from '../modules/calendar-controls.js'
 
-(function ($) {
+window.addEventListener('load', () => {
   applyYearControls()
-})(jQuery)
+})

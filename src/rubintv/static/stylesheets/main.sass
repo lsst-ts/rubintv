@@ -28,13 +28,24 @@
 	justify-content: end
 	text-decoration: none
 	box-shadow: 2.5px 2.5px 4px rgba(0, 0, 0, 0.26)
-	transition: box-shadow 0.2s
+	transition: 0.2s
 	padding: 0.5em
+	&:hover
+		box-shadow: none
 
 .button-large
 	width: 200px
 	height: 144px
-	padding: 1.5em
+	padding: 1em 1.2em
+	&.logo
+		background-position: center
+		background-repeat: no-repeat
+	&.logo:not([style*='.svg'])
+		color: #fff
+		text-shadow: 1px 1px 3px #000
+		background-size: cover
+	&:hover
+		transform: scale(0.992)
 
 .button-small
 	padding: 1em
@@ -53,15 +64,27 @@
 		width: 16px
 		height: 16px
 
+
 a
 	text-decoration: none
 	display: block
 	&:hover
 		text-decoration: underline
 
-.button:hover
-	box-shadow: none
 
+.site-host-display
+	position: fixed
+	z-index: 24
+	top: 5px
+	right: 5px
+	padding: 9px
+	background-color: aquamarine
+	border-radius: 6px
+	font-size: 3em
+	opacity: 0.7
+	pointer-events: none
+	&.development
+		background-color: burlywood
 
 html
 	font-family: "Rubik", sans-serif
@@ -71,10 +94,46 @@ html
 .page-wrapper
 	margin: 30px 30px 30px
 
-header
+.in-memoriam
 	display: flex
-	align-items: stretch
+	flex-direction: row
+	margin-top: 0.8em
+	margin-left: -1em
+	width: max-content
+	color: #000
+	&:hover
+		text-decoration: none
+		p
+			background: #ddd
+	p
+		font-size: 0.8em
+		margin-left: -1em
+		margin-right: -1em
+		padding: 1em
+		text-align: center
+		background: #eee
+		transition: 0.3s
+		border-radius: 20px
+		border: 3px solid #578147
+	img
+		height: 48px
+		width: auto
+		z-index: 2
+		margin-top: auto
+		margin-bottom: 0
+		transform: scale(-1,1)
+		&:first-of-type
+			transform: scale(1)
+			margin-top: 0
+			margin-bottom: auto
+
+
+header
 	margin-bottom: 2em
+
+	.header-wrap
+		display: flex
+		align-items: stretch
 
 	.logo
 		width: auto
@@ -132,19 +191,14 @@ section
 .columns
 	display: flex
 	flex-direction: row
-	> *
-		padding-right: 2em
+	gap: 2em
+	margin-bottom: 2em
 
 #per-image-menu
 	flex-basis: 70%
 
 .channel-day-data
 	flex-basis: 50%
-
-.sidebar
-	flex-basis: 50%
-	padding-top: 5.6em
-	background: #fff
 
 .allsky-current-image, .allsky-current-movie
 	flex-basis: 50%
@@ -270,10 +324,18 @@ section
 	border: 1px solid green
 	border-radius: 6px
 	background-color: #fff
+	animation: fadeout 0.8s linear 0.5s
+
+@keyframes fadeout
+	0%
+		opacity: 100%
+	100%
+		opacity: 0%
 
 .table-panel
+	position: relative
 	background: #eee
-	padding: 1.2em 19px
+	padding: 0.8em 19px
 	border-radius: 20px
 	margin: 0 1em
 
@@ -288,23 +350,33 @@ section
 
 .table-controls
 	display: none
+	grid-template-columns: 1fr 1fr
 	position: absolute
-	padding: 20px
-	margin: -3px -21px
-	border: 2px #fff solid
+	padding: 3px 3px 20px
+	margin: 20px -21px
 	border-top: none
-	background: #eee
+	background: #fff
+	box-shadow: 3px 2px 6px rgba(0,0,0,0.2)
 	label
 		padding: 3px 0px
 		display: flex
 		flex-direction: row
 		align-items: center
-		&:hover
-			background: #ddd
+		user-select: none
+
+.table-control
+	padding: 2px 1em
+	width: max-content
+	&:hover
+		background: #ddd
+	&.toggle
+		background: #6d6d6d
+		color: #fff
+		border-radius: 0 0 6px
 
 .table-panel.open
 	.table-controls
-		display: block
+		display: grid
 	.table-control-button::after
 		transform: rotate(180deg)
 
@@ -395,10 +467,10 @@ section
 		height: 50px
 		width: 50px
 		background-image: none
-	&.active
-		background-image: none
-	&.stopped
-		background-image: url(/rubintv/static/images/heartbeat_channel_stopped.svg)
+.channel.active .heartbeat
+	background-image: none
+.channel.stopped .heartbeat
+	background-image: url(/rubintv/static/images/heartbeat_channel_stopped.svg)
 
 .metadata-status
 	.heartbeat
@@ -431,3 +503,30 @@ section
 
 	.hidden
 		display: none
+
+.dashboard
+	font-family: "Monaco", monospace, monospace
+	margin: 2em 0
+	ul
+		list-style: none
+		margin-bottom: 1em
+	li
+		border: 1px #555 solid
+		border-radius: 6px
+		padding: 11px 18px
+		margin-bottom: 6px
+		width: fit-content
+		&:nth-of-type(2n - 1)
+			background-color: #f0f0f0
+
+.plots-grid
+	display: grid
+	grid-template-columns: repeat(3,1fr)
+	gap: 2em
+
+.plot
+	img
+		width: 100%
+		height: auto
+	figcaption
+		margin-top: 0.5em

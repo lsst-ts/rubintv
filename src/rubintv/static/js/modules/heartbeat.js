@@ -1,4 +1,4 @@
-/* global $ */
+import { getJson, _getById } from './utils.js'
 
 // heartbeat data structure:
 // {
@@ -9,40 +9,46 @@
 // }
 // timestamp is seconds since epoch (Jan 1, 1970)
 
+function timestampToDateUTC (timestamp) {
+  // Date takes timestamp in milliseconds
+  const d = new Date(timestamp * 1000).toLocaleString('en-US', { timeZone: 'UTC' })
+  return d
+}
+
 export class ChannelStatus {
   // time in secs to try downloading heartbeat again after stale
-  RETRY = 120
+  NETWORK_ALLOWANCE = 0
+  RETRY = 30
   // time in secs to query all blobs to bring in missing services
 
-  constructor (service, dependency = null) {
+  constructor (service) {
     this.service = service
-    this.dependency = dependency
-    this.$el = $(`#${this.service}`)
+    this.el = _getById(this.service)
     this.time = 0
     this.next = 0
+    this.active = true
     this.updateHeartbeatData()
   }
 
-  get nextInterval () {
-    return (this.isActive)
-      ? this.next - this.nowTimestamp
-      : this.RETRY
-  }
+  updateHeartbeatData () {
+    let alive = false
 
-  get isActive () {
-    const thisActive = this.next > this.nowTimestamp
-    if (!this.dependency) {
-      return thisActive
-    }
-    return thisActive && this.dependency.isActive
-  }
+    const promise = getJson(`admin/heartbeat/${this.service}`)
 
-  get status () {
-    return this.isActive ? 'active' : 'stopped'
-  }
-
-  get nowTimestamp () {
-    return Math.round(Date.now() / 1000)
+    promise
+      .then(heartbeat => {
+        this.consumeHeartbeat(heartbeat)
+        alive = true
+      })
+      .finally(() => {
+        this.active = this.isActive
+        this.displayStatus(alive)
+        this.waitForNextHeartbeat()
+      })
+      .catch((e) => {
+        console.error(e)
+        console.warn(`Couldn't reach server: Unable to retrieve heartbeats for ${this.service}`)
+      })
   }
 
   consumeHeartbeat (heartbeat) {
@@ -52,45 +58,55 @@ export class ChannelStatus {
     this.errors = heartbeat.errors
   }
 
+  displayStatus (alive = true) {
+    // some classes have no display on a page so skip
+    // if there's no page element
+    if (!this.el) return
+    if (alive) {
+      this.el.classList.remove('stopped')
+      this.el.classList.add(this.status)
+    } else {
+      this.el.classList.remove('stopped', 'active')
+    }
+    this.displayHeartbeatInfo()
+  }
+
+  displayHeartbeatInfo () {
+    const time = this.time
+      ? timestampToDateUTC(this.time) + ' UTC'
+      : 'never'
+
+    const next = this.active
+      ? timestampToDateUTC(this.next)
+      : timestampToDateUTC(this.nowTimestamp + this.RETRY)
+
+    const retrying = !this.active ? 'Retrying\n' : ''
+
+    this.el.setAttribute('title', `${retrying}last heartbeat at: ${time}\nnext check at: ${next} UTC`)
+  }
+
   waitForNextHeartbeat () {
     setTimeout(() => {
       this.updateHeartbeatData()
     }, this.nextInterval * 1000)
   }
 
-  updateHeartbeatData () {
-    this.alive = false
-    const self = this
-
-    $.get(`admin/heartbeat/${this.service}`, (heartbeat) => {
-      if (!$.isEmptyObject(heartbeat)) {
-        self.consumeHeartbeat(heartbeat)
-        this.alive = true
-      }
-    }).always(() => {
-      self.displayStatus(this.alive)
-      self.waitForNextHeartbeat()
-    })
+  get nextInterval () {
+    return (this.active)
+      ? this.next - this.nowTimestamp
+      : this.RETRY
   }
 
-  displayHeartbeatInfo () {
-    const time = this.time
-      ? new Date(this.time * 1000).toLocaleString('en-US', { timeZone: 'UTC' }) + ' UTC'
-      : 'never'
-
-    const next = this.isActive
-      ? new Date(this.next * 1000).toLocaleString('en-US', { timeZone: 'UTC' })
-      : new Date((this.nowTimestamp + this.RETRY) * 1000).toLocaleString('en-US', { timeZone: 'UTC' })
-
-    this.$el.attr({ title: `last heartbeat at: ${time}\nnext check at: ${next} UTC` })
+  get isActive () {
+    const thisActive = (this.next + this.NETWORK_ALLOWANCE) > this.nowTimestamp
+    return thisActive
   }
 
-  displayStatus (alive = true) {
-    if (alive) {
-      this.$el.removeClass('stopped').addClass(this.status)
-    } else {
-      this.$el.removeClass('stopped active')
-    }
-    this.displayHeartbeatInfo()
+  get status () {
+    return this.active ? 'active' : 'stopped'
+  }
+
+  get nowTimestamp () {
+    return Math.round(Date.now() / 1000)
   }
 }

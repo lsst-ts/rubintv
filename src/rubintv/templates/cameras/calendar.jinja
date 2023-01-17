@@ -13,9 +13,10 @@
           </h5>
           <div class="days">
             {% for day in years[year][month] %}
+              {% set date_str = get_date(year, month, day)|string %}
               <a
                 class="day"
-                href="/rubintv/{{ camera.slug }}/historical/{{ year }}-{{ month }}-{{ day }}">
+                href="{{ url('hist_single', location=location.slug, camera=camera.slug, date_str=date_str) }}">
                 <span class="day_num">{{ day }}</span>
                 <span class="num_evs">({{ years[year][month][day] }})</span>
               </a>

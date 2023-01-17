@@ -1,7 +1,7 @@
 {% extends "cameras/layout.jinja" %}
 
 {% block undertitle %}
-  <a class="button historical" href="/rubintv/{{camera.slug}}/historical">
+  <a class="button historical" href="{{ url('historical', location=location.slug, camera=camera.slug) }}">
     Historical data
     <img src="{{ url('static', filename='images/history-line.svg') }}">
   </a>
@@ -9,29 +9,39 @@
 
 {% block content %}
   <div class="columns">
-
-    <nav id="per-image-menu" class="channel-menu" role="navigation">
-      <h3>Per Image Channels: Current</h3>
-      <ul class="channels flr">
-        {% for channel in camera.channels.values() %}
-          {% if channel.label %}
-            <li class="channel service"
-                id="{{ channel.prefix }}"
-                data-dependent-on="{{ channel.service_dependency }}">
-              <a  class="button button-large {{ channel.simplename }}"
-                  href="/rubintv/{{ camera.slug }}/{{ channel.simplename }}_current" target="_blank">
-                <div class="heartbeat"></div>
-                <span>{{ channel.name }}</span>
-              </a>
-            </li>
-          {% endif %}
-        {% endfor %}
-      </ul>
-    </nav>
+    {# {% if camera.night_reports_prefix %}
+      <div id="night_reports_link">
+        <h3>Night Reports Page</h3>
+        <a href="{{ url('night_reports', location=location.slug, camera=camera.slug) }}" class="button button-large night-reports">
+          Night Reports
+        </a>
+      </div>
+    {% endif %} #}
     <div id="per-day-refreshable">
       {% include "cameras/per-day-channels.jinja" %}
     </div>
   </div>
+
+  <section>
+    <nav id="per-image-menu" class="channel-menu" role="navigation">
+      <h3>Per Image Channels: Current</h3>
+        <ul class="channels flr">
+          {% for channel in camera.channels.values() %}
+            {% if channel.label %}
+              <li class="channel service"
+                  id="{{ channel.prefix }}"
+                  data-dependent-on="{{ channel.service_dependency }}">
+                <a  class="button button-large {{ channel.simplename }}"
+                    href="{{ url('current', location=location.slug, camera=camera.slug, channel=channel.simplename) }}" target="_blank">
+                  <div class="heartbeat"></div>
+                  <span>{{ channel.name }}</span>
+                </a>
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </nav>
+  </section>
 
   <div class="metadata-status">
     <h4>metadata service:&nbsp;</h4>
@@ -40,14 +50,13 @@
     </div>
   </div>
 
-    <section class="channel-day-data">
+    <section id="channel-day-data">
       {% include "cameras/data-table-header.jinja" %}
     </section>
 {% endblock content %}
 
 {% block footer_scripts %}
   {% set cam_js_filename = "js/refresh-table/refresh-table-" + camera.slug + ".js" %}
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
   <script type="module" src='{{ url("static", filename=cam_js_filename) }}'></script>
   <script type="module" src="{{ url('static', filename='js/camera-status.js') }}"></script>
 {% endblock footer_scripts  %}

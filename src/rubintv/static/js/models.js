@@ -1,5 +1,3 @@
-/* eslint-disable quote-props */
-
 export const auxtelDefaultSelected = [
   'Mount motion image degradation',
   'Exposure time',
@@ -61,3 +59,5 @@ export const starTrackerWideHeaders = {
     'RMS scatter pixels wide'
   ]
 }
+
+export const slacDefault = []

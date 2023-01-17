@@ -1,19 +1,20 @@
-/* global jQuery */
-import { parseJsonFromDOM, refreshTable } from '../modules/table-control.js'
+import { parseJsonFromDOM, _getById } from '../modules/utils.js'
 import { addToTable } from '../modules/table-startracker.js'
 import { starTrackerHeaders } from '../models.js'
+import { refreshTableLoop } from '../modules/table-refresher.js'
 
-(function ($) {
+document.addEventListener('DOMContentLoaded', function () {
   const meta = parseJsonFromDOM('#table-metadata')
   const headers = starTrackerHeaders
-  updateTable(meta, headers)
-  refreshTable(starTrackerHtmlInject, updateTable, headers, 5)
+
+  updateTable(meta)
+  refreshTableLoop(starTrackerHtmlInject, updateTable, 5)
 
   function starTrackerHtmlInject (htmlParts) {
-    $('.channel-day-data').html(htmlParts.table)
+    _getById('channel-day-data').innerHTML = htmlParts.table
   }
 
-  function updateTable (meta, headers) {
+  function updateTable (meta) {
     addToTable(meta, headers)
   }
-})(jQuery)
+})

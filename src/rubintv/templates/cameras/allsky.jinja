@@ -1,6 +1,6 @@
 {% extends "cameras/layout.jinja" %}
 {% block undertitle %}
-  <a class="button button historical" href="/rubintv/allsky/historical">
+  <a class="button button historical" href="{{ url('historical', location=location.slug, camera=camera.slug) }}">
     Historical movies
     <img src="{{ url('static', filename='images/history-line.svg') }}">
   </a>
@@ -31,6 +31,5 @@
   </div>
 {% endblock content %}
 {% block footer_scripts %}
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script type=module src="{{ url('static', filename='js/allsky/allsky-refresh.js') }}"></script>
+<script type=module src="{{ url('static', filename='js/refresh-table/refresh-allsky.js') }}"></script>
 {% endblock footer_scripts %}
