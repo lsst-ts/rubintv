@@ -1,4 +1,5 @@
 import { _getById } from './modules/utils.js'
+import { ReconnectingWebSocket } from './modules/reconnecting-websocket.js'
 
 window.addEventListener('pageshow', function (e) {
   const location = _getById('location').dataset.location
@@ -26,13 +27,13 @@ window.addEventListener('pageshow', function (e) {
   const appName = this.document.location.pathname.split('/')[1]
   const wsUrl = `${wsProtocol}//${hostname}/${appName}/${location}/heartbeats_ws`
 
-  let webSocket = new WebSocket(wsUrl)
+  const rws = new ReconnectingWebSocket(wsUrl)
 
-  webSocket.onopen = () => {
+  rws.onopen = () => {
     console.log('Listening for heartbeats...')
   }
 
-  webSocket.onmessage = heartbeatHandler
+  rws.onmessage = heartbeatHandler
 
   function heartbeatHandler (event) {
     const heartbeats = JSON.parse(event.data)
@@ -55,12 +56,8 @@ window.addEventListener('pageshow', function (e) {
     })
   }
 
-  webSocket.onclose = () => {
-    webSocket = new WebSocket(wsUrl)
-    webSocket.addEventListener = (e) => {
-      console.log(e)
-    }
-    console.log(webSocket)
+  rws.onclose = () => {
+    console.log('Heartbeats websocket closed')
   }
 
   function timestampToDateUTC (timestamp) {
