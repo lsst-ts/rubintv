@@ -26,7 +26,6 @@ window.addEventListener('pageshow', function (e) {
   const appName = this.document.location.pathname.split('/')[1]
   const wsUrl = `${wsProtocol}//${hostname}/${appName}/${location}/heartbeats_ws`
 
-  let retry
   let webSocket = new WebSocket(wsUrl)
 
   webSocket.onopen = () => {
@@ -57,22 +56,11 @@ window.addEventListener('pageshow', function (e) {
   }
 
   webSocket.onclose = () => {
-    let count = 0
-    retry = this.setInterval(() => {
-      try {
-        webSocket = new WebSocket(wsUrl)
-        console.log(`count is ${count}`)
-        webSocket.onopen = () => {
-          this.clearInterval(retry)
-          webSocket.onmessage = heartbeatHandler
-          console.log('Listening for heartbeats...')
-        }
-      } catch (error) {
-        console.error('Websocket closed. Trying to reopen...')
-      } finally {
-        count++
-      }
-    }, 5000)
+    webSocket = new WebSocket(wsUrl)
+    webSocket.addEventListener = (e) => {
+      console.log(e)
+    }
+    console.log(webSocket)
   }
 
   function timestampToDateUTC (timestamp) {
