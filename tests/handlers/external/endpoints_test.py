@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 
 import pytest
-from aiohttp import web
+from aiohttp import WSMsgType, web
 
 from rubintv.app import create_app
 
@@ -280,3 +281,16 @@ async def test_get_camera_historical_for_badly_formed_date(
         f"/{name}/summit/auxtel/historical/111-111-111"
     )
     assert response.status == 404
+
+
+@pytest.mark.asyncio
+async def test_heartbeats_websocket(aiohttp_client: TestClient) -> None:
+    """Test websocket at /app-name/summit/heartbeats_ws"""
+    app = create_app(minimal_data_load=True)
+    name = app["safir/config"].name
+    client = await aiohttp_client(app)
+
+    ws = await client.ws_connect(f"/{name}/summit/heartbeats_ws")
+    message = await ws.receive()
+    assert message.type == WSMsgType.TEXT
+    assert json.loads(message.data) == app["heartbeats/summit"]

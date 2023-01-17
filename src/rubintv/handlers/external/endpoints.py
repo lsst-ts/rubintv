@@ -3,9 +3,8 @@
 __all__ = [
     "get_page",
     "get_admin_page",
+    "heartbeats_websocket",
     "reload_historical",
-    "request_heartbeat_for_channel",
-    "request_all_heartbeats",
     "get_all_sky_current",
     "get_all_sky_current_update",
     "get_allsky_historical",
@@ -34,7 +33,6 @@ from rubintv.handlers.external.endpoints_helpers import (
     find_location,
     get_current_event,
     get_event_page_link,
-    get_heartbeats,
     get_historical_night_reports_events,
     get_image_viewer_link,
     get_metadata_json,
@@ -56,8 +54,6 @@ from rubintv.models.models_assignment import (
     production_services,
 )
 from rubintv.timer import Timer
-
-HEARTBEATS_PREFIX = "heartbeats"
 
 
 @routes.get("")
@@ -81,7 +77,7 @@ async def get_location_home(request: web.Request) -> Dict[str, Any]:
 
 
 @routes.get("/{location}/heartbeats_ws")
-async def websocket_handler(request: web.Request) -> web.WebSocketResponse:
+async def heartbeats_websocket(request: web.Request) -> web.WebSocketResponse:
     location_name = request.match_info["location"]
     location = find_location(location_name, request)
     heartbeats = request.config_dict[f"heartbeats/{location.slug}"]
@@ -128,47 +124,6 @@ async def reload_historical(request: web.Request) -> web.Response:
     historical = request.config_dict[f"rubintv/cached_data/{location.slug}"]
     historical.reload()
     return web.Response(text="OK", content_type="text/plain")
-
-
-@routes.get("/{location}/admin/heartbeat/{service_prefix}")
-async def request_heartbeat_for_channel(request: web.Request) -> web.Response:
-    location_name = request.match_info["location"]
-    location = find_location(location_name, request)
-    loc_services = {
-        name: production_services[name] for name in location.services
-    }
-    all_services = []
-
-    for ps in loc_services.values():
-        if "channels" in ps:
-            for chan in ps["channels"].values():
-                all_services.append(chan.prefix)
-        if "services" in ps:
-            for service in ps["services"]:
-                all_services.append(service)
-    prefix = request.match_info["service_prefix"]
-    if prefix not in all_services:
-        raise web.HTTPNotFound()
-
-    bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
-    heartbeat_prefix = "/".join([HEARTBEATS_PREFIX, prefix])
-    heartbeats = get_heartbeats(bucket, heartbeat_prefix)
-    if heartbeats:
-        hb_json = heartbeats[0]
-    else:
-        hb_json = {}
-    json_res = json.dumps(hb_json)
-    return web.Response(text=json_res, content_type="application/json")
-
-
-@routes.get("/{location}/admin/heartbeats")
-async def request_all_heartbeats(request: web.Request) -> web.Response:
-    location_name = request.match_info["location"]
-    location = find_location(location_name, request)
-    bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
-    heartbeats = get_heartbeats(bucket, HEARTBEATS_PREFIX)
-    json_res = json.dumps(heartbeats)
-    return web.Response(text=json_res, content_type="application/json")
 
 
 @routes.get("/summit/allsky")
