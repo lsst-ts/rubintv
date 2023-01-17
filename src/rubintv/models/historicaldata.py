@@ -25,14 +25,14 @@ class HistoricalData:
     """
 
     def __init__(
-        self, location_name: str, bucket: Bucket, minimal_data_load: bool
+        self, location_name: str, bucket: Bucket, load_minimal_data: bool
     ) -> None:
         location: Location = locations[location_name]
         self._location = location
         self._bucket = bucket
         self._events = {}
         self._night_reports = {}
-        if not minimal_data_load:
+        if not load_minimal_data:
             self._events = self._get_events()
         else:
             self._events = self._get_single_date_events_for_location()
@@ -100,7 +100,7 @@ class HistoricalData:
                     blobs += list(self._bucket.list_blobs(prefix=prefix))
                 except NotFound:
                     print(
-                        f"Bucket retrieval error. {self._bucket.name} not found"
+                        f"Bucket retrieval error. {self._bucket.name}:{prefix} not found"
                     )
                 print(f"Total blobs found: {len(blobs)}")
         return blobs
@@ -125,8 +125,7 @@ class HistoricalData:
         night_reports: Dict[str, Dict] = {}
         for cam_name in self._location.all_cameras():
             cam: Camera = cameras[cam_name]
-            if cam.night_reports_prefix:
-                prefix = cam.night_reports_prefix
+            if prefix := cam.night_reports_prefix:
                 print(f"Retrieving night reports for {prefix}")
                 blobs = list(self._bucket.list_blobs(prefix=prefix))
                 if blobs:

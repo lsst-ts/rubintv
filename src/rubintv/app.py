@@ -19,7 +19,7 @@ from rubintv.models.historicaldata import HistoricalData
 from rubintv.models.models_assignment import locations
 
 
-def create_app(minimal_data_load: bool = False) -> web.Application:
+def create_app(load_minimal_data: bool = False) -> web.Application:
     """Create and configure the aiohttp.web application."""
     config = Configuration()
     configure_logging(
@@ -37,7 +37,7 @@ def create_app(minimal_data_load: bool = False) -> web.Application:
         bucket = client.bucket(bucket_name)
         root_app[f"rubintv/buckets/{location}"] = bucket
         root_app[f"rubintv/cached_data/{location}"] = HistoricalData(
-            location, bucket, minimal_data_load
+            location, bucket, load_minimal_data
         )
 
     root_app["rubintv/site_title"] = "RubinTV Display"
@@ -75,4 +75,4 @@ def setup_middleware(app: web.Application) -> None:
 
 
 def create_app_light() -> web.Application:
-    return create_app(minimal_data_load=True)
+    return create_app(load_minimal_data=True)

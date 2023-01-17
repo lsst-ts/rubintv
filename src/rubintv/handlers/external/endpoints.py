@@ -550,7 +550,6 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
     metadata_json = get_metadata_json(bucket, camera, the_date)
     day_events = make_table_rows_from_columns_by_seq(day_dict, metadata_json)
     night_reports = historical.get_night_reports_for(camera, the_date)
-    print(night_reports)
 
     years = historical.get_camera_calendar(camera)
 

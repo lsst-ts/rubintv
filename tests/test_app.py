@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 @pytest.mark.asyncio
 async def test_successful_app_creation(aiohttp_client: TestClient) -> None:
     """Test the app stands up and displays home page. Uses minimal data loading"""
-    app = create_app(minimal_data_load=True)
+    app = create_app(load_minimal_data=True)
     name = app["safir/config"].name
     client = await aiohttp_client(app)
     title = app["rubintv/site_title"]
@@ -29,7 +29,7 @@ async def test_successful_app_creation(aiohttp_client: TestClient) -> None:
 @pytest.mark.asyncio
 async def test_home_page(aiohttp_client: TestClient) -> None:
     """Test that home page has links to every location"""
-    app = create_app(minimal_data_load=True)
+    app = create_app(load_minimal_data=True)
     name = app["safir/config"].name
     client = await aiohttp_client(app)
     response = await client.get(f"{name}/")
