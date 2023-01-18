@@ -20,7 +20,7 @@ window.addEventListener('pageshow', function (e) {
   )
 
   // init websocket listener
-  const protocol = this.document.protocol
+  const protocol = this.document.location.protocol
   const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:'
   // use origin to include port
   const hostname = this.document.location.origin.split('//')[1]
@@ -39,7 +39,7 @@ window.addEventListener('pageshow', function (e) {
     const heartbeats = JSON.parse(event.data)
     services.forEach(s => {
       const hb = heartbeats[s.id]
-
+      if (!hb) return
       const hasDependent = s.dependentOn && dependenciesNames.includes(s.dependentOn)
       const depActive = hasDependent ? heartbeats[s.dependentOn].active : true
       const status = hb.active && depActive ? 'active' : 'stopped'
