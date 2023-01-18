@@ -35,11 +35,12 @@ class HistoricalData:
         if not load_minimal_data:
             self._events = self._get_events()
         else:
-            self._events = self._get_single_date_events_for_location()
-        self._night_reports = self._scrape_night_reports()
-        self._lastCall = get_current_day_obs()
+            self._events = self._get_events_for_single_day()
+        self._night_reports = self._get_night_reports()
+        self._last_events_refresh = get_current_day_obs()
+        self._last_reports_refresh = get_current_day_obs()
 
-    def _get_single_date_events_for_location(
+    def _get_events_for_single_day(
         self,
     ) -> Dict[str, Dict[str, List[Event]]]:
         """Returns minimal events for a Location for a hard-coded date in the method.
@@ -107,8 +108,21 @@ class HistoricalData:
 
     def reload(self) -> None:
         """Reloads the historical data cache"""
-        self._events = self._get_events(reset=True)
+        self._events = self._get_events(reload=True)
+        self._night_reports = self._get_night_reports(reload=True)
         return
+
+    def _get_night_reports(
+        self, reload: bool = False
+    ) -> Dict[str, Dict[date, List[Night_Reports_Event]]]:
+        if (
+            reload
+            or not self._night_reports
+            or get_current_day_obs() > self._last_reports_refresh
+        ):
+            self._night_reports = self._scrape_night_reports()
+            self._last_reports_refresh = get_current_day_obs()
+        return self._night_reports
 
     def _scrape_night_reports(
         self,
@@ -164,26 +178,27 @@ class HistoricalData:
         List[Night_Reports_Event]
             A list of Night Reports Events in time order
         """
+        all_night_reports = self._get_night_reports()
         reports = []
         if (
-            camera.slug in self._night_reports
-            and obs_date in self._night_reports[camera.slug]
+            camera.slug in all_night_reports
+            and obs_date in all_night_reports[camera.slug]
         ):
             reports = sorted(
-                self._night_reports[camera.slug][obs_date],
+                all_night_reports[camera.slug][obs_date],
                 key=lambda x: x.timestamp,
             )
         return reports
 
     def _get_events(
-        self, reset: bool = False
+        self, reload: bool = False
     ) -> Dict[str, Dict[str, List[Event]]]:
         """Returns a dict of dicts of sorted lists of Events
 
         Either simply returns the cache of events or populates the cache before returning it.
-        It will (re)populate the cache if any of the following are True:\n
-        - There is no existing cache\n
-        - The day has rolled over\n
+        It will (re)populate the cache if any of the following are True:
+        - There is no existing cache
+        - The day has rolled over
         - reset is set to True
 
 
@@ -199,10 +214,14 @@ class HistoricalData:
             the inner dict is keyed per channel and
             list of Events is sorted by day and sequence number
         """
-        if reset or not self._events or get_current_day_obs() > self._lastCall:
+        if (
+            reload
+            or not self._events
+            or get_current_day_obs() > self._last_events_refresh
+        ):
             blobs = self._get_blobs()
             self._events = self._sort_events_from_blobs(blobs)
-            self._lastCall = get_current_day_obs()
+            self._last_events_refresh = get_current_day_obs()
         return self._events
 
     def _sort_events_from_blobs(
