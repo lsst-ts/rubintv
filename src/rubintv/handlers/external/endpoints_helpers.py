@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import date
 from typing import Any, Dict, List, Tuple
 
@@ -322,12 +323,30 @@ def get_night_reports_blobs(
     return blobs
 
 
+def spaces_to_nbsps(match: re.Match) -> str:
+    length = match.end() - match.start()
+    result = "&nbsp;" * length
+    return result
+
+
+def crs_to_brs(match: re.Match) -> str:
+    length = match.end() - match.start()
+    result = "<br>" * length
+    return result
+
+
 def process_raw_dashboard_data(
     raw_data: Dict,
 ) -> Dict[str, Any]:
     text_part = [
         v for k, v in sorted(raw_data.items()) if k.startswith("text_")
     ]
+    # match for two or more spaces
+    ptrn = re.compile("[:h:]{2,}")
+    nb_text = [ptrn.sub(spaces_to_nbsps, line) for line in text_part]
+    nb_br_text = [re.sub("\n\n", crs_to_brs, line) for line in nb_text]
+
     quantity = {k: v for k, v in raw_data.items() if v not in text_part}
-    text = [line.split("\n") for line in text_part]
+    text = [line.split("\n") for line in nb_br_text]
+
     return {"text": text, "quantities": quantity}

@@ -1,6 +1,5 @@
 import {
-  _getById, _elWithAttrs, _elWithClass,
-  removeColumnFromTableFor
+  _getById, _elWithAttrs, _elWithClass
 }
   from './utils.js'
 
@@ -10,7 +9,7 @@ export class TableControls {
     this.defaultAttrs = defaultAttrs
     this.updateMetadata(metaData)
     const saved = this.retrieveSelected()
-    this.selected = saved ? saved : defaultAttrs
+    this.selected = saved || defaultAttrs
     this.elementToAppendTo = elementToAppendTo
     this.drawToTableCallback = drawToTableCallback
 
@@ -20,8 +19,8 @@ export class TableControls {
   }
 
   orderSelected () {
-    let fromTheDefaults = this.defaultAttrs.filter(attr => this.selected.includes(attr))
-    let notInDefaults = this.selected.filter(attr => !this.defaultAttrs.includes(attr))
+    const fromTheDefaults = this.defaultAttrs.filter(attr => this.selected.includes(attr))
+    const notInDefaults = this.selected.filter(attr => !this.defaultAttrs.includes(attr))
     this.selected = fromTheDefaults.concat(notInDefaults)
   }
 

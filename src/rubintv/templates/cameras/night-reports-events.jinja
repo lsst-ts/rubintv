@@ -7,7 +7,7 @@
       {% for text in text_list %}
         <li>
           {% for line in text %}
-            <p>{{ line }}</p>
+            <p>{{ line|safe }}</p>
           {% endfor %}
         </li>
       {% endfor %}

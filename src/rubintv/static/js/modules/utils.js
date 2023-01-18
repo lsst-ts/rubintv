@@ -104,7 +104,6 @@ export function indicatorForAttr (attributes, attr) {
   // eslint-disable-next-line no-prototype-builtins
   if (attributes.hasOwnProperty(indicator)) {
     // add it to group for including in the class list
-    // possible values include 'bad' and 'warning'
     flag = ` ${attributes[indicator]}`
   }
   return flag

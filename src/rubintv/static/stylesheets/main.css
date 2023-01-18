@@ -113,6 +113,12 @@ body {
 .grid-cell.rainbow_color {
   background: linear-gradient(270deg, #fec8c9 0%, #f5dece 16%, #f5f8cd 28%, #e0f5d1 50%, #c9d2fe 66%, #dcddfe 83%, #f1dafe 100%);
 }
+.grid-cell.r_stripes {
+  background: linear-gradient(27deg, #f77171 0%, #f77171 14%, #f0f0f0 14%, #f0f0f0 29%, #f77171 29%, #f77171 43%, #f0f0f0 43%, #f0f0f0 57%, #f77171 57%, #f77171 71%, #f0f0f0 71%, #f0f0f0 84%, #f77171 84%, #f77171 100%);
+}
+.grid-cell.b_stripes {
+  background: linear-gradient(27deg, #71abf7 0%, #71abf7 14%, #f0f0f0 14%, #f0f0f0 29%, #71abf7 29%, #71abf7 43%, #f0f0f0 43%, #f0f0f0 57%, #71abf7 57%, #71abf7 71%, #f0f0f0 71%, #f0f0f0 84%, #71abf7 84%, #71abf7 100%);
+}
 
 .calendar {
   width: 100%;
@@ -835,7 +841,7 @@ section {
 
 .plots-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 2em;
 }
 
