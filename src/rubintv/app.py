@@ -89,6 +89,7 @@ def create_app_light() -> web.Application:
 
 async def heartbeat_polling_init(app: web.Application) -> AsyncGenerator:
     """Initialise a loop for polling the heartbeats in the bucket"""
+    app["rubintv/heartbeats"] = {}
     app["heartbeats_poller"] = asyncio.create_task(poll_for_heartbeats(app))
     app["websockets"] = weakref.WeakSet()
     yield

@@ -22,7 +22,7 @@ async def poll_for_heartbeats(app: web.Application) -> None:
                 heartbeats_json_arr = get_heartbeats(bucket, HEARTBEATS_PREFIX)
                 print(f"Found {len(heartbeats_json_arr)}")
                 heartbeats = process_heartbeats(heartbeats_json_arr)
-                app[f"heartbeats/{location}"] = heartbeats
+                app["rubintv/heartbeats"][location] = heartbeats
             await asyncio.sleep(30)
     except asyncio.exceptions.CancelledError:
         print("Polling for heartbeats cancelled")

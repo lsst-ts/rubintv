@@ -295,4 +295,4 @@ async def test_heartbeats_websocket(aiohttp_client: TestClient) -> None:
     ws = await client.ws_connect(f"/{name}/summit/heartbeats_ws")
     message = await ws.receive()
     assert message.type == WSMsgType.TEXT
-    assert json.loads(message.data) == app["heartbeats/summit"]
+    assert json.loads(message.data) == app["rubintv/heartbeats"]["summit"]

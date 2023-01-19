@@ -51,7 +51,6 @@ class ModelInitator:
     ) -> Dict[str, Channel]:
         chans = {}
         for chan_name, chan_dict in channels_dict.items():
-            print(chan_dict)
             chan = dataclass_from_dict(Channel, chan_dict)
             # insert lowercase Channel name as 'simplename'
             chan.simplename = chan_name
