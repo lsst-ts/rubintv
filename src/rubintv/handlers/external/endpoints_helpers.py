@@ -342,7 +342,7 @@ def process_raw_dashboard_data(
         v for k, v in sorted(raw_data.items()) if k.startswith("text_")
     ]
     # match for two or more spaces
-    ptrn = re.compile("[:h:]{2,}")
+    ptrn = re.compile("[ ]{2,}")
     nb_text = [ptrn.sub(spaces_to_nbsps, line) for line in text_part]
     nb_br_text = [re.sub("\n\n", crs_to_brs, line) for line in nb_text]
 
