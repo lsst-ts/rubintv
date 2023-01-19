@@ -7,8 +7,6 @@ from aiohttp import web
 from google.api_core.exceptions import NotFound
 from google.cloud.storage.client import Bucket
 
-from rubintv.models.models_assignment import locations
-
 __all__ = ["poll_for_heartbeats", "process_heartbeats", "get_heartbeats"]
 
 HEARTBEATS_PREFIX = "heartbeats"
@@ -17,7 +15,7 @@ HEARTBEATS_PREFIX = "heartbeats"
 async def poll_for_heartbeats(app: web.Application) -> None:
     try:
         while True:
-            for location in locations:
+            for location in app["rubintv/models"].locations:
                 print(f"Looking for heartbeats for {location}:")
                 # just use summit bucket to start
                 bucket = app[f"rubintv/buckets/{location}"]

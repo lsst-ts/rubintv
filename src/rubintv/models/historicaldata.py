@@ -12,7 +12,6 @@ from rubintv.models.models import (
     Night_Reports_Event,
     get_current_day_obs,
 )
-from rubintv.models.models_assignment import cameras, locations
 from rubintv.models.models_helpers import get_prefix_from_date
 
 
@@ -25,11 +24,15 @@ class HistoricalData:
     """
 
     def __init__(
-        self, location_name: str, bucket: Bucket, load_minimal_data: bool
+        self,
+        location: Location,
+        bucket: Bucket,
+        cameras: Dict[str, Camera],
+        load_minimal_data: bool,
     ) -> None:
-        location: Location = locations[location_name]
         self._location = location
         self._bucket = bucket
+        self._cameras = cameras
         self._events = {}
         self._night_reports = {}
         if not load_minimal_data:
@@ -62,7 +65,7 @@ class HistoricalData:
         """
         blobs = []
         for cam_name in self._location.all_cameras():
-            camera: Camera = cameras[cam_name]
+            camera: Camera = self._cameras[cam_name]
             print(f"Trying for: {camera.name}")
             if not camera.online:
                 continue
@@ -93,7 +96,7 @@ class HistoricalData:
         print(f"Getting blobs for location: {self._location.name}")
         blobs = []
         for cam_name in self._location.all_cameras():
-            cam = cameras[cam_name]
+            cam = self._cameras[cam_name]
             for channel in cam.channels.values():
                 prefix = channel.prefix
                 print(f"Trying prefix: {prefix}")
@@ -138,7 +141,7 @@ class HistoricalData:
         """
         night_reports: Dict[str, Dict] = {}
         for cam_name in self._location.all_cameras():
-            cam: Camera = cameras[cam_name]
+            cam: Camera = self._cameras[cam_name]
             if prefix := cam.night_reports_prefix:
                 print(f"Retrieving night reports for {prefix}")
                 blobs = list(self._bucket.list_blobs(prefix=prefix))
@@ -256,7 +259,7 @@ class HistoricalData:
             all_events, key=lambda x: (x.obs_date, x.seq), reverse=True
         )
         events_dict: Dict[str, Dict[str, List[Event]]] = {}
-        for cam in cameras.values():
+        for cam in self._cameras.values():
             channels = cam.channels
             events_dict[cam.slug] = {}
             for channel in channels:

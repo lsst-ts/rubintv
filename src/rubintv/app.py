@@ -20,10 +20,10 @@ from rubintv.background.heartbeats import poll_for_heartbeats
 from rubintv.config import Configuration
 from rubintv.handlers import init_external_routes, init_internal_routes
 from rubintv.models.historicaldata import HistoricalData
-from rubintv.models.models_assignment import locations
+from rubintv.models.models_init import ModelInitator
 
 
-def create_app(minimal_data_load: bool = False) -> web.Application:
+def create_app(load_minimal_data: bool = False) -> web.Application:
     """Create and configure the aiohttp.web application."""
     config = Configuration()
     configure_logging(
@@ -34,14 +34,18 @@ def create_app(minimal_data_load: bool = False) -> web.Application:
     root_app = web.Application()
     root_app["safir/config"] = config
 
-    client = storage.Client()
-    bucket_names = {loc.slug: loc.bucket for loc in locations.values()}
+    models = ModelInitator()
+    root_app["rubintv/models"] = models
 
-    for location, bucket_name in bucket_names.items():
+    client = storage.Client()
+    bucket_names = {loc.slug: loc.bucket for loc in models.locations.values()}
+
+    for location_name, bucket_name in bucket_names.items():
         bucket = client.bucket(bucket_name)
-        root_app[f"rubintv/buckets/{location}"] = bucket
-        root_app[f"rubintv/cached_data/{location}"] = HistoricalData(
-            location, bucket, minimal_data_load
+        root_app[f"rubintv/buckets/{location_name}"] = bucket
+        location = models.locations[location_name]
+        root_app[f"rubintv/cached_data/{location_name}"] = HistoricalData(
+            location, bucket, models.cameras, load_minimal_data
         )
 
     root_app["rubintv/site_title"] = "RubinTV Display"
@@ -80,7 +84,7 @@ def setup_middleware(app: web.Application) -> None:
 
 
 def create_app_light() -> web.Application:
-    return create_app(minimal_data_load=True)
+    return create_app(load_minimal_data=True)
 
 
 async def heartbeat_polling_init(app: web.Application) -> AsyncGenerator:

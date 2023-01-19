@@ -15,7 +15,6 @@ from rubintv.models.models import (
     Location,
     Night_Reports_Event,
 )
-from rubintv.models.models_assignment import locations
 from rubintv.models.models_helpers import get_prefix_from_date
 
 __all__ = [
@@ -51,6 +50,7 @@ def date_from_url_part(url_part: str) -> date:
 
 def find_location(location_name: str, request: web.Request) -> Location:
     location_name = request.match_info["location"]
+    locations = request.config_dict["rubintv/models"].locations
     try:
         location: Location = locations[location_name]
     except KeyError:

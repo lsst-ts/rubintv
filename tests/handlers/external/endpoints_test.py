@@ -286,7 +286,7 @@ async def test_get_camera_historical_for_badly_formed_date(
 @pytest.mark.asyncio
 async def test_heartbeats_websocket(aiohttp_client: TestClient) -> None:
     """Test websocket at /app-name/summit/heartbeats_ws"""
-    app = create_app(minimal_data_load=True)
+    app = create_app(load_minimal_data=True)
     name = app["safir/config"].name
     client = await aiohttp_client(app)
 
