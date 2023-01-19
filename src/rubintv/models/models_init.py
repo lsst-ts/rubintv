@@ -1,10 +1,10 @@
+import inspect
 from pathlib import Path
 from typing import Any, Dict
 
 import yaml
-from dacite import from_dict
 
-from .models import Camera, Location
+from .models import Camera, Channel, Location
 
 
 class ModelInitator:
@@ -31,21 +31,38 @@ class ModelInitator:
     def _get_cameras(self, data: Dict) -> Dict[str, Camera]:
         cameras = {}
         d_cameras = data["Cameras"]
-        for cam_name, cam in d_cameras.items():
+        for cam_name, cam_dict in d_cameras.items():
             # makes Camera objects from dictionaries
-            cam = from_dict(Camera, cam)
+            cam = dataclass_from_dict(Camera, cam_dict)
             cam.slug = cam_name
-            # insert lowercase Channel name as 'simplename'
-            for chan in cam.channels:
-                cam.channels[chan].simplename = chan
+
+            chans = self._channel_dict_to_channel_objs(cam.channels)
+            cam.channels = chans
+            per_day_chans = self._channel_dict_to_channel_objs(
+                cam.per_day_channels
+            )
+            cam.per_day_channels = per_day_chans
+
             cameras[cam_name] = cam
         return cameras
+
+    def _channel_dict_to_channel_objs(
+        self, channels_dict: Dict
+    ) -> Dict[str, Channel]:
+        chans = {}
+        for chan_name, chan_dict in channels_dict.items():
+            print(chan_dict)
+            chan = dataclass_from_dict(Channel, chan_dict)
+            # insert lowercase Channel name as 'simplename'
+            chan.simplename = chan_name
+            chans[chan_name] = chan
+        return chans
 
     def _get_locations(self, data: Dict) -> Dict[str, Location]:
         locations = {}
         d_locations = data["Locations"]
         for loc_name, loc in d_locations.items():
-            location = from_dict(Location, loc)
+            location = dataclass_from_dict(Location, loc)
             location.slug = loc_name
             locations[loc_name] = location
         return locations
@@ -59,3 +76,16 @@ class ModelInitator:
                 chans = self._cameras[cam].channels
                 production_services[s]["channels"] = chans
         return production_services
+
+
+def dataclass_from_dict(cls: Any, data: Dict) -> Any:
+    return cls(
+        **{
+            key: (
+                data[key]
+                if val.default == val.empty
+                else data.get(key, val.default)
+            )
+            for key, val in inspect.signature(cls).parameters.items()
+        }
+    )
