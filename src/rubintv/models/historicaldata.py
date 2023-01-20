@@ -29,6 +29,7 @@ class HistoricalData:
         bucket: Bucket,
         cameras: Dict[str, Camera],
         load_minimal_data: bool,
+        date_to_load: str,
     ) -> None:
         self._location = location
         self._bucket = bucket
@@ -38,13 +39,13 @@ class HistoricalData:
         if not load_minimal_data:
             self._events = self._get_events()
         else:
-            self._events = self._get_events_for_single_day()
+            self._events = self._get_events_for_single_day(date_to_load)
         self._night_reports = self._get_night_reports()
         self._last_events_refresh = get_current_day_obs()
         self._last_reports_refresh = get_current_day_obs()
 
     def _get_events_for_single_day(
-        self,
+        self, date_to_load: str
     ) -> Dict[str, Dict[str, List[Event]]]:
         """Returns minimal events for a Location for a hard-coded date in the method.
         Used when only needing a light-weight cache of data to test the app
@@ -70,7 +71,8 @@ class HistoricalData:
             if not camera.online:
                 continue
             # date for which there are known to be blobs
-            the_date = date(2022, 12, 15)
+            y, m, d = map(int, date_to_load.split("-"))
+            the_date = date(y, m, d)
             channel: Channel
             for channel in camera.channels.values():
                 prefix = get_prefix_from_date(channel.prefix, the_date)

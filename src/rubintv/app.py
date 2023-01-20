@@ -22,6 +22,8 @@ from rubintv.handlers import init_external_routes, init_internal_routes
 from rubintv.models.historicaldata import HistoricalData
 from rubintv.models.models_init import ModelInitator
 
+DATE_FOR_MINIMAL_LOAD = "2022-12-08"
+
 
 def create_app(load_minimal_data: bool = False) -> web.Application:
     """Create and configure the aiohttp.web application."""
@@ -45,7 +47,11 @@ def create_app(load_minimal_data: bool = False) -> web.Application:
         root_app[f"rubintv/buckets/{location_name}"] = bucket
         location = models.locations[location_name]
         root_app[f"rubintv/cached_data/{location_name}"] = HistoricalData(
-            location, bucket, models.cameras, load_minimal_data
+            location,
+            bucket,
+            models.cameras,
+            load_minimal_data,
+            DATE_FOR_MINIMAL_LOAD,
         )
 
     root_app["rubintv/site_title"] = "RubinTV Display"
