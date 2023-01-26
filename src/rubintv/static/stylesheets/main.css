@@ -67,6 +67,14 @@ body {
   background-color: #fda529;
 }
 
+.button.startracker-fast {
+  background-color: #FECC66;
+}
+
+.button.startracker-fast-analysis {
+  background-color: #d5fa80;
+}
+
 .button.focal_plane_mosiac {
   background-color: #6fe9ba;
 }

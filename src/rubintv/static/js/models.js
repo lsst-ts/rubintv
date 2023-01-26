@@ -60,4 +60,14 @@ export const starTrackerWideHeaders = {
   ]
 }
 
+export const starTrackerFastHeaders = {
+  'Star Tracker Fast': [
+    'Exposure Time',
+    'Ra',
+    'Dec',
+    'Alt',
+    'Az'
+  ]
+}
+
 export const slacDefault = []

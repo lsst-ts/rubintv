@@ -21,7 +21,7 @@ Locations:
     logo: Summit.jpg
     camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
-      Other Cameras: [ allsky, startracker, startracker-wide ]
+      Other Cameras: [ allsky, startracker, startracker-wide, startracker-fast ]
     services: [ auxtel, startracker, allsky, comcam, misc ]
 
 
@@ -84,6 +84,18 @@ Cameras:
         name: Wide Analysis
         prefix: startracker_wide_analysis
         label: ST Wide Analysis
+
+
+  startracker-fast:
+    name: StarTrackerFast
+    online: True
+    channels:
+      startracker-fast:
+        name: StarTrackerFast
+        prefix: startracker_fast_raw
+      startracker-fast-analysis:
+        name: Analysis
+        prefix: startracker_fast_analysis
 
 
   allsky:
