@@ -54,6 +54,7 @@ def create_app(load_minimal_data: bool = False) -> web.Application:
             DATE_FOR_MINIMAL_LOAD,
         )
 
+    root_app["rubintv/date_to_load"] = DATE_FOR_MINIMAL_LOAD
     root_app["rubintv/site_title"] = "RubinTV Display"
     setup_metadata(package_name="rubintv", app=root_app)
     setup_middleware(root_app)

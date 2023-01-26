@@ -62,11 +62,26 @@ export const starTrackerWideHeaders = {
 
 export const starTrackerFastHeaders = {
   'Star Tracker Fast': [
-    'Exposure Time',
-    'Ra',
-    'Dec',
-    'Alt',
-    'Az'
+    'Exposure Time fast',
+    'Ra fast',
+    'Dec fast',
+    'Alt fast',
+    'Az fast'
+  ],
+  'Star Tracker Solve Fast': [
+    'nSources fast',
+    'nSources filtered fast',
+    'Calculated Ra fast',
+    'Calculated Dec fast',
+    'Delta Ra Arcsec fast',
+    'Delta Dec Arcsec fast',
+    'Calculated Alt fast',
+    'Calculated Az fast',
+    'Delta Alt Arcsec fast',
+    'Delta Az Arcsec fast',
+    'Delta Rot Arcsec fast',
+    'RMS scatter arcsec fast',
+    'RMS scatter pixels fast'
   ]
 }
 
