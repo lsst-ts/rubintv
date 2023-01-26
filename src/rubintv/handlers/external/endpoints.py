@@ -272,15 +272,15 @@ async def get_recent_table(request: web.Request) -> web.Response:
                 bucket, camera, historical
             )
 
-            night_reports_link = "current"
+            night_reports_link = ""
+            if camera.night_reports_prefix:
+                night_reports_link = "current"
             if the_date != get_current_day_obs():
                 if get_night_reports_events(bucket, camera, the_date) != (
                     [],
                     {},
                 ):
                     night_reports_link = "historic"
-                else:
-                    night_reports_link = ""
 
             metadata_json = get_metadata_json(bucket, camera, the_date)
             per_day = get_per_day_channels(bucket, camera, the_date, logger)
@@ -325,12 +325,15 @@ async def update_todays_table(request: web.Request) -> web.Response:
             bucket, camera, historical
         )
 
-        night_reports_link = "current"
+        night_reports_link = ""
+        if camera.night_reports_prefix:
+            night_reports_link = "current"
         if the_date != get_current_day_obs():
-            if get_night_reports_events(bucket, camera, the_date) != ([], {}):
+            if get_night_reports_events(bucket, camera, the_date) != (
+                [],
+                {},
+            ):
                 night_reports_link = "historic"
-            else:
-                night_reports_link = ""
 
         metadata_json = get_metadata_json(bucket, camera, the_date)
         per_day = get_per_day_channels(bucket, camera, the_date, logger)
