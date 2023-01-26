@@ -24,7 +24,11 @@ body {
 
 .button.movie {
   background-color: #83daee;
-  text-align: center;
+}
+
+.button.night-reports {
+  background-color: #696797;
+  color: #fff;
 }
 
 .button.admin {
@@ -837,6 +841,12 @@ section {
 }
 .dashboard li:nth-of-type(2n - 1) {
   background-color: #f0f0f0;
+}
+.dashboard .dashboard-text {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1em;
 }
 
 .plots-grid {

@@ -16,11 +16,9 @@ async def poll_for_heartbeats(app: web.Application) -> None:
     try:
         while True:
             for location in app["rubintv/models"].locations:
-                print(f"Looking for heartbeats for {location}:")
                 # just use summit bucket to start
                 bucket = app[f"rubintv/buckets/{location}"]
                 heartbeats_json_arr = get_heartbeats(bucket, HEARTBEATS_PREFIX)
-                print(f"Found {len(heartbeats_json_arr)}")
                 heartbeats = process_heartbeats(heartbeats_json_arr)
                 app["rubintv/heartbeats"][location] = heartbeats
             await asyncio.sleep(30)

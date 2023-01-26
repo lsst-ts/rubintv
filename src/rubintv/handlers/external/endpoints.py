@@ -272,6 +272,16 @@ async def get_recent_table(request: web.Request) -> web.Response:
                 bucket, camera, historical
             )
 
+            night_reports_link = "current"
+            if the_date != get_current_day_obs():
+                if get_night_reports_events(bucket, camera, the_date) != (
+                    [],
+                    {},
+                ):
+                    night_reports_link = "historic"
+                else:
+                    night_reports_link = ""
+
             metadata_json = get_metadata_json(bucket, camera, the_date)
             per_day = get_per_day_channels(bucket, camera, the_date, logger)
 
@@ -283,6 +293,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
                 "date": the_date.strftime("%Y-%m-%d"),
                 "events": events,
                 "metadata": metadata_json,
+                "night_reports_link": night_reports_link,
                 "per_day": per_day,
                 "viewer_link": get_image_viewer_link,
                 "event_page_link": get_event_page_link,
@@ -314,6 +325,13 @@ async def update_todays_table(request: web.Request) -> web.Response:
             bucket, camera, historical
         )
 
+        night_reports_link = "current"
+        if the_date != get_current_day_obs():
+            if get_night_reports_events(bucket, camera, the_date) != ([], {}):
+                night_reports_link = "historic"
+            else:
+                night_reports_link = ""
+
         metadata_json = get_metadata_json(bucket, camera, the_date)
         per_day = get_per_day_channels(bucket, camera, the_date, logger)
 
@@ -323,6 +341,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
             "date": the_date,
             "events": events,
             "metadata": metadata_json,
+            "night_reports_link": night_reports_link,
             "per_day": per_day,
             "viewer_link": get_image_viewer_link,
             "event_page_link": get_event_page_link,
@@ -331,7 +350,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
             "cameras/data-table-header.jinja", request, context
         )
         per_day_html = render_string(
-            "cameras/per-day-channels.jinja", request, context
+            "cameras/per-day-refresh.jinja", request, context
         )
         html_parts = {"table": table_html, "per_day": per_day_html}
         json_res = json.dumps(html_parts)
@@ -491,7 +510,7 @@ async def get_historical(request: web.Request) -> Dict[str, Any]:
         )
 
         per_day = get_per_day_channels(bucket, camera, day_obs, logger)
-        night_reports = historical.get_night_reports_for(camera, day_obs)
+        night_reports_link = historical.get_night_reports_for(camera, day_obs)
 
     logger.info("get_historical", duration=timer.seconds)
     return {
@@ -505,7 +524,7 @@ async def get_historical(request: web.Request) -> Dict[str, Any]:
         "events": mrd_events,
         "metadata": metadata_json,
         "per_day": per_day,
-        "night_reports": night_reports,
+        "night_reports_link": night_reports_link,
         "viewer_link": get_image_viewer_link,
         "event_page_link": get_event_page_link,
         "get_date": date,
@@ -540,7 +559,7 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
 
     metadata_json = get_metadata_json(bucket, camera, the_date)
     day_events = make_table_rows_from_columns_by_seq(day_dict, metadata_json)
-    night_reports = historical.get_night_reports_for(camera, the_date)
+    night_reports_link = historical.get_night_reports_for(camera, the_date)
 
     years = historical.get_camera_calendar(camera)
 
@@ -555,7 +574,7 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
         "events": day_events,
         "metadata": metadata_json,
         "per_day": per_day,
-        "night_reports": night_reports,
+        "night_reports": night_reports_link,
         "viewer_link": get_image_viewer_link,
         "event_page_link": get_event_page_link,
         "get_date": date,
