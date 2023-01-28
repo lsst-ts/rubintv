@@ -20,7 +20,10 @@ export function addToTable (metaData, headerGroups, sortable = false) {
       { id: groupID, scope: 'colgroup', colspan: span, class: 'meta-group' }
     )
     tr.append(_elWithAttrs('p', { text: group }))
-    tr.append(_elWithAttrs('img', { src: '/rubintv/static/images/meta-group.png' }))
+    tr.append(_elWithAttrs('img', {
+      id: `brace-${groupID}`,
+      src: '/rubintv/static/images/meta-group.png'
+    }))
     groupRow.append(tr)
   })
 
@@ -53,7 +56,35 @@ export function addToTable (metaData, headerGroups, sortable = false) {
       seqRowLastCell.after(el)
     })
   })
+
+  replaceBraceImgWithSVG()
+
   if (sortable) {
     makeTableSortable()
   }
+}
+
+function replaceBraceImgWithSVG () {
+  const groups = document.querySelectorAll('.meta-group')
+  Array.from(groups).forEach((group) => {
+    const img = group.querySelector('img')
+    img.replaceWith(SVGBracket(img.width))
+  })
+}
+
+function SVGBracket (lineWidth) {
+  const halfW = (lineWidth - 84.5) / 2
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+  svg.setAttribute('viewBox', `0 0 ${lineWidth} 38`)
+  svg.setAttribute('width', '100%')
+  svg.setAttribute('height', '38')
+  path.setAttribute('d',
+  `m1.5,38 c0,-13 8,-18 20,-18 h${halfW} c20,0 20,-20 20,-20 m1.5 0 c0,0 0,20 20, 20 h${halfW} c12,0 20,5 20,18`
+  )
+  path.setAttribute('fill', 'none')
+  path.setAttribute('stroke', '#000')
+  path.setAttribute('style', 'stroke-width: 3px')
+  svg.appendChild(path)
+  return svg
 }

@@ -274,9 +274,9 @@ async def get_recent_table(request: web.Request) -> web.Response:
 
             night_reports_link = ""
             if camera.night_reports_prefix:
-                night_reports_link = "current"
-            if the_date != get_current_day_obs():
-                if get_night_reports_events(bucket, camera, the_date) != (
+                if the_date == get_current_day_obs():
+                    night_reports_link = "current"
+                elif get_night_reports_events(bucket, camera, the_date) != (
                     [],
                     {},
                 ):
@@ -327,9 +327,9 @@ async def update_todays_table(request: web.Request) -> web.Response:
 
         night_reports_link = ""
         if camera.night_reports_prefix:
-            night_reports_link = "current"
-        if the_date != get_current_day_obs():
-            if get_night_reports_events(bucket, camera, the_date) != (
+            if the_date == get_current_day_obs():
+                night_reports_link = "current"
+            elif get_night_reports_events(bucket, camera, the_date) != (
                 [],
                 {},
             ):
@@ -415,7 +415,7 @@ async def update_night_reports(request: web.Request) -> dict[str, Any]:
         the_date = day_obs
         message = "It's a new day"
 
-    plots, dashboard_data = get_night_reports_events(bucket, camera, day_obs)
+    plots, dashboard_data = get_night_reports_events(bucket, camera, the_date)
     dashboard_json = json.dumps(dashboard_data)
 
     return {
@@ -513,7 +513,9 @@ async def get_historical(request: web.Request) -> Dict[str, Any]:
         )
 
         per_day = get_per_day_channels(bucket, camera, day_obs, logger)
-        night_reports_link = historical.get_night_reports_for(camera, day_obs)
+        night_reports_link = ""
+        if historical.get_night_reports_for(camera, day_obs) != ([], {}):
+            night_reports_link = "historical"
 
     logger.info("get_historical", duration=timer.seconds)
     return {
@@ -562,7 +564,9 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
 
     metadata_json = get_metadata_json(bucket, camera, the_date)
     day_events = make_table_rows_from_columns_by_seq(day_dict, metadata_json)
-    night_reports_link = historical.get_night_reports_for(camera, the_date)
+    night_reports_link = ""
+    if historical.get_night_reports_for(camera, the_date) != ([], {}):
+        night_reports_link = "historical"
 
     years = historical.get_camera_calendar(camera)
 
@@ -577,7 +581,7 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
         "events": day_events,
         "metadata": metadata_json,
         "per_day": per_day,
-        "night_reports": night_reports_link,
+        "night_reports_link": night_reports_link,
         "viewer_link": get_image_viewer_link,
         "event_page_link": get_event_page_link,
         "get_date": date,

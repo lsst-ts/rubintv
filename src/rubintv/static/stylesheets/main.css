@@ -597,7 +597,7 @@ section {
   position: static;
 }
 .startracker .table-spacer, .startracker-wide .table-spacer {
-  height: 10em;
+  height: 11em;
 }
 .startracker .meta-group, .startracker-wide .meta-group {
   top: -5.4em;
