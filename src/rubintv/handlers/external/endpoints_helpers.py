@@ -34,6 +34,7 @@ __all__ = [
     "get_current_event",
     "get_heartbeats",
     "build_title",
+    "get_nights_report_link_type",
     "get_night_reports_events",
     "get_historical_night_reports_events",
 ]
@@ -291,6 +292,21 @@ def get_historical_night_reports_events(
         else:
             plots.append(r)
     return plots, json_data
+
+
+def get_nights_report_link_type(
+    bucket: Bucket, camera: Camera, the_date: date
+) -> str:
+    night_reports_link = ""
+    if camera.night_reports_prefix:
+        if the_date == get_current_day_obs():
+            night_reports_link = "current"
+        elif get_night_reports_events(bucket, camera, the_date) != (
+            [],
+            {},
+        ):
+            night_reports_link = "historic"
+    return night_reports_link
 
 
 def get_night_reports_events(

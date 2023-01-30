@@ -38,6 +38,7 @@ from rubintv.handlers.external.endpoints_helpers import (
     get_metadata_json,
     get_most_recent_day_events,
     get_night_reports_events,
+    get_nights_report_link_type,
     get_per_day_channels,
     make_table_rows_from_columns_by_seq,
     month_names,
@@ -272,15 +273,9 @@ async def get_recent_table(request: web.Request) -> web.Response:
                 bucket, camera, historical
             )
 
-            night_reports_link = ""
-            if camera.night_reports_prefix:
-                if the_date == get_current_day_obs():
-                    night_reports_link = "current"
-                elif get_night_reports_events(bucket, camera, the_date) != (
-                    [],
-                    {},
-                ):
-                    night_reports_link = "historic"
+            night_reports_link = get_nights_report_link_type(
+                bucket, camera, the_date
+            )
 
             metadata_json = get_metadata_json(bucket, camera, the_date)
             per_day = get_per_day_channels(bucket, camera, the_date, logger)
@@ -325,16 +320,9 @@ async def update_todays_table(request: web.Request) -> web.Response:
             bucket, camera, historical
         )
 
-        night_reports_link = ""
-        if camera.night_reports_prefix:
-            if the_date == get_current_day_obs():
-                night_reports_link = "current"
-            elif get_night_reports_events(bucket, camera, the_date) != (
-                [],
-                {},
-            ):
-                night_reports_link = "historic"
-
+        night_reports_link = get_nights_report_link_type(
+            bucket, camera, the_date
+        )
         metadata_json = get_metadata_json(bucket, camera, the_date)
         per_day = get_per_day_channels(bucket, camera, the_date, logger)
 
@@ -565,7 +553,7 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
     metadata_json = get_metadata_json(bucket, camera, the_date)
     day_events = make_table_rows_from_columns_by_seq(day_dict, metadata_json)
     night_reports_link = ""
-    if historical.get_night_reports_for(camera, the_date) != ([], {}):
+    if historical.get_night_reports_for(camera, the_date) != []:
         night_reports_link = "historical"
 
     years = historical.get_camera_calendar(camera)
