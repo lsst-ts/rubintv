@@ -1,10 +1,10 @@
 import { _getById } from '../modules/utils.js'
 
 export function tabsUIInit () {
-  const tabs = Array.from(document.getElementsByClassName('tab-title'))
-  const tabsContent = Array.from(document.getElementsByClassName('tab-content'))
+  const tabs = Array.from(document.querySelectorAll('.tab-title:not(.disabled)'))
+  const tabsContent = Array.from(document.querySelectorAll('.tab-content:not(.disabled)'))
   let storedSelected = localStorage.getItem('night-reports-selected')
-  if (!storedSelected) {
+  if (!storedSelected || tabs.filter((t) => { return t.id.includes(storedSelected) }).length === 0) {
     storedSelected = tabs[0].id.split('tabtitle-')[1]
     localStorage.setItem('night-reports-selected', storedSelected)
   }
@@ -26,5 +26,26 @@ export function tabsUIInit () {
     })
   })
 }
-
 tabsUIInit()
+
+function listenForEfficiency () {
+  const keyCode = 'efficiency'
+  let keyStore = ''
+
+  document.body.addEventListener('keypress', keyPress)
+
+  function keyPress (e) {
+    keyStore = keyStore.concat(e.key)
+    if (keyStore === keyCode) {
+      Array.from(document.querySelectorAll('#night-reports .disabled')).forEach((el) => {
+        el.classList.remove('disabled')
+        tabsUIInit()
+        document.body.removeEventListener('keypress', keyPress)
+      })
+    }
+    if (keyStore !== keyCode.substring(0, keyStore.length)) {
+      keyStore = ''
+    }
+  }
+}
+listenForEfficiency()

@@ -4,7 +4,7 @@
   <div class="plots-section tabs">
     <div class="tab-titles">
      {% if dashboard_data["text"] or dashboard_data["quantities"] %}
-        <div id="tabtitle-text" class="tab-title">
+        <div id="tabtitle-text" class="tab-title disabled">
           Text
         </div>
      {% endif %}
@@ -18,7 +18,7 @@
     <div class="plots">
 
     {% if dashboard_data["text"] or dashboard_data["quantities"] %}
-      <div id="tabgroup-text" class="dashboard tab-content">
+      <div id="tabgroup-text" class="dashboard tab-content disabled">
         {% if dashboard_data["text"] %}
           <ul class="dashboard-text">
           {% set text_list = dashboard_data["text"] %}
