@@ -9,7 +9,7 @@ from typing import AsyncGenerator
 
 import aiohttp_jinja2
 import jinja2
-from aiohttp import WSCloseCode, web
+from aiohttp import WSCloseCode, web, web_middlewares
 from google.cloud import storage
 from safir.http import init_http_session
 from safir.logging import configure_logging
@@ -88,6 +88,11 @@ def create_app(load_minimal_data: bool = False) -> web.Application:
 def setup_middleware(app: web.Application) -> None:
     """Add middleware to the application."""
     app.middlewares.append(bind_logger)
+    app.middlewares.append(
+        web_middlewares.normalize_path_middleware(
+            append_slash=False, remove_slash=True
+        )
+    )
 
 
 def create_app_light() -> web.Application:
