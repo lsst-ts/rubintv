@@ -19,6 +19,10 @@ time, mark, audio, video {
   background: transparent;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
   line-height: 1;
 }

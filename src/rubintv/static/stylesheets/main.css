@@ -337,7 +337,6 @@ a:hover {
 html {
   font-family: "Rubik", sans-serif;
   font-size: 16px;
-  box-sizing: border-box;
 }
 
 .page-wrapper {
@@ -841,14 +840,13 @@ section {
   margin-bottom: 1em;
 }
 .dashboard li {
+  box-sizing: border-box;
   border: 1px #555 solid;
   border-radius: 6px;
   padding: 11px 18px;
   margin-bottom: 6px;
-  width: fit-content;
-}
-.dashboard li:nth-of-type(2n - 1) {
-  background-color: #f0f0f0;
+  flex-basis: calc(50% - 0.5em);
+  background-color: #fff;
 }
 .dashboard .dashboard-text {
   display: flex;
@@ -866,7 +864,6 @@ section {
 }
 
 .tab-title {
-  box-sizing: border-box;
   padding: 1em 1em 0.7em 1em;
   cursor: pointer;
   padding: 0.5em 1em 0.7em 1em;
@@ -890,13 +887,13 @@ section {
 
 .plots {
   background-color: #eee;
-  padding-top: 1em;
+  padding: 1em;
 }
 
 .plots-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 2em;
+  gap: 1em;
 }
 
 .plot {
@@ -904,7 +901,6 @@ section {
   flex-direction: column;
   justify-content: space-between;
   background: #eee;
-  padding: 8px;
 }
 .plot img {
   width: 100%;
