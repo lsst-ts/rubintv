@@ -1,7 +1,7 @@
 import json
 import re
 from datetime import date
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from aiohttp import web
 from google.api_core.exceptions import NotFound
@@ -281,16 +281,19 @@ def get_event_page_link(
 
 def get_historical_night_reports_events(
     bucket: Bucket, reports_list: List[Night_Reports_Event]
-) -> Tuple[List[Night_Reports_Event], Dict]:
-    plots = []
+) -> Tuple[Dict[str, List[Night_Reports_Event]], Dict[str, str]]:
+    plots: Dict[str, List[Night_Reports_Event]] = {}
     json_data = {}
     for r in reports_list:
         if r.file_ext == "json":
             blob = bucket.blob(r.blobname)
             json_raw_data = json.loads(blob.download_as_bytes())
-            json_data = process_raw_dashboard_data(json_raw_data)
+            json_data = process_night_report_text_data(json_raw_data)
         else:
-            plots.append(r)
+            if r.group in plots:
+                plots[r.group].append(r)
+            else:
+                plots[r.group] = [r]
     return plots, json_data
 
 
@@ -301,33 +304,41 @@ def get_nights_report_link_type(
     if camera.night_reports_prefix:
         if the_date == get_current_day_obs():
             night_reports_link = "current"
-        elif get_night_reports_events(bucket, camera, the_date) != (
-            [],
-            {},
-        ):
+        elif get_night_reports_events(bucket, camera, the_date):
             night_reports_link = "historic"
     return night_reports_link
 
 
 def get_night_reports_events(
     bucket: Bucket, camera: Camera, day_obs: date
-) -> Tuple[List[Night_Reports_Event], Dict]:
+) -> Optional[Tuple[Dict[str, List[Night_Reports_Event]], Dict[str, str]]]:
     prefix = camera.night_reports_prefix
     blobs = get_night_reports_blobs(bucket, prefix, day_obs)
-    plots = []
-    json_data = {}
+    if not blobs:
+        return None
+    all_plots = []
+    text_data = {}
+
     for blob in blobs:
         if blob.public_url.endswith(".json"):
             json_raw_data = json.loads(blob.download_as_bytes())
-            json_data = process_raw_dashboard_data(json_raw_data)
+            text_data = process_night_report_text_data(json_raw_data)
         else:
-            plots.append(
+            all_plots.append(
                 Night_Reports_Event(
                     blob.public_url, prefix, int(blob.time_created.timestamp())
                 )
             )
-    plots.sort(key=lambda ev: ev.simplename)
-    return (plots, json_data)
+
+    all_plots.sort(key=lambda ev: ev.simplename)
+    plots: Dict[str, List[Night_Reports_Event]] = {}
+    for plot in all_plots:
+        if plot.group in plots:
+            plots[plot.group].append(plot)
+        else:
+            plots[plot.group] = [plot]
+
+    return (plots, text_data)
 
 
 def get_night_reports_blobs(
@@ -351,7 +362,7 @@ def crs_to_brs(match: re.Match) -> str:
     return result
 
 
-def process_raw_dashboard_data(
+def process_night_report_text_data(
     raw_data: Dict,
 ) -> Dict[str, Any]:
     text_part = [

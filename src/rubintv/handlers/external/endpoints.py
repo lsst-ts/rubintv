@@ -367,7 +367,10 @@ async def get_night_reports(request: web.Request) -> dict[str, Any]:
     bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
     day_obs = get_current_day_obs()
 
-    plots, dashboard_data = get_night_reports_events(bucket, camera, day_obs)
+    plots: Dict[str, List[Night_Reports_Event]] = {}
+    dashboard_data: Dict[str, str] = {}
+    if night_reports := get_night_reports_events(bucket, camera, day_obs):
+        plots, dashboard_data = night_reports
     dashboard_json = json.dumps(dashboard_data)
 
     return {
@@ -403,7 +406,10 @@ async def update_night_reports(request: web.Request) -> dict[str, Any]:
         the_date = day_obs
         message = "It's a new day"
 
-    plots, dashboard_data = get_night_reports_events(bucket, camera, the_date)
+    plots: Dict[str, List[Night_Reports_Event]] = {}
+    dashboard_data: Dict[str, str] = {}
+    if night_reports := get_night_reports_events(bucket, camera, day_obs):
+        plots, dashboard_data = night_reports
     dashboard_json = json.dumps(dashboard_data)
 
     return {
@@ -447,9 +453,8 @@ async def get_historical_night_reports(request: web.Request) -> Dict[str, Any]:
         request=request,
     )
 
-    plots: List[Night_Reports_Event]
-    dashboard_data: Dict[str, Any]
-    plots, dashboard_data = ([], {})
+    plots: Dict[str, List[Night_Reports_Event]] = {}
+    dashboard_data: Dict[str, str] = {}
     night_reports = historical.get_night_reports_for(camera, the_date)
     if night_reports:
         bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
@@ -457,6 +462,8 @@ async def get_historical_night_reports(request: web.Request) -> Dict[str, Any]:
             bucket, night_reports
         )
 
+    for group in plots:
+        print(f"{group} contains {len(plots[group])} plots")
     dashboard_json = json.dumps(dashboard_data)
 
     return {

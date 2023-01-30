@@ -26,17 +26,31 @@
     {% endif %}
   </div>
 
-  <div class="plots-grid">
-    {% for plot in plots %}
-      <figure class="plot">
-        <a href="{{ plot.url }}">
-          <img src="{{ plot.url }}?t={{ plot.timestamp }}">
-        </a>
-        <figcaption>
-          {{ plot.name }}
-        </figcaption>
-      </figure>
-    {% endfor %}
+  <div class="plots-section tabs">
+    <div class="tab-titles">
+      {% for group in plots %}
+        <div id="tabtitle-{{ group }}" class="tab-title">
+          {{ group }}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="plots">
+      {% for group in plots %}
+        <div id="tabgroup-{{ group }}" class="tab-content plots-grid">
+          {% for plot in plots[group] %}
+            <figure class="plot">
+              <a href="{{ plot.url }}">
+                <img src="{{ plot.url }}?t={{ plot.timestamp }}">
+              </a>
+              <figcaption>
+                {{ plot.name }}
+              </figcaption>
+            </figure>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
   </div>
 
 </div>

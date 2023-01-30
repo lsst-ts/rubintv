@@ -857,12 +857,55 @@ section {
   gap: 1em;
 }
 
+.tab-titles {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #ddd;
+  width: fit-content;
+}
+
+.tab-title {
+  box-sizing: border-box;
+  padding: 1em 1em 0.7em 1em;
+  cursor: pointer;
+  padding: 0.5em 1em 0.7em 1em;
+  cursor: pointer;
+  background: #eee;
+  border-radius: 0px 11px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  margin-right: 2px;
+}
+.tab-title:last-of-type {
+  margin-right: 0;
+}
+.tab-title.selected {
+  border-color: #666;
+}
+
+.tab-content:not(.showing) {
+  display: none;
+}
+
+.plots {
+  background-color: #eee;
+  padding-top: 1em;
+}
+
 .plots-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 2em;
 }
 
+.plot {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #eee;
+  padding: 8px;
+}
 .plot img {
   width: 100%;
   height: auto;

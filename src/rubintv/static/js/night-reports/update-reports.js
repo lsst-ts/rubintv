@@ -1,6 +1,7 @@
 import { _getById, getHtml } from '../modules/utils.js'
+import { tabsUIInit } from './tabs-ui.js'
 
-window.addEventListener('load', function () {
+window.addEventListener('DOMContentLoaded', function () {
   setInterval(updateEvents, 5000)
 
   function updateEvents () {
@@ -12,6 +13,7 @@ window.addEventListener('load', function () {
   function success (html) {
     if (html) {
       _getById('night-reports-update').innerHTML = html
+      tabsUIInit()
     }
   }
 })

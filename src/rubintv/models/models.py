@@ -102,6 +102,7 @@ class Night_Reports_Event:
     timestamp: int
     blobname: str = ""
     simplename: str = field(init=False)
+    group: str = field(init=False)
     name: str = field(init=False)
     _obs_date: str = field(init=False)
     file_ext: str = field(init=False)
@@ -113,15 +114,16 @@ class Night_Reports_Event:
     def parse_filename(self) -> tuple:
         parts = self.url.split(self.prefix + "/")[-1]
         # use spread in case of extended names later on
-        d, *n = parts.split("/")
+        d, group, *names = parts.split("/")
         obs_date = d
-        simplename, file_ext = ": ".join(n).split(".")
-        name = simplename.replace("_", " ")
-        return (simplename, name, obs_date, file_ext)
+        simplename, file_ext = "".join(names).split(".")
+        name = "".join(simplename).replace("_", " ")
+        return (simplename, group, name, obs_date, file_ext)
 
     def __post_init__(self) -> None:
         (
             self.simplename,
+            self.group,
             self.name,
             self._obs_date,
             self.file_ext,
