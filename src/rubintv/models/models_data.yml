@@ -89,6 +89,7 @@ Cameras:
   startracker-fast:
     name: StarTrackerFast
     online: True
+    metadata_slug: startracker
     channels:
       startracker-fast:
         name: StarTrackerFast

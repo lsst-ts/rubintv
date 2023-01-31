@@ -585,20 +585,20 @@ section {
   height: 100%;
 }
 
-.startracker thead, .startracker-wide thead {
+.startracker thead, .startracker-wide thead, .startracker-fast thead {
   position: sticky;
   top: 10.8em;
 }
-.startracker .grouping, .startracker-wide .grouping {
+.startracker .grouping, .startracker-wide .grouping, .startracker-fast .grouping {
   height: 6em;
 }
-.startracker .grid-title, .startracker-wide .grid-title {
+.startracker .grid-title, .startracker-wide .grid-title, .startracker-fast .grid-title {
   position: static;
 }
-.startracker .table-spacer, .startracker-wide .table-spacer {
+.startracker .table-spacer, .startracker-wide .table-spacer, .startracker-fast .table-spacer {
   height: 11em;
 }
-.startracker .meta-group, .startracker-wide .meta-group {
+.startracker .meta-group, .startracker-wide .meta-group, .startracker-fast .meta-group {
   top: -5.4em;
 }
 
