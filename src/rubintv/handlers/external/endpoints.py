@@ -371,7 +371,10 @@ async def get_night_reports(request: web.Request) -> dict[str, Any]:
     dashboard_data: Dict[str, str] = {}
     if night_reports := get_night_reports_events(bucket, camera, day_obs):
         plots, dashboard_data = night_reports
-    dashboard_json = json.dumps(dashboard_data)
+    plots_dict = {
+        group: [plot.dict() for plot in plots[group]] for group in plots
+    }
+    reports_json = {"text": dashboard_data, "plots": plots_dict}
 
     return {
         "title": title,
@@ -379,14 +382,13 @@ async def get_night_reports(request: web.Request) -> dict[str, Any]:
         "camera": camera,
         "date": day_obs,
         "plots": plots,
-        "dashboard_json": dashboard_json,
+        "reports_json": reports_json,
         "dashboard_data": dashboard_data,
     }
 
 
 @routes.get("/{location}/{camera}/night_reports/update/{date}")
-@template("cameras/night-reports-events.jinja")
-async def update_night_reports(request: web.Request) -> dict[str, Any]:
+async def update_night_reports(request: web.Request) -> web.Response:
     location_name = request.match_info["location"]
     location = find_location(location_name, request)
 
@@ -400,27 +402,23 @@ async def update_night_reports(request: web.Request) -> dict[str, Any]:
 
     date_str = request.match_info["date"]
     the_date = date_from_url_part(date_str)
-    day_obs = get_current_day_obs()
-    message = ""
-    if the_date != day_obs:
-        the_date = day_obs
-        message = "It's a new day"
 
     plots: Dict[str, List[Night_Reports_Event]] = {}
     dashboard_data: Dict[str, str] = {}
-    if night_reports := get_night_reports_events(bucket, camera, day_obs):
+    if night_reports := get_night_reports_events(bucket, camera, the_date):
         plots, dashboard_data = night_reports
-    dashboard_json = json.dumps(dashboard_data)
 
-    return {
-        "location": location,
-        "camera": camera,
-        "date": the_date,
-        "plots": plots,
-        "message": message,
-        "dashboard_json": dashboard_json,
-        "dashboard_data": dashboard_data,
+    plots_dict = {
+        group: [plot.dict() for plot in plots[group]] for group in plots
     }
+    text_html = render_string(
+        "cameras/night-reports-text.jinja",
+        request,
+        {"dashboard_data": dashboard_data},
+    )
+    reports_json = json.dumps({"text": text_html, "plots": plots_dict})
+
+    return web.Response(text=reports_json, content_type="application/json")
 
 
 @routes.get(
@@ -462,9 +460,10 @@ async def get_historical_night_reports(request: web.Request) -> Dict[str, Any]:
             bucket, night_reports
         )
 
-    for group in plots:
-        print(f"{group} contains {len(plots[group])} plots")
-    dashboard_json = json.dumps(dashboard_data)
+    plots_dict = {
+        group: [plot.dict() for plot in plots[group]] for group in plots
+    }
+    reports_json = json.dumps({"text": dashboard_data, "plots": plots_dict})
 
     return {
         "title": title,
@@ -472,8 +471,8 @@ async def get_historical_night_reports(request: web.Request) -> Dict[str, Any]:
         "camera": camera,
         "date": the_date,
         "plots": plots,
-        "dashboard_json": dashboard_json,
         "dashboard_data": dashboard_data,
+        "reports_json": reports_json,
     }
 
 

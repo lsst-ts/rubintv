@@ -1,8 +1,11 @@
 import { _getById } from '../modules/utils.js'
 
-export function tabsUIInit () {
+export function addTabsListeners () {
   const tabs = Array.from(document.querySelectorAll('.tab-title:not(.disabled)'))
-  const tabsContent = Array.from(document.querySelectorAll('.tab-content:not(.disabled)'))
+  if (tabs.length === 0) return
+
+  const tabsContent = document.querySelectorAll('.tab-content:not(.disabled)')
+
   let storedSelected = localStorage.getItem('night-reports-selected')
   if (!storedSelected || tabs.filter((t) => { return t.id.includes(storedSelected) }).length === 0) {
     storedSelected = tabs[0].id.split('tabtitle-')[1]
@@ -26,7 +29,7 @@ export function tabsUIInit () {
     })
   })
 }
-tabsUIInit()
+addTabsListeners()
 
 function listenForEfficiency () {
   const keyCode = 'efficiency'
@@ -37,9 +40,9 @@ function listenForEfficiency () {
   function keyPress (e) {
     keyStore = keyStore.concat(e.key)
     if (keyStore === keyCode) {
-      Array.from(document.querySelectorAll('#night-reports .disabled')).forEach((el) => {
+      document.querySelectorAll('#night-reports .disabled').forEach((el) => {
         el.classList.remove('disabled')
-        tabsUIInit()
+        addTabsListeners()
         document.body.removeEventListener('keypress', keyPress)
       })
     }

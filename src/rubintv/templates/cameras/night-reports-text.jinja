@@ -1,0 +1,27 @@
+{# {% if dashboard_data["text"] or dashboard_data["quantities"] %} #}
+  <div id="tabgroup-text" class="dashboard tab-content disabled">
+    {% if dashboard_data["text"] %}
+      <ul class="dashboard-text">
+      {% set text_list = dashboard_data["text"] %}
+      {% for text in text_list %}
+        <li>
+          {% for line in text %}
+            <p>{{ line|safe }}</p>
+          {% endfor %}
+        </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if dashboard_data["quantities"] %}
+      <ul class="dashboard-quantities">
+      {% set q_list = dashboard_data["quantities"] %}
+      {% for quantity, measurement in q_list.items() %}
+        <li>
+          {{ quantity }}: {{ measurement }}
+        </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+{# {% endif %} #}

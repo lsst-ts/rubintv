@@ -129,6 +129,10 @@ class Night_Reports_Event:
             self.file_ext,
         ) = self.parse_filename()
 
+    def dict(self) -> dict:
+        _dict = self.__dict__.copy()
+        return _dict
+
 
 def get_current_day_obs() -> date:
     """Get the current day_obs - the observatory rolls the date over at UTC-12"""
