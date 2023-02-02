@@ -20,9 +20,10 @@ export function addToTable (metaData, headerGroups, sortable = false) {
       { id: groupID, scope: 'colgroup', colspan: span, class: 'meta-group' }
     )
     tr.append(_elWithAttrs('p', { text: group }))
-    tr.append(_elWithAttrs('img', {
+    tr.append(_elWithAttrs('div', {
+      class: 'brace-placeholder',
       id: `brace-${groupID}`,
-      src: '/rubintv/static/images/meta-group.png'
+      style: 'height: 40px; width: 100%;'
     }))
     groupRow.append(tr)
   })
@@ -67,8 +68,8 @@ export function addToTable (metaData, headerGroups, sortable = false) {
 function replaceBraceImgWithSVG () {
   const groups = document.querySelectorAll('.meta-group')
   Array.from(groups).forEach((group) => {
-    const img = group.querySelector('img')
-    img.replaceWith(SVGBracket(img.width))
+    const placeholder = group.querySelector('.brace-placeholder')
+    placeholder.replaceWith(SVGBracket(placeholder.clientWidth))
   })
 }
 
