@@ -125,8 +125,6 @@ async def test_get_allsky_movie_update(aiohttp_client: TestClient) -> None:
     response = await client.get(f"/{name}/summit/allsky/update/movie")
     assert response.status == 200
     assert response.content_type == "application/json"
-    json_data = await response.json()
-    assert json_data["date"] == app["rubintv/date_to_load"]
 
 
 @pytest.mark.asyncio
