@@ -1,4 +1,5 @@
 export const auxtelDefaultSelected = [
+  'Has annotations?',
   'Mount motion image degradation',
   'Exposure time',
   'Image type',
