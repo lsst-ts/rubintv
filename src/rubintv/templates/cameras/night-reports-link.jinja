@@ -1,10 +1,10 @@
 {% if night_reports_link %}
   <div id="night_reports_link">
-    <h3>Night Reports Page</h3>
+    <h3>Night Report</h3>
     {% if night_reports_link == "current" %}
       <a href="{{ url('night_reports', location=location.slug, camera=camera.slug) }}" class="button button-large night-reports">
         <img src="{{ url('static', filename='images/crescent-moon.svg') }}">
-        Night Reports
+        Night Report
       </a>
     {% else %}
     {# show historical button with date #}
@@ -12,7 +12,7 @@
         href="{{ url('night_reports_hist', location=location.slug, camera=camera.slug, date_str=date|string ) }}"
         class="button button-large night-reports">
         <img src="{{ url('static', filename='images/crescent-moon.svg') }}">
-        Night Reports for {{ date }}
+        Night Report for {{ date }}
       </a>
     {% endif %}
   </div>
