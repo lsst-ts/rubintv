@@ -100,9 +100,9 @@ aiohttp==3.8.3 \
     #   -r requirements/main.in
     #   aiohttp-jinja2
     #   safir
-aiohttp-jinja2==1.5 \
-    --hash=sha256:7c3ba5eac060b691f4e50534af2d79fca2a75712ebd2b25e6fcb1295859f910b \
-    --hash=sha256:b55c0ed167b0cc4b6d6a50fb2299a44beb5dc4aec9df21305b91a5484694cf74
+aiohttp-jinja2==1.5.1 \
+    --hash=sha256:45cf00b80ab4dcc19515df13a929826eeb9698e76a3bcfd99112418751f5a061 \
+    --hash=sha256:8d149b2a57d91f794b33a394ea5bc66b567f38c74a5a6a9477afc2450f105c01
     # via -r requirements/main.in
 aiosignal==1.3.1 \
     --hash=sha256:54cd96e15e1649b75d6c87526a6ff0b6c1b0dd3459f43d9ca11d48c339b68cfc \
