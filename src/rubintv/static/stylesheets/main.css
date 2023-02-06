@@ -289,6 +289,11 @@ h6 {
   transform: scale(0.992);
 }
 
+.button-large img {
+  width: 50%;
+  margin: auto;
+}
+
 .button-small {
   padding: 1em;
   height: 67px;
