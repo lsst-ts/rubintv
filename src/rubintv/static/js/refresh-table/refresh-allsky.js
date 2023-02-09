@@ -1,4 +1,3 @@
-import { ChannelStatus } from '../modules/heartbeat.js'
 import { getJson } from '../modules/utils.js'
 
 window.addEventListener('load', () => {
@@ -38,7 +37,4 @@ window.addEventListener('load', () => {
     })
   }
   setInterval(videoCheckLatest, 5000)
-
-  const status = new ChannelStatus('allsky')
-  console.log(JSON.stringify(status))
 })
