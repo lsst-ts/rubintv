@@ -1,13 +1,17 @@
 import { _getById } from './modules/utils.js'
-import { ReconnectingWebSocket } from './modules/reconnecting-websocket.js'
+import { ReconnectingWebSocket } from './modules/reconnecting-websocket.min.js'
 
 window.addEventListener('pageshow', function (e) {
   const location = _getById('location').dataset.location
 
   // scrape relevent services from page
   const serviceEls = Array.from(document.querySelectorAll('.service'))
-  const services = serviceEls.map(s => {
-    return { id: s.id, el: s, dependentOn: s.dataset.dependentOn }
+  const services = serviceEls.map((s) => {
+    let dependentOn = ''
+    if (s instanceof HTMLElement) {
+      dependentOn = s.dataset.dependentOn
+    }
+    return { id: s.id, el: s, dependentOn }
   })
 
   // boil down dependency names

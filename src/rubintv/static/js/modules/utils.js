@@ -114,30 +114,6 @@ export function removeColumnFromTableFor (attributeName) {
   Array.from(cells).forEach(cell => { cell.remove() })
 }
 
-export function makeTableSortable () {
-  document.querySelectorAll('th').forEach(thElem => {
-    let asc = true
-    const index = Array.from(thElem.parentNode.children).indexOf(thElem)
-    thElem.addEventListener('click', (e) => {
-      const arr = [...thElem.closest('table').querySelectorAll('tbody tr')]
-      arr.sort((a, b) => {
-        let aVal = a.children[index].innerText
-        let bVal = b.children[index].innerText
-        if (!isNaN(aVal) && !isNaN(bVal)) {
-          aVal = +aVal
-          bVal = +bVal
-          return (asc) ? aVal > bVal : aVal < bVal
-        }
-        return (asc) ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal)
-      })
-      arr.forEach(elem => {
-        thElem.closest('table').querySelector('tbody').appendChild(elem)
-      })
-      asc = !asc
-    })
-  })
-}
-
 export function drawTableColumnsAndRows (metaData, columns) {
   Object.entries(metaData).forEach(([seq, attributes]) => {
     const seqRow = _getById(`seqno-${seq}`)

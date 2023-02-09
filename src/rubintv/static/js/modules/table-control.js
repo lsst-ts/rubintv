@@ -37,6 +37,9 @@ export class TableControls {
     localStorage[this.camera] = JSON.stringify(selected)
   }
 
+  /**
+   * @param {JSON} metaData
+   */
   updateMetadata (metaData) {
     this.metaData = metaData
     this.attributes = this.getAttributesFrom(metaData)
@@ -93,7 +96,7 @@ export class TableControls {
         }
       })
 
-    this.drawJumpButtonControls(self.elementToAppendTo)
+    this.drawJumpButtonControls()
     this.addDownloadMetadataButton()
   }
 
@@ -142,7 +145,7 @@ export class TableControls {
       a.href = url
       a.download = `${camera}_${date}.json`
       a.click()
-      URL.revokeObjectURL(blob)
+      URL.revokeObjectURL(blob.name)
     })
   }
 }

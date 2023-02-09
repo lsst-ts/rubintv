@@ -1,10 +1,10 @@
 import {
-  _getById, _elWithAttrs, _elWithClass, makeTableSortable, _escapeName, drawTableColumnsAndRows
+  _getById, _elWithAttrs, _elWithClass, _escapeName, drawTableColumnsAndRows
 } from './utils.js'
 
-export function addToTable (metaData, selection, sortable = false) {
+export function addToTable (metaData, selection) {
   // remove existing table
-  [...document.querySelectorAll('.meta')].forEach(gridElement => {
+  Array.from(document.querySelectorAll('.meta')).forEach(gridElement => {
     gridElement.remove()
   })
 
@@ -51,8 +51,4 @@ export function addToTable (metaData, selection, sortable = false) {
       document.body.append(responseMsg)
     })
   })
-
-  if (sortable) {
-    makeTableSortable()
-  }
 }

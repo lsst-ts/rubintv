@@ -1,7 +1,7 @@
-import { makeTableSortable, _escapeName, _elWithAttrs, drawTableColumnsAndRows } from './utils.js'
+import { _escapeName, _elWithAttrs, drawTableColumnsAndRows } from './utils.js'
 
 // headerGroups is an array of arrays
-export function addToTable (metaData, headerGroups, sortable = false) {
+export function addToTable (metaData, headerGroups) {
   // empty object test- there's no data, just go home
   if (Object.keys(metaData).length === 0) return
   // add metadata group headers to the table
@@ -48,10 +48,6 @@ export function addToTable (metaData, headerGroups, sortable = false) {
   drawTableColumnsAndRows(metaData, headers)
 
   replaceBraceImgWithSVG()
-
-  if (sortable) {
-    makeTableSortable()
-  }
 }
 
 function replaceBraceImgWithSVG () {
