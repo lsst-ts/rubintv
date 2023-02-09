@@ -33,11 +33,11 @@ from rubintv.handlers.external.endpoints_helpers import (
     find_location,
     get_current_event,
     get_event_page_link,
-    get_historical_night_reports_events,
+    get_historical_night_report_events,
     get_image_viewer_link,
     get_metadata_json,
     get_most_recent_day_events,
-    get_night_reports_events,
+    get_night_report_events,
     get_nights_report_link_type,
     get_per_day_channels,
     make_table_rows_from_columns_by_seq,
@@ -46,7 +46,7 @@ from rubintv.handlers.external.endpoints_helpers import (
 from rubintv.models.historicaldata import HistoricalData
 from rubintv.models.models import (
     Event,
-    Night_Reports_Event,
+    Night_Report_Event,
     get_current_day_obs,
 )
 from rubintv.timer import Timer
@@ -367,9 +367,9 @@ async def get_night_reports(request: web.Request) -> dict[str, Any]:
     bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
     day_obs = get_current_day_obs()
 
-    plots: Dict[str, List[Night_Reports_Event]] = {}
+    plots: Dict[str, List[Night_Report_Event]] = {}
     dashboard_data: Dict[str, str] = {}
-    if night_reports := get_night_reports_events(bucket, camera, day_obs):
+    if night_reports := get_night_report_events(bucket, camera, day_obs):
         plots, dashboard_data = night_reports
     plots_dict = {
         group: [plot.dict() for plot in plots[group]] for group in plots
@@ -403,9 +403,9 @@ async def update_night_reports(request: web.Request) -> web.Response:
     date_str = request.match_info["date"]
     the_date = date_from_url_part(date_str)
 
-    plots: Dict[str, List[Night_Reports_Event]] = {}
+    plots: Dict[str, List[Night_Report_Event]] = {}
     dashboard_data: Dict[str, str] = {}
-    if night_reports := get_night_reports_events(bucket, camera, the_date):
+    if night_reports := get_night_report_events(bucket, camera, the_date):
         plots, dashboard_data = night_reports
 
     plots_dict = {
@@ -451,12 +451,12 @@ async def get_historical_night_reports(request: web.Request) -> Dict[str, Any]:
         request=request,
     )
 
-    plots: Dict[str, List[Night_Reports_Event]] = {}
+    plots: Dict[str, List[Night_Report_Event]] = {}
     dashboard_data: Dict[str, str] = {}
     night_reports = historical.get_night_reports_for(camera, the_date)
     if night_reports:
         bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
-        plots, dashboard_data = get_historical_night_reports_events(
+        plots, dashboard_data = get_historical_night_report_events(
             bucket, night_reports
         )
 
@@ -582,7 +582,7 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
     }
 
 
-@routes.get("/{location}/{camera}/{channel}events/{date}/{seq}", name="single")
+@routes.get("/{location}/{camera}/{channel}/event/{date}/{seq}", name="single")
 @template("single_event.jinja")
 async def events(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]

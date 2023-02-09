@@ -13,7 +13,7 @@ from rubintv.models.models import (
     Channel,
     Event,
     Location,
-    Night_Reports_Event,
+    Night_Report_Event,
 )
 from rubintv.models.models_helpers import get_prefix_from_date
 
@@ -35,8 +35,8 @@ __all__ = [
     "get_heartbeats",
     "build_title",
     "get_nights_report_link_type",
-    "get_night_reports_events",
-    "get_historical_night_reports_events",
+    "get_night_report_events",
+    "get_historical_night_report_events",
 ]
 
 
@@ -274,15 +274,15 @@ def get_event_page_link(
     event: Event,
 ) -> str:
     return (
-        f"{location.slug}/{camera.slug}/{channel.endpoint}/"
+        f"{location.slug}/{camera.slug}/{channel.slug}/event/"
         f"{event.clean_date()}/{event.seq}"
     )
 
 
-def get_historical_night_reports_events(
-    bucket: Bucket, reports_list: List[Night_Reports_Event]
-) -> Tuple[Dict[str, List[Night_Reports_Event]], Dict[str, str]]:
-    plots: Dict[str, List[Night_Reports_Event]] = {}
+def get_historical_night_report_events(
+    bucket: Bucket, reports_list: List[Night_Report_Event]
+) -> Tuple[Dict[str, List[Night_Report_Event]], Dict[str, str]]:
+    plots: Dict[str, List[Night_Report_Event]] = {}
     json_data = {}
     for r in reports_list:
         if r.file_ext == "json":
@@ -301,18 +301,18 @@ def get_nights_report_link_type(
     bucket: Bucket, camera: Camera, the_date: date
 ) -> str:
     night_reports_link = ""
-    if camera.night_reports_prefix:
+    if camera.night_report_prefix:
         if the_date == get_current_day_obs():
             night_reports_link = "current"
-        elif get_night_reports_events(bucket, camera, the_date):
+        elif get_night_report_events(bucket, camera, the_date):
             night_reports_link = "historic"
     return night_reports_link
 
 
-def get_night_reports_events(
+def get_night_report_events(
     bucket: Bucket, camera: Camera, day_obs: date
-) -> Optional[Tuple[Dict[str, List[Night_Reports_Event]], Dict[str, str]]]:
-    prefix = camera.night_reports_prefix
+) -> Optional[Tuple[Dict[str, List[Night_Report_Event]], Dict[str, str]]]:
+    prefix = camera.night_report_prefix
     blobs = get_night_reports_blobs(bucket, prefix, day_obs)
     if not blobs:
         return None
@@ -325,13 +325,13 @@ def get_night_reports_events(
             text_data = process_night_report_text_data(json_raw_data)
         else:
             all_plots.append(
-                Night_Reports_Event(
+                Night_Report_Event(
                     blob.public_url, prefix, int(blob.time_created.timestamp())
                 )
             )
 
-    all_plots.sort(key=lambda ev: ev.simplename)
-    plots: Dict[str, List[Night_Reports_Event]] = {}
+    all_plots.sort(key=lambda ev: ev.slug)
+    plots: Dict[str, List[Night_Report_Event]] = {}
     for plot in all_plots:
         if plot.group in plots:
             plots[plot.group].append(plot)

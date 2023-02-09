@@ -55,7 +55,7 @@ Cameras:
         prefix: auxtel_movies
         label: "Movie for "
 
-    night_reports_prefix: auxtel_night_reports
+    night_report_prefix: auxtel_night_reports
 
 
 

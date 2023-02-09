@@ -9,9 +9,29 @@ from rubintv.models.models_helpers import string_int_to_date
 
 @dataclass
 class Channel:
+    """A container for a category of images from a `Camera`.
+
+    Parameters
+    ----------
+    name : `str`
+        Name of the channel.
+    prefix : `str`
+        Lookup prefix for the GCS Bucket.
+    slug : `str`
+        Simplified version of the name, lowercase with no white-space and only
+        ``-`` or ``_`` seperators.
+    label : `str`
+        Optional extra string for GUI buttons. If not given, the label is set
+        the same as the name.
+    service_dependency : `str`
+        Name of the production service on which the production generator of
+        this channel depends. e.g. ``"auxtel_monitor"`` is dependent on
+        ``"auxtel_isr_runner"``. Used as a url slug (see slug above).
+    """
+
     name: str
     prefix: str
-    simplename: str = ""
+    slug: str = ""
     label: str = ""
     service_dependency: str = ""
 
@@ -19,13 +39,40 @@ class Channel:
         if self.label == "":
             self.label = self.name
 
-    @property
-    def endpoint(self) -> str:
-        return self.simplename + "events"
-
 
 @dataclass
 class Camera:
+    """A container for a single camera
+
+    Parameters
+    ----------
+    name : `str`
+        Name of the camera/image producer.
+    online : `bool`
+        To display the camera or not.
+    slug : `str`
+        Simplified version of the name, lowercase with no white-space and only
+        ``-`` or ``_`` seperators.
+    metadata_slug: `str`
+        Optional slug used for locating shared metadata files in the bucket.
+        If none is given, the slug above is used.
+    logo : `str`
+        Name (including extension) of the image file to display in the GUI
+        button. Images are looked for in ``"/static/images/logos/"``.
+    has_image_viewer : `bool`
+        If ``True`` a column is drawn in the table for this camera with a link
+        generated to point to an external image viewer for each monitor event.
+    channels : `dict` [`str`, `Channel`]
+        `Channel` objects belonging to this camera, keyed by name.
+    per_day_channels : `dict` [`str`, `Channel`]
+        `Channel` objects belonging to this camera, keyed by name. Per day
+        channels are for categories of event that only occur once per
+        observation date e.g. a movie of the night's images.
+    night_report_prefix: `str`
+        Used to form part of the bucket lookup for night reports. If left unset
+        the camera is considered not to produce night reports.
+    """
+
     name: str
     online: bool
     _slug: str = field(init=False, repr=False)
@@ -34,7 +81,7 @@ class Camera:
     has_image_viewer: bool = False
     channels: dict[str, Channel] = field(default_factory=dict)
     per_day_channels: dict[str, Channel] = field(default_factory=dict)
-    night_reports_prefix: str = ""
+    night_report_prefix: str = ""
 
     @property
     def slug(self) -> str:
@@ -49,6 +96,18 @@ class Camera:
 
 @dataclass
 class Location:
+    """_summary_
+
+    Parameters
+    ----------
+    name: `str`
+    bucket: `str`
+    services: `list` [`str`]
+    slug: `str`
+    logo: `str`
+    camera_groups: `dict` [`str`, `list` [`str`]]
+    """
+
     name: str
     bucket: str
     services: list[str]
@@ -96,12 +155,12 @@ class Event:
 
 
 @dataclass
-class Night_Reports_Event:
+class Night_Report_Event:
     url: str
     prefix: str
     timestamp: int
     blobname: str = ""
-    simplename: str = field(init=False)
+    slug: str = field(init=False)
     group: str = field(init=False)
     name: str = field(init=False)
     _obs_date: str = field(init=False)
@@ -116,13 +175,13 @@ class Night_Reports_Event:
         # use spread in case of extended names later on
         d, group, *names = parts.split("/")
         obs_date = d
-        simplename, file_ext = "".join(names).split(".")
-        name = "".join(simplename).replace("_", " ")
-        return (simplename, group, name, obs_date, file_ext)
+        slug, file_ext = "".join(names).split(".")
+        name = "".join(slug).replace("_", " ")
+        return (slug, group, name, obs_date, file_ext)
 
     def __post_init__(self) -> None:
         (
-            self.simplename,
+            self.slug,
             self.group,
             self.name,
             self._obs_date,

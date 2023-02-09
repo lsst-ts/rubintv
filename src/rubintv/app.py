@@ -1,6 +1,6 @@
 """The main application factory for the rubintv service."""
 
-__all__ = ["create_app"]
+__all__ = ["create_app", "create_app_light"]
 
 import asyncio
 import weakref
@@ -26,7 +26,15 @@ DATE_FOR_MINIMAL_LOAD = "2022-12-08"
 
 
 def create_app(load_minimal_data: bool = False) -> web.Application:
-    """Create and configure the aiohttp.web application."""
+    """Create and configure the aiohttp.web application.
+
+    Run via `tox -e run-app`
+
+    Returns
+    -------
+    `web.Application`
+        The web app.
+    """
     config = Configuration()
     configure_logging(
         profile=config.profile,
@@ -60,7 +68,9 @@ def create_app(load_minimal_data: bool = False) -> web.Application:
     setup_middleware(root_app)
     root_app.add_routes(init_internal_routes())
     root_app.cleanup_ctx.append(init_http_session)
+    root_app["rubintv/heartbeats"] = {}
     root_app.cleanup_ctx.append(heartbeat_polling_init)
+    root_app.cleanup_ctx.append(websockets_handler)
 
     sub_app = web.Application()
     aiohttp_jinja2.setup(
@@ -96,16 +106,66 @@ def setup_middleware(app: web.Application) -> None:
 
 
 def create_app_light() -> web.Application:
+    """Create an app that loads historical data for only a single date.
+
+    The date is set in DATE_FOR_MINIMAL_LOAD as ``"YYYY-MM-DD"``.
+    Used as the app entry via ``tox -e run-light``.
+
+    Returns
+    -------
+    `web.Application`
+        The web app with only the single date's data to cache.
+    """
     return create_app(load_minimal_data=True)
 
 
 async def heartbeat_polling_init(app: web.Application) -> AsyncGenerator:
-    """Initialise a loop for polling the heartbeats in the bucket"""
-    app["rubintv/heartbeats"] = {}
+    """Initialise a loop for polling the heartbeats in the bucket.
+
+    Uses the aiohttp cleanup contexts pattern.
+
+    Parameters
+    ----------
+    app : `web.Application`
+        The web app.
+
+    Returns
+    -------
+    `AsyncGenerator`
+        Set-up and tear down of polling for heartbeats
+
+    See Also
+    --------
+    aiohttp reference on `cleanup contexts`_.
+    .. _cleanup contexts: https://docs.aiohttp.org/en/stable/web_advanced.html#cleanup-context
+    """
     app["heartbeats_poller"] = asyncio.create_task(poll_for_heartbeats(app))
+    yield
+    app["heartbeats_poller"].cancel()
+    await app["heartbeats_poller"]
+
+
+async def websockets_handler(app: web.Application) -> AsyncGenerator:
+    """Initialise and gracefully close websockets.
+
+    Uses the aiohttp cleanup contexts pattern.
+
+    Parameters
+    ----------
+    app : `web.Application`
+        The web app.
+
+    Returns
+    -------
+    `AsyncGenerator`
+        Set-up and tear down of websockets.
+
+    See Also
+    --------
+    aiohttp reference on `cleanup contexts`_.
+    .. _cleanup contexts: https://docs.aiohttp.org/en/stable/web_advanced.html#cleanup-context
+    """
     app["websockets"] = weakref.WeakSet()
     yield
     for ws in set(app["websockets"]):
         await ws.close(code=WSCloseCode.GOING_AWAY, message="Server shutdown")
-    app["heartbeats_poller"].cancel()
-    await app["heartbeats_poller"]

@@ -8,7 +8,7 @@
           {% if events[seq][chan] %}
             {% set event = events[seq][chan] %}
             {% set chan = camera.channels[chan] %}
-              <a  class="button button-table {{ chan.simplename }}"
+              <a  class="button button-table {{ chan.slug }}"
                   href="{{ url('home') }}{{ event_page_link(location, camera, chan, event) }}">
               </a>
           {% endif %}

@@ -21,8 +21,8 @@
               <li class="channel service"
                   id="{{ channel.prefix }}"
                   data-dependent-on="{{ channel.service_dependency }}">
-                <a  class="button button-large {{ channel.simplename }}"
-                    href="{{ url('current', location=location.slug, camera=camera.slug, channel=channel.simplename) }}" target="_blank">
+                <a  class="button button-large {{ channel.slug }}"
+                    href="{{ url('current', location=location.slug, camera=camera.slug, channel=channel.slug) }}" target="_blank">
                   <div class="heartbeat"></div>
                   <span>{{ channel.name }}</span>
                 </a>
