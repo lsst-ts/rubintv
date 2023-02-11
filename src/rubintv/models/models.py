@@ -18,6 +18,7 @@ class Channel:
     prefix : `str`
         Lookup prefix for the GCS Bucket.
     slug : `str`
+        The part of the URL that identifies this channel in a web request.
         Simplified version of the name, lowercase with no white-space and only
         ``-`` or ``_`` seperators.
     label : `str`
@@ -51,6 +52,7 @@ class Camera:
     online : `bool`
         To display the camera or not.
     slug : `str`
+        The part of the URL that identifies this camera in a web request.
         Simplified version of the name, lowercase with no white-space and only
         ``-`` or ``_`` seperators.
     metadata_slug: `str`
@@ -96,16 +98,30 @@ class Camera:
 
 @dataclass
 class Location:
-    """_summary_
+    """Describes a site grouping of cameras
 
     Parameters
     ----------
     name: `str`
+        The name of the location.
     bucket: `str`
+        The identifying name of the `Bucket` that stores this group's images and
+        other files.
     services: `list` [`str`]
+        The names of services to display on the admin status page as belonging
+        to this location.
     slug: `str`
+        The part of the URL that identifies this location in a web request.
+        Simplified version of the name, lowercase with no white-space and only
+        ``-`` or ``_`` seperators.
     logo: `str`
+        Name (including extension) of the image file to display in the GUI
+        button. Images are looked for in the path ``"/static/images/logos/"``.
     camera_groups: `dict` [`str`, `list` [`str`]]
+        Used on the location's page. The dict key is used as the group title,
+        and the list is of strings that are keys in a globally accessable dict
+        of `Camera` objects (via
+        ``web.Application["rubintv/models"]["cameras"]``)
     """
 
     name: str
@@ -116,6 +132,13 @@ class Location:
     camera_groups: dict[str, list[str]] = field(default_factory=dict)
 
     def all_cameras(self) -> list[str]:
+        """Returns list of keys for the camera dict
+
+        Returns
+        -------
+        list[str]
+            _description_
+        """
         all_cams: list[str] = []
         for cam_list in self.camera_groups.values():
             for cam in cam_list:
@@ -125,6 +148,36 @@ class Location:
 
 @dataclass
 class Event:
+    """Wrapper for a single unit of GCS `Blob` metadata.
+
+    The various fields are extrapolated from the Blob's public url which takes
+    the form:
+
+    ``f"{hostname}/{bucket_name}/{channel_prefix}/{channel-dashes-prefix}_dayObs_
+    {date}_seqNum_{seq}.{ext}"``
+    where:
+        -   ``channel-dashes-prefix`` is ``channel_prefix`` with underscores
+            converted to dashes
+        -   ``date`` is as ``"YYYY-MM-DD"``
+        -   ``seq`` is an unpadded integer
+        -   ``ext`` is the file extension i.e. ``.png``
+
+    Returns
+    -------
+    url: `str`
+        The public url of the blob.
+    name: `str`
+        The last part of the url after the prefix.
+    prefix: `str`
+        The part of the url that identifies the channel the event belongs to.
+    obs_date: `date`
+        The date of the event.
+    seq: `int`
+        The sequence number of the event.
+        In the case of All Sky, the sequence can be ``"final"`` which
+        is converted to an integer.
+    """
+
     url: str
     name: str = field(init=False)
     prefix: str = field(init=False)
@@ -132,6 +185,7 @@ class Event:
     seq: int = field(init=False)
 
     def parse_filename(self, delimiter: str = "_") -> tuple:
+        # Every bucket starts /rubintv
         regex = r"\/rubintv[_\w]+\/"
         cleaned_up_url = re.split(regex, self.url)[-1]
         prefix, name = cleaned_up_url.split(
