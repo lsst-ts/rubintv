@@ -27,9 +27,9 @@ window.addEventListener('load', () => {
       const currentMovieUrl = source.getAttribute('src')
       if (data.channel === 'movie' && data.url !== currentMovieUrl) {
         source.setAttribute('src', data.url)
-        currentMovie.querySelector('.movie-date').textContent(data.date)
-        currentMovie.querySelector('.movie-number').textContent(data.seq)
-        currentMovie.querySelector('.desc').textContent(data.name)
+        currentMovie.querySelector('.movie-date').textContent = data.date
+        currentMovie.querySelector('.movie-number').textContent = data.seq
+        currentMovie.querySelector('.desc').textContent = data.name
         video.load()
       }
     }).catch(e => {

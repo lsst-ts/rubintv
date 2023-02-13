@@ -12,6 +12,9 @@ window.addEventListener('load', function () {
 
   refreshTableLoop(injectHTML, updateTableAndControls, 5)
 
+  /**
+   * @param {{ per_day: string; table: string; }} htmlParts
+   */
   function injectHTML (htmlParts) {
     _getById('per-day-refreshable').innerHTML = htmlParts.per_day
     _getById('channel-day-data').innerHTML = htmlParts.table

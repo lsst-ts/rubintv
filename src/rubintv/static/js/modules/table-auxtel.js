@@ -2,14 +2,18 @@ import {
   _getById, _elWithAttrs, _elWithClass, _escapeName, drawTableColumnsAndRows
 } from './utils.js'
 
+/**
+ * @param {string[]} selection
+ * @param {{ [s: string]: any; } | ArrayLike<any>} metaData
+ */
 export function addToTable (metaData, selection) {
-  // remove existing table
+  // remove existing metadata part of table
   Array.from(document.querySelectorAll('.meta')).forEach(gridElement => {
     gridElement.remove()
   })
 
   // add metadata headers to the table
-  selection.forEach(attr => {
+  selection.forEach((/** @type {string} */ attr) => {
     const escapedName = _escapeName(attr)
     const lastHeaderCall = Array.from(document.querySelectorAll('.grid-title')).pop()
     const el = _elWithClass('th', `grid-title sideways meta ${escapedName}`)

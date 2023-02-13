@@ -39,6 +39,9 @@ window.addEventListener('pageshow', function (e) {
 
   rws.onmessage = heartbeatHandler
 
+  /**
+   * @param {{ data: string; }} event
+   */
   function heartbeatHandler (event) {
     const heartbeats = JSON.parse(event.data)
     services.forEach(s => {
@@ -64,6 +67,9 @@ window.addEventListener('pageshow', function (e) {
     console.log('Heartbeats websocket closed')
   }
 
+  /**
+   * @param {number} timestamp
+   */
   function timestampToDateUTC (timestamp) {
     // Date takes timestamp in milliseconds
     const d = new Date(timestamp * 1000).toLocaleString('en-US', { timeZone: 'UTC' })

@@ -41,9 +41,13 @@ export function addToTable (metaData, selection) {
       const dayObs = dateStr.replaceAll('-', '')
       const dataStr = `dataId = {"day_obs": ${dayObs}, "seq_num": ${seq}}`
       navigator.clipboard.writeText(dataStr)
-      const responseMsg = _elWithAttrs('div', { class: 'copied', text: `DataId for ${seq} copied to clipboard` })
+      const responseMsg = _elWithAttrs('div', {
+        class: 'copied',
+        text: `DataId for ${seq} copied to clipboard`
+      })
       const pos = this.getBoundingClientRect()
-      responseMsg.setAttribute('style', `top: ${pos.y - (pos.height / 2)}px; left: ${pos.x + (pos.width + 8)}px`)
+      responseMsg.setAttribute('style',
+        `top: ${pos.y - (pos.height / 2)}px; left: ${pos.x + (pos.width + 8)}px`)
       responseMsg.addEventListener('animationend', () => {
         responseMsg.remove()
       })

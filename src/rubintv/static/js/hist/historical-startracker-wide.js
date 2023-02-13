@@ -5,6 +5,6 @@ import { applyYearControls } from '../modules/calendar-controls.js'
 
 window.addEventListener('DOMContentLoaded', () => {
   const meta = parseJsonFromDOM('#table-metadata')
-  addToTable(meta, starTrackerWideHeaders, true)
+  addToTable(meta, starTrackerWideHeaders)
   applyYearControls()
 })

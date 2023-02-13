@@ -22,7 +22,13 @@ export function addTabsListeners () {
         contentBox.classList.remove('showing')
       })
       const clickedTab = e.target
+      // The following two lines ignore typing as lint complains
+      // that an EventTarget object doesn't have `classList` and `id`
+      // properties but the EventTarget returned here will always be
+      // an HTMLElement, which has both.
+      // @ts-ignore
       clickedTab.classList.add('selected')
+      // @ts-ignore
       const id = clickedTab.id.split('tabtitle-')[1]
       _getById(`tabgroup-${id}`).classList.add('showing')
       localStorage.setItem('night-reports-selected', id)
@@ -38,6 +44,9 @@ function listenForKeypresses () {
 
   document.body.addEventListener('keypress', keyPress)
 
+  /**
+   * @param {{ key: string; }} e
+   */
   function keyPress (e) {
     typed = typed.concat(e.key)
     // has the whole key been typed out?

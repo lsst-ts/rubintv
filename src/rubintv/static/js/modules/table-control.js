@@ -4,6 +4,11 @@ import {
   from './utils.js'
 
 export class TableControls {
+  /**
+   * @param {any[]} defaultAttrs
+   * @param {JSON} metaData
+   * @param {string} elementToAppendTo
+   */
   constructor (defaultAttrs, metaData, elementToAppendTo, drawToTableCallback) {
     this.camera = document.querySelector('body').className
     this.defaultAttrs = defaultAttrs
@@ -19,11 +24,21 @@ export class TableControls {
   }
 
   orderSelected () {
-    const fromTheDefaults = this.defaultAttrs.filter(attr => this.selected.includes(attr))
-    const notInDefaults = this.selected.filter(attr => !this.defaultAttrs.includes(attr))
+    const fromTheDefaults =
+      this.defaultAttrs.filter((/** @type {string} */ attr) =>
+        this.selected.includes(attr))
+
+    const notInDefaults =
+      this.selected.filter((/** @type {string} */ attr) =>
+        !this.defaultAttrs.includes(attr))
+
     this.selected = fromTheDefaults.concat(notInDefaults)
   }
 
+  /**
+   * @param {string | any[]} arrayA
+   * @param {any} arrayB
+   */
   union (arrayA, arrayB) {
     return Array.from(new Set(arrayA.concat(arrayB)))
   }
@@ -33,6 +48,9 @@ export class TableControls {
     return (retrieved && JSON.parse(retrieved))
   }
 
+  /**
+   * @param {any} selected
+   */
   storeSelected (selected) {
     localStorage[this.camera] = JSON.stringify(selected)
   }
@@ -45,6 +63,9 @@ export class TableControls {
     this.attributes = this.getAttributesFrom(metaData)
   }
 
+  /**
+   * @param {{ [s: string]: any; }} metaData
+   */
   getAttributesFrom (metaData) {
     // get the set of all data for list of all available attrs
     const allAttrs = Object.values(metaData).map(obj => Object.keys(obj)).flat()
@@ -56,15 +77,22 @@ export class TableControls {
   draw () {
     const panel = _elWithClass('div', 'table-panel')
     const controls = _elWithClass('div', 'table-controls')
-    const button = _elWithAttrs('button', { class: 'table-control-button', text: 'Add/Remove Columns' })
+    const button = _elWithAttrs('button', {
+      class: 'table-control-button', text: 'Add/Remove Columns'
+    })
     panel.appendChild(button)
 
     this.attributes.forEach(title => {
       const label = _elWithAttrs('label', { for: title, text: title })
-      const checkBox = _elWithAttrs('input', { type: 'checkbox', id: title, name: title, value: 1 })
+      const checkBox = _elWithAttrs('input', {
+        type: 'checkbox',
+        id: title,
+        name: title,
+        value: 1
+      })
 
       if (this.selected.includes(title)) {
-        checkBox.setAttribute('checked', true)
+        checkBox.setAttribute('checked', 'true')
       }
 
       const control = _elWithClass('div', 'table-control')
@@ -100,6 +128,9 @@ export class TableControls {
     this.addDownloadMetadataButton()
   }
 
+  /**
+   * @param {{ target: any; }} e
+   */
   handleCheckboxChange (e) {
     const thisEl = e.target
     if (this.selected.includes(thisEl.name)) {
@@ -133,7 +164,10 @@ export class TableControls {
   }
 
   addDownloadMetadataButton () {
-    const button = _elWithAttrs('button', { class: 'button button-small download-metadata', text: 'Download Metadata' })
+    const button = _elWithAttrs('button', {
+      class: 'button button-small download-metadata',
+      text: 'Download Metadata'
+    })
     _getById('table-controls').after(button)
 
     const camera = document.body.className
