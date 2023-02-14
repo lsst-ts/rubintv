@@ -194,7 +194,7 @@ class Event:
 
         Returns
         -------
-        tuple
+        values : `tuple`
             A tuple of values used by `__post_init__` to fully init the object.
         """
         # Every bucket starts /rubintv
@@ -268,6 +268,13 @@ class Night_Report_Event:
         return string_int_to_date(self._obs_date)
 
     def parse_filename(self) -> tuple:
+        """Split the filename into parts.
+
+        Returns
+        -------
+        `tuple`
+             A tuple of values used by `__post_init__` to fully init the object.
+        """
         parts = self.url.split(self.prefix + "/")[-1]
         # use spread in case of extended names
         d, group, *names = parts.split("/")
@@ -290,7 +297,15 @@ class Night_Report_Event:
 
 
 def get_current_day_obs() -> date:
-    """Get the current day_obs - the observatory rolls the date over at UTC-12"""
+    """Get the current day_obs.
+
+    The observatory rolls the date over at UTC minus 12 hours.
+
+    Returns
+    -------
+    dayObs : `date`
+        The current observation day.
+    """
     utc = gettz("UTC")
     nowUtc = datetime.now().astimezone(utc)
     offset = timedelta(hours=-12)

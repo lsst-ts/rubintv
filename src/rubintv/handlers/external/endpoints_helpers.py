@@ -40,10 +40,47 @@ __all__ = [
 ]
 
 
+def date_from_hyphenated_string(date_str: str) -> date:
+    """Return a date from a date string.
+
+    Parameters
+    ----------
+    date_str : str
+        A string in the form ``"YYYY-MM-DD"``.
+
+    Returns
+    -------
+    date
+        A date object.
+    """
+    year, month, day = [int(s) for s in date_str.split("-")]
+    the_date = date(year, month, day)
+    return the_date
+
+
 def date_from_url_part(url_part: str) -> date:
+    """Return a date from a given string url segment.
+
+    The url part must be a valid date in the form ``"YYYY-MM-DD"`` or an
+    HTTPNotFound error will be thrown.
+
+    Parameters
+    ----------
+    url_part : `str`
+        A valid date in the form ``"YYYY-MM-DD"``.
+
+    Returns
+    -------
+    the_date : `date`
+        A date object.
+
+    Raises
+    ------
+    web.HTTPNotFound
+        The error 404 as the app response.
+    """
     try:
-        year, month, day = [int(s) for s in url_part.split("-")]
-        the_date = date(year, month, day)
+        the_date = date_from_hyphenated_string(url_part)
     except ValueError:
         raise web.HTTPNotFound()
     return the_date
