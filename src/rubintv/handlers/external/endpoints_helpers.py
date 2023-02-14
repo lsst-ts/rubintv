@@ -330,7 +330,7 @@ def get_night_report_events(
                 )
             )
 
-    all_plots.sort(key=lambda ev: ev.slug)
+    all_plots.sort(key=lambda ev: ev.name)
     plots: Dict[str, List[Night_Report_Event]] = {}
     for plot in all_plots:
         if plot.group in plots:

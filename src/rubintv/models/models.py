@@ -185,6 +185,18 @@ class Event:
     seq: int = field(init=False)
 
     def parse_filename(self, delimiter: str = "_") -> tuple:
+        """Split the filename into class attributes.
+
+        Parameters
+        ----------
+        delimiter : str, optional
+            The character that delimits the attributes, by default "_"
+
+        Returns
+        -------
+        tuple
+            A tuple of values used by `__post_init__` to fully init the object.
+        """
         # Every bucket starts /rubintv
         regex = r"\/rubintv[_\w]+\/"
         cleaned_up_url = re.split(regex, self.url)[-1]
@@ -210,11 +222,42 @@ class Event:
 
 @dataclass
 class Night_Report_Event:
+    """Wrapper for a night report blob.
+
+        -   Night Reports can be located in a given bucket using the prefix:
+            ``f"/{bucket}/{night_report_prefix}/"``.
+
+        -   Filenames take the form:
+            ``f"/{obs_date}/{group_name}/{measurement_name}.{file_ext}"``.
+
+    Parameters
+    ----------
+    url: `str`
+        The public url of the blob. This is used as the unique identifier of a
+        plot image onsite.
+    prefix: `str`
+        The prefix used to locate the blob in the bucket. It's used as the
+        delimeter by which to split the url into bucket hostname and the data
+        stored in the filename.
+    timestamp: `int`
+        The timestamp of the blob. This is used to keep plot images up-to-date
+        onsite.
+    blobname: `str`
+        The name by which to download the blob data from the bucket.
+    group: `str`
+        The name of the group the data belogs to.
+    name: `str`
+        The name of the plot or text item of data.
+    _obs_date: `str`
+        The observation date of the data.
+    file_ext: `str`
+        The file extension.
+    """
+
     url: str
     prefix: str
     timestamp: int
     blobname: str = ""
-    slug: str = field(init=False)
     group: str = field(init=False)
     name: str = field(init=False)
     _obs_date: str = field(init=False)
@@ -226,16 +269,15 @@ class Night_Report_Event:
 
     def parse_filename(self) -> tuple:
         parts = self.url.split(self.prefix + "/")[-1]
-        # use spread in case of extended names later on
+        # use spread in case of extended names
         d, group, *names = parts.split("/")
         obs_date = d
-        slug, file_ext = "".join(names).split(".")
-        name = "".join(slug).replace("_", " ")
-        return (slug, group, name, obs_date, file_ext)
+        raw_name, file_ext = "".join(names).split(".")
+        name = "".join(raw_name).replace("_", " ")
+        return (group, name, obs_date, file_ext)
 
     def __post_init__(self) -> None:
         (
-            self.slug,
             self.group,
             self.name,
             self._obs_date,
