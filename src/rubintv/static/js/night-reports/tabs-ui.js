@@ -31,24 +31,38 @@ export function addTabsListeners () {
 }
 addTabsListeners()
 
-function listenForEfficiency () {
-  const keyCode = 'efficiency'
-  let keyStore = ''
+function listenForKeypresses () {
+  const keysAndTabs = { efficiency: 'text', elana: 'elana' }
+  let keyCodes = Object.keys(keysAndTabs)
+  let typed = ''
 
   document.body.addEventListener('keypress', keyPress)
 
   function keyPress (e) {
-    keyStore = keyStore.concat(e.key)
-    if (keyStore === keyCode) {
-      document.querySelectorAll('#night-reports .disabled').forEach((el) => {
+    typed = typed.concat(e.key)
+    // has the whole key been typed out?
+    if (keyCodes.includes(typed)) {
+      // reveal the tab
+      const tabToReveal = keysAndTabs[typed]
+      document.querySelectorAll(`[id$="-${tabToReveal}"]`).forEach((el) => {
         el.classList.remove('disabled')
         addTabsListeners()
-        document.body.removeEventListener('keypress', keyPress)
       })
+      // remove the key from the active array
+      keyCodes = keyCodes.filter(k => { return k !== typed })
+      // remove the listener altogether if no more keys left
+      if (keyCodes.length === 0) {
+        document.body.removeEventListener('keypress', keyPress)
+      }
     }
-    if (keyStore !== keyCode.substring(0, keyStore.length)) {
-      keyStore = ''
+    // check to see if any of the keys is being typed out
+    const isTypingAnyKey = keyCodes.map(k => {
+      return typed === k.substring(0, typed.length)
+    })
+    if (isTypingAnyKey.reduce(
+      (acc, curr) => acc || curr, false) === false) {
+      typed = ''
     }
   }
 }
-listenForEfficiency()
+listenForKeypresses()

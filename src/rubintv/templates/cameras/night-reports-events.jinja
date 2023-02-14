@@ -6,13 +6,16 @@
   {% endif %}
   <div class="plots-section tabs">
     <div class="tab-titles">
-     {# {% if dashboard_data["text"] or dashboard_data["quantities"] %} #}
+     {% if dashboard_data["text"] or dashboard_data["quantities"] %}
         <div id="tabtitle-text" class="tab-title disabled">
           Text
         </div>
-     {# {% endif %} #}
+     {% endif %}
       {% for group in plots %}
-        <div id="tabtitle-{{ group }}" class="tab-title">
+        {% if group == "Elana" or group == "elana" %}
+          {% set is_disabled = "disabled "%}
+        {% endif %}
+        <div id="tabtitle-{{ group|lower }}" class="tab-title {{ is_disabled }}">
           {{ group }}
         </div>
       {% endfor %}
@@ -23,7 +26,7 @@
     {% include "cameras/night-reports-text.jinja" %}
 
       {% for group in plots %}
-        <div id="tabgroup-{{ group }}" class="tab-content plots-grid">
+        <div id="tabgroup-{{ group|lower }}" class="tab-content plots-grid">
           {% for plot in plots[group] %}
             <figure class="plot">
               <a href="{{ plot.url }}">
