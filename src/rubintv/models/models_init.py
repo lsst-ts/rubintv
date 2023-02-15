@@ -9,7 +9,7 @@ import yaml
 from .models import Camera, Channel, Location
 
 
-class ModelInitator:
+class ModelsInitator:
     """Oversee the loading and initialising of the various models used by the
     app."""
 
@@ -20,6 +20,7 @@ class ModelInitator:
         self._cameras = self._get_cameras(data)
         self._locations = self._get_locations(data)
         self._services = self._get_services(data)
+        self._metadata_headings_to_cameras(data)
 
     @property
     def cameras(self) -> Dict[str, Camera]:
@@ -162,6 +163,20 @@ class ModelInitator:
                 chans: Dict[str, Channel] = self._cameras[cam].channels
                 services[s]["channels"] = chans
         return services
+
+    def _metadata_headings_to_cameras(self, data: Dict) -> None:
+        """Insert metadata column headings into `Camera`s.
+
+        Parameters
+        ----------
+        data : `Dict`
+        """
+        headings: Dict = data["MetadataHeadings"]
+        for cam in headings:
+            if cam in self.cameras:
+                cam_headings = headings[cam]
+                self._cameras[cam].metadata_headers = cam_headings
+        return
 
 
 def dataclass_from_dict(cls: Any, data: Dict) -> Any:

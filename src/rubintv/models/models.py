@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
@@ -65,14 +67,24 @@ class Camera:
         If ``True`` a column is drawn in the table for this camera with a link
         generated to point to an external image viewer for each monitor event.
     channels : `dict` [`str`, `Channel`]
-        `Channel` objects belonging to this camera, keyed by name.
+        `Channel`s belonging to this camera, keyed by name.
     per_day_channels : `dict` [`str`, `Channel`]
-        `Channel` objects belonging to this camera, keyed by name. Per day
+        `Channel`s belonging to this camera, keyed by name. Per day
         channels are for categories of event that only occur once per
         observation date e.g. a movie of the night's images.
-    night_report_prefix: `str`
+    night_report_prefix : `str`
         Used to form part of the bucket lookup for night reports. If left unset
         the camera is considered not to produce night reports.
+    metadata_headers : `list` [`dict` [`str`, `dict` [`str`, `str`]]] |
+    `dict`[`str`, `str`]
+        The default column headers for the metadata in the table for this
+        `Camera`.
+        -   If it's a `dict`, a key is a column name and a value is a description
+            of the column.
+        -   If it's a `list`, the headers are split into groups with a group per
+            list item, with the key of the next inner dict for the group name.
+            The very inner dict is keyed by column name and the value, a
+            description of the column.
     """
 
     name: str
@@ -84,6 +96,7 @@ class Camera:
     channels: dict[str, Channel] = field(default_factory=dict)
     per_day_channels: dict[str, Channel] = field(default_factory=dict)
     night_report_prefix: str = ""
+    metadata_headers: list[dict[str, dict[str, str]]] | dict[str, str] = None
 
     @property
     def slug(self) -> str:

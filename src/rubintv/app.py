@@ -20,7 +20,7 @@ from rubintv.background.heartbeats import poll_for_heartbeats
 from rubintv.config import Configuration
 from rubintv.handlers import init_external_routes, init_internal_routes
 from rubintv.models.historicaldata import HistoricalData
-from rubintv.models.models_init import ModelInitator
+from rubintv.models.models_init import ModelsInitator
 
 DATE_FOR_MINIMAL_LOAD = "2022-12-08"
 
@@ -44,7 +44,7 @@ def create_app(load_minimal_data: bool = False) -> web.Application:
     root_app = web.Application()
     root_app["safir/config"] = config
 
-    models = ModelInitator()
+    models = ModelsInitator()
     root_app["rubintv/models"] = models
 
     client = storage.Client()
