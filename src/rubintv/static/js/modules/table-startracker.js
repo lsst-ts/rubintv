@@ -1,4 +1,4 @@
-import { makeTableSortable, createTableCell, indicatorForAttr, _escapeName, _elWithAttrs, _getById } from './utils.js'
+import { makeTableSortable, _escapeName, _elWithAttrs, drawTableColumnsAndRows } from './utils.js'
 
 // headerGroups is an array of arrays
 export function addToTable (metaData, headerGroups, sortable = false) {
@@ -45,18 +45,7 @@ export function addToTable (metaData, headerGroups, sortable = false) {
 
   // add table entries by row...
   const headers = Object.values(headerGroups).flat()
-  Object.entries(metaData).forEach(([seq, attributes]) => {
-    const seqRow = _getById(`seqno-${seq}`)
-    // ...and column
-    headers.forEach(attr => {
-      const seqRowLastCell = seqRow.querySelectorAll('td:last-child')[0]
-      const escapedName = _escapeName(attr)
-      // check for indicator attribute (i.e. starts with '_')
-      const flag = indicatorForAttr(attributes, attr)
-      const el = createTableCell(attributes, attr, escapedName, flag)
-      seqRowLastCell.after(el)
-    })
-  })
+  drawTableColumnsAndRows(metaData, headers)
 
   replaceBraceImgWithSVG()
 

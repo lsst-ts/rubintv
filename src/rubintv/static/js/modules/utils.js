@@ -137,3 +137,20 @@ export function makeTableSortable () {
     })
   })
 }
+
+export function drawTableColumnsAndRows (metaData, columns) {
+  Object.entries(metaData).forEach(([seq, attributes]) => {
+    const seqRow = _getById(`seqno-${seq}`)
+    if (seqRow) {
+      // ...and column
+      columns.forEach(attr => {
+        const seqRowLastCell = seqRow.querySelectorAll('td:last-child')[0]
+        const escapedName = _escapeName(attr)
+        // check for indicator attribute (i.e. starts with '_')
+        const flag = indicatorForAttr(attributes, attr)
+        const el = createTableCell(attributes, attr, escapedName, flag)
+        seqRowLastCell.after(el)
+      })
+    }
+  })
+}

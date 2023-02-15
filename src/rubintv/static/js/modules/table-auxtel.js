@@ -1,5 +1,5 @@
 import {
-  createTableCell, indicatorForAttr, _getById, _elWithAttrs, _elWithClass, makeTableSortable, _escapeName
+  _getById, _elWithAttrs, _elWithClass, makeTableSortable, _escapeName, drawTableColumnsAndRows
 } from './utils.js'
 
 export function addToTable (metaData, selection, sortable = false) {
@@ -17,19 +17,7 @@ export function addToTable (metaData, selection, sortable = false) {
     lastHeaderCall.after(el)
   })
 
-  // add table entries by row...
-  Object.entries(metaData).forEach(([seq, attributes]) => {
-    const seqRow = _getById(`seqno-${seq}`)
-    // ...and column
-    selection.forEach(attr => {
-      const seqRowLastCell = seqRow.querySelectorAll('td:last-child')[0]
-      const escapedName = _escapeName(attr)
-      // check for indicator attribute (i.e. starts with '_')
-      const flag = indicatorForAttr(attributes, attr)
-      const el = createTableCell(attributes, attr, escapedName, flag)
-      seqRowLastCell.after(el)
-    })
-  })
+  drawTableColumnsAndRows(metaData, selection)
 
   // add empty column to table header for 'copy to clipboard'
   if (!_getById('ctbEmpty')) {
