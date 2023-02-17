@@ -554,6 +554,7 @@ section {
   position: sticky;
   top: 13em;
   font-size: 14px;
+  cursor: pointer;
 }
 .grid-title.sideways {
   max-width: 40px;
@@ -605,6 +606,12 @@ section {
 }
 .startracker .meta-group, .startracker-wide .meta-group, .startracker-fast .meta-group {
   top: -5.4em;
+}
+.startracker .meta-group p, .startracker-wide .meta-group p, .startracker-fast .meta-group p {
+  white-space: nowrap;
+}
+.startracker .jump-buttons, .startracker-wide .jump-buttons, .startracker-fast .jump-buttons {
+  top: 252px;
 }
 
 .copy-to-cb {

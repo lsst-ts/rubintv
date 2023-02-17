@@ -75,16 +75,17 @@ class Camera:
     night_report_prefix : `str`
         Used to form part of the bucket lookup for night reports. If left unset
         the camera is considered not to produce night reports.
-    metadata_headers : `list` [`dict` [`str`, `dict` [`str`, `str`]]] |
-    `dict`[`str`, `str`]
+    metadata_headers : `dict` [`str`, `dict` [`str`, `str`]]] | `dict`[`str`,
+    `str`]
         The default column headers for the metadata in the table for this
         `Camera`.
-        -   If it's a `dict`, a key is a column name and a value is a description
-            of the column.
-        -   If it's a `list`, the headers are split into groups with a group per
-            list item, with the key of the next inner dict for the group name.
-            The very inner dict is keyed by column name and the value, a
+        -   If it's a simple `dict`, a key is a column name and a value is a
             description of the column.
+        -   The more complex dict is keyed by group name and then as above.
+
+    js_entry : `str`
+        Used in the template to point to a javascript file that manages table
+        updating and other dynamic interfaces.
     """
 
     name: str
@@ -96,7 +97,10 @@ class Camera:
     channels: dict[str, Channel] = field(default_factory=dict)
     per_day_channels: dict[str, Channel] = field(default_factory=dict)
     night_report_prefix: str = ""
-    metadata_headers: list[dict[str, dict[str, str]]] | dict[str, str] = None
+    metadata_headers: dict[str, dict[str, str]] | dict[str, str] = field(
+        init=False
+    )
+    js_entry: str = ""
 
     @property
     def slug(self) -> str:

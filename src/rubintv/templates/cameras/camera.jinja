@@ -50,7 +50,9 @@
 {% endblock content %}
 
 {% block footer_scripts %}
-  {% set cam_js_filename = "js/refresh-table/refresh-table-" + camera.slug + ".js" %}
-  <script type="module" src='{{ url("static", filename=cam_js_filename) }}'></script>
+  {% if camera.js_entry %}
+    {% set cam_js_filename = "js/refresh-table/refresh-table-" + camera.js_entry + ".js" %}
+    <script type="module" src='{{ url("static", filename=cam_js_filename) }}'></script>
+  {% endif %}
   <script type="module" src="{{ url('static', filename='js/heartbeats.js') }}"></script>
 {% endblock footer_scripts  %}

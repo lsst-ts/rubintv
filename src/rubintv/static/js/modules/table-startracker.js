@@ -2,53 +2,64 @@ import { _escapeName, _elWithAttrs, drawTableColumnsAndRows } from './utils.js'
 
 // headerGroups is an array of arrays
 /**
- * @param {{ [s: string]: any; } | ArrayLike<any>} metaData
+ * @param {{[s: string]: any;} | ArrayLike<any>} metaData
  * @param {ArrayLike<any> | { [s: string]: any; }} headerGroups
  */
-export function addToTable (metaData, headerGroups) {
+export function drawTable (metaData, headerGroups) {
   // empty object test- there's no data, just go home
   if (Object.keys(metaData).length === 0) return
+
+  // remove existing metadata part of table
+  Array.from(document.querySelectorAll('.meta')).forEach(gridElement => {
+    gridElement.remove()
+  })
+
   // add metadata group headers to the table
   // fill out the headers for the new row with blanks
   // one for each existing channel (and seq num)
   const tableRow = document.querySelector('.channel-grid tr')
-  const groupRow = _elWithAttrs('tr', { id: 'grouping' })
+  const groupRow = _elWithAttrs('tr', { id: 'grouping', class: 'meta' })
   Array.from(tableRow.querySelectorAll('th')).forEach(() => {
     groupRow.append(_elWithAttrs('th', { scope: 'col' }))
   })
 
   Object.keys(headerGroups).forEach((group) => {
-    const span = headerGroups[group].length
-    const groupID = _escapeName(group)
-    const tr = _elWithAttrs('th',
-      { id: groupID, scope: 'colgroup', colspan: span, class: 'meta-group' }
-    )
-    tr.append(_elWithAttrs('p', { text: group }))
-    tr.append(_elWithAttrs('div', {
-      class: 'brace-placeholder',
-      id: `brace-${groupID}`,
-      style: 'height: 40px; width: 100%;'
-    }))
-    groupRow.append(tr)
+    const span = Object.keys(headerGroups[group]).length
+    if (span > 0) {
+      const groupID = _escapeName(group)
+      const tr = _elWithAttrs('th',
+        { id: groupID, scope: 'colgroup', colspan: span, class: 'meta-group' }
+      )
+      tr.append(_elWithAttrs('p', { text: group }))
+      tr.append(_elWithAttrs('div', {
+        class: 'brace-placeholder',
+        id: `brace-${groupID}`,
+        style: 'height: 40px; width: 100%;'
+      }))
+      groupRow.append(tr)
+    }
   })
 
   document.querySelector('thead').prepend(groupRow)
 
   Object.keys(headerGroups).forEach((group) => {
     const groupID = _escapeName(group)
-    headerGroups[group].forEach((/** @type {string} */ attr) => {
+    Object.keys(headerGroups[group]).forEach((/** @type {string} */ attr) => {
       const escapedName = _escapeName(attr)
       const lastHeaderCall = Array.from(document.querySelectorAll('.grid-title')).pop()
       const el = _elWithAttrs('th',
-        { class: `grid-title sideways ${escapedName}`, headers: groupID }
+        { class: `grid-title sideways meta ${escapedName}`, headers: groupID }
       )
       el.textContent = attr
+      if (headerGroups[group][attr]) {
+        el.title = headerGroups[group][attr]
+      }
       lastHeaderCall.after(el)
     })
   })
 
   // add table entries by row...
-  const headers = Object.values(headerGroups).flat()
+  const headers = Object.values(headerGroups).map(h => Object.keys(h)).flat()
   drawTableColumnsAndRows(metaData, headers)
 
   replaceBraceImgWithSVG()

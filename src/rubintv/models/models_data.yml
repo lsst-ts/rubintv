@@ -31,6 +31,7 @@ Cameras:
     online: True
     has_image_viewer: True
     night_report_prefix: auxtel_night_reports
+    js_entry: auxtel
     channels:
       # if no explicit 'label' use 'name'
       monitor:
@@ -66,6 +67,7 @@ Cameras:
         name: Analysis
         prefix: startracker_analysis
     night_reports_prefix: startracker_night_reports
+    js_entry: startracker
 
   startracker-wide:
     name: StarTracker Wide
@@ -81,6 +83,7 @@ Cameras:
         prefix: startracker_wide_analysis
         label: ST Wide Analysis
     night_reports_prefix: startracker_night_reports
+    js_entry: startracker
 
   startracker-fast:
     name: StarTracker Fast
@@ -94,6 +97,7 @@ Cameras:
         name: Analysis
         prefix: startracker_fast_analysis
     night_reports_prefix: startracker_night_reports
+    js_entry: startracker
 
   allsky:
     name: All Sky
@@ -105,6 +109,7 @@ Cameras:
       image:
         name: Current Image
         prefix: all_sky_current
+    js_entry: allsky
 
   comcam:
     name: ComCam
@@ -129,7 +134,9 @@ Cameras:
       noise_map:
         name: Noise Map
         prefix: ir2_noise_map
+    js_entry: auxtel
     logo: slac_lsstcam.png
+
 
   ts8:
     name: TS8
@@ -141,6 +148,7 @@ Cameras:
       noise_map:
         name: Noise Map
         prefix: ts8_noise_map
+    js_entry: auxtel
     logo: ts8.png
 
 
@@ -189,68 +197,68 @@ MetadataHeadings:
     DIMM Seeing:
 
   startracker:
-    - Star Tracker:
-        Exposure Time:
-          A Star Tracker style tooltip here
-        Ra:
-        Dec:
-        Alt:
-        Az:
-    - Star Tracker Solution:
-        nSources:
-        nSources filtered:
-        Calculated Ra:
-        Calculated Dec:
-        Delta Ra Arcsec:
-        Delta Dec Arcsec:
-        Calculated Alt:
-        Calculated Az:
-        Delta Alt Arcsec:
-        Delta Az Arcsec:
-        Delta Rot Arcsec:
-        RMS scatter arcsec:
-        RMS scatter pixels:
+    Header values:
+      Exposure Time:
+        A tooltip here
+      Ra:
+      Dec:
+      Alt:
+      Az:
+    Astrometric fit:
+      nSources:
+      nSources filtered:
+      Calculated Ra:
+      Calculated Dec:
+      Delta Ra Arcsec:
+      Delta Dec Arcsec:
+      Calculated Alt:
+      Calculated Az:
+      Delta Alt Arcsec:
+      Delta Az Arcsec:
+      Delta Rot Arcsec:
+      RMS scatter arcsec:
+      RMS scatter pixels:
 
   startracker-wide:
-    - Star Tracker Wide:
-        Exposure Time wide:
-        Ra wide:
-        Dec wide:
-        Alt wide:
-        Az wide:
-    - Star Tracker Solve Wide:
-        nSources wide:
-        nSources filtered wide:
-        Calculated Ra wide:
-        Calculated Dec wide:
-        Delta Ra Arcsec wide:
-        Delta Dec Arcsec wide:
-        Calculated Alt wide:
-        Calculated Az wide:
-        Delta Alt Arcsec wide:
-        Delta Az Arcsec wide:
-        Delta Rot Arcsec wide:
-        RMS scatter arcsec wide:
-        RMS scatter pixels wide:
+    Star Tracker Wide:
+      Exposure Time wide:
+      Ra wide:
+      Dec wide:
+      Alt wide:
+      Az wide:
+    Star Tracker Solve Wide:
+      nSources wide:
+      nSources filtered wide:
+      Calculated Ra wide:
+      Calculated Dec wide:
+      Delta Ra Arcsec wide:
+      Delta Dec Arcsec wide:
+      Calculated Alt wide:
+      Calculated Az wide:
+      Delta Alt Arcsec wide:
+      Delta Az Arcsec wide:
+      Delta Rot Arcsec wide:
+      RMS scatter arcsec wide:
+      RMS scatter pixels wide:
 
   startracker-fast:
-    - Star Tracker Fast:
-        Exposure Time fast:
-        Ra fast:
-        Dec fast:
-        Alt fast:
-        Az fast:
-    - Star Tracker Solve Fast:
-        nSources fast:
-        nSources filtered fast:
-        Calculated Ra fast:
-        Calculated Dec fast:
-        Delta Ra Arcsec fast:
-        Delta Dec Arcsec fast:
-        Calculated Alt fast:
-        Calculated Az fast:
-        Delta Alt Arcsec fast:
-        Delta Az Arcsec fast:
-        Delta Rot Arcsec fast:
-        RMS scatter arcsec fast:
-        RMS scatter pixels fast:
+    Star Tracker Fast:
+      Exposure Time fast:
+      Ra fast:
+      Dec fast:
+      Alt fast:
+      Az fast:
+    Star Tracker Solve Fast:
+      nSources fast:
+      nSources filtered fast:
+      Calculated Ra fast:
+      Calculated Dec fast:
+      Delta Ra Arcsec fast:
+      Delta Dec Arcsec fast:
+      Calculated Alt fast:
+      Calculated Az fast:
+      Delta Alt Arcsec fast:
+      Delta Az Arcsec fast:
+      Delta Rot Arcsec fast:
+      RMS scatter arcsec fast:
+      RMS scatter pixels fast:

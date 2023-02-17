@@ -5,17 +5,23 @@ import {
 
 export class TableControls {
   /**
+   * @param {any[]} defaultAttrs
    * @param {JSON} metaData
    * @param {string} elementToAppendTo
-   * @param {string[]} defaultAttrsAndDescs
    */
-  constructor (defaultAttrsAndDescs, metaData, elementToAppendTo, drawToTableCallback) {
+  constructor (defaultAttrs, metaData, elementToAppendTo, drawToTableCallback) {
     this.camera = document.querySelector('body').className
-    this.defaultAttrsAndDescs = defaultAttrsAndDescs
-    this.defaultAttrs = Object.keys(defaultAttrsAndDescs)
-    this.updateMetadata(metaData)
+
+    this.groupedAttrs = defaultAttrs
+    this.defaultAttrs =
+    Object.values(defaultAttrs).map(h => Object.keys(h)).flat()
+
+    this.metaData = metaData
+
     const saved = this.retrieveSelected()
     this.selected = saved || this.defaultAttrs
+    this.setGroupedSelected()
+
     this.elementToAppendTo = elementToAppendTo
     this.drawToTableCallback = drawToTableCallback
 
@@ -57,14 +63,6 @@ export class TableControls {
   }
 
   /**
-   * @param {JSON} metaData
-   */
-  updateMetadata (metaData) {
-    this.metaData = metaData
-    this.attributes = this.getAttributesFrom(metaData)
-  }
-
-  /**
    * @param {{ [s: string]: any; }} metaData
    */
   getAttributesFrom (metaData) {
@@ -83,7 +81,7 @@ export class TableControls {
     })
     panel.appendChild(button)
 
-    this.attributes.forEach(title => {
+    this.defaultAttrs.forEach(title => {
       const label = _elWithAttrs('label', { for: title, text: title })
       const checkBox = _elWithAttrs('input', {
         type: 'checkbox',
@@ -140,7 +138,8 @@ export class TableControls {
       this.selected.push(thisEl.name)
     }
     this.orderSelected()
-    this.drawToTableCallback(this.metaData, this.selected, this.defaultAttrsAndDescs)
+    this.setGroupedSelected()
+    this.drawToTableCallback(this.metaData, this.groupedSelected)
     this.storeSelected(this.selected)
   }
 
@@ -182,5 +181,19 @@ export class TableControls {
       a.click()
       URL.revokeObjectURL(blob.name)
     })
+  }
+
+  setGroupedSelected () {
+    const selected = this.selected
+    const grouped = {}
+    for (const g in this.groupedAttrs) {
+      grouped[g] = {}
+      for (const attr in this.groupedAttrs[g]) {
+        if (selected.includes(attr)) {
+          grouped[g][attr] = this.groupedAttrs[g][attr]
+        }
+      }
+    }
+    this.groupedSelected = grouped
   }
 }

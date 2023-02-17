@@ -6,7 +6,7 @@ import {
  * @param {string[]} selection
  * @param {{ [s: string]: any; } | ArrayLike<any>} metaData
  */
-export function addToTable (metaData, selection) {
+export function addToTable (metaData, selection, headerDescs) {
   // remove existing metadata part of table
   Array.from(document.querySelectorAll('.meta')).forEach(gridElement => {
     gridElement.remove()
@@ -18,6 +18,9 @@ export function addToTable (metaData, selection) {
     const lastHeaderCall = Array.from(document.querySelectorAll('.grid-title')).pop()
     const el = _elWithClass('th', `grid-title sideways meta ${escapedName}`)
     el.textContent = attr
+    if (headerDescs[attr]) {
+      el.title = headerDescs[attr]
+    }
     lastHeaderCall.after(el)
   })
 

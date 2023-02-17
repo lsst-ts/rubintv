@@ -77,6 +77,9 @@ def create_app(load_minimal_data: bool = False) -> web.Application:
         sub_app,
         loader=jinja2.FileSystemLoader(Path(__file__).parent / "templates"),
     )
+    # Prevent tojson() filter from re-ordering keys
+    env = aiohttp_jinja2.get_env(sub_app)
+    env.policies["json.dumps_kwargs"] = {"sort_keys": False}
 
     setup_middleware(sub_app)
     sub_app.add_routes(init_external_routes())

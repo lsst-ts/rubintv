@@ -1,13 +1,14 @@
 import { parseJsonFromDOM, _getById } from '../modules/utils.js'
-import { addToTable } from '../modules/table-startracker.js'
-import { starTrackerHeaders } from '../models.js'
+import { drawTable } from '../modules/table-startracker.js'
 import { refreshTableLoop } from '../modules/table-refresher.js'
+import { TableControls } from '../modules/table-control-startracker.js'
 
 document.addEventListener('DOMContentLoaded', function () {
+  const headers = parseJsonFromDOM('#metadata-headers')
   const meta = parseJsonFromDOM('#table-metadata')
-  const headers = starTrackerHeaders
 
-  updateTable(meta)
+  const tableUI = new TableControls(headers, meta, '#table-controls', drawTable)
+  drawTable(meta, tableUI.groupedSelected)
   refreshTableLoop(starTrackerHtmlInject, updateTable, 5)
 
   function starTrackerHtmlInject (htmlParts) {
@@ -15,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function updateTable (meta) {
-    addToTable(meta, headers)
+    tableUI.draw()
+    drawTable(meta, tableUI.groupedSelected)
   }
 })
