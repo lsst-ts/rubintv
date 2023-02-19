@@ -5,28 +5,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
-from aiohttp import web
 
 from rubintv.app import create_app
 
 if TYPE_CHECKING:
     from aiohttp.pytest_plugin.test_utils import TestClient
-
-
-@pytest.mark.asyncio
-async def request_heartbeat_for_auxtel_monitor(
-    aiohttp_client: TestClient,
-) -> None:
-    """Test GET /app-name/summit/heartbeat/auxtel_monitor"""
-    app = create_app(load_minimal_data=True)
-    name = app["safir/config"].name
-    client = await aiohttp_client(app)
-
-    response: web.Response = await client.get(
-        f"/{name}/summit/heartbeat/auxtel_monitor"
-    )
-    assert response.status == 200
-    assert response.content_type == "application/json"
 
 
 @pytest.mark.asyncio
@@ -66,35 +49,8 @@ async def test_reload_historical(aiohttp_client: TestClient) -> None:
 
 
 @pytest.mark.asyncio
-async def request_all_heartbeats(aiohttp_client: TestClient) -> None:
-    """Test GET /app-name/summit/heartbeats"""
-    app = create_app(load_minimal_data=True)
-    name = app["safir/config"].name
-    client = await aiohttp_client(app)
-
-    response = await client.get(f"/{name}/summit/heartbeats")
-    assert response.status == 200
-    assert response.content_type == "application/json"
-
-
-@pytest.mark.asyncio
-async def request_heartbeat_for_unknown_channel(
-    aiohttp_client: TestClient,
-) -> None:
-    """Test GET /app-name/summit/heartbeat/none-existant"""
-    app = create_app(load_minimal_data=True)
-    name = app["safir/config"].name
-    client = await aiohttp_client(app)
-
-    response = await client.get(f"/{name}/summit/heartbeat/non-existant")
-    assert response.status == 404
-
-
-@pytest.mark.asyncio
 async def test_get_allsky_page(aiohttp_client: TestClient) -> None:
-    """Test GET /app-name/summit/allsky
-    All Sky has its own page not based on the general camera
-    page template or endpoint"""
+    """Test GET /app-name/summit/allsky"""
     app = create_app()
     name = app["safir/config"].name
     client = await aiohttp_client(app)
@@ -106,7 +62,7 @@ async def test_get_allsky_page(aiohttp_client: TestClient) -> None:
 @pytest.mark.asyncio
 async def test_get_allsky_image_update(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/summit/allsky/update/image"""
-    app = create_app()
+    app = create_app(load_minimal_data=True)
     name = app["safir/config"].name
     client = await aiohttp_client(app)
 
@@ -204,33 +160,33 @@ async def test_get_camera_update(aiohttp_client: TestClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_camera_imevents(aiohttp_client: TestClient) -> None:
-    """Test GET /app-name/summit/auxtel/imevents/{date_str}"""
+async def test_camera_im_event(aiohttp_client: TestClient) -> None:
+    """Test GET /app-name/summit/auxtel/im/event/{date_str}/549"""
     app = create_app(load_minimal_data=True)
     name = app["safir/config"].name
     date_str = app["rubintv/date_to_load"]
     client = await aiohttp_client(app)
     response = await client.get(
-        f"/{name}/summit/auxtel/imevents/{date_str}/549"
+        f"/{name}/summit/auxtel/im/event/{date_str}/549"
     )
     assert response.status == 200
 
 
 @pytest.mark.asyncio
-async def test_camera_specevents(aiohttp_client: TestClient) -> None:
-    """Test GET /app-name/summit/auxtel/specevents/{date_str}/163"""
+async def test_camera_spec_event(aiohttp_client: TestClient) -> None:
+    """Test GET /app-name/summit/auxtel/spec/event/{date_str}/163"""
     app = create_app(load_minimal_data=True)
     name = app["safir/config"].name
     date_str = app["rubintv/date_to_load"]
     client = await aiohttp_client(app)
     response = await client.get(
-        f"/{name}/summit/auxtel/specevents/{date_str}/291"
+        f"/{name}/summit/auxtel/spec/event/{date_str}/291"
     )
     assert response.status == 200
 
 
 @pytest.mark.asyncio
-async def test_camera_imcurrent(aiohttp_client: TestClient) -> None:
+async def test_camera_im_current(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/summit/auxtel/im_current"""
     app = create_app()
     name = app["safir/config"].name
@@ -240,7 +196,7 @@ async def test_camera_imcurrent(aiohttp_client: TestClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_camera_speccurrent(aiohttp_client: TestClient) -> None:
+async def test_camera_spec_current(aiohttp_client: TestClient) -> None:
     """Test GET /app-name/summit/auxtel/spec_current"""
     app = create_app()
     name = app["safir/config"].name
