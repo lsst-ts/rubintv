@@ -66,7 +66,7 @@ Cameras:
       analysis:
         name: Analysis
         prefix: startracker_analysis
-    night_reports_prefix: startracker_night_reports
+    night_report_prefix: startracker_night_reports
     js_entry: startracker
 
   startracker-wide:
@@ -82,7 +82,7 @@ Cameras:
         name: Wide Analysis
         prefix: startracker_wide_analysis
         label: ST Wide Analysis
-    night_reports_prefix: startracker_night_reports
+    night_report_prefix: startracker_night_reports
     js_entry: startracker
 
   startracker-fast:
@@ -96,7 +96,7 @@ Cameras:
       startracker-fast-analysis:
         name: Analysis
         prefix: startracker_fast_analysis
-    night_reports_prefix: startracker_night_reports
+    night_report_prefix: startracker_night_reports
     js_entry: startracker
 
   allsky:
