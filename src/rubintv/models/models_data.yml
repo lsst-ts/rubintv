@@ -201,6 +201,7 @@ MetadataHeadings:
       Exposure Time:
         A tooltip here
       MJD:
+      UTC:
       Ra:
       Dec:
       Alt:
@@ -224,6 +225,7 @@ MetadataHeadings:
     Star Tracker Wide:
       Exposure Time wide:
       MJD:
+      UTC:
       Ra wide:
       Dec wide:
       Alt wide:
@@ -247,6 +249,7 @@ MetadataHeadings:
     Star Tracker Fast:
       Exposure Time fast:
       MJD:
+      UTC:
       Ra fast:
       Dec fast:
       Alt fast:
