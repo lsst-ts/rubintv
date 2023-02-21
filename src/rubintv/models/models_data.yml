@@ -200,6 +200,7 @@ MetadataHeadings:
     Header values:
       Exposure Time:
         A tooltip here
+      MJD:
       Ra:
       Dec:
       Alt:
@@ -222,6 +223,7 @@ MetadataHeadings:
   startracker-wide:
     Star Tracker Wide:
       Exposure Time wide:
+      MJD:
       Ra wide:
       Dec wide:
       Alt wide:
@@ -244,6 +246,7 @@ MetadataHeadings:
   startracker-fast:
     Star Tracker Fast:
       Exposure Time fast:
+      MJD:
       Ra fast:
       Dec fast:
       Alt fast:
