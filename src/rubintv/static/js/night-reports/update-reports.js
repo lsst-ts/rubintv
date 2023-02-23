@@ -20,55 +20,53 @@ window.addEventListener('DOMContentLoaded', function () {
    * @param {{ plots: { [x: string]: any[]; }; text: string; }} newReports
    */
   function success (newReports) {
-    if (newReports) {
-      // update plots
-      Object.keys(newReports.plots).forEach((group) => {
-        // add new group to DOM if there's a new one
-        if (!Object.keys(prevReports.plots).includes(group)) {
-          addNewGroup(group)
-          prevReports.plots[group] = []
-        }
-
-        // store previous plots for this group by url key
-        // and timestamp value
-        const prevPlots = prevReports.plots[group].map(
-          (/** @type {{ url: string; timestamp: number;}} */ p) => {
-            return { [p.url]: p.timestamp }
-          }
-        )
-
-        const groupEl = _getById(`tabgroup-${group}`)
-
-        newReports.plots[group].forEach(
-          (/** @type {{ url: string; timestamp: number; name: string }} */ plot) => {
-            // is it a new image?
-            if (!Object.keys(prevPlots).includes(plot.url)) {
-              const newPlot = createNewPlot(plot)
-              groupEl.append(newPlot)
-            }
-            // is it a new version of a plot?
-            // prevReports = { url: timestamp... }
-            if (plot.timestamp > prevPlots[plot.url]) {
-              const oldImg = document.querySelector(`img[src^="${plot.url}"]`)
-              const newImg = createNewImg(plot)
-              newImg.addEventListener('load', (e) => {
-                oldImg.replaceWith(newImg)
-              })
-            }
-          }
-        )
-      })
-      // update text
-      if (newReports.text) {
-        if (!prevReports.text) {
-          addNewGroup('Text')
-        }
-        _getById('tabgroup-text').innerHTML = newReports.text
+    // update plots - plots object will always exist
+    Object.keys(newReports.plots).forEach((group) => {
+      // add new group to DOM if there's a new one
+      if (!Object.keys(prevReports.plots).includes(group)) {
+        addNewGroup(group)
+        prevReports.plots[group] = []
       }
 
-      prevReports = newReports
-      addTabsListeners()
+      // store previous plots for this group by url key
+      // and timestamp value
+      const prevPlots = prevReports.plots[group].map(
+        (/** @type {{ url: string; timestamp: number;}} */ p) => {
+          return { [p.url]: p.timestamp }
+        }
+      )
+
+      const groupEl = _getById(`tabgroup-${group}`)
+
+      newReports.plots[group].forEach(
+        (/** @type {{ url: string; timestamp: number; name: string }} */ plot) => {
+          // is it a new image?
+          if (!Object.keys(prevPlots).includes(plot.url)) {
+            const newPlot = createNewPlot(plot)
+            groupEl.append(newPlot)
+          }
+          // is it a new version of a plot?
+          // prevReports = { url: timestamp... }
+          if (plot.timestamp > prevPlots[plot.url]) {
+            const oldImg = document.querySelector(`img[src^="${plot.url}"]`)
+            const newImg = createNewImg(plot)
+            newImg.addEventListener('load', (e) => {
+              oldImg.replaceWith(newImg)
+            })
+          }
+        }
+      )
+    })
+    // update text
+    if (newReports.text) {
+      if (!prevReports.text) {
+        addNewGroup('Text')
+      }
+      _getById('tabgroup-text').innerHTML = newReports.text
     }
+
+    prevReports = newReports
+    addTabsListeners()
   }
 
   /**
