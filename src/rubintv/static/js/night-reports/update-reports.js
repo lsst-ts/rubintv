@@ -21,33 +21,36 @@ window.addEventListener('DOMContentLoaded', function () {
    */
   function success (newReports) {
     // update plots - plots object will always exist
-    Object.keys(newReports.plots).forEach((group) => {
+    Object.keys(newReports.plots).forEach(group => {
       // add new group to DOM if there's a new one
       if (!Object.keys(prevReports.plots).includes(group)) {
-        addNewGroup(group)
-        prevReports.plots[group] = []
+        addNewGroupGUI(group)
+        prevReports.plots[group] = {}
       }
 
       // store previous plots for this group by url key
-      // and timestamp value
-      const prevPlots = prevReports.plots[group].map(
-        (/** @type {{ url: string; timestamp: number;}} */ p) => {
-          return { [p.url]: p.timestamp }
+      // and hash value
+      const prevPlots = {}
+      Object.keys(prevReports.plots[group]).forEach(
+        pName => {
+          const p = prevReports.plots[group][pName]
+          prevPlots[p.url] = p.hash
         }
       )
+      const groupEl = _getById(`tabgroup-${group.toLowerCase()}`)
 
-      const groupEl = _getById(`tabgroup-${group}`)
-
-      newReports.plots[group].forEach(
-        (/** @type {{ url: string; timestamp: number; name: string }} */ plot) => {
+      Object.keys(newReports.plots[group]).forEach(
+        plotName => {
+          const plot = newReports.plots[group][plotName]
           // is it a new image?
+          console.log(Object.keys(prevPlots).includes(plot.url))
           if (!Object.keys(prevPlots).includes(plot.url)) {
             const newPlot = createNewPlot(plot)
             groupEl.append(newPlot)
           }
-          // is it a new version of a plot?
-          // prevReports = { url: timestamp... }
-          if (plot.timestamp > prevPlots[plot.url]) {
+          // is it a different version of a plot?
+          // prevReports = { url: hash... }
+          if (plot.hash !== prevPlots[plot.url]) {
             const oldImg = document.querySelector(`img[src^="${plot.url}"]`)
             const newImg = createNewImg(plot)
             newImg.addEventListener('load', (e) => {
@@ -60,7 +63,7 @@ window.addEventListener('DOMContentLoaded', function () {
     // update text
     if (newReports.text) {
       if (!prevReports.text) {
-        addNewGroup('Text')
+        addNewGroupGUI('Text')
       }
       _getById('tabgroup-text').innerHTML = newReports.text
     }
@@ -72,15 +75,15 @@ window.addEventListener('DOMContentLoaded', function () {
   /**
    * @param {string} group
    */
-  function addNewGroup (group) {
+  function addNewGroupGUI (group) {
     const newTab = _elWithAttrs('div', {
-      id: `tabtitle-${group}`,
+      id: `tabtitle-${group.toLowerCase()}`,
       class: 'tab-title'
     })
     newTab.textContent = group
 
     const newGroup = _elWithAttrs('div', {
-      id: `tabgroup-${group}`,
+      id: `tabgroup-${group.toLowerCase()}`,
       class: 'tab-content plots-grid'
     })
 
@@ -89,7 +92,7 @@ window.addEventListener('DOMContentLoaded', function () {
   }
 
   /**
-   * @param {{ url: any; name: string; timestamp: number }} plot
+   * @param {{ url: any; name: string; hash: string }} plot
    */
   function createNewPlot (plot) {
     const newPlot = _elWithClass('figure', 'plot')
@@ -103,11 +106,11 @@ window.addEventListener('DOMContentLoaded', function () {
   }
 
   /**
-   * @param {{ url: string; timestamp: number; }} plot
+   * @param {{ url: string; hash: string; }} plot
    */
   function createNewImg (plot) {
     const newImg = document.createElement('img')
-    newImg.src = plot.url + '?t=' + plot.timestamp
+    newImg.src = plot.url + '?t=' + plot.hash
     newImg.classList.add('report-updated')
     return newImg
   }

@@ -273,7 +273,7 @@ class Night_Report_Event:
 
     url: str
     prefix: str
-    timestamp: int
+    hash: str
     blobname: str = ""
     group: str = field(init=False)
     name: str = field(init=False)

@@ -168,7 +168,7 @@ class HistoricalData:
                         report = Night_Report_Event(
                             blob.public_url,
                             prefix,
-                            int(blob.time_created.timestamp()),
+                            blob.md5_hash,
                             blobname=blob.name,
                         )
                         the_date = report.obs_date
@@ -206,7 +206,7 @@ class HistoricalData:
         ):
             reports = sorted(
                 all_night_reports[camera.slug][obs_date],
-                key=lambda x: x.timestamp,
+                key=lambda x: x.hash,
             )
         return reports
 

@@ -1,9 +1,5 @@
 <h3 id="the-date" data-date="{{ date }}">Night reports for: <span class="data">{{ date }}</span></h3>
 <div id="night-reports">
-  {% if not (dashboard_data or plots) %}
-    <p>nothing to show</p>
-  {% else %}
-  {% endif %}
   <div class="plots-section tabs">
     <div class="tab-titles">
      {% if dashboard_data["text"] or dashboard_data["quantities"] %}
@@ -13,7 +9,7 @@
      {% endif %}
       {% for group in plots %}
         {% if group == "Elana" or group == "elana" %}
-          {% set is_disabled = "disabled "%}
+          {% set is_disabled = "disabled" %}
         {% endif %}
         <div id="tabtitle-{{ group|lower }}" class="tab-title {{ is_disabled }}">
           {{ group }}

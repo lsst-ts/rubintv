@@ -12,8 +12,8 @@ export function addTabsListeners () {
     localStorage.setItem('night-reports-selected', storedSelected)
   }
 
-  _getById(`tabtitle-${storedSelected}`).classList.add('selected')
-  _getById(`tabgroup-${storedSelected}`).classList.add('showing')
+  _getById(`tabtitle-${storedSelected.toLowerCase()}`).classList.add('selected')
+  _getById(`tabgroup-${storedSelected.toLowerCase()}`).classList.add('showing')
 
   tabs.forEach((tab) => {
     tab.addEventListener('click', (e) => {
@@ -30,7 +30,7 @@ export function addTabsListeners () {
       clickedTab.classList.add('selected')
       // @ts-ignore
       const id = clickedTab.id.split('tabtitle-')[1]
-      _getById(`tabgroup-${id}`).classList.add('showing')
+      _getById(`tabgroup-${id.toLowerCase()}`).classList.add('showing')
       localStorage.setItem('night-reports-selected', id)
     })
   })

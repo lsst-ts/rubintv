@@ -278,7 +278,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
             )
 
             metadata_json = get_metadata_json(bucket, camera, the_date)
-            per_day = get_per_day_channels(bucket, camera, the_date, logger)
+            per_day = get_per_day_channels(bucket, camera, the_date)
 
             template = "cameras/camera.jinja"
             context = {
@@ -324,7 +324,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
             bucket, camera, the_date
         )
         metadata_json = get_metadata_json(bucket, camera, the_date)
-        per_day = get_per_day_channels(bucket, camera, the_date, logger)
+        per_day = get_per_day_channels(bucket, camera, the_date)
 
         context = {
             "location": location,
@@ -506,7 +506,7 @@ async def get_historical(request: web.Request) -> Dict[str, Any]:
             mrd_dict, metadata_json
         )
 
-        per_day = get_per_day_channels(bucket, camera, day_obs, logger)
+        per_day = get_per_day_channels(bucket, camera, day_obs)
         night_reports_link = ""
         if historical.get_night_reports_for(camera, day_obs):
             night_reports_link = "historical"
@@ -533,7 +533,6 @@ async def get_historical(request: web.Request) -> Dict[str, Any]:
 @routes.get("/{location}/{camera}/historical/{date_str}", name="hist_single")
 @template("cameras/historical.jinja")
 async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
-    logger = request["safir/logger"]
     location_name = request.match_info["location"]
     location = find_location(location_name, request)
 
@@ -564,7 +563,7 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
 
     years = historical.get_camera_calendar(camera)
 
-    per_day = get_per_day_channels(bucket, camera, the_date, logger)
+    per_day = get_per_day_channels(bucket, camera, the_date)
     return {
         "title": title,
         "location": location,

@@ -26,7 +26,6 @@ __all__ = [
     "get_channel_resource_url",
     "get_metadata_json",
     "month_names",
-    "build_dict_with_remaining_channels",
     "make_table_rows_from_columns_by_seq",
     "get_most_recent_day_events",
     "get_sorted_events_from_blobs",
@@ -97,7 +96,7 @@ def find_location(location_name: str, request: web.Request) -> Location:
 
 
 def get_per_day_channels(
-    bucket: Bucket, camera: Camera, the_date: date, logger: Any
+    bucket: Bucket, camera: Camera, the_date: date
 ) -> Dict[str, str]:
     """Builds a dict of per-day channels to display
 
@@ -116,9 +115,6 @@ def get_per_day_channels(
     the_date : `date`
         The datetime.date object for the given day
 
-    logger : `Any`
-        The app-wide logging object
-
     Returns
     -------
     per_day_channels : `dict[str, str]`
@@ -128,15 +124,35 @@ def get_per_day_channels(
     per_day_channels = {}
     for channel in camera.per_day_channels.keys():
         if resource_url := get_channel_resource_url(
-            bucket, camera.per_day_channels[channel], the_date, logger
+            bucket, camera.per_day_channels[channel], the_date
         ):
             per_day_channels[channel] = resource_url
     return per_day_channels
 
 
 def get_channel_resource_url(
-    bucket: Bucket, channel: Channel, a_date: date, logger: Any
+    bucket: Bucket, channel: Channel, a_date: date
 ) -> str:
+    """Returns the url of a file in the bucket given a channel and date.
+
+    As this returns only the url for the first from a potential list of blobs,
+    it's only intended to be used when one blob is expected for the given
+    channel and date, like a day's movie.
+
+    Parameters
+    ----------
+    bucket : `Bucket`
+        The given GCS bucket.
+    channel : `Channel`
+        The given channel.
+    a_date : `date`
+        The given date.
+
+    Returns
+    -------
+    url : `str`
+        The public url of the first blob for the given channel and date.
+    """
     date_str = a_date.strftime("%Y%m%d")
     prefix = f"{channel.prefix}/dayObs_{date_str}"
     url = ""
@@ -146,7 +162,23 @@ def get_channel_resource_url(
 
 
 def get_metadata_json(bucket: Bucket, camera: Camera, a_date: date) -> Dict:
-    date_str = date_without_hyphens(a_date)
+    """Returns the metadata json for a given camera and date as a `Dict`.
+
+    Parameters
+    ----------
+    bucket : `Bucket`
+        The given GCS bucket.
+    camera : `Camera`
+        The given camera.
+    a_date : `date`
+        The given date.
+
+    Returns
+    -------
+    json_dict : `Dict`
+        A dict version of the json metadata.
+    """
+    date_str = date_str_without_hyphens(a_date)
     blob_name = f"{camera.metadata_slug}_metadata/dayObs_{date_str}.json"
     metadata_json = "{}"
     if blob := bucket.get_blob(blob_name):
@@ -155,32 +187,33 @@ def get_metadata_json(bucket: Bucket, camera: Camera, a_date: date) -> Dict:
 
 
 def month_names() -> List[str]:
+    """Returns a list of month names as words.
+
+    Returns
+    -------
+    List[str]
+        A list of month names.
+    """
     return [date(2000, m, 1).strftime("%B") for m in list(range(1, 13))]
-
-
-def build_dict_with_remaining_channels(
-    bucket: Bucket,
-    camera: Camera,
-    events_dict: Dict[str, list[Event]],
-    the_date: date,
-) -> Dict[str, list[Event]]:
-    # creates a dict where key => list of events e.g.:
-    # {"monitor": [Event 1, Event 2 ...] , "im": [Event 2 ...] ... }
-    primary_channel = list(camera.channels)[0]
-    for chan in camera.channels:
-        if chan == primary_channel:
-            continue
-        prefix = camera.channels[chan].prefix
-        new_prefix = get_prefix_from_date(prefix, the_date)
-        blobs = list(bucket.list_blobs(prefix=new_prefix))
-        events_dict[chan] = get_sorted_events_from_blobs(blobs)
-    return events_dict
 
 
 def make_table_rows_from_columns_by_seq(
     events_dict: Dict, metadata: Dict
-) -> Dict[int, dict[str, Event]]:
-    d: Dict[int, dict[str, Event]] = {}
+) -> Dict[int, Dict[str, Event]]:
+    d: Dict[int, Dict[str, Event]] = {}
+    """Returns a dict of dicts of events, keyed outwardly by sequence number and
+    inwardly by channel name.
+
+    If a sequence number appears in the given metadata that is not otherwise
+    in the given `events_dict` it is appended as the key for an empty dict.
+    This is so that if metadata exists, a row can be drawn on the table without
+    there needing to be anything in the channels.
+
+    Returns
+    -------
+    rows_dict : `Dict` [`int`, `Dict` [`str`, `Event`]]
+
+    """
     # d == {seq: {chan1: event, chan2: event, ... }}
     for chan in events_dict:
         chan_events = events_dict[chan]
@@ -289,12 +322,12 @@ def build_title(*title_parts: str, request: web.Request) -> str:
     return title
 
 
-def date_without_hyphens(a_date: date) -> str:
+def date_str_without_hyphens(a_date: date) -> str:
     return str(a_date).replace("-", "")
 
 
 def get_image_viewer_link(day_obs: date, seq_num: int) -> str:
-    date_str = date_without_hyphens(day_obs)
+    date_str = date_str_without_hyphens(day_obs)
     url = (
         "http://ccs.lsst.org/FITSInfo/view.html?"
         f"image=AT_O_{date_str}_{seq_num:06}"
@@ -362,9 +395,7 @@ def get_night_report_events(
             text_data = process_night_report_text_data(json_raw_data)
         else:
             all_plots.append(
-                Night_Report_Event(
-                    blob.public_url, prefix, int(blob.time_created.timestamp())
-                )
+                Night_Report_Event(blob.public_url, prefix, blob.md5_hash)
             )
 
     all_plots.sort(key=lambda ev: ev.name)
@@ -381,7 +412,7 @@ def get_night_report_events(
 def get_night_reports_blobs(
     bucket: Bucket, prefix: str, day_obs: date
 ) -> List[Blob]:
-    date_str = date_without_hyphens(day_obs)
+    date_str = date_str_without_hyphens(day_obs)
     prefix_with_date = "/".join([prefix, date_str])
     blobs = list(bucket.list_blobs(prefix=prefix_with_date))
     return blobs
