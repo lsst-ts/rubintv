@@ -6,10 +6,10 @@ export function addTabsListeners () {
 
   const tabsContent = document.querySelectorAll('.tab-content:not(.disabled)')
 
-  let storedSelected = localStorage.getItem('night-reports-selected')
+  let storedSelected = localStorage.getItem('night-report-selected')
   if (!storedSelected || tabs.filter((t) => { return t.id.includes(storedSelected) }).length === 0) {
     storedSelected = tabs[0].id.split('tabtitle-')[1]
-    localStorage.setItem('night-reports-selected', storedSelected)
+    localStorage.setItem('night-report-selected', storedSelected)
   }
 
   _getById(`tabtitle-${storedSelected.toLowerCase()}`).classList.add('selected')
@@ -31,7 +31,7 @@ export function addTabsListeners () {
       // @ts-ignore
       const id = clickedTab.id.split('tabtitle-')[1]
       _getById(`tabgroup-${id.toLowerCase()}`).classList.add('showing')
-      localStorage.setItem('night-reports-selected', id)
+      localStorage.setItem('night-report-selected', id)
     })
   })
 }

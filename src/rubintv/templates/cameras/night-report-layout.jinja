@@ -1,0 +1,9 @@
+{% extends "cameras/layout.jinja" %}
+{% block content %}
+ <div id="night-report-update">
+    {% include "cameras/night-report-events.jinja" %}
+ </div>
+{% endblock content %}
+{% block footer_scripts %}
+   <script defer type="module" src="{{ url('static', filename='js/night-report/tabs-ui.js') }}"></script>
+{% endblock footer_scripts %}

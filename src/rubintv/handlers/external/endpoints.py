@@ -350,7 +350,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
 
 
 @routes.get("/{location}/{camera}/night_reports", name="night_reports")
-@template("cameras/night-reports.jinja")
+@template("cameras/night-report.jinja")
 async def get_night_reports(request: web.Request) -> dict[str, Any]:
     location_name = request.match_info["location"]
     location = find_location(location_name, request)
@@ -412,7 +412,7 @@ async def update_night_reports(request: web.Request) -> web.Response:
         group: [plot.dict() for plot in plots[group]] for group in plots
     }
     text_html = render_string(
-        "cameras/night-reports-text.jinja",
+        "cameras/night-report-text.jinja",
         request,
         {"dashboard_data": dashboard_data},
     )
@@ -425,7 +425,7 @@ async def update_night_reports(request: web.Request) -> web.Response:
     "/{location}/{camera}/historical_night_reports/{date_str}",
     name="night_reports_hist",
 )
-@template("cameras/night-reports-historical.jinja")
+@template("cameras/night-report-historical.jinja")
 async def get_historical_night_reports(request: web.Request) -> Dict[str, Any]:
     location_name = request.match_info["location"]
     location = find_location(location_name, request)

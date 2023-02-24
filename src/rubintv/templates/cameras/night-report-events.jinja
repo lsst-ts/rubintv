@@ -1,5 +1,5 @@
-<h3 id="the-date" data-date="{{ date }}">Night reports for: <span class="data">{{ date }}</span></h3>
-<div id="night-reports">
+<h3 id="the-date" data-date="{{ date }}">Night report for: <span class="data">{{ date }}</span></h3>
+<div id="night-report">
   <div class="plots-section tabs">
     <div class="tab-titles">
      {% if dashboard_data["text"] or dashboard_data["quantities"] %}
@@ -19,7 +19,7 @@
 
     <div class="plots">
 
-    {% include "cameras/night-reports-text.jinja" %}
+    {% include "cameras/night-report-text.jinja" %}
 
       {% for group in plots %}
         <div id="tabgroup-{{ group|lower }}" class="tab-content plots-grid">

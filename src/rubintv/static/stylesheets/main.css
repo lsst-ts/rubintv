@@ -26,7 +26,7 @@ body {
   background-color: #83daee;
 }
 
-.button.night-reports {
+.button.night-report {
   background-color: #696797;
   color: #fff;
 }
@@ -843,7 +843,7 @@ section {
   display: none;
 }
 
-#night-reports .disabled {
+#night-report .disabled {
   display: none !important;
 }
 

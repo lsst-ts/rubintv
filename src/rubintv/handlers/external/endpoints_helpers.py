@@ -202,7 +202,7 @@ def make_table_rows_from_columns_by_seq(
 ) -> Dict[int, Dict[str, Event]]:
     d: Dict[int, Dict[str, Event]] = {}
     """Returns a dict of dicts of events, keyed outwardly by sequence number and
-    inwardly by channel name.
+    inwardly by channel name for displaying as a table.
 
     If a sequence number appears in the given metadata that is not otherwise
     in the given `events_dict` it is appended as the key for an empty dict.
