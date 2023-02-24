@@ -2,11 +2,9 @@
 <div id="night-report">
   <div class="plots-section tabs">
     <div class="tab-titles">
-     {% if dashboard_data["text"] or dashboard_data["quantities"] %}
-        <div id="tabtitle-text" class="tab-title disabled">
-          Text
-        </div>
-     {% endif %}
+      <div id="tabtitle-text" class="tab-title disabled">
+        Text
+      </div>
       {% for group in plots %}
         {% if group == "Elana" or group == "elana" %}
           {% set is_disabled = "disabled" %}

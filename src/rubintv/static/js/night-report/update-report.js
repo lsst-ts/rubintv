@@ -65,9 +65,11 @@ window.addEventListener('DOMContentLoaded', function () {
       if (!prevReports.text) {
         addNewGroupGUI('Text')
       }
-      _getById('tabgroup-text').innerHTML = newReports.text
+      const textEl = _getById('tabgroup-text')
+      const textClasses = textEl.classList.value
+      textEl.outerHTML = newReports.text
+      textEl.classList.value = textClasses
     }
-
     prevReports = newReports
     addTabsListeners()
   }

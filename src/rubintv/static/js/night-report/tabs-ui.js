@@ -12,8 +12,9 @@ export function addTabsListeners () {
     localStorage.setItem('night-report-selected', storedSelected)
   }
 
-  _getById(`tabtitle-${storedSelected.toLowerCase()}`).classList.add('selected')
-  _getById(`tabgroup-${storedSelected.toLowerCase()}`).classList.add('showing')
+  const id = storedSelected.toLowerCase()
+  _getById(`tabtitle-${id}`).classList.add('selected')
+  _getById(`tabgroup-${id}`).classList.add('showing')
 
   tabs.forEach((tab) => {
     tab.addEventListener('click', (e) => {
@@ -52,6 +53,7 @@ function listenForKeypresses () {
     // has the whole key been typed out?
     if (keyCodes.includes(typed)) {
       // reveal the tab
+      console.log(`added ${typed}`)
       const tabToReveal = keysAndTabs[typed]
       document.querySelectorAll(`[id$="-${tabToReveal}"]`).forEach((el) => {
         el.classList.remove('disabled')
