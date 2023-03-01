@@ -86,6 +86,27 @@ def date_from_url_part(url_part: str) -> date:
 
 
 def find_location(location_name: str, request: web.Request) -> Location:
+    """Either returns a `Location` matching the given name or throws a 404 Not
+    Found.
+
+
+    Parameters
+    ----------
+    location_name : `str`
+        The slug of the `Location`.
+    request : `web.Request`
+        The app's web request for looking up the location.
+
+    Returns
+    -------
+    Location
+        The location information object relating the the given name.
+
+    Raises
+    ------
+    web.HTTPNotFound
+        404 Error to be caught by the app.
+    """
     location_name = request.match_info["location"]
     locations = request.config_dict["rubintv/models"].locations
     try:
@@ -198,23 +219,33 @@ def month_names() -> List[str]:
 
 
 def make_table_rows_from_columns_by_seq(
-    events_dict: Dict, metadata: Dict
+    events_dict: Dict[str, List[Event]], metadata: Dict[str, Dict[str, str]]
 ) -> Dict[int, Dict[str, Event]]:
     d: Dict[int, Dict[str, Event]] = {}
-    """Returns a dict of dicts of events, keyed outwardly by sequence number and
-    inwardly by channel name for displaying as a table.
+    """Returns a dict of dicts of `Events`, keyed outwardly by sequence number
+    and inwardly by channel name for displaying as a table.
 
     If a sequence number appears in the given metadata that is not otherwise
     in the given `events_dict` it is appended as the key for an empty dict.
     This is so that if metadata exists, a row can be drawn on the table without
     there needing to be anything in the channels.
 
+    Parameters
+    ----------
+    events_dict : `Dict` [`str`, `List` [`Event`]]
+        Dictionary of `Lists` of `Event`s keyed by `Channel` name.
+
+    metadata : `Dict` [`str`, `Dict` [`str`, `str`]]
+        Dictionary of metadata outer keyed by sequence number and the inner by
+        table column name.
+
     Returns
     -------
     rows_dict : `Dict` [`int`, `Dict` [`str`, `Event`]]
+        A dict that represents a table of `Event`s, keyed by ``seq`` and with
+        an inner dict with an entry for each `Channel` for that seq num.
 
     """
-    # d == {seq: {chan1: event, chan2: event, ... }}
     for chan in events_dict:
         chan_events = events_dict[chan]
         for e in chan_events:
@@ -227,14 +258,38 @@ def make_table_rows_from_columns_by_seq(
         seq = int(seq_str)
         if seq not in d:
             d[seq] = {}
+    # d == {seq: {chan1: event, chan2: event, ... }}
     # make sure the table is in order
-    d = {k: v for k, v in sorted(d.items(), reverse=True)}
-    return d
+    rows_dict = {k: v for k, v in sorted(d.items(), reverse=True)}
+    return rows_dict
 
 
 def get_most_recent_day_events(
     bucket: Bucket, camera: Camera, historical: HistoricalData
 ) -> tuple[date, dict[int, dict[str, Event]]]:
+    """Returns a tuple of the date and an dict of `Events` for which there are
+    entries in the bucket.
+
+    The method looks for events and metadata in the bucket for the current day obs.
+    If nothing is found, the most recent day is retrieved from the historical store.
+    The resulting events are packed into a dict that are convenient for displaying
+    on a table.
+
+    Parameters
+    ----------
+    bucket : `Bucket`
+        The given GCS bucket.
+    camera : `Camera`
+        The given camera.
+    historical : `HistoricalData`
+        The in-memory store of all the events in the bucket since the last time
+        the day rolled over or the store was reloaded.
+
+    Returns
+    -------
+    the_date_and_events : `tuple` [`date`, `Dict` [`int`, `Dict` [`str`, `Event`]]]
+        A tuple of both the date and the events from that date.
+    """
     obs_date = get_current_day_obs()
     metadata = get_metadata_json(bucket, camera, obs_date)
     events = {}
@@ -251,11 +306,26 @@ def get_most_recent_day_events(
             events = historical.get_events_for_date(camera, the_date)
             metadata = get_metadata_json(bucket, camera, the_date)
 
-    todays_events = make_table_rows_from_columns_by_seq(events, metadata)
-    return (the_date, todays_events)
+    the_date_events = make_table_rows_from_columns_by_seq(events, metadata)
+    return (the_date, the_date_events)
 
 
 def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
+    """Returns a list of events cast and sorted from a given list of blobs.
+
+    Bobs that have filename extensions not included in ``[".png", ".jpg",
+    ".mp4"]`` are filtered out.
+
+    Parameters
+    ----------
+    blobs : `List`
+        The given list of blobs.
+
+    Returns
+    -------
+    s_events : `List` [`Event`]
+        A list of `Event`s sorted by date and then sequence number.
+    """
     events = [
         Event(el.public_url)
         for el in blobs
@@ -263,8 +333,8 @@ def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
         or el.public_url.endswith(".jpg")
         or el.public_url.endswith(".mp4")
     ]
-    sevents = sorted(events, key=lambda x: (x.obs_date, x.seq), reverse=True)
-    return sevents
+    s_events = sorted(events, key=lambda x: (x.obs_date, x.seq), reverse=True)
+    return s_events
 
 
 def get_events_for_prefix_and_date(
@@ -272,6 +342,23 @@ def get_events_for_prefix_and_date(
     the_date: date,
     bucket: Bucket,
 ) -> List[Event]:
+    """Returns a sorted list of blobs from the GCS bucket for a given prefix and
+    date.
+
+    Parameters
+    ----------
+    prefix : `str`
+        The lookup prefix for the GCS bucket.
+    the_date : `date`
+        The given date used in the lookup.
+    bucket : `Bucket`
+        The GCS bucket in which to look.
+
+    Returns
+    -------
+    events : `List` [`Event`]
+        A sorted list of events.
+    """
     new_prefix = get_prefix_from_date(prefix, the_date)
     events = []
     blobs = list(bucket.list_blobs(prefix=new_prefix))
@@ -286,6 +373,27 @@ def get_current_event(
     bucket: Bucket,
     historical: HistoricalData,
 ) -> Event:
+    """Returns the most recent event for a given camera and channel.
+
+    If nothing is found in the bucket for the current day obs then the most
+    recent event is retrieved from the in-memory store of events.
+
+    Parameters
+    ----------
+    camera : `Camera`
+        The given camera.
+    channel : `Channel`
+        The given channel.
+    bucket : `Bucket`
+        The given GCS bucket.
+    historical : `HistoricalData`
+        The store of historical data.
+
+    Returns
+    -------
+    latest : `Event`
+        A single event.
+    """
     day_obs = get_current_day_obs()
     events = get_events_for_prefix_and_date(channel.prefix, day_obs, bucket)
     if events:
@@ -296,6 +404,23 @@ def get_current_event(
 
 
 def get_heartbeats(bucket: Bucket, prefix: str) -> List[Dict]:
+    """Returns the data from heartbeat files in the bucket located by prefix.
+
+    A heartbeat json file contains status data about a particular `Channel` or
+    service.
+
+    Parameters
+    ----------
+    bucket : `Bucket`
+        The given GCS bucket.
+    prefix : `str`
+        The prefix used to lookup the metadata file(s).
+
+    Returns
+    -------
+    heartbeats : `List` [`Dict`]
+        A list of heartbeat dicts.
+    """
     hb_blobs = list(bucket.list_blobs(prefix=prefix))
     heartbeats = []
     for hb_blob in hb_blobs:
@@ -315,6 +440,21 @@ def get_heartbeats(bucket: Bucket, prefix: str) -> List[Dict]:
 
 
 def build_title(*title_parts: str, request: web.Request) -> str:
+    """Returns a string for using as page title.
+
+    Parameters
+    ----------
+    *title_parts: `str`
+        A variable number of strings to be added to the root title.
+    request : `web.Request`
+        The request object that allows access to the app's ``"site_title"``
+        global.
+
+    Returns
+    -------
+    title : `str`
+        The page title.
+    """
     title = request.config_dict["rubintv/site_title"]
     to_append = " - ".join(title_parts)
     if to_append:
