@@ -182,6 +182,18 @@ Services:
 
 
 MetadataHeadings:
+  slac_lsstcam:
+    Exposure time:
+    Image type:
+    Filter:
+    Seq. No.:
+
+  ts8:
+    Exposure time:
+    Image type:
+    Filter:
+    Seq. No.:
+
   auxtel:
     Has annotations?:
       Test tooltip here
