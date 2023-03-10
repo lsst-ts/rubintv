@@ -29,11 +29,9 @@ Cameras:
   auxtel:
     name: AuxTel
     online: True
-    has_image_viewer: True
     night_report_prefix: auxtel_night_reports
     js_entry: auxtel
     channels:
-      # if no explicit 'label' use 'name'
       monitor:
         name: Monitor
         prefix: auxtel_monitor
@@ -55,6 +53,10 @@ Cameras:
         name: Tonight's Movie
         prefix: auxtel_movies
         label: "Movie for "
+    image_viewer_link: "http://ccs.lsst.org/FITSInfo/view.html?\
+    image=AT_O_{day_obs}_{seq_num:06}\
+    &raft=R00&color=grey&bias=Simple+Overscan+Correction\
+    &scale=Per-Segment&source=RubinTV"
 
   startracker:
     name: StarTracker
@@ -150,6 +152,8 @@ Cameras:
         prefix: ts8_noise_map
     js_entry: auxtel
     logo: ts8.png
+    image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
+    FITSInfo/view.html?image=TS_C_{day_obs}_{seq_num:06}"
 
 
 Services:

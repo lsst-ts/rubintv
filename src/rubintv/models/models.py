@@ -93,7 +93,7 @@ class Camera:
     _slug: str = field(init=False, repr=False)
     metadata_slug: str = ""
     logo: str = ""
-    has_image_viewer: bool = False
+    image_viewer_link: str = ""
     channels: dict[str, Channel] = field(default_factory=dict)
     per_day_channels: dict[str, Channel] = field(default_factory=dict)
     night_report_prefix: str = ""

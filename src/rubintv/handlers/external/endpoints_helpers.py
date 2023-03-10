@@ -466,13 +466,10 @@ def date_str_without_hyphens(a_date: date) -> str:
     return str(a_date).replace("-", "")
 
 
-def get_image_viewer_link(day_obs: date, seq_num: int) -> str:
-    date_str = date_str_without_hyphens(day_obs)
-    url = (
-        "http://ccs.lsst.org/FITSInfo/view.html?"
-        f"image=AT_O_{date_str}_{seq_num:06}"
-        "&raft=R00&color=grey&bias=Simple+Overscan+Correction"
-        "&scale=Per-Segment&source=RubinTV"
+def get_image_viewer_link(camera: Camera, day_obs: date, seq_num: int) -> str:
+    date_int_str = date_str_without_hyphens(day_obs)
+    url = camera.image_viewer_link.format(
+        day_obs=date_int_str, seq_num=seq_num
     )
     return url
 
