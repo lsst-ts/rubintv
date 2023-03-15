@@ -30,7 +30,7 @@ export function drawTable (metaData, headerGroups) {
       const tr = _elWithAttrs('th',
         { id: groupID, scope: 'colgroup', colspan: span, class: 'meta-group' }
       )
-      tr.append(_elWithAttrs('p', { text: group }))
+      tr.append(_elWithAttrs('p', { class: 'braced-group-title', text: group }))
       tr.append(_elWithAttrs('div', {
         class: 'brace-placeholder',
         id: `brace-${groupID}`,
@@ -89,8 +89,8 @@ function SVGBracket (width) {
   `m1.5,38 c0,-13 8,-18 20,-18 h${half} c20,0 20,-20 20,-20 m1.5 0 c0,0 0,20 20, 20 h${half} c12,0 20,5 20,18`
   )
   path.setAttribute('fill', 'none')
-  path.setAttribute('stroke', '#000')
-  path.setAttribute('style', 'stroke-width: 3px')
+  path.setAttribute('class', 'svg-brace')
+  path.setAttribute('style', 'stroke-width: 1.5px')
   svg.appendChild(path)
   return svg
 }

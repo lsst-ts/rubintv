@@ -4,19 +4,63 @@
     $collection: map-merge($collection, $map)
   @return $collection
 
+$light: #eee
+$dark: #555
+$darker: darken($dark, 10%)
+
 body
-  background-color: #fff
+  background-color: $dark
+  color: $light
+
+header
+  background-color: $darker
+  color: $light
+  border-top: 3px solid $light
+  border-bottom: 1px solid $light
+  a
+    color: $light
+
+// calendar
+
+.year-title
+  color: #999
+  background-color: $dark
+
+.day
+  background: #484848
+  color: $light
+  &:hover
+    text-decoration: none
+  &.obs
+    background: #404040
+    &:hover
+      background: #505050
+
+// admin
+.service-group
+  background: #484848
+.service
+  background:  $dark
+
+
+// table
+.table-control
+  color: #222
 
 .channel-grid-heading
-  background-color: #fff
+  background-color: $dark
 
 .grid-cell
   background-color: #f0f0f0
   color: #000
 
 .table-spacer
-  background-color: #fff
+  background-color: $dark
 
+.svg-brace
+  stroke: #fff
+
+// buttons
 .button.historical
   background-color: #262534
   color: #fff

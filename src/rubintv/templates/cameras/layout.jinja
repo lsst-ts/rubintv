@@ -1,15 +1,6 @@
 {% extends "layout.jinja" %}
-{% block title %}
-  RubinTV -
-{% endblock title %}
-{% block subtitle %}
-<a  id="location"
-    data-location="{{ location.slug }}"
-    href="{{ url('location', location=location.slug) }}">
-  {{ location.name }}
-</a>
--
-<a href="{{ url('camera', location=location.slug, camera=camera.slug) }}">
-  {{ camera.name }}
-</a>
-{% endblock subtitle %}
+{% block pagetitle %}
+  <a href="{{ url('camera', location=location.slug, camera=camera.slug) }}">
+    {{ camera.name }}
+  </a>
+{% endblock pagetitle %}

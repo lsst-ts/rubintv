@@ -1,5 +1,6 @@
 import json
 import re
+from calendar import Calendar
 from datetime import date
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -26,6 +27,7 @@ __all__ = [
     "get_channel_resource_url",
     "get_metadata_json",
     "month_names",
+    "calendar_factory",
     "make_table_rows_from_columns_by_seq",
     "get_most_recent_day_events",
     "get_sorted_events_from_blobs",
@@ -216,6 +218,12 @@ def month_names() -> List[str]:
         A list of month names.
     """
     return [date(2000, m, 1).strftime("%B") for m in list(range(1, 13))]
+
+
+def calendar_factory() -> Calendar:
+    # first weekday 0 is Monday
+    calendar = Calendar(firstweekday=0)
+    return calendar
 
 
 def make_table_rows_from_columns_by_seq(

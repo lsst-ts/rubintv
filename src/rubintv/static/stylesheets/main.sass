@@ -1,4 +1,5 @@
 @import "reset.css"
+@import "buttons"
 @import "colours"
 @import "calendar"
 
@@ -6,6 +7,7 @@
 	display: flex
 	flex-direction: row
 	flex-wrap: wrap
+	gap: 1em
 
 .resp
 	width: 100%
@@ -17,59 +19,6 @@
 	margin-top: -7vh
 	margin-bottom: -9vh
 
-.button
-	box-sizing: border-box
-	border-radius: 10%
-	border: none
-	background: #eee
-	color: #000
-	display: flex
-	flex-direction: column
-	justify-content: end
-	text-decoration: none
-	box-shadow: 2.5px 2.5px 4px rgba(0, 0, 0, 0.26)
-	transition: 0.2s
-	padding: 0.5em
-	&:hover
-		box-shadow: none
-
-.button-large
-	width: 200px
-	height: 144px
-	padding: 1em 1.2em
-	&.logo
-		background-position: center
-		background-repeat: no-repeat
-	&.logo:not([style*='.svg'])
-		color: #fff
-		text-shadow: 1px 1px 3px #000
-		background-size: cover
-	&:hover
-		transform: scale(0.992)
-
-.button-large
-	img
-		width: 50%
-		margin: auto
-
-.button-small
-	padding: 1em
-	height: 67px
-	width: fit-content
-	min-width: 100px
-
-.button-table
-	width: 30px
-	height: 30px
-	border-radius: 10%
-	&.image-viewer-link
-		background: url(/rubintv/static/images/image-viewer-link.svg)
-	&.copy
-		background-image: url(/rubintv/static/images/copy-to-clipboard.svg)
-		width: 16px
-		height: 16px
-
-
 a
 	text-decoration: none
 	display: block
@@ -77,108 +26,87 @@ a
 		text-decoration: underline
 
 
-.site-host-display
-	position: fixed
-	z-index: 24
-	top: 5px
-	right: 5px
-	padding: 9px
-	background-color: aquamarine
-	border-radius: 6px
-	font-size: 3em
-	opacity: 0.7
-	pointer-events: none
-	&.development
-		background-color: burlywood
-
-
 html
 	font-family: "Rubik", sans-serif
 	font-size: 16px
-
-.page-wrapper
-	margin: 30px 30px 30px
-
-.in-memoriam
-	display: flex
-	flex-direction: row
-	margin-top: 0.8em
-	margin-left: -1em
-	width: max-content
-	color: #000
-	&:hover
-		text-decoration: none
-		p
-			background: #ddd
-	p
-		font-size: 0.8em
-		margin-left: -1em
-		margin-right: -1em
-		padding: 1em
-		text-align: center
-		background: #eee
-		transition: 0.3s
-		border-radius: 20px
-		border: 3px solid #578147
-	img
-		height: 48px
-		width: auto
-		z-index: 2
-		margin-top: auto
-		margin-bottom: 0
-		transform: scale(-1,1)
-		&:first-of-type
-			transform: scale(1)
-			margin-top: 0
-			margin-bottom: auto
+	font-weight: 300
 
 
 header
-	margin-bottom: 2em
+	h1,h2,h3,h4,h5,h6
+		font-weight: 300
 
-	.header-wrap
-		display: flex
-		align-items: stretch
+header
+	padding: 16px 30px 20px
+	a .inline
+		text-decoration: underline
+		display: inline-block
 
-	.logo
-		width: auto
-		height: 100px
-
-	.title
-		margin-left: 2em
+.header-wrap
+	display: flex
+	align-items: stretch
+	& > div
 		display: flex
 		flex-direction: column
 
-		h1
-			margin: 0
-			a
-				display: inline-block
-				font-size: 1em
+.header-messages
+	justify-content: center
+	margin-right: 3em
 
-		.historical
-			width: max-content
-			margin-top: 2px
-			padding: 0.5em 0.9em
-			border-radius: 9px
-			display: flex
-			flex-direction: row
-			align-items: center
-			height: 100%
-			img
-				height: 1em
-				width: auto
-				margin-left: 4px
+.header-page-titles
+	margin-top: 12.5px
 
+.header-page-buttons
+	flex-grow: 1
+	flex-direction: row !important
+	justify-content: flex-start
+	align-items: flex-end
+	margin-left: 2em
+
+.header-site-titles
+	align-items: center
 
 .page-title
-	margin-bottom: 1em
+	font-weight: 400
+	font-size: 35px
+	margin: 0
 
-[class$="-menu"]
-	position: relative
-	z-index: 23
-	li
-		margin-right: 1em
-		margin-bottom: 1em
+.page-subtitle
+	margin-top: auto
+	margin-bottom: 0.2em
+
+.site-title
+	font-size: 11.4px
+	margin-top: 8px
+
+.logo
+	display: block
+	width: 120px
+	height: auto
+	padding: 12.5px
+	box-sizing: border-box
+	background-color: #fff
+	img
+		width: 100%
+		height: auto
+
+	h1
+		margin: 0
+		a
+			display: inline-block
+			font-size: 1em
+
+.breadcrumb
+	display: flex
+	flex-direction: row
+	justify-content: flex-end
+	margin-bottom: 1em
+	gap: 4px
+	a
+		color: #fff
+
+main
+		padding: 1em 30px 25px
 
 h2
 	font-size: 1.7em
@@ -190,8 +118,6 @@ h3
 section
 	margin-bottom: 4em
 	padding-bottom: 2em
-	border-bottom: 1px solid #dcdcdc
-	width: fit-content
 
 .columns
 	display: flex
@@ -210,10 +136,6 @@ section
 
 .allsky-current-movie
 	position: relative
-	.button.historical
-		position: absolute
-		top: -103px
-		right: 32px
 
 @media screen and (max-width: 1165px)
 	.allsky-current-movie
@@ -266,7 +188,7 @@ section
 		margin-right: 1em
 
 .channel-grid
-	font-family: "Monaco", monospace, monospace
+	font-family: 'Red Hat Mono', monospace
 	border-spacing: 2px
 	border-collapse: separate
 
@@ -283,14 +205,12 @@ section
 		white-space: nowrap
 
 .grid-cell
+	font-size: 0.8em
 	padding: 0.3em
 	vertical-align: middle
 	height: 42px
 	box-sizing: border-box
-	> div
-		display: flex
-		flex-direction: column
-		justify-content: center
+
 
 .table-spacer
 	height: 8em
@@ -311,6 +231,8 @@ section
 		top: 10.8em
 	.grouping
 		height: 6em
+	.braced-group-title
+		margin-bottom: 2px
 	.grid-title
 		position: static
 	.table-spacer
@@ -320,13 +242,14 @@ section
 		p
 			white-space: nowrap
 	.jump-buttons
-		top: 252px
+		top: 254px
 
 .copy-to-cb
-	background-color: transparent
 	display: flex
 	justify-content: center
 	align-items: center
+	padding-left: 0.7em
+	padding-right: 0.7em
 
 .copied
 	position: fixed
@@ -362,7 +285,8 @@ section
 	display: none
 	grid-template-columns: 1fr 1fr
 	position: absolute
-	padding: 3px 3px 20px
+	gap: 0 0.4em
+	padding: 3px
 	margin: 20px -21px
 	border-top: none
 	background: #fff
@@ -376,7 +300,7 @@ section
 
 .table-control
 	padding: 2px 1em
-	width: max-content
+	white-space: nowrap
 	&:hover
 		background: #ddd
 	&.toggle
@@ -401,7 +325,7 @@ section
 	display: flex
 	flex-direction: column
 	justify-content: space-between
-	top: 148px
+	top: 146px
 	left: -30px
 	gap: 2px
 	.jump-button
@@ -422,7 +346,6 @@ section
 	align-items: center
 	margin-bottom: 1.5em
 	padding: 1em
-	background: #e8e8e8
 
 	.all-services, .services
 		display: flex
@@ -431,7 +354,8 @@ section
 
 	.all-services > *
 		padding: 1em
-		border: 1px solid #fff
+		border: 1px solid #aaa
+		border-radius: 6px
 		&:nth-child(2)
 			margin-left: 2em
 
@@ -440,7 +364,6 @@ section
 		margin-bottom: 0.5em
 
 	.service
-		background: #ddd
 		padding: 0.8em
 		display: flex
 		flex-direction: column
@@ -520,7 +443,7 @@ section
 
 
 .dashboard
-	font-family: "Monaco", monospace, monospace
+	font-family: 'Red Hat Mono', monospace
 	margin: 2em 0
 	ul
 		list-style: none
@@ -583,3 +506,51 @@ section
 		height: auto
 	figcaption
 		margin-top: 0.5em
+
+
+.in-memoriam
+	display: flex
+	flex-direction: row
+	width: max-content
+	color: #000
+	&:hover
+		text-decoration: none
+		p
+			background: #fff
+	p
+		font-size: 0.8em
+		margin-left: -1em
+		margin-right: -1em
+		padding: 1em
+		text-align: center
+		background: #eee
+		transition: 0.3s
+		border-radius: 20px
+		border: 3px solid #578147
+	img
+		height: 48px
+		width: auto
+		z-index: 2
+		margin-top: auto
+		margin-bottom: 0
+		transform: scale(-1,1)
+		&:first-of-type
+			transform: scale(1)
+			margin-top: 0
+			margin-bottom: auto
+
+
+.site-host-display
+	position: fixed
+	z-index: 24
+	top: 0
+	right: 0
+	padding: 9px
+	background-color: aquamarine
+	border-radius: 0 0 0 6px
+	font-size: 0.8em
+	color: #222
+	opacity: 0.7
+	pointer-events: none
+	&.development
+		background-color: burlywood

@@ -1,0 +1,62 @@
+{% if camera.slug == "allsky" %}
+  {% set no_total_seq = True %}
+{% endif %}
+
+<div class="year-titles">
+  <div class="year-button year-more"></div>
+    <div class="year-title-viewbox">
+      {% for year in years %}
+        {% if year == year_to_display %}
+          <p class="year-title current" data-year="{{ year }}">
+            {{ year }}
+          </p>
+        {% else %}
+          <p class="year-title" data-year="{{ year }}">
+            {{ year }}
+          </p>
+        {% endif %}
+      {% endfor %}
+    </div>
+  <div class="year-button year-less"></div>
+</div>
+
+<div class="years">
+{% for year in years %}
+  {% if year == year_to_display %}
+    <div class="year current" id="year-{{ year }}">
+  {% else %}
+    <div class="year" id="year-{{ year }}">
+  {% endif %}
+
+    {% for month in years[year] %}
+      <div class="month">
+        <h5 class="month-title">
+          {{ month_names[month - 1] }}
+        </h5>
+        <div class="days">
+          {% for week in calendar.monthdayscalendar(year, month) %}
+              {% for day in week %}
+                {% if day == 0 %}
+                  <p class="no-day"></p>
+                {% else %}
+                  {% if day in years[year][month]|list %}
+                    {% set date_str = get_date(year, month, day)|string %}
+                    <a  class="day obs"
+                        href="{{ url('hist_single', location=location.slug, camera=camera.slug, date_str=date_str) }}">
+                      <span class="day_num">{{ day }}</span>
+                      {% if not no_total_seq %}
+                        <span class="num_evs">({{ years[year][month][day] }})</span>
+                      {% endif %}
+                    </a>
+                  {% else %}
+                    <p class="day">{{ day }}</p>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endfor %}
+</div>

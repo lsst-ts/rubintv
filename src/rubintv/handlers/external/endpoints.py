@@ -29,6 +29,7 @@ from rubintv import __version__
 from rubintv.handlers import routes
 from rubintv.handlers.external.endpoints_helpers import (
     build_title,
+    calendar_factory,
     date_from_url_part,
     find_location,
     get_current_event,
@@ -170,80 +171,6 @@ async def get_all_sky_current_update(request: web.Request) -> web.Response:
     }
     json_res = json.dumps(json_dict)
     return web.Response(text=json_res, content_type="application/json")
-
-
-@routes.get("/summit/allsky/historical")
-@template("cameras/allsky-historical.jinja")
-async def get_allsky_historical(request: web.Request) -> Dict[str, Any]:
-    locations = request.config_dict["rubintv/models"].locations
-    location = locations["summit"]
-    title = build_title("Summit", "All Sky", "Historical", request=request)
-    historical = request.config_dict["rubintv/cached_data/summit"]
-    logger = request["safir/logger"]
-
-    with Timer() as timer:
-        cameras = request.config_dict["rubintv/models"].cameras
-        camera = cameras["allsky"]
-
-        years = historical.get_camera_calendar(camera)
-        most_recent_year = next(iter(years.keys()))
-
-        channel = camera.channels["movie"]
-        movie = historical.get_most_recent_event(camera, channel)
-
-    logger.info("get_allsky_historical", duration=timer.seconds)
-    return {
-        "title": title,
-        "location": location,
-        "camera": camera,
-        "year_to_display": most_recent_year,
-        "years": years,
-        "month_names": month_names(),
-        "movie": movie,
-        "date": date,
-    }
-
-
-@routes.get("/summit/allsky/historical/{date_str}")
-@template("cameras/allsky-historical.jinja")
-async def get_allsky_historical_movie(request: web.Request) -> Dict[str, Any]:
-    logger = request["safir/logger"]
-    with Timer() as timer:
-        locations = request.config_dict["rubintv/models"].locations
-        location = locations["summit"]
-        cameras = request.config_dict["rubintv/models"].cameras
-        camera = cameras["allsky"]
-        historical = request.config_dict["rubintv/cached_data/summit"]
-
-        date_str = request.match_info["date_str"]
-        title = build_title(
-            "Summit", "All Sky", "Historical", date_str, request=request
-        )
-
-        the_date = date_from_url_part(date_str)
-        year = the_date.year
-
-        all_events: Dict[str, List[Event]] = historical.get_events_for_date(
-            camera, the_date
-        )
-        # check if any events in the arrays in the dict
-        if not [v for values in all_events.values() for v in values]:
-            raise web.HTTPNotFound
-
-        years = historical.get_camera_calendar(camera)
-        movie = all_events["movie"][0]
-    logger.info("get_allsky_historical_movie", duration=timer.seconds)
-    return {
-        "title": title,
-        "location": location,
-        "camera": camera,
-        "years": years,
-        "year_to_display": year,
-        "month_names": month_names(),
-        "movie": movie,
-        # include datetime.date() to allow conversions in template
-        "date": date,
-    }
 
 
 @routes.get("/{location}/{camera}", name="camera")
@@ -423,7 +350,7 @@ async def update_night_reports(request: web.Request) -> web.Response:
 
 @routes.get(
     "/{location}/{camera}/historical_night_reports/{date_str}",
-    name="night_reports_hist",
+    name="nr_history",
 )
 @template("cameras/night-report-historical.jinja")
 async def get_historical_night_reports(request: web.Request) -> Dict[str, Any]:
@@ -476,6 +403,81 @@ async def get_historical_night_reports(request: web.Request) -> Dict[str, Any]:
     }
 
 
+@routes.get("/summit/allsky/historical")
+@template("cameras/allsky-historical.jinja")
+async def get_allsky_historical(request: web.Request) -> Dict[str, Any]:
+    locations = request.config_dict["rubintv/models"].locations
+    location = locations["summit"]
+    title = build_title("Summit", "All Sky", "Historical", request=request)
+    historical = request.config_dict["rubintv/cached_data/summit"]
+    logger = request["safir/logger"]
+
+    with Timer() as timer:
+        cameras = request.config_dict["rubintv/models"].cameras
+        camera = cameras["allsky"]
+
+        years = historical.get_camera_calendar(camera)
+        most_recent_year = next(iter(years.keys()))
+
+        channel = camera.channels["movie"]
+        movie = historical.get_most_recent_event(camera, channel)
+
+    logger.info("get_allsky_historical", duration=timer.seconds)
+    return {
+        "title": title,
+        "location": location,
+        "camera": camera,
+        "year_to_display": most_recent_year,
+        "years": years,
+        "month_names": month_names(),
+        "calendar": calendar_factory(),
+        "movie": movie,
+        "get_date": date,
+    }
+
+
+@routes.get("/summit/allsky/historical/{date_str}")
+@template("cameras/allsky-historical.jinja")
+async def get_allsky_historical_movie(request: web.Request) -> Dict[str, Any]:
+    logger = request["safir/logger"]
+    with Timer() as timer:
+        locations = request.config_dict["rubintv/models"].locations
+        location = locations["summit"]
+        cameras = request.config_dict["rubintv/models"].cameras
+        camera = cameras["allsky"]
+        historical = request.config_dict["rubintv/cached_data/summit"]
+
+        date_str = request.match_info["date_str"]
+        title = build_title(
+            "Summit", "All Sky", "Historical", date_str, request=request
+        )
+
+        the_date = date_from_url_part(date_str)
+        year = the_date.year
+
+        all_events: Dict[str, List[Event]] = historical.get_events_for_date(
+            camera, the_date
+        )
+        # check if any events in the arrays in the dict
+        if not [v for values in all_events.values() for v in values]:
+            raise web.HTTPNotFound
+
+        years = historical.get_camera_calendar(camera)
+        movie = all_events["movie"][0]
+    logger.info("get_allsky_historical_movie", duration=timer.seconds)
+    return {
+        "title": title,
+        "location": location,
+        "camera": camera,
+        "years": years,
+        "year_to_display": year,
+        "month_names": month_names(),
+        "calendar": calendar_factory(),
+        "movie": movie,
+        "get_date": date,
+    }
+
+
 @routes.get("/{location}/{camera}/historical", name="historical")
 @template("cameras/historical.jinja")
 async def get_historical(request: web.Request) -> Dict[str, Any]:
@@ -519,6 +521,7 @@ async def get_historical(request: web.Request) -> Dict[str, Any]:
         "year_to_display": year_to_display,
         "years": years,
         "month_names": month_names(),
+        "calendar": calendar_factory(),
         "date": day_obs,
         "events": mrd_events,
         "metadata": metadata_json,
@@ -569,7 +572,9 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
         "location": location,
         "camera": camera,
         "years": years,
+        "year_to_display": the_date.year,
         "month_names": month_names(),
+        "calendar": calendar_factory(),
         "date": the_date,
         "events": day_events,
         "metadata": metadata_json,

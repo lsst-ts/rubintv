@@ -1,52 +1,48 @@
 .calendar
   width: 100%
-  min-width: 600px
-  padding-top: 2em
   margin-top: -2em
   margin-bottom: 2em
-  display: flex
-  flex-direction: row
-  flex-wrap: wrap
-  align-items: flex-start
-  gap: 10px
   &.half-width
     width: 50%
-    flex-direction: column
 
 .most-recent-year
   margin-bottom: 2em
 
+.year-titles
+  margin-bottom: 4em
+  position: relative
+  max-width: fit-content
+
 .year-title
   font-size: 1.1em
-  margin-bottom: 1em
-  padding: 2px 0
-  border-bottom: 1px #999 solid
   cursor: pointer
-  &::before
-    content: "∆"
-    margin-right: 0.3em
-    transform-origin: 50% 50%
-    transform: rotate(180deg)
-    display: inline-block
-    width: 0.7em
+  max-width: fit-content
+  &.current
+    color: #eee
+
+.year-title-viewbox
+  height: 1.1em
+  display: flex
+  gap: 14px
+
+.years
+  overflow: hidden
 
 .year
-  flex-basis: calc(50% - 10px)
+  display: none
+  flex-direction: row
+  flex-wrap: nowrap
   box-sizing: border-box
-  padding: 1em
-  background: #fafafa
-.half-width > .year
-  flex-basis: 0
-
-.year.closed
-  .year-title::before
-    transform: rotate(90deg)
-  .months
-    display: none
+  gap: 3em
+  overflow-x: scroll
+  &.current
+    display: flex
 
 
 .month-title
   font-size: 1.1em
+  margin-bottom: 1em
+  text-align: end
 
 .months
   display: flex
@@ -56,30 +52,25 @@
   gap: 8px
 
 .month
-  flex-basis: calc(33.33% - 8px)
+  box-sizing: border-box
+  flex-basis: calc(25% - 0.5em)
 
 .days
   display: grid
-  grid-template-columns: 1fr 1fr 1fr 1fr
-  gap: 0.3em
-  margin-bottom: 1em
-  background: #eee
-  padding: 0.3em
-  border-radius: 0 6px 6px 6px
+  grid-template-columns: repeat(7, 1fr)
+  gap: 2px
 
 .day
-  padding: 0.5em
-  background: #fff
-  cursor: pointer
-  transition: background 0.3s
-  &:hover
-    background: #eaeaea
+  font-family: 'Red Hat Mono', monospace
+  padding: 0.4em
+  width: 1.9em
+  height: 1.7em
+  user-select: none
+  &.obs
+    cursor: pointer
+    transition: background 0.3s
   .day_num
-    font-size: 1.2em
     display: block
   .num_evs
     font-size: 0.6em
     display: block
-
-h6
-  text-align: center

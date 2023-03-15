@@ -1,40 +1,22 @@
 {% extends "cameras/layout.jinja" %}
+{% block pagesubtitle %}
+Historical Movie
+{% endblock pagesubtitle %}
 {% block undertitle %}
-<h2>Historical Data: {{ movie.obs_date }}</h2>
+  {{ movie.obs_date }}
 {% endblock undertitle %}
+
+{% block breadcrumb %}
+<a href="{{ url('home') }}">Home</a>>
+<a href="{{ url('location', location=location.slug) }}">{{ location.name }}</a>>
+<a href="{{ url('camera', location=location.slug, camera=camera.slug) }}">{{ camera.name }}</a>>
+<p>Historical</p>
+{% endblock breadcrumb  %}
+
 {% block content %}
 <div class="columns">
   <section class="calendar half-width">
-
-      {% for year in years %}
-        {% if year == year_to_display %}
-        <div class="year open" data-year="{{ year }}">
-        {% else %}
-        <div class="year closed" data-year="{{ year }}">
-        {% endif %}
-          <h4 class="year-title">{{ year }}</h4>
-            <div class="months">
-              {% for month in years[year] %}
-              <div class="month">
-                <h5 class="month-title">
-                  {{ month_names[month - 1] }}
-                </h5>
-                <div class="days">
-                  {% for day in years[year][month] %}
-                    {% set date_str = date(year, month, day)|string %}
-                    <a
-                      class="day"
-                      href="{{ url('hist_single', location=location.slug, camera=camera.slug, date_str=date_str) }}">
-                      {{ day }}
-                    </a>
-                  {% endfor %}
-                </div>  {# end of days #}
-              </div> {# end of month #}
-            {% endfor %}
-            </div>
-        </div> {# end of year #}
-      {% endfor %}
-
+    {% include "cameras/calendar2.jinja" %}
   </section>
   <section class="current-movie historical">
     {% include "cameras/allsky-movie.jinja" %}

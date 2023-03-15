@@ -1,11 +1,130 @@
 @charset "UTF-8";
 @import "reset.css";
+.button {
+  box-sizing: border-box;
+  border-radius: 10%;
+  border: none;
+  background: #eee;
+  color: #000;
+  display: flex;
+  flex-direction: column;
+  justify-content: end;
+  text-decoration: none;
+  box-shadow: 2.5px 2.5px 4px rgba(0, 0, 0, 0.26);
+  transition: 0.2s;
+  padding: 0.5em;
+}
+.button:hover {
+  box-shadow: none;
+}
+
+.button-large {
+  width: 160px;
+  height: 110px;
+  padding: 0.8em 1.2em;
+  font-size: 0.85em;
+}
+.button-large.button-logo {
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.button-large.button-logo:not([style*=".svg"]) {
+  color: #fff;
+  text-shadow: 1px 1px 3px #000;
+  background-size: cover;
+}
+.button-large:hover {
+  transform: scale(0.992);
+}
+
+.button-large img {
+  width: 50%;
+  margin: auto;
+}
+
+.button-small {
+  padding: 1em;
+  height: 67px;
+  width: fit-content;
+  min-width: 100px;
+}
+
+.button-table {
+  width: 30px;
+  height: 30px;
+  border-radius: 10%;
+}
+.button-table.image-viewer-link {
+  background: url(/rubintv/static/images/image-viewer-link.svg);
+}
+.button-table.copy {
+  background-image: url(/rubintv/static/images/copy-to-clipboard.svg);
+  width: 16px;
+  height: 16px;
+}
+
+.button.historical {
+  width: max-content;
+  padding: 0.4em;
+  margin-bottom: -0.4em;
+  border-radius: 6px;
+  display: inline-block;
+  flex-direction: row;
+}
+.button.historical img {
+  height: 1em;
+  width: auto;
+  margin-left: 4px;
+}
+
 body {
-  background-color: #fff;
+  background-color: #555;
+  color: #eee;
+}
+
+header {
+  background-color: #3c3c3c;
+  color: #eee;
+  border-top: 3px solid #eee;
+  border-bottom: 1px solid #eee;
+}
+header a {
+  color: #eee;
+}
+
+.year-title {
+  color: #999;
+  background-color: #555;
+}
+
+.day {
+  background: #484848;
+  color: #eee;
+}
+.day:hover {
+  text-decoration: none;
+}
+.day.obs {
+  background: #404040;
+}
+.day.obs:hover {
+  background: #505050;
+}
+
+.service-group {
+  background: #484848;
+}
+
+.service {
+  background: #555;
+}
+
+.table-control {
+  color: #222;
 }
 
 .channel-grid-heading {
-  background-color: #fff;
+  background-color: #555;
 }
 
 .grid-cell {
@@ -14,7 +133,11 @@ body {
 }
 
 .table-spacer {
-  background-color: #fff;
+  background-color: #555;
+}
+
+.svg-brace {
+  stroke: #fff;
 }
 
 .button.historical {
@@ -134,61 +257,58 @@ body {
 
 .calendar {
   width: 100%;
-  min-width: 600px;
-  padding-top: 2em;
   margin-top: -2em;
   margin-bottom: 2em;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 10px;
 }
 .calendar.half-width {
   width: 50%;
-  flex-direction: column;
 }
 
 .most-recent-year {
   margin-bottom: 2em;
 }
 
+.year-titles {
+  margin-bottom: 4em;
+  position: relative;
+  max-width: fit-content;
+}
+
 .year-title {
   font-size: 1.1em;
-  margin-bottom: 1em;
-  padding: 2px 0;
-  border-bottom: 1px #999 solid;
   cursor: pointer;
+  max-width: fit-content;
 }
-.year-title::before {
-  content: "∆";
-  margin-right: 0.3em;
-  transform-origin: 50% 50%;
-  transform: rotate(180deg);
-  display: inline-block;
-  width: 0.7em;
+.year-title.current {
+  color: #eee;
+}
+
+.year-title-viewbox {
+  height: 1.1em;
+  display: flex;
+  gap: 14px;
+}
+
+.years {
+  overflow: hidden;
 }
 
 .year {
-  flex-basis: calc(50% - 10px);
-  box-sizing: border-box;
-  padding: 1em;
-  background: #fafafa;
-}
-
-.half-width > .year {
-  flex-basis: 0;
-}
-
-.year.closed .year-title::before {
-  transform: rotate(90deg);
-}
-.year.closed .months {
   display: none;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  box-sizing: border-box;
+  gap: 3em;
+  overflow-x: scroll;
+}
+.year.current {
+  display: flex;
 }
 
 .month-title {
   font-size: 1.1em;
+  margin-bottom: 1em;
+  text-align: end;
 }
 
 .months {
@@ -200,30 +320,28 @@ body {
 }
 
 .month {
-  flex-basis: calc(33.33% - 8px);
+  box-sizing: border-box;
+  flex-basis: calc(25% - 0.5em);
 }
 
 .days {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  gap: 0.3em;
-  margin-bottom: 1em;
-  background: #eee;
-  padding: 0.3em;
-  border-radius: 0 6px 6px 6px;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
 }
 
 .day {
-  padding: 0.5em;
-  background: #fff;
+  font-family: "Red Hat Mono", monospace;
+  padding: 0.4em;
+  width: 1.9em;
+  height: 1.7em;
+  user-select: none;
+}
+.day.obs {
   cursor: pointer;
   transition: background 0.3s;
 }
-.day:hover {
-  background: #eaeaea;
-}
 .day .day_num {
-  font-size: 1.2em;
   display: block;
 }
 .day .num_evs {
@@ -231,14 +349,11 @@ body {
   display: block;
 }
 
-h6 {
-  text-align: center;
-}
-
 .flr {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
+  gap: 1em;
 }
 
 .resp {
@@ -253,68 +368,6 @@ h6 {
   margin-bottom: -9vh;
 }
 
-.button {
-  box-sizing: border-box;
-  border-radius: 10%;
-  border: none;
-  background: #eee;
-  color: #000;
-  display: flex;
-  flex-direction: column;
-  justify-content: end;
-  text-decoration: none;
-  box-shadow: 2.5px 2.5px 4px rgba(0, 0, 0, 0.26);
-  transition: 0.2s;
-  padding: 0.5em;
-}
-.button:hover {
-  box-shadow: none;
-}
-
-.button-large {
-  width: 200px;
-  height: 144px;
-  padding: 1em 1.2em;
-}
-.button-large.logo {
-  background-position: center;
-  background-repeat: no-repeat;
-}
-.button-large.logo:not([style*=".svg"]) {
-  color: #fff;
-  text-shadow: 1px 1px 3px #000;
-  background-size: cover;
-}
-.button-large:hover {
-  transform: scale(0.992);
-}
-
-.button-large img {
-  width: 50%;
-  margin: auto;
-}
-
-.button-small {
-  padding: 1em;
-  height: 67px;
-  width: fit-content;
-  min-width: 100px;
-}
-
-.button-table {
-  width: 30px;
-  height: 30px;
-  border-radius: 10%;
-}
-.button-table.image-viewer-link {
-  background: url(/rubintv/static/images/image-viewer-link.svg);
-}
-.button-table.copy {
-  background-image: url(/rubintv/static/images/copy-to-clipboard.svg);
-  width: 16px;
-  height: 16px;
-}
-
 a {
   text-decoration: none;
   display: block;
@@ -323,120 +376,103 @@ a:hover {
   text-decoration: underline;
 }
 
-.site-host-display {
-  position: fixed;
-  z-index: 24;
-  top: 5px;
-  right: 5px;
-  padding: 9px;
-  background-color: aquamarine;
-  border-radius: 6px;
-  font-size: 3em;
-  opacity: 0.7;
-  pointer-events: none;
-}
-.site-host-display.development {
-  background-color: burlywood;
-}
-
 html {
   font-family: "Rubik", sans-serif;
   font-size: 16px;
+  font-weight: 300;
 }
 
-.page-wrapper {
-  margin: 30px 30px 30px;
-}
-
-.in-memoriam {
-  display: flex;
-  flex-direction: row;
-  margin-top: 0.8em;
-  margin-left: -1em;
-  width: max-content;
-  color: #000;
-}
-.in-memoriam:hover {
-  text-decoration: none;
-}
-.in-memoriam:hover p {
-  background: #ddd;
-}
-.in-memoriam p {
-  font-size: 0.8em;
-  margin-left: -1em;
-  margin-right: -1em;
-  padding: 1em;
-  text-align: center;
-  background: #eee;
-  transition: 0.3s;
-  border-radius: 20px;
-  border: 3px solid #578147;
-}
-.in-memoriam img {
-  height: 48px;
-  width: auto;
-  z-index: 2;
-  margin-top: auto;
-  margin-bottom: 0;
-  transform: scale(-1, 1);
-}
-.in-memoriam img:first-of-type {
-  transform: scale(1);
-  margin-top: 0;
-  margin-bottom: auto;
+header h1, header h2, header h3, header h4, header h5, header h6 {
+  font-weight: 300;
 }
 
 header {
-  margin-bottom: 2em;
+  padding: 16px 30px 20px;
 }
-header .header-wrap {
+header a .inline {
+  text-decoration: underline;
+  display: inline-block;
+}
+
+.header-wrap {
   display: flex;
   align-items: stretch;
 }
-header .logo {
-  width: auto;
-  height: 100px;
-}
-header .title {
-  margin-left: 2em;
+.header-wrap > div {
   display: flex;
   flex-direction: column;
 }
-header .title h1 {
-  margin: 0;
+
+.header-messages {
+  justify-content: center;
+  margin-right: 3em;
 }
-header .title h1 a {
-  display: inline-block;
-  font-size: 1em;
+
+.header-page-titles {
+  margin-top: 12.5px;
 }
-header .title .historical {
-  width: max-content;
-  margin-top: 2px;
-  padding: 0.5em 0.9em;
-  border-radius: 9px;
-  display: flex;
-  flex-direction: row;
+
+.header-page-buttons {
+  flex-grow: 1;
+  flex-direction: row !important;
+  justify-content: flex-start;
+  align-items: flex-end;
+  margin-left: 2em;
+}
+
+.header-site-titles {
   align-items: center;
-  height: 100%;
-}
-header .title .historical img {
-  height: 1em;
-  width: auto;
-  margin-left: 4px;
 }
 
 .page-title {
-  margin-bottom: 1em;
+  font-weight: 400;
+  font-size: 35px;
+  margin: 0;
 }
 
-[class$=-menu] {
-  position: relative;
-  z-index: 23;
+.page-subtitle {
+  margin-top: auto;
+  margin-bottom: 0.2em;
 }
-[class$=-menu] li {
-  margin-right: 1em;
+
+.site-title {
+  font-size: 11.4px;
+  margin-top: 8px;
+}
+
+.logo {
+  display: block;
+  width: 120px;
+  height: auto;
+  padding: 12.5px;
+  box-sizing: border-box;
+  background-color: #fff;
+}
+.logo img {
+  width: 100%;
+  height: auto;
+}
+.logo h1 {
+  margin: 0;
+}
+.logo h1 a {
+  display: inline-block;
+  font-size: 1em;
+}
+
+.breadcrumb {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
   margin-bottom: 1em;
+  gap: 4px;
+}
+.breadcrumb a {
+  color: #fff;
+}
+
+main {
+  padding: 1em 30px 25px;
 }
 
 h2 {
@@ -452,8 +488,6 @@ h3 {
 section {
   margin-bottom: 4em;
   padding-bottom: 2em;
-  border-bottom: 1px solid #dcdcdc;
-  width: fit-content;
 }
 
 .columns {
@@ -477,11 +511,6 @@ section {
 
 .allsky-current-movie {
   position: relative;
-}
-.allsky-current-movie .button.historical {
-  position: absolute;
-  top: -103px;
-  right: 32px;
 }
 
 @media screen and (max-width: 1165px) {
@@ -544,7 +573,7 @@ section {
 }
 
 .channel-grid {
-  font-family: "Monaco", monospace, monospace;
+  font-family: "Red Hat Mono", monospace;
   border-spacing: 2px;
   border-collapse: separate;
 }
@@ -564,15 +593,11 @@ section {
 }
 
 .grid-cell {
+  font-size: 0.8em;
   padding: 0.3em;
   vertical-align: middle;
   height: 42px;
   box-sizing: border-box;
-}
-.grid-cell > div {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
 }
 
 .table-spacer {
@@ -598,6 +623,9 @@ section {
 .startracker .grouping, .startracker-wide .grouping, .startracker-fast .grouping {
   height: 6em;
 }
+.startracker .braced-group-title, .startracker-wide .braced-group-title, .startracker-fast .braced-group-title {
+  margin-bottom: 2px;
+}
 .startracker .grid-title, .startracker-wide .grid-title, .startracker-fast .grid-title {
   position: static;
 }
@@ -611,14 +639,15 @@ section {
   white-space: nowrap;
 }
 .startracker .jump-buttons, .startracker-wide .jump-buttons, .startracker-fast .jump-buttons {
-  top: 252px;
+  top: 254px;
 }
 
 .copy-to-cb {
-  background-color: transparent;
   display: flex;
   justify-content: center;
   align-items: center;
+  padding-left: 0.7em;
+  padding-right: 0.7em;
 }
 
 .copied {
@@ -660,7 +689,8 @@ section {
   display: none;
   grid-template-columns: 1fr 1fr;
   position: absolute;
-  padding: 3px 3px 20px;
+  gap: 0 0.4em;
+  padding: 3px;
   margin: 20px -21px;
   border-top: none;
   background: #fff;
@@ -676,7 +706,7 @@ section {
 
 .table-control {
   padding: 2px 1em;
-  width: max-content;
+  white-space: nowrap;
 }
 .table-control:hover {
   background: #ddd;
@@ -706,7 +736,7 @@ section {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  top: 148px;
+  top: 146px;
   left: -30px;
   gap: 2px;
 }
@@ -730,7 +760,6 @@ section {
   align-items: center;
   margin-bottom: 1.5em;
   padding: 1em;
-  background: #e8e8e8;
 }
 .service-group .all-services, .service-group .services {
   display: flex;
@@ -739,7 +768,8 @@ section {
 }
 .service-group .all-services > * {
   padding: 1em;
-  border: 1px solid #fff;
+  border: 1px solid #aaa;
+  border-radius: 6px;
 }
 .service-group .all-services > *:nth-child(2) {
   margin-left: 2em;
@@ -749,7 +779,6 @@ section {
   margin-bottom: 0.5em;
 }
 .service-group .service {
-  background: #ddd;
   padding: 0.8em;
   display: flex;
   flex-direction: column;
@@ -848,7 +877,7 @@ section {
 }
 
 .dashboard {
-  font-family: "Monaco", monospace, monospace;
+  font-family: "Red Hat Mono", monospace;
   margin: 2em 0;
 }
 .dashboard ul {
@@ -921,6 +950,60 @@ section {
 }
 .plot figcaption {
   margin-top: 0.5em;
+}
+
+.in-memoriam {
+  display: flex;
+  flex-direction: row;
+  width: max-content;
+  color: #000;
+}
+.in-memoriam:hover {
+  text-decoration: none;
+}
+.in-memoriam:hover p {
+  background: #fff;
+}
+.in-memoriam p {
+  font-size: 0.8em;
+  margin-left: -1em;
+  margin-right: -1em;
+  padding: 1em;
+  text-align: center;
+  background: #eee;
+  transition: 0.3s;
+  border-radius: 20px;
+  border: 3px solid #578147;
+}
+.in-memoriam img {
+  height: 48px;
+  width: auto;
+  z-index: 2;
+  margin-top: auto;
+  margin-bottom: 0;
+  transform: scale(-1, 1);
+}
+.in-memoriam img:first-of-type {
+  transform: scale(1);
+  margin-top: 0;
+  margin-bottom: auto;
+}
+
+.site-host-display {
+  position: fixed;
+  z-index: 24;
+  top: 0;
+  right: 0;
+  padding: 9px;
+  background-color: aquamarine;
+  border-radius: 0 0 0 6px;
+  font-size: 0.8em;
+  color: #222;
+  opacity: 0.7;
+  pointer-events: none;
+}
+.site-host-display.development {
+  background-color: burlywood;
 }
 
 /*# sourceMappingURL=main.css.map */

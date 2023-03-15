@@ -1,13 +1,18 @@
 {% extends "layout.jinja" %}
+{% block pagetitle %}
+RubinTV
+{% endblock pagetitle %}
+{% block pagesubtitle %}
+Locations
+{% endblock pagesubtitle %}
 {% block content %}
   <section>
-    <h2 class="section-title">Locations</h2>
     <nav class="location-menu">
       <ul class="locations flr">
         {% for loc in locations.values() %}
           <li>
             <a
-                class="button button-large logo"
+                class="button button-large button-logo"
                 href="{{ url('location', location=loc.slug) }}"
                 style="background-image: url({{ url('static', filename='images/logos/' + loc.logo) }})">
               {{ loc.name }}
