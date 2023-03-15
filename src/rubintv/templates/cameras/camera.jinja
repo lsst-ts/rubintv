@@ -43,10 +43,11 @@
     <section id="channel-day-data">
       {% include "cameras/data-table-header.jinja" %}
     </section>
-
+  {% if camera.metadata_headers %}
     <script type="application/json" id="metadata-headers">
       {{ camera.metadata_headers|tojson }}
     </script>
+  {% endif %}
 {% endblock content %}
 
 {% block footer_scripts %}
