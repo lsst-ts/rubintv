@@ -119,6 +119,10 @@ header a {
   background: #555;
 }
 
+#night-report {
+  color: #000;
+}
+
 .table-control {
   color: #222;
 }

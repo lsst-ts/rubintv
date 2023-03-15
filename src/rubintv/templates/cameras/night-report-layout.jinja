@@ -1,4 +1,10 @@
 {% extends "cameras/layout.jinja" %}
+{% block pagesubtitle %}
+   Night Report
+{% endblock pagesubtitle %}
+{% block undertitle %}
+   {{ date }}
+{% endblock undertitle %}
 
 {% block breadcrumb %}
 <a href="{{ url('home') }}">Home</a>>
