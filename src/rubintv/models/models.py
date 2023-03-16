@@ -256,11 +256,11 @@ class Night_Report_Event:
         The prefix used to locate the blob in the bucket. It's used as the
         delimeter by which to split the url into bucket hostname and the data
         stored in the filename.
-    timestamp: `int`
-        The timestamp of the blob. This is used to keep plot images up-to-date
+    hash: `str`
+        The md5 hash of the blob. This is used to keep plot images up-to-date
         onsite.
     blobname: `str`
-        The name by which to download the blob data from the bucket.
+        The name used to download the blob data from the bucket.
     group: `str`
         The name of the group the data belogs to.
     name: `str`

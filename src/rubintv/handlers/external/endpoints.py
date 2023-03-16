@@ -31,10 +31,10 @@ from rubintv.handlers.external.endpoints_helpers import (
     build_title,
     calendar_factory,
     date_from_url_part,
+    download_sort_night_report_events,
     find_location,
     get_current_event,
     get_event_page_link,
-    get_historical_night_report_events,
     get_image_viewer_link,
     get_metadata_json,
     get_most_recent_day_events,
@@ -201,7 +201,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
             )
 
             night_reports_link = get_nights_report_link_type(
-                bucket, camera, the_date
+                camera, historical, the_date
             )
 
             metadata_json = get_metadata_json(bucket, camera, the_date)
@@ -248,7 +248,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
         )
 
         night_reports_link = get_nights_report_link_type(
-            bucket, camera, the_date
+            camera, historical, the_date
         )
         metadata_json = get_metadata_json(bucket, camera, the_date)
         per_day = get_per_day_channels(bucket, camera, the_date)
@@ -380,10 +380,9 @@ async def get_historical_night_reports(request: web.Request) -> Dict[str, Any]:
 
     plots: Dict[str, List[Night_Report_Event]] = {}
     dashboard_data: Dict[str, str] = {}
-    night_reports = historical.get_night_reports_for(camera, the_date)
-    if night_reports:
+    if night_reports := historical.get_night_reports_for(camera, the_date):
         bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
-        plots, dashboard_data = get_historical_night_report_events(
+        plots, dashboard_data = download_sort_night_report_events(
             bucket, night_reports
         )
 

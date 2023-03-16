@@ -151,7 +151,8 @@ class HistoricalData:
 
         Returns
         -------
-        night_reports : `Dict` [`str`, `Dict` [`str`, `List` [`Night_Report_Event`]]]
+        night_reports : `Dict` [`str`, `Dict` [`str`, `List`
+        [`Night_Report_Event`]]]
             A two dimensional dictionary with outer key camera name and
             inner key the date (as a date object) which co-identify
             a list of Night Reports Events objects.
