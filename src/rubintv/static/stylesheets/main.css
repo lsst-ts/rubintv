@@ -115,7 +115,7 @@ header a {
   background: #484848;
 }
 
-.service {
+.services .service {
   background: #555;
 }
 
@@ -374,10 +374,14 @@ header a {
 
 a {
   text-decoration: none;
-  display: block;
+  display: inline-block;
 }
 a:hover {
   text-decoration: underline;
+}
+
+.inline-block {
+  display: inline-block;
 }
 
 html {
@@ -810,14 +814,13 @@ section {
   animation: none;
 }
 
-.on-page-status {
-  margin: 1em 1em 1em auto;
-}
-.on-page-status .heartbeat {
+.service.inline-block .heartbeat {
+  width: 0.7em;
+  height: 0.7em;
   background-image: none;
 }
-.on-page-status.active {
-  background-image: none;
+.service.inline-block.stopped {
+  background: url(/rubintv/static/images/heartbeat_stopped.svg);
 }
 
 .channel .heartbeat {

@@ -3,4 +3,9 @@
   <a href="{{ url('camera', location=location.slug, camera=camera.slug) }}">
     {{ camera.name }}
   </a>
+  {% block inline_status %}
+  {% endblock inline_status %}
 {% endblock pagetitle %}
+{% block footer_scripts %}
+  <script type="module" src="{{ url('static', filename='js/heartbeats.js') }}"></script>
+{% endblock footer_scripts %}
