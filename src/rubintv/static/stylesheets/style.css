@@ -383,8 +383,8 @@ header a {
 .day {
   font-family: "Red Hat Mono", monospace;
   padding: 0.4em;
-  width: 1.9em;
-  height: 1.7em;
+  width: 3em;
+  height: 2.6em;
   user-select: none;
 }
 .day.obs {
@@ -655,9 +655,9 @@ section {
 }
 
 .table-spacer {
-  height: 8em;
+  height: 8.7em;
   position: sticky;
-  top: 4.4em;
+  top: 3.7em;
 }
 
 .meta-group {
@@ -672,7 +672,7 @@ section {
 
 .startracker thead, .startracker-wide thead, .startracker-fast thead {
   position: sticky;
-  top: 10.8em;
+  top: 11em;
 }
 .startracker .grouping, .startracker-wide .grouping, .startracker-fast .grouping {
   height: 6em;
@@ -684,7 +684,7 @@ section {
   position: static;
 }
 .startracker .table-spacer, .startracker-wide .table-spacer, .startracker-fast .table-spacer {
-  height: 11em;
+  height: 11.8em;
 }
 .startracker .meta-group, .startracker-wide .meta-group, .startracker-fast .meta-group {
   top: -5.4em;
@@ -693,7 +693,7 @@ section {
   white-space: nowrap;
 }
 .startracker .jump-buttons, .startracker-wide .jump-buttons, .startracker-fast .jump-buttons {
-  top: 254px;
+  top: 267px;
 }
 
 .copy-to-cb {
@@ -790,7 +790,7 @@ section {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  top: 146px;
+  top: 157px;
   left: -30px;
   gap: 2px;
 }
