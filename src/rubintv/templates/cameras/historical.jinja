@@ -32,7 +32,7 @@ Historical Data
 
 {% block footer_scripts %}
   {% if camera.js_entry %}
-    {% set filename = "js/hist/historical-" + camera.js_entry + ".js" %}
-    <script type=module src="{{ url('static', filename=filename) }}"></script>
+    {% set filename = "assets/" + camera.js_entry + "_historical.js" %}
+    <script src="{{ url('static', filename=filename) }}"></script>
   {% endif %}
 {% endblock footer_scripts %}

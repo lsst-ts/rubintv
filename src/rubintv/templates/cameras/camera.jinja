@@ -61,8 +61,8 @@
 
 {% block footer_scripts %}
   {% if camera.js_entry %}
-    {% set cam_js_filename = "js/refresh-table/refresh-table-" + camera.js_entry + ".js" %}
-    <script type="module" src='{{ url("static", filename=cam_js_filename) }}'></script>
+    {% set cam_js = "assets/" + camera.js_entry + ".js" %}
+    <script src='{{ url("static", filename=cam_js) }}'></script>
   {% endif %}
   {{ super() }}
 {% endblock footer_scripts  %}
