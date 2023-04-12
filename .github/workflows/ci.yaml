@@ -28,6 +28,16 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: npm install and build
+        run: |
+          npm install
+          npm run build
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -61,16 +71,6 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: '/tmp/google_creds.json'
 
-      - uses: actions/setup-node@v3
-        with:
-          cache: 'npm'
-          node-version-file: '.nvmrc'
-
-      - name: npm install and build
-        run: |
-          npm install
-          npm run build
-
   build:
     runs-on: ubuntu-latest
     needs: [test]
@@ -91,7 +91,6 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          cache: 'npm'
           node-version-file: '.nvmrc'
 
       - name: npm install and build
