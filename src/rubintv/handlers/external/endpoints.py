@@ -83,7 +83,11 @@ async def heartbeats_websocket(request: web.Request) -> web.WebSocketResponse:
 
     ws = web.WebSocketResponse()
     request.config_dict["websockets"].add(ws)
-    await ws.prepare(request)
+    try:
+        await ws.prepare(request)
+    except ConnectionResetError as ce:
+        logger = request["safir/logger"]
+        logger.error("Websocket connection error", error=ce)
     try:
         await ws.send_json(heartbeats)
         while True:
