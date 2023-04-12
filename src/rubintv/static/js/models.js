@@ -86,4 +86,9 @@ export const starTrackerFastHeaders = {
   ]
 }
 
-export const slacDefault = []
+export const slacDefault = [
+  'Exposure time',
+  'Dark time',
+  'Image type',
+  'Test type'
+]
