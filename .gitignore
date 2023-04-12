@@ -136,8 +136,9 @@ dmypy.json
 # Mac filesystem stuff
 .DS_Store
 
-# VScode store
+# VScode
 .vscode/
+jsconfig.json
 
 # jupyter notebooks
 *.ipynb

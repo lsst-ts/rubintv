@@ -3,18 +3,27 @@
 <h2>Historical Data: {{ date }}</h2>
 {% endblock undertitle %}
 {% block content %}
+
 <section class="calendar">
   {% include "cameras/calendar.jinja" %}
 </section>
+
 <section id="channel-day-data">
   <div class="columns">
-    {# {% include "cameras/historical-night-reports-link.jinja" %} #}
+    {% include "cameras/night-report-link.jinja" %}
     {% include "cameras/per-day-channels.jinja" %}
   </div>
   {% include "cameras/data-table-header.jinja" %}
 </section>
+
+<script type="application/json" id="metadata-headers">
+  {{ camera.metadata_headers|tojson }}
+</script>
+
 {% endblock content %}
 {% block footer_scripts %}
-  {% set filename = "js/hist/historical-" + camera.slug + ".js" %}
-  <script type=module src="{{ url('static', filename=filename) }}"></script>
+  {% if camera.js_entry %}
+    {% set filename = "js/hist/historical-" + camera.js_entry + ".js" %}
+    <script type=module src="{{ url('static', filename=filename) }}"></script>
+  {% endif %}
 {% endblock footer_scripts %}

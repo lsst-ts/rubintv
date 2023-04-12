@@ -1,13 +1,16 @@
 {% extends "layout.jinja" %}
 {% block title %}
-RubinTV Admin
+RubinTV Admin - {{ location.name }}
 {% endblock title %}
 {% block subtitle %}
 <h2 style="font-size: 1em;">({{ version }})</h2>
 {% endblock subtitle %}
 
 {% block content %}
-  <h2>Service status</h2>
+  <h2 id="location"
+      data-location="{{ location.slug }}">
+    {{ location.name }} service status
+  </h2>
   {% for group in services %}
   <div class="service-group {{ group }}">
     <h3>
@@ -62,6 +65,6 @@ RubinTV Admin
 
 {% endblock content %}
 {% block footer_scripts %}
-<script type=module src="{{ url('static', filename='js/admin-status.js') }}"></script>
+<script type=module src="{{ url('static', filename='js/heartbeats.js') }}"></script>
 <script type=module src="{{ url('static', filename='js/modules/historical-reset.js') }}"></script>
 {% endblock footer_scripts %}

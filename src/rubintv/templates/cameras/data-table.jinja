@@ -8,15 +8,15 @@
           {% if events[seq][chan] %}
             {% set event = events[seq][chan] %}
             {% set chan = camera.channels[chan] %}
-              <a  class="button button-table {{ chan.simplename }}"
+              <a  class="button button-table {{ chan.slug }}"
                   href="{{ url('home') }}{{ event_page_link(location, camera, chan, event) }}">
               </a>
           {% endif %}
         </td>
     {% endfor %}
-    {% if camera.has_image_viewer %}
+    {% if camera.image_viewer_link %}
       <td class="grid-cell">
-        <a class="button button-table image-viewer-link" href="{{ viewer_link(date, seq) }}"></a>
+        <a class="button button-table image-viewer-link" href="{{ viewer_link(camera, date, seq) }}"></a>
       </td>
     {% endif %}
 {% endfor %}

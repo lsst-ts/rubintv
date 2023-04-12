@@ -22,15 +22,18 @@ body
   color: #fff
 .button.movie
   background-color: #83daee
-  text-align: center
+.button.night-report
+  background-color:  #696797
+  color: #fff
 .button.admin
   background-color: #999
 
 $auxtel: ("monitor":#F07F85, "mount": #F0C87F, "spec": #7F85F0, "im": #7FF094)
 $startracker: ("startracker": #58528b, "analysis": #ba528f, "startracker-wide": #fc6465, "startracker-wide-analysis": #fda529)
+$startrackerfast: ("startracker-fast": #FECC66, "startracker-fast-analysis": #d5fa80)
 $slac: ("focal_plane_mosiac": #6fe9ba, "noise_map": #e771a8)
 
-$buttons: map_collect($auxtel, $startracker, $slac)
+$buttons: map_collect($auxtel, $startracker, $startrackerfast, $slac)
 @each $name, $colour in $buttons
   .button.#{$name}
     background-color: $colour
@@ -56,3 +59,9 @@ $filters: ("u_color": #d9f3fd, "g_color": #e7fdd9, "r_color": #fdd7d7, "i_color"
     background-color: #fefefe
   &.rainbow_color
     background: linear-gradient(270deg, #fec8c9 0%, #f5dece 16%, #f5f8cd 28%, #e0f5d1 50%, #c9d2fe 66%, #dcddfe 83%, #f1dafe 100%)
+
+  &.r_stripes
+    background: linear-gradient(27deg, #f77171 0%, #f77171 14%, #f0f0f0 14%, #f0f0f0 29%, #f77171 29%, #f77171 43%, #f0f0f0 43%, #f0f0f0 57%,  #f77171 57%, #f77171 71%, #f0f0f0 71%, #f0f0f0 84%, #f77171 84%, #f77171 100%)
+
+  &.b_stripes
+    background: linear-gradient(27deg, #71abf7 0%, #71abf7 14%, #f0f0f0 14%, #f0f0f0 29%, #71abf7 29%, #71abf7 43%, #f0f0f0 43%, #f0f0f0 57%,  #71abf7 57%, #71abf7 71%, #f0f0f0 71%, #f0f0f0 84%, #71abf7 84%, #71abf7 100%)

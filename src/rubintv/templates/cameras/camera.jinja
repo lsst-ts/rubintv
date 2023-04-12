@@ -8,18 +8,8 @@
 {% endblock undertitle %}
 
 {% block content %}
-  <div class="columns">
-    {# {% if camera.night_reports_prefix %}
-      <div id="night_reports_link">
-        <h3>Night Reports Page</h3>
-        <a href="{{ url('night_reports', location=location.slug, camera=camera.slug) }}" class="button button-large night-reports">
-          Night Reports
-        </a>
-      </div>
-    {% endif %} #}
-    <div id="per-day-refreshable">
-      {% include "cameras/per-day-channels.jinja" %}
-    </div>
+  <div id="per-day-refreshable" class="columns">
+    {% include "cameras/per-day-refresh.jinja" %}
   </div>
 
   <section>
@@ -31,8 +21,8 @@
               <li class="channel service"
                   id="{{ channel.prefix }}"
                   data-dependent-on="{{ channel.service_dependency }}">
-                <a  class="button button-large {{ channel.simplename }}"
-                    href="{{ url('current', location=location.slug, camera=camera.slug, channel=channel.simplename) }}" target="_blank">
+                <a  class="button button-large {{ channel.slug }}"
+                    href="{{ url('current', location=location.slug, camera=camera.slug, channel=channel.slug) }}" target="_blank">
                   <div class="heartbeat"></div>
                   <span>{{ channel.name }}</span>
                 </a>
@@ -53,10 +43,16 @@
     <section id="channel-day-data">
       {% include "cameras/data-table-header.jinja" %}
     </section>
+
+    <script type="application/json" id="metadata-headers">
+      {{ camera.metadata_headers|tojson }}
+    </script>
 {% endblock content %}
 
 {% block footer_scripts %}
-  {% set cam_js_filename = "js/refresh-table/refresh-table-" + camera.slug + ".js" %}
-  <script type="module" src='{{ url("static", filename=cam_js_filename) }}'></script>
-  <script type="module" src="{{ url('static', filename='js/camera-status.js') }}"></script>
+  {% if camera.js_entry %}
+    {% set cam_js_filename = "js/refresh-table/refresh-table-" + camera.js_entry + ".js" %}
+    <script type="module" src='{{ url("static", filename=cam_js_filename) }}'></script>
+  {% endif %}
+  <script type="module" src="{{ url('static', filename='js/heartbeats.js') }}"></script>
 {% endblock footer_scripts  %}

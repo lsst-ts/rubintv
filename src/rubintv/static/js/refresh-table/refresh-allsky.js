@@ -1,4 +1,3 @@
-import { ChannelStatus } from '../modules/heartbeat.js'
 import { getJson } from '../modules/utils.js'
 
 window.addEventListener('load', () => {
@@ -28,9 +27,9 @@ window.addEventListener('load', () => {
       const currentMovieUrl = source.getAttribute('src')
       if (data.channel === 'movie' && data.url !== currentMovieUrl) {
         source.setAttribute('src', data.url)
-        currentMovie.querySelector('.movie-date').textContent(data.date)
-        currentMovie.querySelector('.movie-number').textContent(data.seq)
-        currentMovie.querySelector('.desc').textContent(data.name)
+        currentMovie.querySelector('.movie-date').textContent = data.date
+        currentMovie.querySelector('.movie-number').textContent = data.seq
+        currentMovie.querySelector('.desc').textContent = data.name
         video.load()
       }
     }).catch(e => {
@@ -38,7 +37,4 @@ window.addEventListener('load', () => {
     })
   }
   setInterval(videoCheckLatest, 5000)
-
-  const status = new ChannelStatus('allsky')
-  console.log(JSON.stringify(status))
 })

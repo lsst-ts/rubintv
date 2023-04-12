@@ -8,7 +8,6 @@ import pytest
 from bs4 import BeautifulSoup
 
 from rubintv.app import create_app
-from rubintv.models.models_assignment import locations
 
 if TYPE_CHECKING:
     from aiohttp.pytest_plugin.test_utils import TestClient
@@ -35,6 +34,7 @@ async def test_home_page(aiohttp_client: TestClient) -> None:
     response = await client.get(f"{name}/")
     html = await response.text()
     parsed = BeautifulSoup(html, "html.parser")
+    locations = app["rubintv/models"].locations
     location_slugs = [loc.slug for loc in locations.values()]
     # find all nav links - there should be one for each location
     # (in the same order as defined in models_data.yaml)

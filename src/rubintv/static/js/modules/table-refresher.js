@@ -1,5 +1,10 @@
 import { getJson, parseJsonFromDOM } from './utils.js'
 
+/**
+ * @param {{ (htmlParts: any): void; }} injectHTMLCallback
+ * @param {{ (meta: any): void; }} doUpdatingCallback
+ * @param {number} periodInSecs
+ */
 export function refreshTableLoop (injectHTMLCallback, doUpdatingCallback, periodInSecs) {
   setInterval(function () {
     const urlPath = document.location.pathname

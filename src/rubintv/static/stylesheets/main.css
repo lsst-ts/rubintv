@@ -24,7 +24,11 @@ body {
 
 .button.movie {
   background-color: #83daee;
-  text-align: center;
+}
+
+.button.night-report {
+  background-color: #696797;
+  color: #fff;
 }
 
 .button.admin {
@@ -61,6 +65,14 @@ body {
 
 .button.startracker-wide-analysis {
   background-color: #fda529;
+}
+
+.button.startracker-fast {
+  background-color: #FECC66;
+}
+
+.button.startracker-fast-analysis {
+  background-color: #d5fa80;
 }
 
 .button.focal_plane_mosiac {
@@ -112,6 +124,12 @@ body {
 }
 .grid-cell.rainbow_color {
   background: linear-gradient(270deg, #fec8c9 0%, #f5dece 16%, #f5f8cd 28%, #e0f5d1 50%, #c9d2fe 66%, #dcddfe 83%, #f1dafe 100%);
+}
+.grid-cell.r_stripes {
+  background: linear-gradient(27deg, #f77171 0%, #f77171 14%, #f0f0f0 14%, #f0f0f0 29%, #f77171 29%, #f77171 43%, #f0f0f0 43%, #f0f0f0 57%, #f77171 57%, #f77171 71%, #f0f0f0 71%, #f0f0f0 84%, #f77171 84%, #f77171 100%);
+}
+.grid-cell.b_stripes {
+  background: linear-gradient(27deg, #71abf7 0%, #71abf7 14%, #f0f0f0 14%, #f0f0f0 29%, #71abf7 29%, #71abf7 43%, #f0f0f0 43%, #f0f0f0 57%, #71abf7 57%, #71abf7 71%, #f0f0f0 71%, #f0f0f0 84%, #71abf7 84%, #71abf7 100%);
 }
 
 .calendar {
@@ -271,6 +289,11 @@ h6 {
   transform: scale(0.992);
 }
 
+.button-large img {
+  width: 50%;
+  margin: auto;
+}
+
 .button-small {
   padding: 1em;
   height: 67px;
@@ -319,7 +342,6 @@ a:hover {
 html {
   font-family: "Rubik", sans-serif;
   font-size: 16px;
-  box-sizing: border-box;
 }
 
 .page-wrapper {
@@ -532,6 +554,7 @@ section {
   position: sticky;
   top: 13em;
   font-size: 14px;
+  cursor: pointer;
 }
 .grid-title.sideways {
   max-width: 40px;
@@ -568,21 +591,27 @@ section {
   height: 100%;
 }
 
-.startracker thead, .startracker-wide thead {
+.startracker thead, .startracker-wide thead, .startracker-fast thead {
   position: sticky;
   top: 10.8em;
 }
-.startracker .grouping, .startracker-wide .grouping {
+.startracker .grouping, .startracker-wide .grouping, .startracker-fast .grouping {
   height: 6em;
 }
-.startracker .grid-title, .startracker-wide .grid-title {
+.startracker .grid-title, .startracker-wide .grid-title, .startracker-fast .grid-title {
   position: static;
 }
-.startracker .table-spacer, .startracker-wide .table-spacer {
-  height: 10em;
+.startracker .table-spacer, .startracker-wide .table-spacer, .startracker-fast .table-spacer {
+  height: 11em;
 }
-.startracker .meta-group, .startracker-wide .meta-group {
+.startracker .meta-group, .startracker-wide .meta-group, .startracker-fast .meta-group {
   top: -5.4em;
+}
+.startracker .meta-group p, .startracker-wide .meta-group p, .startracker-fast .meta-group p {
+  white-space: nowrap;
+}
+.startracker .jump-buttons, .startracker-wide .jump-buttons, .startracker-fast .jump-buttons {
+  top: 252px;
 }
 
 .copy-to-cb {
@@ -814,6 +843,10 @@ section {
   display: none;
 }
 
+#night-report .disabled {
+  display: none !important;
+}
+
 .dashboard {
   font-family: "Monaco", monospace, monospace;
   margin: 2em 0;
@@ -823,22 +856,65 @@ section {
   margin-bottom: 1em;
 }
 .dashboard li {
+  box-sizing: border-box;
   border: 1px #555 solid;
   border-radius: 6px;
   padding: 11px 18px;
   margin-bottom: 6px;
+  flex-basis: calc(50% - 0.5em);
+  background-color: #fff;
+}
+.dashboard .dashboard-text {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1em;
+}
+
+.tab-titles {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #ddd;
   width: fit-content;
 }
-.dashboard li:nth-of-type(2n - 1) {
-  background-color: #f0f0f0;
+
+.tab-title {
+  padding: 1em 1em 0.7em 1em;
+  cursor: pointer;
+  padding: 0.5em 1em 0.7em 1em;
+  cursor: pointer;
+  background: #eee;
+  border-radius: 0px 11px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  margin-right: 2px;
+}
+.tab-title:last-of-type {
+  margin-right: 0;
+}
+.tab-title.selected {
+  border-color: #666;
+}
+
+.tab-content:not(.showing) {
+  display: none;
 }
 
 .plots-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2em;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1em;
+  background-color: #eee;
+  padding: 1em;
 }
 
+.plot {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #eee;
+}
 .plot img {
   width: 100%;
   height: auto;

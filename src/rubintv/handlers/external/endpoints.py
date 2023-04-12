@@ -3,9 +3,8 @@
 __all__ = [
     "get_page",
     "get_admin_page",
+    "heartbeats_websocket",
     "reload_historical",
-    "request_heartbeat_for_channel",
-    "request_all_heartbeats",
     "get_all_sky_current",
     "get_all_sky_current_update",
     "get_allsky_historical",
@@ -18,6 +17,7 @@ __all__ = [
     "current",
 ]
 
+import asyncio
 import json
 from datetime import date
 from typing import Any, Dict, List
@@ -33,12 +33,12 @@ from rubintv.handlers.external.endpoints_helpers import (
     find_location,
     get_current_event,
     get_event_page_link,
-    get_heartbeats,
-    get_historical_night_reports_events,
+    get_historical_night_report_events,
     get_image_viewer_link,
     get_metadata_json,
     get_most_recent_day_events,
-    get_night_reports_events,
+    get_night_report_events,
+    get_nights_report_link_type,
     get_per_day_channels,
     make_table_rows_from_columns_by_seq,
     month_names,
@@ -46,17 +46,10 @@ from rubintv.handlers.external.endpoints_helpers import (
 from rubintv.models.historicaldata import HistoricalData
 from rubintv.models.models import (
     Event,
-    Night_Reports_Event,
+    Night_Report_Event,
     get_current_day_obs,
 )
-from rubintv.models.models_assignment import (
-    cameras,
-    locations,
-    production_services,
-)
 from rubintv.timer import Timer
-
-HEARTBEATS_PREFIX = "heartbeats"
 
 
 @routes.get("")
@@ -64,6 +57,7 @@ HEARTBEATS_PREFIX = "heartbeats"
 @template("home.jinja")
 async def get_page(request: web.Request) -> Dict[str, Any]:
     title = build_title(request=request)
+    locations = request.config_dict["rubintv/models"].locations
     return {
         "title": title,
         "locations": locations,
@@ -75,8 +69,35 @@ async def get_page(request: web.Request) -> Dict[str, Any]:
 async def get_location_home(request: web.Request) -> Dict[str, Any]:
     location_name = request.match_info["location"]
     location = find_location(location_name, request)
+    cameras = request.config_dict["rubintv/models"].cameras
     title = build_title(location.name, request=request)
     return {"title": title, "location": location, "cameras": cameras}
+
+
+@routes.get("/{location}/heartbeats_ws")
+async def heartbeats_websocket(request: web.Request) -> web.WebSocketResponse:
+    location_name = request.match_info["location"]
+    location = find_location(location_name, request)
+    heartbeats = request.config_dict["rubintv/heartbeats"][location.slug]
+
+    ws = web.WebSocketResponse()
+    request.config_dict["websockets"].add(ws)
+    await ws.prepare(request)
+    try:
+        await ws.send_json(heartbeats)
+        while True:
+            while (
+                request.config_dict["rubintv/heartbeats"][location.slug]
+                == heartbeats
+            ):
+                await asyncio.sleep(10)
+            heartbeats = request.config_dict["rubintv/heartbeats"][
+                location.slug
+            ]
+            await ws.send_json(heartbeats)
+    finally:
+        request.config_dict["websockets"].discard(ws)
+        return ws
 
 
 @routes.get("/{location}/admin", name="admin")
@@ -84,9 +105,8 @@ async def get_location_home(request: web.Request) -> Dict[str, Any]:
 async def get_admin_page(request: web.Request) -> Dict[str, Any]:
     location_name = request.match_info["location"]
     location = find_location(location_name, request)
-    loc_services = {
-        name: production_services[name] for name in location.services
-    }
+    services = request.config_dict["rubintv/models"].services
+    loc_services = {name: services[name] for name in location.services}
     title = build_title(location.name, "Admin", request=request)
     return {
         "title": title,
@@ -105,54 +125,15 @@ async def reload_historical(request: web.Request) -> web.Response:
     return web.Response(text="OK", content_type="text/plain")
 
 
-@routes.get("/{location}/admin/heartbeat/{service_prefix}")
-async def request_heartbeat_for_channel(request: web.Request) -> web.Response:
-    location_name = request.match_info["location"]
-    location = find_location(location_name, request)
-    loc_services = {
-        name: production_services[name] for name in location.services
-    }
-    all_services = []
-
-    for ps in loc_services.values():
-        if "channels" in ps:
-            for chan in ps["channels"].values():
-                all_services.append(chan.prefix)
-        if "services" in ps:
-            for service in ps["services"]:
-                all_services.append(service)
-    prefix = request.match_info["service_prefix"]
-    if prefix not in all_services:
-        raise web.HTTPNotFound()
-
-    bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
-    heartbeat_prefix = "/".join([HEARTBEATS_PREFIX, prefix])
-    heartbeats = get_heartbeats(bucket, heartbeat_prefix)
-    if heartbeats:
-        hb_json = heartbeats[0]
-    else:
-        hb_json = {}
-    json_res = json.dumps(hb_json)
-    return web.Response(text=json_res, content_type="application/json")
-
-
-@routes.get("/{location}/admin/heartbeats")
-async def request_all_heartbeats(request: web.Request) -> web.Response:
-    location_name = request.match_info["location"]
-    location = find_location(location_name, request)
-    bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
-    heartbeats = get_heartbeats(bucket, HEARTBEATS_PREFIX)
-    json_res = json.dumps(heartbeats)
-    return web.Response(text=json_res, content_type="application/json")
-
-
 @routes.get("/summit/allsky")
 @template("cameras/allsky.jinja")
 async def get_all_sky_current(request: web.Request) -> Dict[str, Any]:
+    locations = request.config_dict["rubintv/models"].locations
     location = locations["summit"]
     title = build_title("Summit", "All Sky", request=request)
     historical = request.config_dict["rubintv/cached_data/summit"]
     bucket = request.config_dict["rubintv/buckets/summit"]
+    cameras = request.config_dict["rubintv/models"].cameras
     camera = cameras["allsky"]
     image_channel = camera.channels["image"]
     current = get_current_event(camera, image_channel, bucket, historical)
@@ -171,6 +152,7 @@ async def get_all_sky_current(request: web.Request) -> Dict[str, Any]:
 async def get_all_sky_current_update(request: web.Request) -> web.Response:
     historical = request.config_dict["rubintv/cached_data/summit"]
     bucket = request.config_dict["rubintv/buckets/summit"]
+    cameras = request.config_dict["rubintv/models"].cameras
     camera = cameras["allsky"]
     channel_name = request.match_info["channel"]
 
@@ -193,12 +175,14 @@ async def get_all_sky_current_update(request: web.Request) -> web.Response:
 @routes.get("/summit/allsky/historical")
 @template("cameras/allsky-historical.jinja")
 async def get_allsky_historical(request: web.Request) -> Dict[str, Any]:
+    locations = request.config_dict["rubintv/models"].locations
     location = locations["summit"]
     title = build_title("Summit", "All Sky", "Historical", request=request)
     historical = request.config_dict["rubintv/cached_data/summit"]
     logger = request["safir/logger"]
 
     with Timer() as timer:
+        cameras = request.config_dict["rubintv/models"].cameras
         camera = cameras["allsky"]
 
         years = historical.get_camera_calendar(camera)
@@ -225,7 +209,9 @@ async def get_allsky_historical(request: web.Request) -> Dict[str, Any]:
 async def get_allsky_historical_movie(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]
     with Timer() as timer:
+        locations = request.config_dict["rubintv/models"].locations
         location = locations["summit"]
+        cameras = request.config_dict["rubintv/models"].cameras
         camera = cameras["allsky"]
         historical = request.config_dict["rubintv/cached_data/summit"]
 
@@ -268,6 +254,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
     cam_name = request.match_info["camera"]
     if cam_name not in location.all_cameras():
         raise web.HTTPNotFound()
+    cameras = request.config_dict["rubintv/models"].cameras
     camera = cameras[cam_name]
     title = build_title(location.name, camera.name, request=request)
 
@@ -286,8 +273,12 @@ async def get_recent_table(request: web.Request) -> web.Response:
                 bucket, camera, historical
             )
 
+            night_reports_link = get_nights_report_link_type(
+                bucket, camera, the_date
+            )
+
             metadata_json = get_metadata_json(bucket, camera, the_date)
-            per_day = get_per_day_channels(bucket, camera, the_date, logger)
+            per_day = get_per_day_channels(bucket, camera, the_date)
 
             template = "cameras/camera.jinja"
             context = {
@@ -297,6 +288,7 @@ async def get_recent_table(request: web.Request) -> web.Response:
                 "date": the_date.strftime("%Y-%m-%d"),
                 "events": events,
                 "metadata": metadata_json,
+                "night_reports_link": night_reports_link,
                 "per_day": per_day,
                 "viewer_link": get_image_viewer_link,
                 "event_page_link": get_event_page_link,
@@ -316,7 +308,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
         cam_name = request.match_info["camera"]
         if cam_name not in location.all_cameras():
             raise web.HTTPNotFound()
-
+        cameras = request.config_dict["rubintv/models"].cameras
         camera = cameras[cam_name]
 
         bucket = request.config_dict[f"rubintv/buckets/{location_name}"]
@@ -328,8 +320,11 @@ async def update_todays_table(request: web.Request) -> web.Response:
             bucket, camera, historical
         )
 
+        night_reports_link = get_nights_report_link_type(
+            bucket, camera, the_date
+        )
         metadata_json = get_metadata_json(bucket, camera, the_date)
-        per_day = get_per_day_channels(bucket, camera, the_date, logger)
+        per_day = get_per_day_channels(bucket, camera, the_date)
 
         context = {
             "location": location,
@@ -337,6 +332,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
             "date": the_date,
             "events": events,
             "metadata": metadata_json,
+            "night_reports_link": night_reports_link,
             "per_day": per_day,
             "viewer_link": get_image_viewer_link,
             "event_page_link": get_event_page_link,
@@ -345,7 +341,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
             "cameras/data-table-header.jinja", request, context
         )
         per_day_html = render_string(
-            "cameras/per-day-channels.jinja", request, context
+            "cameras/per-day-refresh.jinja", request, context
         )
         html_parts = {"table": table_html, "per_day": per_day_html}
         json_res = json.dumps(html_parts)
@@ -354,7 +350,7 @@ async def update_todays_table(request: web.Request) -> web.Response:
 
 
 @routes.get("/{location}/{camera}/night_reports", name="night_reports")
-@template("cameras/night-reports.jinja")
+@template("cameras/night-report.jinja")
 async def get_night_reports(request: web.Request) -> dict[str, Any]:
     location_name = request.match_info["location"]
     location = find_location(location_name, request)
@@ -362,6 +358,7 @@ async def get_night_reports(request: web.Request) -> dict[str, Any]:
     cam_name = request.match_info["camera"]
     if cam_name not in location.all_cameras():
         raise web.HTTPNotFound()
+    cameras = request.config_dict["rubintv/models"].cameras
     camera = cameras[cam_name]
     title = build_title(
         location.name, camera.name, "Night Reports", request=request
@@ -370,8 +367,14 @@ async def get_night_reports(request: web.Request) -> dict[str, Any]:
     bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
     day_obs = get_current_day_obs()
 
-    plots, dashboard_data = get_night_reports_events(bucket, camera, day_obs)
-    dashboard_json = json.dumps(dashboard_data)
+    plots: Dict[str, List[Night_Report_Event]] = {}
+    dashboard_data: Dict[str, str] = {}
+    if night_reports := get_night_report_events(bucket, camera, day_obs):
+        plots, dashboard_data = night_reports
+    plots_dict = {
+        group: [plot.dict() for plot in plots[group]] for group in plots
+    }
+    reports_json = {"text": dashboard_data, "plots": plots_dict}
 
     return {
         "title": title,
@@ -379,51 +382,50 @@ async def get_night_reports(request: web.Request) -> dict[str, Any]:
         "camera": camera,
         "date": day_obs,
         "plots": plots,
-        "dashboard_json": dashboard_json,
+        "reports_json": reports_json,
         "dashboard_data": dashboard_data,
     }
 
 
 @routes.get("/{location}/{camera}/night_reports/update/{date}")
-@template("cameras/night-reports-events.jinja")
-async def update_night_reports(request: web.Request) -> dict[str, Any]:
+async def update_night_reports(request: web.Request) -> web.Response:
     location_name = request.match_info["location"]
     location = find_location(location_name, request)
 
     cam_name = request.match_info["camera"]
     if cam_name not in location.all_cameras():
         raise web.HTTPNotFound()
+    cameras = request.config_dict["rubintv/models"].cameras
     camera = cameras[cam_name]
 
     bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
 
     date_str = request.match_info["date"]
     the_date = date_from_url_part(date_str)
-    day_obs = get_current_day_obs()
-    message = ""
-    if the_date != day_obs:
-        the_date = day_obs
-        message = "It's a new day"
 
-    plots, dashboard_data = get_night_reports_events(bucket, camera, day_obs)
-    dashboard_json = json.dumps(dashboard_data)
+    plots: Dict[str, List[Night_Report_Event]] = {}
+    dashboard_data: Dict[str, str] = {}
+    if night_reports := get_night_report_events(bucket, camera, the_date):
+        plots, dashboard_data = night_reports
 
-    return {
-        "location": location,
-        "camera": camera,
-        "date": the_date,
-        "plots": plots,
-        "message": message,
-        "dashboard_json": dashboard_json,
-        "dashboard_data": dashboard_data,
+    plots_dict = {
+        group: [plot.dict() for plot in plots[group]] for group in plots
     }
+    text_html = render_string(
+        "cameras/night-report-text.jinja",
+        request,
+        {"dashboard_data": dashboard_data},
+    )
+    reports_json = json.dumps({"text": text_html, "plots": plots_dict})
+
+    return web.Response(text=reports_json, content_type="application/json")
 
 
 @routes.get(
     "/{location}/{camera}/historical_night_reports/{date_str}",
     name="night_reports_hist",
 )
-@template("cameras/night-reports-historical.jinja")
+@template("cameras/night-report-historical.jinja")
 async def get_historical_night_reports(request: web.Request) -> Dict[str, Any]:
     location_name = request.match_info["location"]
     location = find_location(location_name, request)
@@ -431,6 +433,7 @@ async def get_historical_night_reports(request: web.Request) -> Dict[str, Any]:
     cam_name = request.match_info["camera"]
     if cam_name not in location.all_cameras():
         raise web.HTTPNotFound()
+    cameras = request.config_dict["rubintv/models"].cameras
     camera = cameras[cam_name]
 
     historical: HistoricalData = request.config_dict[
@@ -448,17 +451,19 @@ async def get_historical_night_reports(request: web.Request) -> Dict[str, Any]:
         request=request,
     )
 
-    plots: List[Night_Reports_Event]
-    dashboard_data: Dict[str, Any]
-    plots, dashboard_data = ([], {})
+    plots: Dict[str, List[Night_Report_Event]] = {}
+    dashboard_data: Dict[str, str] = {}
     night_reports = historical.get_night_reports_for(camera, the_date)
     if night_reports:
         bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
-        plots, dashboard_data = get_historical_night_reports_events(
+        plots, dashboard_data = get_historical_night_report_events(
             bucket, night_reports
         )
 
-    dashboard_json = json.dumps(dashboard_data)
+    plots_dict = {
+        group: [plot.dict() for plot in plots[group]] for group in plots
+    }
+    reports_json = json.dumps({"text": dashboard_data, "plots": plots_dict})
 
     return {
         "title": title,
@@ -466,8 +471,8 @@ async def get_historical_night_reports(request: web.Request) -> Dict[str, Any]:
         "camera": camera,
         "date": the_date,
         "plots": plots,
-        "dashboard_json": dashboard_json,
         "dashboard_data": dashboard_data,
+        "reports_json": reports_json,
     }
 
 
@@ -480,6 +485,7 @@ async def get_historical(request: web.Request) -> Dict[str, Any]:
         location = find_location(location_name, request)
 
         bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
+        cameras = request.config_dict["rubintv/models"].cameras
         camera = cameras[request.match_info["camera"]]
         title = build_title(
             location.name, camera.name, "Historical", request=request
@@ -500,8 +506,10 @@ async def get_historical(request: web.Request) -> Dict[str, Any]:
             mrd_dict, metadata_json
         )
 
-        per_day = get_per_day_channels(bucket, camera, day_obs, logger)
-        night_reports = historical.get_night_reports_for(camera, day_obs)
+        per_day = get_per_day_channels(bucket, camera, day_obs)
+        night_reports_link = ""
+        if historical.get_night_reports_for(camera, day_obs):
+            night_reports_link = "historical"
 
     logger.info("get_historical", duration=timer.seconds)
     return {
@@ -515,7 +523,7 @@ async def get_historical(request: web.Request) -> Dict[str, Any]:
         "events": mrd_events,
         "metadata": metadata_json,
         "per_day": per_day,
-        "night_reports": night_reports,
+        "night_reports_link": night_reports_link,
         "viewer_link": get_image_viewer_link,
         "event_page_link": get_event_page_link,
         "get_date": date,
@@ -525,7 +533,6 @@ async def get_historical(request: web.Request) -> Dict[str, Any]:
 @routes.get("/{location}/{camera}/historical/{date_str}", name="hist_single")
 @template("cameras/historical.jinja")
 async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
-    logger = request["safir/logger"]
     location_name = request.match_info["location"]
     location = find_location(location_name, request)
 
@@ -534,6 +541,7 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
     ]
     bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
 
+    cameras = request.config_dict["rubintv/models"].cameras
     camera = cameras[request.match_info["camera"]]
     date_str = request.match_info["date_str"]
 
@@ -549,11 +557,13 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
 
     metadata_json = get_metadata_json(bucket, camera, the_date)
     day_events = make_table_rows_from_columns_by_seq(day_dict, metadata_json)
-    night_reports = historical.get_night_reports_for(camera, the_date)
+    night_reports_link = ""
+    if historical.get_night_reports_for(camera, the_date):
+        night_reports_link = "historical"
 
     years = historical.get_camera_calendar(camera)
 
-    per_day = get_per_day_channels(bucket, camera, the_date, logger)
+    per_day = get_per_day_channels(bucket, camera, the_date)
     return {
         "title": title,
         "location": location,
@@ -564,22 +574,22 @@ async def get_historical_day_data(request: web.Request) -> Dict[str, Any]:
         "events": day_events,
         "metadata": metadata_json,
         "per_day": per_day,
-        "night_reports": night_reports,
+        "night_reports_link": night_reports_link,
         "viewer_link": get_image_viewer_link,
         "event_page_link": get_event_page_link,
         "get_date": date,
     }
 
 
-@routes.get("/{location}/{camera}/{channel}events/{date}/{seq}", name="single")
+@routes.get("/{location}/{camera}/{channel}/event/{date}/{seq}", name="single")
 @template("single_event.jinja")
 async def events(request: web.Request) -> Dict[str, Any]:
     logger = request["safir/logger"]
     with Timer() as timer:
         location_name = request.match_info["location"]
         location = find_location(location_name, request)
-
         bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
+        cameras = request.config_dict["rubintv/models"].cameras
         camera = cameras[request.match_info["camera"]]
         channel_name = request.match_info["channel"]
         the_date = request.match_info["date"]
@@ -615,6 +625,7 @@ async def current(request: web.Request) -> Dict[str, Any]:
     with Timer() as timer:
         location_name = request.match_info["location"]
         location = find_location(location_name, request)
+        cameras = request.config_dict["rubintv/models"].cameras
         camera = cameras[request.match_info["camera"]]
         bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
         historical = request.config_dict[

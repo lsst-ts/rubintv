@@ -21,7 +21,7 @@ Locations:
     logo: Summit.jpg
     camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
-      Other Cameras: [ allsky, startracker, startracker-wide ]
+      Other Cameras: [ allsky, startracker, startracker-wide, startracker-fast ]
     services: [ auxtel, startracker, allsky, comcam, misc ]
 
 
@@ -29,9 +29,9 @@ Cameras:
   auxtel:
     name: AuxTel
     online: True
-    has_image_viewer: True
+    night_report_prefix: auxtel_night_reports
+    js_entry: auxtel
     channels:
-      # if no explicit 'label' use 'name'
       monitor:
         name: Monitor
         prefix: auxtel_monitor
@@ -48,16 +48,15 @@ Cameras:
       mount:
         name: Mount
         prefix: auxtel_mount_torques
-
     per_day_channels:
       movie:
         name: Tonight's Movie
         prefix: auxtel_movies
         label: "Movie for "
-
-    night_reports_prefix: auxtel_night_reports
-
-
+    image_viewer_link: "http://ccs.lsst.org/FITSInfo/view.html?\
+    image=AT_O_{day_obs}_{seq_num:06}\
+    &raft=R00&color=grey&bias=Simple+Overscan+Correction\
+    &scale=Per-Segment&source=RubinTV"
 
   startracker:
     name: StarTracker
@@ -69,7 +68,8 @@ Cameras:
       analysis:
         name: Analysis
         prefix: startracker_analysis
-
+    night_report_prefix: startracker_night_reports
+    js_entry: startracker
 
   startracker-wide:
     name: StarTracker Wide
@@ -84,7 +84,22 @@ Cameras:
         name: Wide Analysis
         prefix: startracker_wide_analysis
         label: ST Wide Analysis
+    night_report_prefix: startracker_night_reports
+    js_entry: startracker
 
+  startracker-fast:
+    name: StarTracker Fast
+    online: True
+    metadata_slug: startracker
+    channels:
+      startracker-fast:
+        name: StarTrackerFast
+        prefix: startracker_fast_raw
+      startracker-fast-analysis:
+        name: Analysis
+        prefix: startracker_fast_analysis
+    night_report_prefix: startracker_night_reports
+    js_entry: startracker
 
   allsky:
     name: All Sky
@@ -96,7 +111,7 @@ Cameras:
       image:
         name: Current Image
         prefix: all_sky_current
-
+    js_entry: allsky
 
   comcam:
     name: ComCam
@@ -106,7 +121,6 @@ Cameras:
         name: Central CCD Monitor
         prefix: comcam_monitor
         label: Monitor
-
 
   lsstcam:
     name: LSSTCam
@@ -122,7 +136,9 @@ Cameras:
       noise_map:
         name: Noise Map
         prefix: ir2_noise_map
+    js_entry: auxtel
     logo: slac_lsstcam.png
+
 
   ts8:
     name: TS8
@@ -134,7 +150,10 @@ Cameras:
       noise_map:
         name: Noise Map
         prefix: ts8_noise_map
+    js_entry: auxtel
     logo: ts8.png
+    image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
+    FITSInfo/view.html?image=TS_C_{day_obs}_{seq_num:06}"
 
 
 Services:
@@ -164,3 +183,104 @@ Services:
     display_name: Misc Services
     services:
       backgroundService: Background
+
+
+MetadataHeadings:
+  slac_lsstcam:
+    Exposure time:
+    Image type:
+    Filter:
+    Seq. No.:
+
+  ts8:
+    Exposure time:
+    Image type:
+    Filter:
+    Seq. No.:
+
+  auxtel:
+    Has annotations?:
+      Test tooltip here
+    Mount motion image degradation:
+    Exposure time:
+    Image type:
+    Target:
+      And another one here
+    Filter:
+    Disperser:
+    Airmass:
+    TAI:
+    DIMM Seeing:
+
+  startracker:
+    Header values:
+      Exposure Time:
+        A tooltip here
+      MJD:
+      UTC:
+      Ra:
+      Dec:
+      Alt:
+      Az:
+    Astrometric fit:
+      nSources:
+      nSources filtered:
+      Calculated Ra:
+      Calculated Dec:
+      Delta Ra Arcsec:
+      Delta Dec Arcsec:
+      Calculated Alt:
+      Calculated Az:
+      Delta Alt Arcsec:
+      Delta Az Arcsec:
+      Delta Rot Arcsec:
+      RMS scatter arcsec:
+      RMS scatter pixels:
+
+  startracker-wide:
+    Star Tracker Wide:
+      Exposure Time wide:
+      MJD:
+      UTC:
+      Ra wide:
+      Dec wide:
+      Alt wide:
+      Az wide:
+    Star Tracker Solve Wide:
+      nSources wide:
+      nSources filtered wide:
+      Calculated Ra wide:
+      Calculated Dec wide:
+      Delta Ra Arcsec wide:
+      Delta Dec Arcsec wide:
+      Calculated Alt wide:
+      Calculated Az wide:
+      Delta Alt Arcsec wide:
+      Delta Az Arcsec wide:
+      Delta Rot Arcsec wide:
+      RMS scatter arcsec wide:
+      RMS scatter pixels wide:
+
+  startracker-fast:
+    Star Tracker Fast:
+      Exposure Time fast:
+      MJD:
+      UTC:
+      Ra fast:
+      Dec fast:
+      Alt fast:
+      Az fast:
+    Star Tracker Solve Fast:
+      nSources fast:
+      nSources filtered fast:
+      Calculated Ra fast:
+      Calculated Dec fast:
+      Delta Ra Arcsec fast:
+      Delta Dec Arcsec fast:
+      Calculated Alt fast:
+      Calculated Az fast:
+      Delta Alt Arcsec fast:
+      Delta Az Arcsec fast:
+      Delta Rot Arcsec fast:
+      RMS scatter arcsec fast:
+      RMS scatter pixels fast:

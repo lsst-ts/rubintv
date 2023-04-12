@@ -1,6 +1,7 @@
 import json
+import re
 from datetime import date
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from aiohttp import web
 from google.api_core.exceptions import NotFound
@@ -12,9 +13,8 @@ from rubintv.models.models import (
     Channel,
     Event,
     Location,
-    Night_Reports_Event,
+    Night_Report_Event,
 )
-from rubintv.models.models_assignment import locations
 from rubintv.models.models_helpers import get_prefix_from_date
 
 __all__ = [
@@ -26,7 +26,6 @@ __all__ = [
     "get_channel_resource_url",
     "get_metadata_json",
     "month_names",
-    "build_dict_with_remaining_channels",
     "make_table_rows_from_columns_by_seq",
     "get_most_recent_day_events",
     "get_sorted_events_from_blobs",
@@ -34,22 +33,82 @@ __all__ = [
     "get_current_event",
     "get_heartbeats",
     "build_title",
-    "get_night_reports_events",
-    "get_historical_night_reports_events",
+    "get_nights_report_link_type",
+    "get_night_report_events",
+    "get_historical_night_report_events",
 ]
 
 
+def date_from_hyphenated_string(date_str: str) -> date:
+    """Return a date from a date string.
+
+    Parameters
+    ----------
+    date_str : str
+        A string in the form ``"YYYY-MM-DD"``.
+
+    Returns
+    -------
+    date
+        A date object.
+    """
+    year, month, day = [int(s) for s in date_str.split("-")]
+    the_date = date(year, month, day)
+    return the_date
+
+
 def date_from_url_part(url_part: str) -> date:
+    """Return a date from a given string url segment.
+
+    The url part must be a valid date in the form ``"YYYY-MM-DD"`` or an
+    HTTPNotFound error will be thrown.
+
+    Parameters
+    ----------
+    url_part : `str`
+        A valid date in the form ``"YYYY-MM-DD"``.
+
+    Returns
+    -------
+    the_date : `date`
+        A date object.
+
+    Raises
+    ------
+    web.HTTPNotFound
+        The error 404 as the app response.
+    """
     try:
-        year, month, day = [int(s) for s in url_part.split("-")]
-        the_date = date(year, month, day)
+        the_date = date_from_hyphenated_string(url_part)
     except ValueError:
         raise web.HTTPNotFound()
     return the_date
 
 
 def find_location(location_name: str, request: web.Request) -> Location:
+    """Either returns a `Location` matching the given name or throws a 404 Not
+    Found.
+
+
+    Parameters
+    ----------
+    location_name : `str`
+        The slug of the `Location`.
+    request : `web.Request`
+        The app's web request for looking up the location.
+
+    Returns
+    -------
+    Location
+        The location information object relating the the given name.
+
+    Raises
+    ------
+    web.HTTPNotFound
+        404 Error to be caught by the app.
+    """
     location_name = request.match_info["location"]
+    locations = request.config_dict["rubintv/models"].locations
     try:
         location: Location = locations[location_name]
     except KeyError:
@@ -58,7 +117,7 @@ def find_location(location_name: str, request: web.Request) -> Location:
 
 
 def get_per_day_channels(
-    bucket: Bucket, camera: Camera, the_date: date, logger: Any
+    bucket: Bucket, camera: Camera, the_date: date
 ) -> Dict[str, str]:
     """Builds a dict of per-day channels to display
 
@@ -77,9 +136,6 @@ def get_per_day_channels(
     the_date : `date`
         The datetime.date object for the given day
 
-    logger : `Any`
-        The app-wide logging object
-
     Returns
     -------
     per_day_channels : `dict[str, str]`
@@ -89,15 +145,35 @@ def get_per_day_channels(
     per_day_channels = {}
     for channel in camera.per_day_channels.keys():
         if resource_url := get_channel_resource_url(
-            bucket, camera.per_day_channels[channel], the_date, logger
+            bucket, camera.per_day_channels[channel], the_date
         ):
             per_day_channels[channel] = resource_url
     return per_day_channels
 
 
 def get_channel_resource_url(
-    bucket: Bucket, channel: Channel, a_date: date, logger: Any
+    bucket: Bucket, channel: Channel, a_date: date
 ) -> str:
+    """Returns the url of a file in the bucket given a channel and date.
+
+    As this returns only the url for the first from a potential list of blobs,
+    it's only intended to be used when one blob is expected for the given
+    channel and date, like a day's movie.
+
+    Parameters
+    ----------
+    bucket : `Bucket`
+        The given GCS bucket.
+    channel : `Channel`
+        The given channel.
+    a_date : `date`
+        The given date.
+
+    Returns
+    -------
+    url : `str`
+        The public url of the first blob for the given channel and date.
+    """
     date_str = a_date.strftime("%Y%m%d")
     prefix = f"{channel.prefix}/dayObs_{date_str}"
     url = ""
@@ -107,7 +183,23 @@ def get_channel_resource_url(
 
 
 def get_metadata_json(bucket: Bucket, camera: Camera, a_date: date) -> Dict:
-    date_str = date_without_hyphens(a_date)
+    """Returns the metadata json for a given camera and date as a `Dict`.
+
+    Parameters
+    ----------
+    bucket : `Bucket`
+        The given GCS bucket.
+    camera : `Camera`
+        The given camera.
+    a_date : `date`
+        The given date.
+
+    Returns
+    -------
+    json_dict : `Dict`
+        A dict version of the json metadata.
+    """
+    date_str = date_str_without_hyphens(a_date)
     blob_name = f"{camera.metadata_slug}_metadata/dayObs_{date_str}.json"
     metadata_json = "{}"
     if blob := bucket.get_blob(blob_name):
@@ -116,33 +208,44 @@ def get_metadata_json(bucket: Bucket, camera: Camera, a_date: date) -> Dict:
 
 
 def month_names() -> List[str]:
+    """Returns a list of month names as words.
+
+    Returns
+    -------
+    List[str]
+        A list of month names.
+    """
     return [date(2000, m, 1).strftime("%B") for m in list(range(1, 13))]
 
 
-def build_dict_with_remaining_channels(
-    bucket: Bucket,
-    camera: Camera,
-    events_dict: Dict[str, list[Event]],
-    the_date: date,
-) -> Dict[str, list[Event]]:
-    # creates a dict where key => list of events e.g.:
-    # {"monitor": [Event 1, Event 2 ...] , "im": [Event 2 ...] ... }
-    primary_channel = list(camera.channels)[0]
-    for chan in camera.channels:
-        if chan == primary_channel:
-            continue
-        prefix = camera.channels[chan].prefix
-        new_prefix = get_prefix_from_date(prefix, the_date)
-        blobs = list(bucket.list_blobs(prefix=new_prefix))
-        events_dict[chan] = get_sorted_events_from_blobs(blobs)
-    return events_dict
-
-
 def make_table_rows_from_columns_by_seq(
-    events_dict: Dict, metadata: Dict
-) -> Dict[int, dict[str, Event]]:
-    d: Dict[int, dict[str, Event]] = {}
-    # d == {seq: {chan1: event, chan2: event, ... }}
+    events_dict: Dict[str, List[Event]], metadata: Dict[str, Dict[str, str]]
+) -> Dict[int, Dict[str, Event]]:
+    d: Dict[int, Dict[str, Event]] = {}
+    """Returns a dict of dicts of `Events`, keyed outwardly by sequence number
+    and inwardly by channel name for displaying as a table.
+
+    If a sequence number appears in the given metadata that is not otherwise
+    in the given `events_dict` it is appended as the key for an empty dict.
+    This is so that if metadata exists, a row can be drawn on the table without
+    there needing to be anything in the channels.
+
+    Parameters
+    ----------
+    events_dict : `Dict` [`str`, `List` [`Event`]]
+        Dictionary of `Lists` of `Event`s keyed by `Channel` name.
+
+    metadata : `Dict` [`str`, `Dict` [`str`, `str`]]
+        Dictionary of metadata outer keyed by sequence number and the inner by
+        table column name.
+
+    Returns
+    -------
+    rows_dict : `Dict` [`int`, `Dict` [`str`, `Event`]]
+        A dict that represents a table of `Event`s, keyed by ``seq`` and with
+        an inner dict with an entry for each `Channel` for that seq num.
+
+    """
     for chan in events_dict:
         chan_events = events_dict[chan]
         for e in chan_events:
@@ -155,14 +258,38 @@ def make_table_rows_from_columns_by_seq(
         seq = int(seq_str)
         if seq not in d:
             d[seq] = {}
+    # d == {seq: {chan1: event, chan2: event, ... }}
     # make sure the table is in order
-    d = {k: v for k, v in sorted(d.items(), reverse=True)}
-    return d
+    rows_dict = {k: v for k, v in sorted(d.items(), reverse=True)}
+    return rows_dict
 
 
 def get_most_recent_day_events(
     bucket: Bucket, camera: Camera, historical: HistoricalData
 ) -> tuple[date, dict[int, dict[str, Event]]]:
+    """Returns a tuple of the date and an dict of `Events` for which there are
+    entries in the bucket.
+
+    The method looks for events and metadata in the bucket for the current day obs.
+    If nothing is found, the most recent day is retrieved from the historical store.
+    The resulting events are packed into a dict that are convenient for displaying
+    on a table.
+
+    Parameters
+    ----------
+    bucket : `Bucket`
+        The given GCS bucket.
+    camera : `Camera`
+        The given camera.
+    historical : `HistoricalData`
+        The in-memory store of all the events in the bucket since the last time
+        the day rolled over or the store was reloaded.
+
+    Returns
+    -------
+    the_date_and_events : `tuple` [`date`, `Dict` [`int`, `Dict` [`str`, `Event`]]]
+        A tuple of both the date and the events from that date.
+    """
     obs_date = get_current_day_obs()
     metadata = get_metadata_json(bucket, camera, obs_date)
     events = {}
@@ -179,11 +306,26 @@ def get_most_recent_day_events(
             events = historical.get_events_for_date(camera, the_date)
             metadata = get_metadata_json(bucket, camera, the_date)
 
-    todays_events = make_table_rows_from_columns_by_seq(events, metadata)
-    return (the_date, todays_events)
+    the_date_events = make_table_rows_from_columns_by_seq(events, metadata)
+    return (the_date, the_date_events)
 
 
 def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
+    """Returns a list of events cast and sorted from a given list of blobs.
+
+    Bobs that have filename extensions not included in ``[".png", ".jpg",
+    ".mp4"]`` are filtered out.
+
+    Parameters
+    ----------
+    blobs : `List`
+        The given list of blobs.
+
+    Returns
+    -------
+    s_events : `List` [`Event`]
+        A list of `Event`s sorted by date and then sequence number.
+    """
     events = [
         Event(el.public_url)
         for el in blobs
@@ -191,8 +333,8 @@ def get_sorted_events_from_blobs(blobs: List) -> List[Event]:
         or el.public_url.endswith(".jpg")
         or el.public_url.endswith(".mp4")
     ]
-    sevents = sorted(events, key=lambda x: (x.obs_date, x.seq), reverse=True)
-    return sevents
+    s_events = sorted(events, key=lambda x: (x.obs_date, x.seq), reverse=True)
+    return s_events
 
 
 def get_events_for_prefix_and_date(
@@ -200,6 +342,23 @@ def get_events_for_prefix_and_date(
     the_date: date,
     bucket: Bucket,
 ) -> List[Event]:
+    """Returns a sorted list of blobs from the GCS bucket for a given prefix and
+    date.
+
+    Parameters
+    ----------
+    prefix : `str`
+        The lookup prefix for the GCS bucket.
+    the_date : `date`
+        The given date used in the lookup.
+    bucket : `Bucket`
+        The GCS bucket in which to look.
+
+    Returns
+    -------
+    events : `List` [`Event`]
+        A sorted list of events.
+    """
     new_prefix = get_prefix_from_date(prefix, the_date)
     events = []
     blobs = list(bucket.list_blobs(prefix=new_prefix))
@@ -214,6 +373,27 @@ def get_current_event(
     bucket: Bucket,
     historical: HistoricalData,
 ) -> Event:
+    """Returns the most recent event for a given camera and channel.
+
+    If nothing is found in the bucket for the current day obs then the most
+    recent event is retrieved from the in-memory store of events.
+
+    Parameters
+    ----------
+    camera : `Camera`
+        The given camera.
+    channel : `Channel`
+        The given channel.
+    bucket : `Bucket`
+        The given GCS bucket.
+    historical : `HistoricalData`
+        The store of historical data.
+
+    Returns
+    -------
+    latest : `Event`
+        A single event.
+    """
     day_obs = get_current_day_obs()
     events = get_events_for_prefix_and_date(channel.prefix, day_obs, bucket)
     if events:
@@ -224,6 +404,23 @@ def get_current_event(
 
 
 def get_heartbeats(bucket: Bucket, prefix: str) -> List[Dict]:
+    """Returns the data from heartbeat files in the bucket located by prefix.
+
+    A heartbeat json file contains status data about a particular `Channel` or
+    service.
+
+    Parameters
+    ----------
+    bucket : `Bucket`
+        The given GCS bucket.
+    prefix : `str`
+        The prefix used to lookup the metadata file(s).
+
+    Returns
+    -------
+    heartbeats : `List` [`Dict`]
+        A list of heartbeat dicts.
+    """
     hb_blobs = list(bucket.list_blobs(prefix=prefix))
     heartbeats = []
     for hb_blob in hb_blobs:
@@ -243,6 +440,21 @@ def get_heartbeats(bucket: Bucket, prefix: str) -> List[Dict]:
 
 
 def build_title(*title_parts: str, request: web.Request) -> str:
+    """Returns a string for using as page title.
+
+    Parameters
+    ----------
+    *title_parts: `str`
+        A variable number of strings to be added to the root title.
+    request : `web.Request`
+        The request object that allows access to the app's ``"site_title"``
+        global.
+
+    Returns
+    -------
+    title : `str`
+        The page title.
+    """
     title = request.config_dict["rubintv/site_title"]
     to_append = " - ".join(title_parts)
     if to_append:
@@ -250,17 +462,14 @@ def build_title(*title_parts: str, request: web.Request) -> str:
     return title
 
 
-def date_without_hyphens(a_date: date) -> str:
+def date_str_without_hyphens(a_date: date) -> str:
     return str(a_date).replace("-", "")
 
 
-def get_image_viewer_link(day_obs: date, seq_num: int) -> str:
-    date_str = date_without_hyphens(day_obs)
-    url = (
-        "http://ccs.lsst.org/FITSInfo/view.html?"
-        f"image=AT_O_{date_str}_{seq_num:06}"
-        "&raft=R00&color=grey&bias=Simple+Overscan+Correction"
-        "&scale=Per-Segment&source=RubinTV"
+def get_image_viewer_link(camera: Camera, day_obs: date, seq_num: int) -> str:
+    date_int_str = date_str_without_hyphens(day_obs)
+    url = camera.image_viewer_link.format(
+        day_obs=date_int_str, seq_num=seq_num
     )
     return url
 
@@ -272,62 +481,104 @@ def get_event_page_link(
     event: Event,
 ) -> str:
     return (
-        f"{location.slug}/{camera.slug}/{channel.endpoint}/"
+        f"{location.slug}/{camera.slug}/{channel.slug}/event/"
         f"{event.clean_date()}/{event.seq}"
     )
 
 
-def get_historical_night_reports_events(
-    bucket: Bucket, reports_list: List[Night_Reports_Event]
-) -> Tuple[List[Night_Reports_Event], Dict]:
-    plots = []
+def get_historical_night_report_events(
+    bucket: Bucket, reports_list: List[Night_Report_Event]
+) -> Tuple[Dict[str, List[Night_Report_Event]], Dict[str, str]]:
+    plots: Dict[str, List[Night_Report_Event]] = {}
     json_data = {}
     for r in reports_list:
         if r.file_ext == "json":
             blob = bucket.blob(r.blobname)
             json_raw_data = json.loads(blob.download_as_bytes())
-            json_data = process_raw_dashboard_data(json_raw_data)
+            json_data = process_night_report_text_data(json_raw_data)
         else:
-            plots.append(r)
+            if r.group in plots:
+                plots[r.group].append(r)
+            else:
+                plots[r.group] = [r]
     return plots, json_data
 
 
-def get_night_reports_events(
+def get_nights_report_link_type(
+    bucket: Bucket, camera: Camera, the_date: date
+) -> str:
+    night_reports_link = ""
+    if camera.night_report_prefix:
+        if the_date == get_current_day_obs():
+            night_reports_link = "current"
+        elif get_night_report_events(bucket, camera, the_date):
+            night_reports_link = "historic"
+    return night_reports_link
+
+
+def get_night_report_events(
     bucket: Bucket, camera: Camera, day_obs: date
-) -> Tuple[List[Night_Reports_Event], Dict]:
-    prefix = camera.night_reports_prefix
+) -> Optional[Tuple[Dict[str, List[Night_Report_Event]], Dict[str, str]]]:
+    prefix = camera.night_report_prefix
     blobs = get_night_reports_blobs(bucket, prefix, day_obs)
-    plots = []
-    json_data = {}
+    if not blobs:
+        return None
+    all_plots = []
+    text_data = {}
+
     for blob in blobs:
         if blob.public_url.endswith(".json"):
             json_raw_data = json.loads(blob.download_as_bytes())
-            json_data = process_raw_dashboard_data(json_raw_data)
+            text_data = process_night_report_text_data(json_raw_data)
         else:
-            plots.append(
-                Night_Reports_Event(
-                    blob.public_url, prefix, int(blob.time_created.timestamp())
-                )
+            all_plots.append(
+                Night_Report_Event(blob.public_url, prefix, blob.md5_hash)
             )
-    plots.sort(key=lambda ev: ev.simplename)
-    return (plots, json_data)
+
+    all_plots.sort(key=lambda ev: ev.name)
+    plots: Dict[str, List[Night_Report_Event]] = {}
+    for plot in all_plots:
+        if plot.group in plots:
+            plots[plot.group].append(plot)
+        else:
+            plots[plot.group] = [plot]
+
+    return (plots, text_data)
 
 
 def get_night_reports_blobs(
     bucket: Bucket, prefix: str, day_obs: date
 ) -> List[Blob]:
-    date_str = date_without_hyphens(day_obs)
+    date_str = date_str_without_hyphens(day_obs)
     prefix_with_date = "/".join([prefix, date_str])
     blobs = list(bucket.list_blobs(prefix=prefix_with_date))
     return blobs
 
 
-def process_raw_dashboard_data(
+def spaces_to_nbsps(match: re.Match) -> str:
+    length = match.end() - match.start()
+    result = "&nbsp;" * length
+    return result
+
+
+def crs_to_brs(match: re.Match) -> str:
+    length = match.end() - match.start()
+    result = "<br>" * length
+    return result
+
+
+def process_night_report_text_data(
     raw_data: Dict,
 ) -> Dict[str, Any]:
     text_part = [
         v for k, v in sorted(raw_data.items()) if k.startswith("text_")
     ]
+    # match for two or more spaces
+    ptrn = re.compile("[ ]{2,}")
+    nb_text = [ptrn.sub(spaces_to_nbsps, line) for line in text_part]
+    nb_br_text = [re.sub("\n\n", crs_to_brs, line) for line in nb_text]
+
     quantity = {k: v for k, v in raw_data.items() if v not in text_part}
-    text = [line.split("\n") for line in text_part]
+    text = [line.split("\n") for line in nb_br_text]
+
     return {"text": text, "quantities": quantity}

@@ -1,35 +1,30 @@
 import {
-  createTableCell, indicatorForAttr, _getById, _elWithAttrs, _elWithClass, makeTableSortable, _escapeName
+  _getById, _elWithAttrs, _elWithClass, _escapeName, drawTableColumnsAndRows
 } from './utils.js'
 
-export function addToTable (metaData, selection, sortable = false) {
-  // remove existing table
-  [...document.querySelectorAll('.meta')].forEach(gridElement => {
+/**
+ * @param {string[]} selection
+ * @param {{ [s: string]: any; } | ArrayLike<any>} metaData
+ */
+export function addToTable (metaData, selection, headerDescs) {
+  // remove existing metadata part of table
+  Array.from(document.querySelectorAll('.meta')).forEach(gridElement => {
     gridElement.remove()
   })
 
   // add metadata headers to the table
-  selection.forEach(attr => {
+  selection.forEach((/** @type {string} */ attr) => {
     const escapedName = _escapeName(attr)
     const lastHeaderCall = Array.from(document.querySelectorAll('.grid-title')).pop()
     const el = _elWithClass('th', `grid-title sideways meta ${escapedName}`)
     el.textContent = attr
+    if (headerDescs[attr]) {
+      el.title = headerDescs[attr]
+    }
     lastHeaderCall.after(el)
   })
 
-  // add table entries by row...
-  Object.entries(metaData).forEach(([seq, attributes]) => {
-    const seqRow = _getById(`seqno-${seq}`)
-    // ...and column
-    selection.forEach(attr => {
-      const seqRowLastCell = seqRow.querySelectorAll('td:last-child')[0]
-      const escapedName = _escapeName(attr)
-      // check for indicator attribute (i.e. starts with '_')
-      const flag = indicatorForAttr(attributes, attr)
-      const el = createTableCell(attributes, attr, escapedName, flag)
-      seqRowLastCell.after(el)
-    })
-  })
+  drawTableColumnsAndRows(metaData, selection)
 
   // add empty column to table header for 'copy to clipboard'
   if (!_getById('ctbEmpty')) {
@@ -63,8 +58,4 @@ export function addToTable (metaData, selection, sortable = false) {
       document.body.append(responseMsg)
     })
   })
-
-  if (sortable) {
-    makeTableSortable()
-  }
 }

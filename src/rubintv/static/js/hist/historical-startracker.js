@@ -1,10 +1,12 @@
-import { parseJsonFromDOM } from '../modules/table-control.js'
-import { addToTable } from '../modules/table-startracker.js'
-import { starTrackerHeaders } from '../models.js'
+import { parseJsonFromDOM } from '../modules/utils.js'
+import { TableControls } from '../modules/table-control-startracker.js'
+import { drawTable } from '../modules/table-startracker.js'
 import { applyYearControls } from '../modules/calendar-controls.js'
 
-window.addEventListener('load', () => {
+window.addEventListener('DOMContentLoaded', () => {
+  const headers = parseJsonFromDOM('#metadata-headers')
   const meta = parseJsonFromDOM('#table-metadata')
-  addToTable(meta, starTrackerHeaders, true)
+  const tableControls = new TableControls(headers, meta, '.channel-grid-heading', drawTable)
+  drawTable(meta, tableControls.groupedSelected)
   applyYearControls()
 })
