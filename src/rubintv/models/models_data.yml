@@ -188,15 +188,15 @@ Services:
 MetadataHeadings:
   slac_lsstcam:
     Exposure time:
+    Dark time:
     Image type:
-    Filter:
-    Seq. No.:
+    Test type:
 
   ts8:
     Exposure time:
+    Dark time:
     Image type:
-    Filter:
-    Seq. No.:
+    Test type:
 
   auxtel:
     Has annotations?:
