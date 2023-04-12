@@ -36,16 +36,6 @@ jobs:
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.0
 
-      - uses: actions/setup-node@v3
-        with:
-          cache: 'npm'
-          node-version-file: '.nvmrc'
-
-      - name: npm install and build
-        run: |
-          npm install
-          npm run build
-
       - name: Install tox
         run: pip install tox
 
@@ -70,6 +60,16 @@ jobs:
         run: tox -e py,coverage-report,typing
         env:
           GOOGLE_APPLICATION_CREDENTIALS: '/tmp/google_creds.json'
+
+      - uses: actions/setup-node@v3
+        with:
+          cache: 'npm'
+          node-version-file: '.nvmrc'
+
+      - name: npm install and build
+        run: |
+          npm install
+          npm run build
 
   build:
     runs-on: ubuntu-latest
