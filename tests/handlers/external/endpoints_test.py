@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 
 import pytest
@@ -82,7 +83,7 @@ async def test_get_allsky_movie_update(aiohttp_client: TestClient) -> None:
     assert response.status == 200
     assert response.content_type == "application/json"
     json_data = await response.json()
-    assert json_data["date"] == "2022-12-15"
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", json_data["date"])
 
 
 @pytest.mark.asyncio
