@@ -99,6 +99,7 @@ jobs:
         run: |
           npm install
           npm run build
+          ls -R
 
       - name: Define the Docker tag
         id: vars
