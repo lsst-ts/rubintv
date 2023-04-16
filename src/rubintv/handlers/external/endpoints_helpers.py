@@ -268,9 +268,12 @@ def make_table_rows_from_columns_by_seq(
                 d.update({e.seq: {chan: e}})
     # add an empty row for sequence numbers found only in metadata
     for seq_str in metadata:
-        seq = int(seq_str)
-        if seq not in d:
-            d[seq] = {}
+        try:
+            seq = int(seq_str)
+            if seq not in d:
+                d[seq] = {}
+        except ValueError:
+            print("Warning: Non-integer seq num ignored")
     # d == {seq: {chan1: event, chan2: event, ... }}
     # make sure the table is in order
     rows_dict = {k: v for k, v in sorted(d.items(), reverse=True)}
