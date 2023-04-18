@@ -12,7 +12,7 @@ Locations:
     bucket: rubintv_data_tts
     logo: cactus.svg
     camera_groups:
-      Cameras: [ auxtel ]
+      Cameras: [ auxtel, fake_auxtel ]
     services: [ auxtel, misc ]
 
   summit:
@@ -154,6 +154,40 @@ Cameras:
     logo: ts8.png
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
     FITSInfo/view.html?image=TS_C_{day_obs}_{seq_num:06}"
+
+
+  fake_auxtel:
+    name: Fake Auxtel
+    online: True
+    night_report_prefix: fake_auxtel_night_reports
+    js_entry: auxtel
+    channels:
+      monitor:
+        name: Monitor
+        prefix: fake_auxtel_monitor
+        service_dependency: fake_auxtel_isr_runner
+      im:
+        name: Image Analysis
+        label: ImAnalysis
+        prefix: fake_summit_imexam
+        service_dependency: fake_auxtel_isr_runner
+      spec:
+        name: Spectrum
+        prefix: fake_summit_specexam
+        service_dependency: fake_auxtel_isr_runner
+      mount:
+        name: Mount
+        prefix: fake_auxtel_mount_torques
+    per_day_channels:
+      movie:
+        name: Tonight's Movie
+        prefix: fake_auxtel_movies
+        label: "Movie for "
+    image_viewer_link: "http://ccs.lsst.org/FITSInfo/view.html?\
+    image=AT_O_{day_obs}_{seq_num:06}\
+    &raft=R00&color=grey&bias=Simple+Overscan+Correction\
+    &scale=Per-Segment&source=RubinTV"
+
 
 
 Services:
