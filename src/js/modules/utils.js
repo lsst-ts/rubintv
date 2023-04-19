@@ -153,7 +153,7 @@ function _createFoldoutCellButton (seq, attr, obj) {
   // eslint-disable-next-line dot-notation
   let displayValue = obj['DISPLAY_VALUE']
   if (!displayValue) {
-    displayValue = 'x'
+    displayValue = '✅'
   } else {
     // eslint-disable-next-line dot-notation
     delete obj['DISPLAY_VALUE']
@@ -176,10 +176,14 @@ function _foldoutCell (ev) {
   const dict = JSON.parse(el.dataset.dict)
 
   const overlay = _elWithClass('div', 'full-overlay')
+  overlay.id = 'overlay'
   const modal = _elWithClass('div', 'cell-dict-modal')
-  modal.id = 'dict-modal'
+  const closeButton = _elWithClass('div', 'close-button')
+  closeButton.textContent = 'x'
+  closeButton.id = 'modal-close'
   const heading = _elWithAttrs('h3')
   heading.textContent = `Seq Num: ${seq} - ${column}`
+  modal.appendChild(closeButton)
   modal.appendChild(heading)
 
   const table = _elWithClass('table', 'cell-dict')
@@ -195,9 +199,11 @@ function _foldoutCell (ev) {
   overlay.appendChild(modal)
   document.querySelector('main').appendChild(overlay)
   overlay.addEventListener('click', (e) => {
-    if (e.target.id === 'dict-modal') return
-    modal.remove()
-    overlay.remove()
+    console.log(e.target)
+    if (e.target.id === 'overlay' || e.target.id === 'modal-close') {
+      modal.remove()
+      overlay.remove()
+    }
   })
 }
 
