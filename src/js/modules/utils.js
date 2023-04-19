@@ -153,7 +153,7 @@ function _createFoldoutCellButton (seq, attr, obj) {
   // eslint-disable-next-line dot-notation
   let displayValue = obj['DISPLAY_VALUE']
   if (!displayValue) {
-    displayValue = '✅'
+    displayValue = '❓'
   } else {
     // eslint-disable-next-line dot-notation
     delete obj['DISPLAY_VALUE']
@@ -198,9 +198,16 @@ function _foldoutCell (ev) {
   modal.appendChild(table)
   overlay.appendChild(modal)
   document.querySelector('main').appendChild(overlay)
+  overlay.focus()
   overlay.addEventListener('click', (e) => {
-    console.log(e.target)
     if (e.target.id === 'overlay' || e.target.id === 'modal-close') {
+      modal.remove()
+      overlay.remove()
+    }
+  })
+  document.body.addEventListener('keydown', (e) => {
+    console.log(e.key)
+    if (e.key === 'Escape') {
       modal.remove()
       overlay.remove()
     }
