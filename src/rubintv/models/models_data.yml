@@ -220,6 +220,20 @@ Services:
 
 
 MetadataHeadings:
+  fake_auxtel:
+    Has annotations?:
+      Test tooltip here
+    Mount motion image degradation:
+    Exposure time:
+    Image type:
+    Target:
+      And another one here
+    Filter:
+    Disperser:
+    Airmass:
+    TAI:
+    DIMM Seeing:
+
   slac_lsstcam:
     Exposure time:
     Dark time:

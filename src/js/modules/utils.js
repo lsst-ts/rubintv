@@ -111,27 +111,80 @@ export function _escapeName (attrName) {
  * @param {string} element
  */
 export function parseJsonFromDOM (element) {
+  const metaInDOM = document.querySelector(element)
+  if (!metaInDOM) return {}
   const metaText = document.querySelector(element).textContent
   return JSON.parse(metaText)
 }
 
 /**
- * @param {{ [x: string]: string | number; }} attributes
- * @param {string | number} attr
+ * @param {string} seq
+ * @param {{[x: string]: string | number | object}} attributes
+ * @param {string} attr
  * @param {string[]} classes
  */
-export function createTableCell (attributes, attr, ...classes) {
+export function createTableCell (seq, attributes, attr, ...classes) {
   const classString = classes.join(' ')
   const el = _elWithClass('td', `meta grid-cell ${classString}`)
   let val = attributes[attr]
-  if (typeof val === 'number') {
-    val = (+val.toFixed(3)).toString()
-  }
-  if (typeof val === 'undefined') {
+  if (val) {
+    switch (typeof val) {
+      case 'number':
+        val = (+val.toFixed(3)).toString()
+        break
+      case 'object':
+        el.appendChild(_createFoldoutCellButton(seq, attr, val))
+        val = null
+        break
+    }
+  } else {
     val = ''
   }
-  el.textContent = val
+  if (val) {
+    el.textContent = val
+  }
   return el
+}
+
+function _createFoldoutCellButton (seq, attr, obj) {
+  const button = _elWithAttrs('button', { class: 'button button-table' })
+  button.dataset.seq = seq
+  button.dataset.column = attr
+  // eslint-disable-next-line dot-notation
+  let displayValue = obj['DISPLAY_VALUE']
+  if (!displayValue) {
+    displayValue = 'x'
+  } else {
+    // eslint-disable-next-line dot-notation
+    delete obj['DISPLAY_VALUE']
+  }
+  button.textContent = displayValue
+  button.dataset.dict = JSON.stringify(obj)
+  button.addEventListener('click', _foldoutCell)
+  return button
+}
+
+/**
+ *
+ * @param {HTMLElement} el
+ * @param {Event} ev
+ */
+
+function _foldoutCell (el, ev) {
+  // stubbed out for later today
+  //
+  // const column = el.dataset.column
+  // const seq = el.dataset.seq
+  // const dict = el.dataset.dict
+
+  // const modal = _elWithAttrs('div')
+  // const list = _elWithAttrs('div')
+  // dict.forEach((k, v) => {
+  //   const label = _elWithAttrs('dl', { text: k })
+  //   const term = _elWithAttrs('dl', { text: v })
+  //   list.appendChild(label)
+  //   list.appendChild(term)
+  // })
 }
 
 /**
@@ -146,7 +199,7 @@ export function indicatorForAttr (attributes, attrToCheck) {
   // is there an indicator for this attribute?
   if (Object.keys(attributes).includes(indicator)) {
     // if so, get its value
-    flag = ` ${attributes[indicator]}`
+    flag = attributes[indicator]
   }
   return flag
 }
@@ -169,7 +222,7 @@ export function drawTableColumnsAndRows (metaData, columns) {
         const escapedName = _escapeName(attr)
         // check for indicator attribute (i.e. starts with '_')
         const flag = indicatorForAttr(attributes, attr)
-        const el = createTableCell(attributes, attr, escapedName, flag)
+        const el = createTableCell(seq, attributes, attr, escapedName, flag)
         seqRowLastCell.after(el)
       })
     }
