@@ -166,25 +166,39 @@ function _createFoldoutCellButton (seq, attr, obj) {
 
 /**
  *
- * @param {HTMLElement} el
  * @param {Event} ev
  */
 
-function _foldoutCell (el, ev) {
-  // stubbed out for later today
-  //
-  // const column = el.dataset.column
-  // const seq = el.dataset.seq
-  // const dict = el.dataset.dict
+function _foldoutCell (ev) {
+  const el = ev.target
+  const column = el.dataset.column
+  const seq = el.dataset.seq
+  const dict = JSON.parse(el.dataset.dict)
 
-  // const modal = _elWithAttrs('div')
-  // const list = _elWithAttrs('div')
-  // dict.forEach((k, v) => {
-  //   const label = _elWithAttrs('dl', { text: k })
-  //   const term = _elWithAttrs('dl', { text: v })
-  //   list.appendChild(label)
-  //   list.appendChild(term)
-  // })
+  const overlay = _elWithClass('div', 'full-overlay')
+  const modal = _elWithClass('div', 'cell-dict-modal')
+  modal.id = 'dict-modal'
+  const heading = _elWithAttrs('h3')
+  heading.textContent = `Seq Num: ${seq} - ${column}`
+  modal.appendChild(heading)
+
+  const table = _elWithClass('table', 'cell-dict')
+  for (const [k, v] of Object.entries(dict)) {
+    const tRow = _elWithAttrs('tr')
+    const head = _elWithAttrs('th', { class: 'key', text: k })
+    const datum = _elWithAttrs('td', { class: 'value', text: v })
+    tRow.appendChild(head)
+    tRow.appendChild(datum)
+    table.appendChild(tRow)
+  }
+  modal.appendChild(table)
+  overlay.appendChild(modal)
+  document.querySelector('main').appendChild(overlay)
+  overlay.addEventListener('click', (e) => {
+    if (e.target.id === 'dict-modal') return
+    modal.remove()
+    overlay.remove()
+  })
 }
 
 /**

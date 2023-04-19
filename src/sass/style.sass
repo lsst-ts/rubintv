@@ -111,6 +111,19 @@ header
 main
 		padding: 1em 30px 25px
 
+.full-overlay
+	position: fixed
+	top: 0
+	left: 0
+	right: 0
+	bottom: 0
+	z-index: 23
+	background: rgba(0,0,0,0.2)
+	display: flex
+	justify-content: center
+	align-items: center
+
+
 h2
 	font-size: 1.7em
 	margin-bottom: 0.6em
@@ -257,9 +270,7 @@ section
 .copied
 	position: fixed
 	padding: 0.5em
-	border: 1px solid green
 	border-radius: 6px
-	background-color: #fff
 	animation: fadeout 0.8s linear 0.5s
 
 @keyframes fadeout
@@ -338,6 +349,17 @@ section
 		padding: 4px
 	.to-bottom
 		transform: rotate(180deg)
+
+.cell-dict-modal
+	background: #000
+	padding: 2em
+	overflow: scroll
+	.key
+		text-align: left
+	.key::after
+		content: ":"
+		padding-right: 2em
+
 
 
 .admin-access
