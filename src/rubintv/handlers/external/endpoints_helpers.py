@@ -234,7 +234,6 @@ def calendar_factory() -> Calendar:
 def make_table_rows_from_columns_by_seq(
     events_dict: Dict[str, List[Event]], metadata: Dict[str, Dict[str, str]]
 ) -> Dict[int, Dict[str, Event]]:
-    d: Dict[int, Dict[str, Event]] = {}
     """Returns a dict of dicts of `Events`, keyed outwardly by sequence number
     and inwardly by channel name for displaying as a table.
 
@@ -259,6 +258,7 @@ def make_table_rows_from_columns_by_seq(
         an inner dict with an entry for each `Channel` for that seq num.
 
     """
+    d: Dict[int, Dict[str, Event]] = {}
     for chan in events_dict:
         chan_events = events_dict[chan]
         for e in chan_events:
