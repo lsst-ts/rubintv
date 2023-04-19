@@ -198,7 +198,7 @@ function _foldoutCell (ev) {
   modal.appendChild(table)
   overlay.appendChild(modal)
   document.querySelector('main').appendChild(overlay)
-  overlay.focus()
+  document.activeElement.blur()
   overlay.addEventListener('click', (e) => {
     if (e.target.id === 'overlay' || e.target.id === 'modal-close') {
       modal.remove()
@@ -206,7 +206,6 @@ function _foldoutCell (ev) {
     }
   })
   document.body.addEventListener('keydown', (e) => {
-    console.log(e.key)
     if (e.key === 'Escape') {
       modal.remove()
       overlay.remove()
