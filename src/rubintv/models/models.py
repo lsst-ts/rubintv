@@ -75,6 +75,9 @@ class Camera:
     night_report_prefix : `str`
         Used to form part of the bucket lookup for night reports. If left unset
         the camera is considered not to produce night reports.
+    night_report_label : `str`
+        The label used on the link button, page title and subtitle for Night
+        Report-like pages. Defaults to `"Night Report"`
     metadata_headers : `dict` [`str`, `dict` [`str`, `str`]]] | `dict`[`str`,
     `str`]
         The default column headers for the metadata in the table for this
@@ -97,6 +100,7 @@ class Camera:
     channels: dict[str, Channel] = field(default_factory=dict)
     per_day_channels: dict[str, Channel] = field(default_factory=dict)
     night_report_prefix: str = ""
+    night_report_label = "Night Report"
     metadata_headers: dict[str, dict[str, str]] | dict[str, str] = field(
         init=False
     )

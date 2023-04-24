@@ -138,6 +138,8 @@ Cameras:
         prefix: ir2_noise_map
     js_entry: auxtel
     logo: slac_lsstcam.png
+    night_report_prefix: slac_lsstcam_night_reports
+    night_report_label: Trending Plots
 
 
   ts8:
@@ -154,6 +156,8 @@ Cameras:
     logo: ts8.png
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
     FITSInfo/view.html?image=TS_C_{day_obs}_{seq_num:06}"
+    night_report_prefix: ts8_night_reports
+    night_report_label: Trending Plots
 
 
   fake_auxtel:
