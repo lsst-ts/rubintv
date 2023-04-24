@@ -36,6 +36,12 @@ spec:
             - name: creds
               mountPath: "/etc/rubintv"
               readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 300
+            periodSeconds: 15
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
