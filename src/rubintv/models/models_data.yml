@@ -225,7 +225,7 @@ Services:
 
 MetadataHeadings:
   fake_auxtel:
-    Has annotations?:
+    Exposure log entries:
       Test tooltip here
     Mount motion image degradation:
     Exposure time:
@@ -251,7 +251,7 @@ MetadataHeadings:
     Test type:
 
   auxtel:
-    Has annotations?:
+    Exposure log entries:
       Test tooltip here
     Mount motion image degradation:
     Exposure time:
