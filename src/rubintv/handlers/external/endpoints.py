@@ -25,7 +25,6 @@ from typing import Any, Dict, List
 from aiohttp import web
 from aiohttp_jinja2 import render_string, render_template, template
 
-from rubintv import __version__
 from rubintv.handlers import routes
 from rubintv.handlers.external.endpoints_helpers import (
     build_title,
@@ -117,7 +116,6 @@ async def get_admin_page(request: web.Request) -> Dict[str, Any]:
         "title": title,
         "location": location,
         "services": loc_services,
-        "version": __version__,
     }
 
 

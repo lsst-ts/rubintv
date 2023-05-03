@@ -1,4 +1,12 @@
 /**
+* @param {string | any[]} arrayA
+* @param {any} arrayB
+*/
+export function intersect (arrayA, arrayB) {
+  return arrayA.filter(el => arrayB.includes(el))
+}
+
+/**
  * @param {RequestInfo | URL} url
  */
 export async function getJson (url) {
@@ -254,3 +262,15 @@ export function drawTableColumnsAndRows (metaData, columns) {
     }
   })
 }
+
+function clearLocalStorageOnNewVersion () {
+  const thisVersion = document.documentElement.dataset.version
+  if (!thisVersion) return
+  const storedVersion = window.localStorage.getItem('rubintv_version')
+  if (thisVersion !== storedVersion) {
+    localStorage.clear()
+    localStorage.setItem('rubintv_version', thisVersion)
+  }
+}
+
+clearLocalStorageOnNewVersion()

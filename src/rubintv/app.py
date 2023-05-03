@@ -16,6 +16,7 @@ from safir.logging import configure_logging
 from safir.metadata import setup_metadata
 from safir.middleware import bind_logger
 
+from rubintv import __version__
 from rubintv.background.heartbeats import poll_for_heartbeats
 from rubintv.config import Configuration
 from rubintv.handlers import init_external_routes, init_internal_routes
@@ -80,6 +81,7 @@ def create_app(load_minimal_data: bool = False) -> web.Application:
     # Prevent tojson() filter from re-ordering keys
     env = aiohttp_jinja2.get_env(sub_app)
     env.policies["json.dumps_kwargs"] = {"sort_keys": False}
+    env.globals.update(version=__version__)
 
     setup_middleware(sub_app)
     sub_app.add_routes(init_external_routes())
