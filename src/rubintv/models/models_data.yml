@@ -226,113 +226,190 @@ Services:
 MetadataHeadings:
   fake_auxtel:
     Exposure log entries:
-      Test tooltip here
+      Any exposure log entries which have been made, click to pop out the details
     Mount motion image degradation:
+      An estimate of the degradation of the PSF, in arcseconds, due mount tracking issues
     Exposure time:
+      The image exposure time
     Image type:
+      The image type, e.g. bias, dark, flat etc
     Target:
-      And another one here
+      The name of the target in the exposure
     Filter:
+      The filter in use for the image, or `empty` if none
     Disperser:
+      The dispersive element in use for the image, or `empty` if none
     Airmass:
+      The airmass of the observation
     TAI:
+      The TAI of the observation
     DIMM Seeing:
-
+      The seeing, as measured by the DIMM, if available
   slac_lsstcam:
     Exposure time:
+      The image exposure time
     Dark time:
+      The image dark time
     Image type:
+      The image type, e.g. bias, dark, flat etc
     Test type:
-
+      The type of test being run, e.g. superflats
   ts8:
     Exposure time:
+      The image exposure time
     Dark time:
+      The image dark time
     Image type:
+      The image type, e.g. bias, dark, flat etc
     Test type:
-
+      The type of test being run, e.g. superflats etc
   auxtel:
     Exposure log entries:
-      Test tooltip here
+      Any exposure log entries which have been made, click to pop out the details
     Mount motion image degradation:
+      An estimate of the degradation of the PSF, in arcseconds, due mount tracking issues
     Exposure time:
+      The image exposure time
     Image type:
+      The image type, e.g. bias, dark, flat etc
     Target:
-      And another one here
+      The name of the target in the exposure
     Filter:
+      The filter in use for the image, or `empty` if none
     Disperser:
+      The dispersive element in use for the image, or `empty` if none
     Airmass:
+      The airmass of the observation
     TAI:
+      The TAI of the observation
     DIMM Seeing:
-
+      The seeing, as measured by the DIMM, if available
   startracker:
     Header values:
       Exposure Time:
-        A tooltip here
+        The image exposure time
       MJD:
+        The MJD of the observation
       UTC:
+        The UTC of the observation - currently misreported, it is actually TAI
       Ra:
+        The commanded ra from the header, i.e. from the pointing component
       Dec:
+        The commanded dec from the header, i.e. from the pointing component
       Alt:
+        The average alt from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
       Az:
+        The average az from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
     Astrometric fit:
       nSources:
+        The total number of sources detected in the image
       nSources filtered:
+        The total number of sources passed to the fitter
       Calculated Ra:
+        The calculated ra from the astrometric fit
       Calculated Dec:
+        The calculated dec from the astrometric fit
       Delta Ra Arcsec:
+        The difference between the commanded and fitted ra, in arcseconds
       Delta Dec Arcsec:
+        The difference between the commanded and fitted dec, in arcseconds
       Calculated Alt:
+        The calculated alt from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
       Calculated Az:
+        The calculated az from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
       Delta Alt Arcsec:
+        The difference between the commanded and fitted alt, in arcseconds
       Delta Az Arcsec:
+        The difference between the commanded and fitted az, in arcseconds
       Delta Rot Arcsec:
+        The difference between the commanded and fitted rotator angle, in arcseconds. Note that as we don't have a rotator, this is more or less arbitrary.
       RMS scatter arcsec:
+        The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
       RMS scatter pixels:
-
+        The RMS distance between the measured position of each source and its position in the catalog, in pixels
   startracker-wide:
     Star Tracker Wide:
       Exposure Time wide:
+        The image exposure time
       MJD:
+        The MJD of the observation
       UTC:
+        The UTC of the observation - currently misreported, it is actually TAI
       Ra wide:
+        The commanded ra from the header, i.e. from the pointing component
       Dec wide:
+        The commanded dec from the header, i.e. from the pointing component
       Alt wide:
+        The average alt from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
       Az wide:
+        The average az from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
     Star Tracker Solve Wide:
       nSources wide:
+        The total number of sources detected in the image
       nSources filtered wide:
+        The total number of sources passed to the fitter
       Calculated Ra wide:
+        The calculated ra from the astrometric fit
       Calculated Dec wide:
+        The calculated dec from the astrometric fit
       Delta Ra Arcsec wide:
+        The difference between the commanded and fitted ra, in arcseconds
       Delta Dec Arcsec wide:
+        The difference between the commanded and fitted dec, in arcseconds
       Calculated Alt wide:
+        The calculated alt from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
       Calculated Az wide:
+        The calculated az from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
       Delta Alt Arcsec wide:
+        The difference between the commanded and fitted alt, in arcseconds
       Delta Az Arcsec wide:
+        The difference between the commanded and fitted az, in arcseconds
       Delta Rot Arcsec wide:
+        The difference between the commanded and fitted rotator angle, in arcseconds. Note that as we don't have a rotator, this is more or less arbitrary.
       RMS scatter arcsec wide:
+        The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
       RMS scatter pixels wide:
-
+        The RMS distance between the measured position of each source and its position in the catalog, in pixels
   startracker-fast:
     Star Tracker Fast:
       Exposure Time fast:
+        The image exposure time
       MJD:
+        The MJD of the observation
       UTC:
+        The UTC of the observation - currently misreported, it is actually TAI
       Ra fast:
+        The commanded ra from the header, i.e. from the pointing component
       Dec fast:
+        The commanded dec from the header, i.e. from the pointing component
       Alt fast:
+        The average alt from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
       Az fast:
+        The average az from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
     Star Tracker Solve Fast:
       nSources fast:
+        The total number of sources detected in the image
       nSources filtered fast:
+        The total number of sources passed to the fitter
       Calculated Ra fast:
+        The calculated ra from the astrometric fit
       Calculated Dec fast:
+        The calculated dec from the astrometric fit
       Delta Ra Arcsec fast:
+        The difference between the commanded and fitted ra, in arcseconds
       Delta Dec Arcsec fast:
+        The difference between the commanded and fitted dec, in arcseconds
       Calculated Alt fast:
+        The calculated alt from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
       Calculated Az fast:
+        The calculated az from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
       Delta Alt Arcsec fast:
+        The difference between the commanded and fitted alt, in arcseconds
       Delta Az Arcsec fast:
+        The difference between the commanded and fitted az, in arcseconds
       Delta Rot Arcsec fast:
+        The difference between the commanded and fitted rotator angle, in arcseconds. Note that as we don't have a rotator, this is more or less arbitrary.
       RMS scatter arcsec fast:
+        The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
       RMS scatter pixels fast:
+        The RMS distance between the measured position of each source and its position in the catalog, in pixels
