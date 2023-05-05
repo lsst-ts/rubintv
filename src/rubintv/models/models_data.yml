@@ -22,10 +22,28 @@ Locations:
     camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
       Other Cameras: [ allsky, startracker, startracker-wide, startracker-fast ]
+      Telescopes: [ tma ]
     services: [ auxtel, startracker, allsky, comcam, misc ]
 
 
 Cameras:
+  tma:
+    name: TMA
+    online: true
+    channels:
+      plot_a:
+        name: Plot A
+        prefix: tma_plot_a
+      plot_b:
+        name: Plot B
+        prefix: tma_plot_b
+      plot_c:
+        name: Plot C
+        prefix: tma_plot_c
+      plot_d:
+        name: Plot D
+        prefix: tma_plot_d
+
   auxtel:
     name: AuxTel
     online: True
