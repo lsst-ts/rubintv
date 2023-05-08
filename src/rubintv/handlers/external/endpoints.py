@@ -64,6 +64,11 @@ async def get_page(request: web.Request) -> Dict[str, Any]:
     }
 
 
+@routes.get("/health")
+async def get_health(request: web.Request) -> web.Response:
+    return web.Response(text="OK", content_type="text/plain")
+
+
 @routes.get("/{location}", name="location")
 @template("location_home.jinja")
 async def get_location_home(request: web.Request) -> Dict[str, Any]:
