@@ -16,3 +16,8 @@ async def get_index(request: web.Request) -> web.Response:
     metadata = request.config_dict["safir/metadata"]
 
     return web.json_response(metadata)
+
+
+@internal_routes.get("/health")
+async def get_health(request: web.Request) -> web.Response:
+    return web.Response(text="OK", content_type="text/plain")

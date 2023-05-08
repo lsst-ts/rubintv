@@ -42,6 +42,7 @@ spec:
               port: 8080
             initialDelaySeconds: 300
             periodSeconds: 15
+            timeoutSeconds: 15
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
