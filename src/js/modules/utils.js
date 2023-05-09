@@ -135,7 +135,7 @@ export function createTableCell (seq, attributes, attr, ...classes) {
   const classString = classes.join(' ')
   const el = _elWithClass('td', `meta grid-cell ${classString}`)
   let val = attributes[attr]
-  if (val) {
+  if (val || val === 0) {
     switch (typeof val) {
       case 'number':
         val = (+val.toFixed(3)).toString()
