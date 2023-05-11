@@ -135,10 +135,13 @@ Cameras:
     name: ComCam
     online: True
     channels:
-      monitor:
-        name: Central CCD Monitor
-        prefix: comcam_monitor
-        label: Monitor
+      focal_plane_mosiac:
+        name: Focal Plane Mosiac
+        prefix: comcam_focal_plane_mosiac
+      noise_map:
+        name: Noise Map
+        prefix: comcam_noise_map
+    js_entry: auxtel
 
   lsstcam:
     name: LSSTCam
@@ -431,3 +434,12 @@ MetadataHeadings:
         The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
       RMS scatter pixels fast:
         The RMS distance between the measured position of each source and its position in the catalog, in pixels
+  comcam:
+    Exposure time:
+      The image exposure time
+    Dark time:
+      The image dark time
+    Image type:
+      The image type, e.g. bias, dark, flat etc
+    Test type:
+      The type of test being run, e.g. superflats etc
