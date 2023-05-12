@@ -1,7 +1,7 @@
 <div id="tabgroup-text" class="dashboard tab-content">
   {% if dashboard_data["multiline"] %}
     <ul class="dashboard-text">
-    {% set text_list = dashboard_data["text"] %}
+    {% set text_list = dashboard_data["multiline"] %}
     {% for text in text_list %}
       <li>
         {% for line in text %}
