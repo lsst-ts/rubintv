@@ -142,6 +142,8 @@ Cameras:
         name: Noise Map
         prefix: comcam_noise_map
     js_entry: auxtel
+    image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
+    view.html?image=CC_O_{day_obs}_{seq_num:06}"
 
   lsstcam:
     name: LSSTCam
