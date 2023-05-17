@@ -135,9 +135,9 @@ Cameras:
     name: ComCam
     online: True
     channels:
-      focal_plane_mosiac:
-        name: Focal Plane Mosiac
-        prefix: comcam_focal_plane_mosiac
+      focal_plane_mosaic:
+        name: Focal Plane mosaic
+        prefix: comcam_focal_plane_mosaic
       noise_map:
         name: Noise Map
         prefix: comcam_noise_map
@@ -153,12 +153,12 @@ Cameras:
     name: LSSTCam
     online: True
     channels:
-      focal_plane_mosiac:
-        name: Focal Plane Mosiac
-        prefix: ir2_focal_plane_mosiac
+      focal_plane_mosaic:
+        name: Focal Plane mosaic
+        prefix: slac_lsstcam_focal_plane_mosaic
       noise_map:
         name: Noise Map
-        prefix: ir2_noise_map
+        prefix: slac_lsstcam_noise_map
     js_entry: auxtel
     logo: slac_lsstcam.png
     night_report_prefix: slac_lsstcam_night_reports
@@ -169,9 +169,9 @@ Cameras:
     name: TS8
     online: True
     channels:
-      focal_plane_mosiac:
-        name: Focal Plane Mosiac
-        prefix: ts8_focal_plane_mosiac
+      focal_plane_mosaic:
+        name: Focal Plane mosaic
+        prefix: ts8_focal_plane_mosaic
       noise_map:
         name: Noise Map
         prefix: ts8_noise_map
