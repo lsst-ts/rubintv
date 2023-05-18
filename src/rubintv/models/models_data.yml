@@ -12,8 +12,8 @@ Locations:
     bucket: rubintv_data_tts
     logo: cactus.svg
     camera_groups:
-      Cameras: [ auxtel, fake_auxtel ]
-    services: [ auxtel, misc ]
+      Cameras: [ auxtel, fake_auxtel, comcam ]
+    services: [ auxtel, comcam, misc ]
 
   summit:
     name: Summit
