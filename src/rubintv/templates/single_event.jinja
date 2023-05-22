@@ -10,8 +10,11 @@
 
 {% block content %}
 <div id="refresher">
-  <div class="subheader">
+  <div class="event-info">
     <h2>{{ date }} : Sequence {{ seq }}</h2>
+    <nav class="prev-next-nav">
+
+    </nav>
   </div>
   {% if event %}
     <a href="{{ event.url }}">

@@ -11,8 +11,12 @@
     <link rel="icon" href="{{ url('static', filename='images/favicon.png') }}">
     <title>{{ title }}</title>
 </head>
+{% set body_class = "" %}
 {% if camera %}
     {% set body_class = camera.slug %}
+{% endif %}
+{% if event %}
+    {% set body_class = body_class ~ " event" %}
 {% endif %}
 <body class="{{ body_class }}">
         <header>
