@@ -269,6 +269,8 @@ MetadataHeadings:
     DIMM Seeing:
       The seeing, as measured by the DIMM, if available
   slac_lsstcam:
+    Run number:
+      The run number, as taken from the exposure record's science_program field
     Exposure time:
       The image exposure time
     Dark time:
@@ -278,6 +280,8 @@ MetadataHeadings:
     Test type:
       The type of test being run, e.g. superflats
   ts8:
+    Run number:
+      The run number, as taken from the exposure record's science_program field
     Exposure time:
       The image exposure time
     Dark time:
