@@ -1,6 +1,9 @@
-import { parseJsonFromDOM, _getById } from '../modules/utils.js'
+import {
+  parseJsonFromDOM,
+  _getById
+} from '../modules/utils.js'
+import { addToTable } from '../modules/draw-simple-table.js'
 import { TableControls } from '../modules/table-control.js'
-import { addToTable } from '../modules/table-auxtel.js'
 import { refreshTableLoop } from '../modules/table-refresher.js'
 
 window.addEventListener('load', function () {

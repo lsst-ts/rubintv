@@ -1,5 +1,5 @@
 import { _getById, getJson, _elWithClass, _elWithAttrs } from '../modules/utils.js'
-import { addTabsListeners } from './tabs-ui.js'
+import { addTabsListeners, listenForKeypresses } from '../night-report/tabs-ui.js'
 
 window.addEventListener('DOMContentLoaded', function () {
   let prevReports = JSON.parse(_getById('reports-json').textContent)
@@ -72,6 +72,7 @@ window.addEventListener('DOMContentLoaded', function () {
     }
     prevReports = newReports
     addTabsListeners()
+    listenForKeypresses()
   }
 
   /**

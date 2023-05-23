@@ -1,4 +1,4 @@
-import { _elWithAttrs, getHtml, _getById } from './modules/utils.js'
+import { _elWithAttrs, getHtml, _getById } from '../modules/utils.js'
 
 window.addEventListener('DOMContentLoaded', function () {
   setInterval(function () {

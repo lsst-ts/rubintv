@@ -1,6 +1,6 @@
 import { TableControls } from '../modules/table-control.js'
 import { parseJsonFromDOM } from '../modules/utils.js'
-import { addToTable } from '../modules/table-auxtel.js'
+import { addToTable } from '../modules/draw-simple-table.js'
 import { applyYearControls } from '../modules/calendar-controls.js'
 
 document.addEventListener('DOMContentLoaded', () => {

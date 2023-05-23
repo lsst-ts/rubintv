@@ -1,5 +1,5 @@
 import {
-  _getById, _elWithAttrs, _elWithClass
+  _getById, _elWithAttrs, _elWithClass, intersect
 }
   from './utils.js'
 
@@ -15,7 +15,11 @@ export class TableControls {
     this.defaultAttrs = Object.keys(defaultAttrsAndDescs)
     this.updateMetadata(metaData)
     const saved = this.retrieveSelected()
-    this.selected = saved || this.defaultAttrs
+    if (saved) {
+      this.selected = intersect(saved, this.attributes)
+    } else {
+      this.selected = this.defaultAttrs
+    }
     this.elementToAppendTo = elementToAppendTo
     this.drawToTableCallback = drawToTableCallback
 
@@ -34,14 +38,6 @@ export class TableControls {
         !this.defaultAttrs.includes(attr))
 
     this.selected = fromTheDefaults.concat(notInDefaults)
-  }
-
-  /**
-   * @param {string | any[]} arrayA
-   * @param {any} arrayB
-   */
-  union (arrayA, arrayB) {
-    return Array.from(new Set(arrayA.concat(arrayB)))
   }
 
   retrieveSelected () {

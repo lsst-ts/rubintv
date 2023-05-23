@@ -38,7 +38,7 @@ export function addTabsListeners () {
 }
 addTabsListeners()
 
-function listenForKeypresses () {
+export function listenForKeypresses () {
   const keysAndTabs = { efficiency: 'text', elana: 'elana' }
   let keyCodes = Object.keys(keysAndTabs)
   let typed = ''
@@ -76,4 +76,3 @@ function listenForKeypresses () {
     }
   }
 }
-listenForKeypresses()

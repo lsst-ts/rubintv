@@ -1,5 +1,9 @@
 import {
-  _getById, _elWithAttrs, _elWithClass, _escapeName, drawTableColumnsAndRows
+  _getById,
+  _elWithClass,
+  _escapeName,
+  _elWithAttrs,
+  drawTableColumnsAndRows
 } from './utils.js'
 
 /**

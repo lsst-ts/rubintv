@@ -1,6 +1,6 @@
 import { simplePost, _getById } from './utils.js'
 
-function historicalReset () {
+export function listenForHistoricalReset () {
   const form = _getById('historicalReset')
   form.addEventListener('click', function (e) {
     e.preventDefault()
@@ -17,5 +17,3 @@ function historicalReset () {
     })
   })
 }
-
-historicalReset()

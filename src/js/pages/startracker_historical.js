@@ -1,6 +1,6 @@
 import { parseJsonFromDOM } from '../modules/utils.js'
-import { TableControls } from '../modules/table-control-startracker.js'
-import { drawTable } from '../modules/table-startracker.js'
+import { TableControls } from '../modules/table-control-grouped.js'
+import { drawTable } from '../modules/draw-grouped-table.js'
 import { applyYearControls } from '../modules/calendar-controls.js'
 
 window.addEventListener('DOMContentLoaded', () => {

@@ -1,7 +1,10 @@
-import { parseJsonFromDOM, _getById } from '../modules/utils.js'
-import { drawTable } from '../modules/table-startracker.js'
+import {
+  parseJsonFromDOM,
+  _getById
+} from '../modules/utils.js'
+import { drawTable } from '../modules/draw-grouped-table.js'
 import { refreshTableLoop } from '../modules/table-refresher.js'
-import { TableControls } from '../modules/table-control-startracker.js'
+import { TableControls } from '../modules/table-control-grouped.js'
 
 document.addEventListener('DOMContentLoaded', function () {
   const headers = parseJsonFromDOM('#metadata-headers')

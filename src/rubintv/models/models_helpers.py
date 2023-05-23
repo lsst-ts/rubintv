@@ -12,7 +12,8 @@ def get_prefix_from_date(prefix: str, a_date: date) -> str:
     prefix : `str`
         The prefix for a particular channel.
     a_date : `date`
-        The given date to use to form the prefix.
+        The given date to use to form the prefix. The date format is
+        `"YYYY-MM-DD"` as output by `datetime.date` on conversion to a `str`.
 
     Returns
     -------

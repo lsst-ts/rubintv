@@ -1,29 +1,39 @@
 {% extends "cameras/layout.jinja" %}
+{% block pagesubtitle %}
+  Latest
+{% endblock pagesubtitle %}
+
 {% block undertitle %}
-  <a class="button button historical" href="{{ url('historical', location=location.slug, camera=camera.slug) }}">
-    Historical movies
-    <img src="{{ url('static', filename='images/history-line.svg') }}">
+   {{current.obs_date}}
+  <a class="button historical" href="{{ url('historical', location=location.slug, camera=camera.slug) }}">
+    Historical <img src="{{ url('static', filename='images/history-line.svg') }}">
   </a>
 {% endblock undertitle %}
 
-{% block allsky_status %}
-<div id="allsky" class="on-page-status">
-  <div class="heartbeat"></div>
-</div>
-{% endblock allsky_status %}
+{% block inline_status %}
+  <div id="allsky" class="service inline-block">
+    <div class="heartbeat"></div>
+  </div>
+{% endblock inline_status %}
+
+{% block breadcrumb %}
+<a href="{{ url('home') }}">Home</a>>
+<a href="{{ url('location', location=location.slug) }}">{{ location.name }}</a>>
+<p>{{ camera.name }}</p>
+{% endblock breadcrumb  %}
 
 {% block content %}
   <div class="columns">
 
     <section class="allsky-current-image">
-    <h2>Current Still Image:</h2>
+    <h2>Current image</h2>
       <div class="current-still">
         {% include "cameras/allsky-image.jinja" %}
       </div>
     </section>
 
     <section class="allsky-current-movie">
-    <h2>Most recent movie:</h2>
+    <h2>Current movie</h2>
       <div class="current-movie">
         {% include "cameras/allsky-movie.jinja" %}
       </div>
@@ -31,5 +41,6 @@
   </div>
 {% endblock content %}
 {% block footer_scripts %}
-<script type=module src="{{ url('static', filename='js/refresh-table/refresh-allsky.js') }}"></script>
+<script src="{{ url('static', filename='assets/allsky.js') }}"></script>
+{{ super() }}
 {% endblock footer_scripts %}

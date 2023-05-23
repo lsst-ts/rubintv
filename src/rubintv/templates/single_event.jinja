@@ -1,13 +1,28 @@
 {% extends "cameras/layout.jinja" %}
 
+{% block pagesubtitle %}
+  {{ channel }}
+{% endblock pagesubtitle %}
+
+{% block undertitle %}
+ {{ date }}
+{% endblock undertitle %}
+
 {% block content %}
 <div id="refresher">
-  <div class="subheader">
+  <div class="event-info">
     <h2>{{ date }} : Sequence {{ seq }}</h2>
+    <nav class="prev-next-nav">
+
+    </nav>
   </div>
   {% if event %}
     <a href="{{ event.url }}">
-      <img class="resp {% if channel=="Monitor" %} behind {% endif %}" src="{{ event.url }}">
+    {% set image_class = "resp" %}
+    {# {% if channel=="Monitor" %}
+      {% set image_class = "resp behind" %}
+    {% endif %} #}
+      <img class="{{ image_class }}" src="{{ event.url }}">
     </a>
     {% if channel != "Monitor" %}
       <div class="desc">{{ event.name }}</div>

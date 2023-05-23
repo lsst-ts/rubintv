@@ -1,5 +1,5 @@
 import { _getById } from './modules/utils.js'
-import { ReconnectingWebSocket } from './modules/reconnecting-websocket.min.js'
+import ReconnectingWebSocket from 'reconnecting-websocket'
 
 window.addEventListener('pageshow', function (e) {
   const location = _getById('location').dataset.location

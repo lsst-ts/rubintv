@@ -1,5 +1,6 @@
 import json
 import re
+from calendar import Calendar
 from datetime import date
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -26,6 +27,7 @@ __all__ = [
     "get_channel_resource_url",
     "get_metadata_json",
     "month_names",
+    "calendar_factory",
     "make_table_rows_from_columns_by_seq",
     "get_most_recent_day_events",
     "get_sorted_events_from_blobs",
@@ -35,8 +37,13 @@ __all__ = [
     "build_title",
     "get_nights_report_link_type",
     "get_night_report_events",
-    "get_historical_night_report_events",
+    "download_sort_night_report_events",
 ]
+
+
+def _list_blobs(bucket: Bucket, prefix: str) -> List[Blob]:
+    blobs = list(bucket.list_blobs(prefix=prefix))
+    return blobs
 
 
 def date_from_hyphenated_string(date_str: str) -> date:
@@ -177,7 +184,7 @@ def get_channel_resource_url(
     date_str = a_date.strftime("%Y%m%d")
     prefix = f"{channel.prefix}/dayObs_{date_str}"
     url = ""
-    if blobs := list(bucket.list_blobs(prefix=prefix)):
+    if blobs := _list_blobs(bucket, prefix):
         url = blobs[0].public_url
     return url
 
@@ -218,10 +225,15 @@ def month_names() -> List[str]:
     return [date(2000, m, 1).strftime("%B") for m in list(range(1, 13))]
 
 
+def calendar_factory() -> Calendar:
+    # first weekday 0 is Monday
+    calendar = Calendar(firstweekday=0)
+    return calendar
+
+
 def make_table_rows_from_columns_by_seq(
     events_dict: Dict[str, List[Event]], metadata: Dict[str, Dict[str, str]]
 ) -> Dict[int, Dict[str, Event]]:
-    d: Dict[int, Dict[str, Event]] = {}
     """Returns a dict of dicts of `Events`, keyed outwardly by sequence number
     and inwardly by channel name for displaying as a table.
 
@@ -246,6 +258,7 @@ def make_table_rows_from_columns_by_seq(
         an inner dict with an entry for each `Channel` for that seq num.
 
     """
+    d: Dict[int, Dict[str, Event]] = {}
     for chan in events_dict:
         chan_events = events_dict[chan]
         for e in chan_events:
@@ -255,9 +268,12 @@ def make_table_rows_from_columns_by_seq(
                 d.update({e.seq: {chan: e}})
     # add an empty row for sequence numbers found only in metadata
     for seq_str in metadata:
-        seq = int(seq_str)
-        if seq not in d:
-            d[seq] = {}
+        try:
+            seq = int(seq_str)
+            if seq not in d:
+                d[seq] = {}
+        except ValueError:
+            print("Warning: Non-integer seq num ignored")
     # d == {seq: {chan1: event, chan2: event, ... }}
     # make sure the table is in order
     rows_dict = {k: v for k, v in sorted(d.items(), reverse=True)}
@@ -361,7 +377,7 @@ def get_events_for_prefix_and_date(
     """
     new_prefix = get_prefix_from_date(prefix, the_date)
     events = []
-    blobs = list(bucket.list_blobs(prefix=new_prefix))
+    blobs = _list_blobs(bucket, new_prefix)
     if blobs:
         events = get_sorted_events_from_blobs(blobs)
     return events
@@ -421,7 +437,7 @@ def get_heartbeats(bucket: Bucket, prefix: str) -> List[Dict]:
     heartbeats : `List` [`Dict`]
         A list of heartbeat dicts.
     """
-    hb_blobs = list(bucket.list_blobs(prefix=prefix))
+    hb_blobs = _list_blobs(bucket, prefix)
     heartbeats = []
     for hb_blob in hb_blobs:
         blob_content = None
@@ -467,6 +483,25 @@ def date_str_without_hyphens(a_date: date) -> str:
 
 
 def get_image_viewer_link(camera: Camera, day_obs: date, seq_num: int) -> str:
+    """Returns the url for the camera's external image viewer for a given date
+    and seq num.
+
+    Used in the template.
+
+    Parameters
+    ----------
+    camera : `Camera`
+        The given camera.
+    day_obs : `date`
+        The given date.
+    seq_num : `int`
+        The given seq num.
+
+    Returns
+    -------
+    url : `str`
+        The url for the image viewer for a single image.
+    """
     date_int_str = date_str_without_hyphens(day_obs)
     url = camera.image_viewer_link.format(
         day_obs=date_int_str, seq_num=seq_num
@@ -486,9 +521,68 @@ def get_event_page_link(
     )
 
 
-def get_historical_night_report_events(
+def get_nights_report_link_type(
+    camera: Camera, historical: HistoricalData, the_date: date
+) -> str:
+    """Returns a string that indicates, if a given camera has a night report,
+    whether it should be a current (updating) report or historical one.
+
+    An empty string indicates there should be no link displayed.
+    Used by the template to provide the correct link to the night report page.
+
+    Parameters
+    ----------
+    camera : `Camera`
+        The given camera.
+    historical : `HistoricalData`
+        The cache of historical data.
+    the_date : `date`
+        The given date.
+
+    Returns
+    -------
+    night_report_link : `str`
+        Either ``"current"``, ``"historic"`` or an empty string for no link.
+    """
+    if not camera.night_report_prefix:
+        return ""
+    night_report_link = ""
+    if the_date == get_current_day_obs():
+        night_report_link = "current"
+    elif historical.get_night_reports_for(camera, the_date):
+        night_report_link = "historic"
+    return night_report_link
+
+
+def download_sort_night_report_events(
     bucket: Bucket, reports_list: List[Night_Report_Event]
-) -> Tuple[Dict[str, List[Night_Report_Event]], Dict[str, str]]:
+) -> Tuple[Dict[str, List[Night_Report_Event]], Dict[str, Any]]:
+    """Downloads and returns a tuple of a dict of plots and a dict of sections
+    of text which together comprise a night report for a given list of
+    `Night_Report_Event`s.
+
+    Only the text reports (as json files) are downloaded as the image plots are
+    passed as urls to the browser.
+
+    The dict of plots is keyed by plot group and contains a list of
+    `Night_Report_Event`s for each group.
+    The dict of text is keyed by either ``"text"`` or ``"quantities"``,
+    respectively a list of lists of strings and a dict of strings. (See
+    `process_night_report_text_data()`)
+
+    Parameters
+    ----------
+    bucket : `Bucket`
+        The given bucket to download the events from.
+    reports_list : `List` [`Night_Report_Event`]
+        A list of `Night_Report_Event`s for a camera and date.
+
+    Returns
+    -------
+    `Tuple` [`Dict` [`str`, `List` [`Night_Report_Event`]], `Dict` [`str`,
+    `Any`]]
+        A tuple of plots as `Night_Report_Event`s and a dict of grouped text.
+    """
     plots: Dict[str, List[Night_Report_Event]] = {}
     json_data = {}
     for r in reports_list:
@@ -504,64 +598,109 @@ def get_historical_night_report_events(
     return plots, json_data
 
 
-def get_nights_report_link_type(
-    bucket: Bucket, camera: Camera, the_date: date
-) -> str:
-    night_reports_link = ""
-    if camera.night_report_prefix:
-        if the_date == get_current_day_obs():
-            night_reports_link = "current"
-        elif get_night_report_events(bucket, camera, the_date):
-            night_reports_link = "historic"
-    return night_reports_link
-
-
 def get_night_report_events(
     bucket: Bucket, camera: Camera, day_obs: date
 ) -> Optional[Tuple[Dict[str, List[Night_Report_Event]], Dict[str, str]]]:
+    """Downloads and returns a tuple of a dict of plots and a dict of sections
+    of text which together comprise a night report for a given camera and
+    day_obs, or None if there are none found in the bucket.
+
+    See `download_sort_night_report_events()` for details.
+
+    Parameters
+    ----------
+    bucket : `Bucket`
+        The given GCS bucket to scrape and download from.
+    camera : `Camera`
+        The given camera.
+    day_obs : `date`
+        The given date
+
+    Returns
+    -------
+    night_report : `Optional` [`Tuple` [`Dict` [`str`, `List`[
+        `Night_Report_Event`]], `Dict` [`str`, `str`]]]
+        Either None if there are no night report events for the date in the
+        bucket or a tuple of plots as `Night_Report_Event`s and a dict of
+        grouped text.
+    """
     prefix = camera.night_report_prefix
     blobs = get_night_reports_blobs(bucket, prefix, day_obs)
     if not blobs:
         return None
-    all_plots = []
-    text_data = {}
-
-    for blob in blobs:
-        if blob.public_url.endswith(".json"):
-            json_raw_data = json.loads(blob.download_as_bytes())
-            text_data = process_night_report_text_data(json_raw_data)
-        else:
-            all_plots.append(
-                Night_Report_Event(blob.public_url, prefix, blob.md5_hash)
-            )
-
-    all_plots.sort(key=lambda ev: ev.name)
-    plots: Dict[str, List[Night_Report_Event]] = {}
-    for plot in all_plots:
-        if plot.group in plots:
-            plots[plot.group].append(plot)
-        else:
-            plots[plot.group] = [plot]
-
-    return (plots, text_data)
+    reports_list = [
+        Night_Report_Event(
+            blob.public_url,
+            prefix,
+            blob.md5_hash,
+            blobname=blob.name,
+        )
+        for blob in blobs
+    ]
+    return download_sort_night_report_events(bucket, reports_list)
 
 
 def get_night_reports_blobs(
     bucket: Bucket, prefix: str, day_obs: date
 ) -> List[Blob]:
+    """Scrapes and returns the given bucket for night report blobs for the
+    given date.
+
+    Parameters
+    ----------
+    bucket : `Bucket`
+        The given GCS bucket.
+    prefix : `str`
+        The prefix to search for blobs with.
+    day_obs : `date`
+        The given date for the search.
+
+    Returns
+    -------
+    blobs : `List` [`Blob`]
+        A list of night report blobs.
+    """
     date_str = date_str_without_hyphens(day_obs)
     prefix_with_date = "/".join([prefix, date_str])
-    blobs = list(bucket.list_blobs(prefix=prefix_with_date))
+    blobs = _list_blobs(bucket, prefix_with_date)
     return blobs
 
 
-def spaces_to_nbsps(match: re.Match) -> str:
+def _spaces_to_nbsps(match: re.Match) -> str:
+    """Returns a string comprising an HTML non-breaking space character for the
+    length of `re.Match`.
+
+    Parameters
+    ----------
+    match : `re.Match`
+        The regex Match object.
+
+    Returns
+    -------
+    result : `str`
+        A string comprising an HTML non-breaking space character for the length
+        of `re.Match`
+    """
     length = match.end() - match.start()
     result = "&nbsp;" * length
     return result
 
 
-def crs_to_brs(match: re.Match) -> str:
+def _crs_to_brs(match: re.Match) -> str:
+    """Returns a string with an HTML break (newline) tag for each matched char
+    in the given `re.Match` object.
+
+    Parameters
+    ----------
+    match : `re.Match`
+        The regex Match object.
+
+    Returns
+    -------
+    result : `str`
+        A string with an HTML break (newline) tag for each matched char in the
+        given `re.Match` object.
+    """
     length = match.end() - match.start()
     result = "<br>" * length
     return result
@@ -570,15 +709,39 @@ def crs_to_brs(match: re.Match) -> str:
 def process_night_report_text_data(
     raw_data: Dict,
 ) -> Dict[str, Any]:
-    text_part = [
+    """Returns text processed from json strings to strings of formatted HTML.
+
+    - The ``"multiline"`` part is a list of lists of strings. The inner list
+    represents lines of text and the outer lists are groups of those lines for
+    displaying in a single box. Spacing is kept intact to view on the page by
+    substituting spaces for the HTML non-breaking space character.
+    Double-spaced lines are replaced with HTML break tags.
+
+    - The ``"quantities"` part is a dict of strings that are displayed ``"{key}
+    : {value}"``.
+
+
+    Parameters
+    ----------
+    raw_data : `Dict`
+        The json object of keys as loaded into a dict.
+
+    Returns
+    -------
+    text_data : `Dict` [`str`, `Any`]
+        A dict of the two constiuent text parts to output to the page in the
+        template.
+    """
+    multiline_part = [
         v for k, v in sorted(raw_data.items()) if k.startswith("text_")
     ]
     # match for two or more spaces
     ptrn = re.compile("[ ]{2,}")
-    nb_text = [ptrn.sub(spaces_to_nbsps, line) for line in text_part]
-    nb_br_text = [re.sub("\n\n", crs_to_brs, line) for line in nb_text]
+    nb_text = [ptrn.sub(_spaces_to_nbsps, line) for line in multiline_part]
+    # match for two newlines
+    nb_br_text = [re.sub("\n\n", _crs_to_brs, line) for line in nb_text]
+    multiline = [line.split("\n") for line in nb_br_text]
 
-    quantity = {k: v for k, v in raw_data.items() if v not in text_part}
-    text = [line.split("\n") for line in nb_br_text]
+    quantities = {k: v for k, v in raw_data.items() if v not in multiline_part}
 
-    return {"text": text, "quantities": quantity}
+    return {"multiline": multiline, "quantities": quantities}

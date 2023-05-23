@@ -1,7 +1,13 @@
 {% extends "layout.jinja" %}
-{% block undertitle %}
+{% block pagetitle %}
   {{ location.name }}
-{% endblock undertitle %}
+{% endblock pagetitle %}
+
+{% block breadcrumb %}
+<a href="{{ url('home') }}">Home</a>>
+<p>{{ location.name }}</p>
+{% endblock breadcrumb  %}
+
 {% block content %}
 {% set loc_slug = location.slug %}
 {% for group_name, cam_names in location.camera_groups.items() %}
@@ -14,7 +20,7 @@
             {% set camera = cameras[cam_name] %}
             {% if camera.logo %}
               <a
-                class="button button-large logo"
+                class="button button-large button-logo"
                 href="{{ url('camera', location=loc_slug, camera=cam_name) }}"
                 style="background-image: url({{ url('static', filename='images/logos/' + camera.logo) }})">
                 {{ camera.name }}

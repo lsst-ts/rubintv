@@ -75,6 +75,9 @@ class Camera:
     night_report_prefix : `str`
         Used to form part of the bucket lookup for night reports. If left unset
         the camera is considered not to produce night reports.
+    night_report_label : `str`
+        The label used on the link button, page title and subtitle for Night
+        Report-like pages. Defaults to `"Night Report"`
     metadata_headers : `dict` [`str`, `dict` [`str`, `str`]]] | `dict`[`str`,
     `str`]
         The default column headers for the metadata in the table for this
@@ -97,6 +100,7 @@ class Camera:
     channels: dict[str, Channel] = field(default_factory=dict)
     per_day_channels: dict[str, Channel] = field(default_factory=dict)
     night_report_prefix: str = ""
+    night_report_label = "Night Report"
     metadata_headers: dict[str, dict[str, str]] | dict[str, str] = field(
         init=False
     )
@@ -256,11 +260,11 @@ class Night_Report_Event:
         The prefix used to locate the blob in the bucket. It's used as the
         delimeter by which to split the url into bucket hostname and the data
         stored in the filename.
-    timestamp: `int`
-        The timestamp of the blob. This is used to keep plot images up-to-date
+    hash: `str`
+        The md5 hash of the blob. This is used to keep plot images up-to-date
         onsite.
     blobname: `str`
-        The name by which to download the blob data from the bucket.
+        The name used to download the blob data from the bucket.
     group: `str`
         The name of the group the data belogs to.
     name: `str`

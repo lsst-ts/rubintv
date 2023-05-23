@@ -1,5 +1,5 @@
 import {
-  _getById, _elWithAttrs, _elWithClass
+  _getById, _elWithAttrs, _elWithClass, intersect
 }
   from './utils.js'
 
@@ -19,7 +19,11 @@ export class TableControls {
     this.metaData = metaData
 
     const saved = this.retrieveSelected()
-    this.selected = saved || this.defaultAttrs
+    if (saved) {
+      this.selected = intersect(saved, this.defaultAttrs)
+    } else {
+      this.selected = this.defaultAttrs
+    }
     this.setGroupedSelected()
 
     this.elementToAppendTo = elementToAppendTo
