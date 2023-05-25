@@ -456,9 +456,11 @@ class HistoricalData:
             The date of the most recent day's Event.
         """
         camera_name = camera.slug
-        primary_channel = list(camera.channels)[0]
-        events = self._get_events()[camera_name][primary_channel]
-        most_recent = events[0].obs_date
+        dates = []
+        for chan in camera.channels:
+            events = self._get_events()[camera_name][chan]
+            dates.append(events[0].obs_date)
+        most_recent = max(dates)
         return most_recent
 
     def get_most_recent_event(self, camera: Camera, channel: Channel) -> Event:
