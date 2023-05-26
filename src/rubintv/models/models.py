@@ -102,7 +102,7 @@ class Camera:
     night_report_prefix: str = ""
     night_report_label = "Night Report"
     metadata_headers: dict[str, dict[str, str]] | dict[str, str] = field(
-        init=False
+        init=False, repr=False
     )
     js_entry: str = ""
 

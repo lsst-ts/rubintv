@@ -46,7 +46,7 @@ class HistoricalData:
 
     def _get_events_for_single_day(
         self, date_to_load: str
-    ) -> Dict[str, Dict[str, List[Event]]]:
+    ) -> Dict[str, List[Event]]:
         """Returns events for every `Camera` for a `Location` for a single date.
 
         Parameters
@@ -56,17 +56,16 @@ class HistoricalData:
 
         Returns
         -------
-        events : `Dict` [`str`, `Dict` [`str`, `List` [`Event`]]]
-            The outer dict is keyed per camera, the inner dict is keyed per
-            channel and list of `Event`s is sorted by day and sequence number.
+        events : `Dict` [`str`, `List` [`Event`]]
+            Keyed per camera, each list of Events is sorted by date and
+            sequence number (in descending number and date order).
         """
-        blobs = []
+        blobs: Dict[str, List[Blob]] = {}
         for cam_name in self._location.all_cameras():
             camera: Camera = self._cameras[cam_name]
-            print(f"Trying for: {camera.name}")
             if not camera.online:
                 continue
-            # date for which there are known to be blobs
+            blobs[cam_name] = []
             y, m, d = map(int, date_to_load.split("-"))
             the_date = date(y, m, d)
             channel: Channel
@@ -75,36 +74,37 @@ class HistoricalData:
                 try:
                     found_blobs = list(self._bucket.list_blobs(prefix=prefix))
                     print(f"channel: {channel.name} found {len(found_blobs)}")
-                    blobs += found_blobs
+                    blobs[cam_name] += found_blobs
                 except NotFound:
                     print(
                         f"Bucket retrieval error. {self._bucket.name} not found"
                     )
         return self._sort_events_from_blobs(blobs)
 
-    def _get_blobs(self) -> List[Blob]:
+    def _get_blobs(self) -> Dict[str, List[Blob]]:
         """Downloads Blob metadata from the Bucket for every Camera registered
         as having historical data.
 
         Returns
         -------
-        blobs : `List` [`Blob`]
-            A list of Blob objects.
+        blobs : `Dict` [`str`, `List` [`Blob`]]
+            A dict of lists of Blob objects, keyed by camera name.
         """
         print(f"Getting blobs for location: {self._location.name}")
-        blobs = []
+        blobs: Dict[str, List[Blob]] = {}
         for cam_name in self._location.all_cameras():
             cam = self._cameras[cam_name]
+            blobs[cam_name] = []
             for channel in cam.channels.values():
                 prefix = channel.prefix
-                print(f"Trying prefix: {prefix}")
                 try:
-                    blobs += list(self._bucket.list_blobs(prefix=prefix))
+                    cam_blobs = list(self._bucket.list_blobs(prefix=prefix))
                 except NotFound:
                     print(
                         f"Bucket retrieval error. {self._bucket.name}:{prefix} not found"
                     )
-                print(f"Total blobs found: {len(blobs)}")
+                print(f"Blobs for {prefix} found: {len(cam_blobs)}")
+                blobs[cam_name] += cam_blobs
         return blobs
 
     def reload(self) -> None:
@@ -211,9 +211,7 @@ class HistoricalData:
             )
         return reports
 
-    def _get_events(
-        self, reload: bool = False
-    ) -> Dict[str, Dict[str, List[Event]]]:
+    def _get_events(self, reload: bool = False) -> Dict[str, List[Event]]:
         """Returns a dict of dicts of sorted lists of Events
 
         Either simply returns the cache of events or populates the cache before
@@ -232,10 +230,9 @@ class HistoricalData:
 
         Returns
         -------
-        events : Dict[str, Dict[str, List[Event]]]
-            The outer dict is keyed per camera,
-            the inner dict is keyed per channel and
-            list of Events is sorted by day and sequence number.
+        events : `Dict` [`str`, `List` [`Event`]
+            Keyed per camera, each list of Events is sorted by date and
+            sequence number (in descending number and date order).
         """
         if (
             reload
@@ -248,44 +245,40 @@ class HistoricalData:
         return self._events
 
     def _sort_events_from_blobs(
-        self, blobs: List
-    ) -> Dict[str, Dict[str, List[Event]]]:
+        self, blobs: Dict[str, List[Blob]]
+    ) -> Dict[str, List[Event]]:
         """Returns a dict of dicts of sorted lists of Events.
 
-        This method takes a list of Blobs, filters out any that don't match the
-        filetypes associated with camera events then recasts and sorts them as
-        Events by day and sequence number.
-        Those Events are then organised by channel and camera to which they
-        belong.
+        This method takes a dict of list of Blobs, filters out any that don't
+        match the filetypes associated with camera events then recasts and
+        sorts them as Events by day and sequence number.
+        Those Events are then organised by camera.
 
         Parameters
         ----------
-        blobs : `List`
-            A list of blobs.
+        blobs : `Dict` [`str`, `List` [`Blob`]]
+            A dict of list of blobs, keyed by camera name.
 
         Returns
         -------
-        events_dict : `Dict` [`str`, `Dict` [`str`, `List` [`Event`]]]
-            The outer dict is keyed per camera, the inner dict is keyed per
-            channel and list of Events is sorted by day and sequence number.
+        events : `Dict` [`str`, `List` [`Event`]]
+            Keyed per camera, each list of Events is sorted by date and
+            sequence number (in descending number and date order.
         """
-        all_events = [
-            Event(blob.public_url)
-            for blob in blobs
-            if list(filter(blob.public_url.endswith, [".png", ".jpg", ".mp4"]))
-            != []
-        ]
-        s_events = sorted(
-            all_events, key=lambda x: (x.obs_date, x.seq), reverse=True
-        )
-        events_dict: Dict[str, Dict[str, List[Event]]] = {}
-        for cam in self._cameras.values():
-            channels = cam.channels
-            events_dict[cam.slug] = {}
-            for channel in channels:
-                events_dict[cam.slug][channel] = [
-                    e for e in s_events if e.prefix == channels[channel].prefix
-                ]
+        events_dict: Dict[str, List[Event]] = {}
+
+        for cam_name in blobs:
+            events = [
+                Event(blob.public_url)
+                for blob in blobs[cam_name]
+                if list(
+                    filter(blob.public_url.endswith, [".png", ".jpg", ".mp4"])
+                )
+                != []
+            ]
+            events_dict[cam_name] = sorted(
+                events, key=lambda x: (x.obs_date, x.seq), reverse=True
+            )
         return events_dict
 
     def get_years(self, camera: Camera) -> List[int]:
@@ -303,12 +296,8 @@ class HistoricalData:
             A list of years.
         """
         camera_name = camera.slug
-        primary_channel = list(camera.channels)[0]
         years = set(
-            [
-                event.obs_date.year
-                for event in self._get_events()[camera_name][primary_channel]
-            ]
+            [event.obs_date.year for event in self._get_events()[camera_name]]
         )
         return list(years)
 
@@ -329,11 +318,10 @@ class HistoricalData:
             List of month numbers (1..12 inclusive).
         """
         camera_name = camera.slug
-        primary_channel = list(camera.channels)[0]
         months = set(
             [
                 event.obs_date.month
-                for event in self._get_events()[camera_name][primary_channel]
+                for event in self._get_events()[camera_name]
                 if event.obs_date.year == year
             ]
         )
@@ -366,11 +354,10 @@ class HistoricalData:
             value.
         """
         camera_name = camera.slug
-        primary_channel = list(camera.channels)[0]
         days = set(
             [
                 event.obs_date.day
-                for event in self._get_events()[camera_name][primary_channel]
+                for event in self._get_events()[camera_name]
                 if event.obs_date.month == month
                 and event.obs_date.year == year
             ]
@@ -400,8 +387,7 @@ class HistoricalData:
             The seq_num of the last Event for that Camera and day.
         """
         camera_name = camera.slug
-        primary_channel = list(camera.channels)[0]
-        cam_events = self._get_events()[camera_name][primary_channel]
+        cam_events = self._get_events()[camera_name]
         days_events = [ev for ev in cam_events if ev.obs_date == a_date]
         return days_events[0].seq
 
@@ -429,13 +415,13 @@ class HistoricalData:
         ``{ 'chan_name1': [Event 1, Event 2, ...], 'chan_name2': [...], ...}``.
         """
         camera_name = camera.slug
-        events_dict = self._get_events()[camera_name]
+        events_list = self._get_events()[camera_name]
         days_events_dict = {}
-        for channel in events_dict:
-            days_events_dict[channel] = [
+        for chan_name, channel in camera.channels.items():
+            days_events_dict[chan_name] = [
                 event
-                for event in events_dict[channel]
-                if event.obs_date == a_date
+                for event in events_list
+                if event.obs_date == a_date and event.prefix == channel.prefix
             ]
         return days_events_dict
 
@@ -456,11 +442,8 @@ class HistoricalData:
             The date of the most recent day's Event.
         """
         camera_name = camera.slug
-        dates = []
-        for chan in camera.channels:
-            events = self._get_events()[camera_name][chan]
-            dates.append(events[0].obs_date)
-        most_recent = max(dates)
+        events = self._get_events()[camera_name]
+        most_recent = events[0].obs_date
         return most_recent
 
     def get_most_recent_event(self, camera: Camera, channel: Channel) -> Event:
@@ -481,8 +464,13 @@ class HistoricalData:
 
         """
         camera_name = camera.slug
-        channel_name = channel.slug
-        events = self._get_events()[camera_name][channel_name]
+        events = [
+            e
+            for e in self._get_events()[camera_name]
+            if e.prefix == channel.prefix
+        ]
+        print(channel.prefix)
+        print(f"Events here are {self._get_events()[camera_name]}")
         return events[0]
 
     def get_camera_calendar(

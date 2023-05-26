@@ -410,7 +410,9 @@ async def get_allsky_historical(request: web.Request) -> Dict[str, Any]:
     locations = request.config_dict["rubintv/models"].locations
     location = locations["summit"]
     title = build_title("Summit", "All Sky", "Historical", request=request)
-    historical = request.config_dict["rubintv/cached_data/summit"]
+    historical: HistoricalData = request.config_dict[
+        "rubintv/cached_data/summit"
+    ]
     logger = request["safir/logger"]
 
     with Timer() as timer:
@@ -418,7 +420,10 @@ async def get_allsky_historical(request: web.Request) -> Dict[str, Any]:
         camera = cameras["allsky"]
 
         years = historical.get_camera_calendar(camera)
-        most_recent_year = next(iter(years.keys()))
+        if years:
+            most_recent_year = next(iter(years.keys()))
+        else:
+            most_recent_year = None
 
         channel = camera.channels["movie"]
         movie = historical.get_most_recent_event(camera, channel)
