@@ -388,8 +388,8 @@ class HistoricalData:
         """
         camera_name = camera.slug
         cam_events = self._get_events()[camera_name]
-        days_events = [ev for ev in cam_events if ev.obs_date == a_date]
-        return days_events[0].seq
+        days_events = (ev for ev in cam_events if ev.obs_date == a_date)
+        return next(days_events).seq
 
     def get_events_for_date(
         self, camera: Camera, a_date: date
@@ -464,14 +464,12 @@ class HistoricalData:
 
         """
         camera_name = camera.slug
-        events = [
+        events = (
             e
             for e in self._get_events()[camera_name]
             if e.prefix == channel.prefix
-        ]
-        print(channel.prefix)
-        print(f"Events here are {self._get_events()[camera_name]}")
-        return events[0]
+        )
+        return next(events)
 
     def get_camera_calendar(
         self, camera: Camera
