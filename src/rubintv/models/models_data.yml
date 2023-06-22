@@ -163,6 +163,8 @@ Cameras:
     logo: slac_lsstcam.png
     night_report_prefix: slac_lsstcam_night_reports
     night_report_label: Trending Plots
+    image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/FITSInfo/\
+    view.html?image=MC_C_{day_obs}_{seq_num:06}"
 
 
   ts8:
