@@ -31,18 +31,9 @@ Cameras:
     name: TMA
     online: true
     channels:
-      plot_a:
-        name: Plot A
-        prefix: tma_plot_a
-      plot_b:
-        name: Plot B
-        prefix: tma_plot_b
-      plot_c:
-        name: Plot C
-        prefix: tma_plot_c
-      plot_d:
-        name: Plot D
-        prefix: tma_plot_d
+      mount_motion_profile:
+        name: Mount motion profile
+        prefix: mount_motion_profile
 
   auxtel:
     name: AuxTel
