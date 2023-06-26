@@ -442,3 +442,10 @@ MetadataHeadings:
       The image type, e.g. bias, dark, flat etc
     Test type:
       The type of test being run, e.g. superflats etc
+  tma:
+    Seq. No.:
+    Event version number:
+    Event type:
+    End reason:
+    Duration:
+    Time UTC:
