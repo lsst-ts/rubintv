@@ -34,6 +34,7 @@ Cameras:
       tma_mount_motion_profile:
         name: Mount motion profile
         prefix: tma_mount_motion_profile
+    js_entry: auxtel
 
   auxtel:
     name: AuxTel
