@@ -18,10 +18,11 @@ class BucketHandlerInterface(ABC):
 class BucketHandlerMaker:
     def __init__(self, service_handle: str = "s3") -> None:
         self._bucket_cls: Type[BucketHandlerInterface]
-        if service_handle == "gcs":
-            self._bucket_cls = GCSBucketHandler
-        else:
-            self._bucket_cls = S3BucketHandler
+        match service_handle:
+            case "gcs":
+                self._bucket_cls = GCSBucketHandler
+            case _:
+                self._bucket_cls = S3BucketHandler
 
     def get_bucket_handler(self, bucket_handle: str) -> BucketHandlerInterface:
         cls_name = self._bucket_cls.__name__
