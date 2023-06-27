@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" data-version="{{ version }}">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Mono:wght@300;400&family=Rubik:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='assets/style.css') }}">
+    <link rel="icon" href="{{ url_for('static', path='images/favicon.png') }}">
+    <title>{{ title }}</title>
+</head>
+{% set body_class = "" %}
+{% if camera %}
+    {% set body_class = camera.slug %}
+{% endif %}
+{% if event %}
+    {% set body_class = body_class ~ " event" %}
+{% endif %}
+<body class="{{ body_class }}">
+        <header>
+            <div class="header-wrap">
+                <div class="header-page-titles">
+                    <h2 class="page-title">
+                        {% block pagetitle %}
+                        {% endblock pagetitle %}
+                    </h2>
+                    {% block allsky_status %}
+                    {% endblock allsky_status %}
+                    <h3 class="page-subtitle">
+                        {% block pagesubtitle %}
+                        {% endblock pagesubtitle %}
+                    </h3>
+                    <h4 class="page-undertitle">
+                        {% block undertitle %}
+                        {% endblock undertitle %}
+                    </h4>
+                </div>
+                <div class="header-page-buttons">
+                    {% block headerbuttons %}
+                    {% endblock headerbuttons %}
+                </div>
+                <div class="header-messages">
+                    {% block messages %}
+                        <a class="in-memoriam" href="https://community.lsst.org/t/remembering-simon-krughoff/7344">
+                            <img src="{{ url_for('static', path='images/flowers.svg') }}">
+                                <p>
+                                    In memory of Simon Krughoff 1974-2023<br><br>
+                                    Who, among his many<br>contributions to the project,<br>helped launch RubinTV
+                                </p>
+                            <img src="{{ url_for('static', path='images/flowers.svg') }}">
+                        </a>
+                    {% endblock messages %}
+                </div>
+                <div class="header-site-titles">
+                    <a class="logo" href="{{ url_for('home') }}" title="home">
+                        <img src="{{ url_for('static', path='images/logos/Rubin_Logo.png') }}">
+                    </a>
+                    <h1 class="site-title">RubinTV Image Display Service</h1>
+                </div>
+            </div>
+        </header>
+        <main>
+            <div class="breadcrumb">
+                {% block breadcrumb %}
+                {% endblock breadcrumb %}
+            </div>
+            {% block content %}
+            {% endblock content %}
+            {% block further %}
+            {% endblock further %}
+        </main>
+    <script type=text/javascript src="{{ url_for('static', path='assets/hostbanner.js') }}"></script>
+    {% block footer_scripts %}
+    {% endblock footer_scripts %}
+</body>
+</html>

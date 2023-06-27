@@ -1,0 +1,52 @@
+{% extends "_layout.jinja" %}
+{% block pagetitle %}
+  {{ location.title }}
+{% endblock pagetitle %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('home') }}">Home</a>>
+<p>{{ location.title }}</p>
+{% endblock breadcrumb  %}
+
+{% block content %}
+{% set loc_name = location.name %}
+{% for group_name, cam_names in location.camera_groups.items() %}
+  <section>
+    <h2 class="section-title">{{ group_name }}</h2>
+    <nav class="camera-menu">
+      <ul class="cameras flr">
+        {% for cam_name in cam_names %}
+          <li>
+            {% set cameras = request.app.state.fixtures.cameras|list_to_dict %}
+            {% set camera = cameras[cam_name] %}
+            {% if camera.logo %}
+              <a
+                class="button button-large button-logo"
+                href="{{ url_for('camera', location_name=loc_name, camera_name=cam_name) }}"
+                style="background-image: url({{ url_for('static', path='images/logos/' + camera.logo) }})">
+                {{ camera.title }}
+              </a>
+            {% else %}
+              <a
+                class="button button-large"
+                href="{{ url_for('camera', location_name=loc_name, camera_name=cam_name) }}"
+              >
+                {{ camera.title }}
+              </a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </section>
+{% endfor %}
+{% endblock content %}
+{% block further %}
+  <div class="admin-access">
+    {# <a
+      class="button button-small admin"
+      href="{{ url_for('admin', location=location.name) }}">
+      Admin
+    </a> #}
+  </div>
+{% endblock further %}

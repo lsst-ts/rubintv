@@ -1,0 +1,76 @@
+.calendar
+  width: 100%
+  margin-top: -2em
+  margin-bottom: 2em
+  &.half-width
+    width: 50%
+
+.most-recent-year
+  margin-bottom: 2em
+
+.year-titles
+  margin-bottom: 4em
+  position: relative
+  max-width: fit-content
+
+.year-title
+  font-size: 1.1em
+  cursor: pointer
+  max-width: fit-content
+  &.current
+    color: #eee
+
+.year-title-viewbox
+  height: 1.1em
+  display: flex
+  gap: 14px
+
+.years
+  overflow: hidden
+
+.year
+  display: none
+  flex-direction: row
+  flex-wrap: nowrap
+  box-sizing: border-box
+  gap: 3em
+  overflow-x: scroll
+  &.current
+    display: flex
+
+
+.month-title
+  font-size: 1.1em
+  margin-bottom: 1em
+  text-align: end
+
+.months
+  display: flex
+  flex-direction: row
+  flex-wrap: wrap
+  justify-content: flex-start
+  gap: 8px
+
+.month
+  box-sizing: border-box
+  flex-basis: calc(25% - 0.5em)
+
+.days
+  display: grid
+  grid-template-columns: repeat(7, 1fr)
+  gap: 2px
+
+.day
+  font-family: 'Red Hat Mono', monospace
+  padding: 0.4em
+  width: 3em
+  height: 2.6em
+  user-select: none
+  &.obs
+    cursor: pointer
+    transition: background 0.3s
+  .day_num
+    display: block
+  .num_evs
+    font-size: 0.6em
+    display: block

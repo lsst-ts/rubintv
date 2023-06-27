@@ -1,0 +1,65 @@
+.button
+	box-sizing: border-box
+	border-radius: 12px
+	border: none
+	background: #eee
+	color: #000
+	display: flex
+	flex-direction: column
+	justify-content: end
+	text-decoration: none
+	box-shadow: 2.5px 2.5px 4px rgba(0, 0, 0, 0.26)
+	transition: 0.2s
+	padding: 0.5em
+	&:hover
+		box-shadow: none
+
+.button-large
+	width: 160px
+	height: 110px
+	padding: 0.8em 1.2em
+	font-size: 0.85em
+	&.button-logo
+		background-position: center
+		background-repeat: no-repeat
+	&.button-logo:not([style*='.svg'])
+		color: #fff
+		text-shadow: 1px 1px 3px #000
+		background-size: cover
+	&:hover
+		transform: scale(0.992)
+
+.button-large
+	img
+		width: 50%
+		margin: auto
+
+.button-small
+	padding: 1em
+	height: 67px
+	width: fit-content
+	min-width: 100px
+
+.button-table
+	width: 30px
+	height: 30px
+	border-radius: 10%
+	&.image-viewer-link
+		background: url(../images/image-viewer-link.svg)
+	&.copy
+		background-image: url(../images/copy-to-clipboard.svg)
+		width: 16px
+		height: 16px
+
+.button
+	&.historical
+		width: max-content
+		padding: 0.4em
+		margin-bottom: -0.4em
+		border-radius: 6px
+		display: inline-block
+		flex-direction: row
+		img
+			height: 1em
+			width: auto
+			margin-left: 4px
