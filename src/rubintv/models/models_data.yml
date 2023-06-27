@@ -31,9 +31,9 @@ Cameras:
     name: TMA
     online: true
     channels:
-      mount_motion_profile:
+      tma_mount_motion_profile:
         name: Mount motion profile
-        prefix: mount_motion_profile
+        prefix: tma_mount_motion_profile
 
   auxtel:
     name: AuxTel
