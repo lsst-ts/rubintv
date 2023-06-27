@@ -1,0 +1,128 @@
+@function map-collect($maps...)
+  $collection: ()
+  @each $map in $maps
+    $collection: map-merge($collection, $map)
+  @return $collection
+
+$light: #eee
+$dark: #555
+$darker: darken($dark, 10%)
+
+body
+  background-color: $dark
+  color: $light
+
+header
+  background-color: $darker
+  color: $light
+  border-top: 3px solid $light
+  border-bottom: 1px solid $light
+  a
+    color: $light
+
+// calendar
+.year-title
+  color: #999
+  background-color: $dark
+
+.day
+  background: #484848
+  color: $light
+  &:hover
+    text-decoration: none
+  &.obs
+    background: #404040
+    &:hover
+      background: #887166 !important
+
+.allsky
+  .day
+    color: #6a6a6a
+    &.obs
+      background: #2a2a2a
+      color: #fff
+
+// admin
+.service-group
+  background: #484848
+.services
+  .service
+    background:  $dark
+
+
+// night report
+#night-report
+  color: #000
+
+// table
+.table-control
+  color: #222
+
+.channel-grid-heading
+  background-color: $dark
+
+.grid-cell
+  background-color: #f0f0f0
+  color: #000
+
+.table-spacer
+  background-color: $dark
+
+.svg-brace
+  stroke: #fff
+
+.copied
+  border: 1px solid green
+  background-color: #fff
+  color: #000
+
+// buttons
+.button.historical
+  background-color: #262534
+  color: #fff
+.button.movie
+  background-color: #83daee
+.button.night-report
+  background-color:  #696797
+  color: #fff
+.button.admin
+  background-color: #999
+
+$auxtel: ("monitor":#F07F85, "mount": #F0C87F, "spec": #7F85F0, "im": #7FF094)
+$startracker: ("startracker": #58528b, "analysis": #ba528f, "startracker-wide": #fc6465, "startracker-wide-analysis": #fda529)
+$startrackerfast: ("startracker-fast": #FECC66, "startracker-fast-analysis": #d5fa80)
+$slac: ("focal_plane_mosaic": #6fe9ba, "noise_map": #e771a8)
+$tma: ("tma_mount_motion_profile": #fa9284)
+
+$buttons: map_collect($auxtel, $startracker, $startrackerfast, $slac, $tma)
+@each $name, $colour in $buttons
+  .button.#{$name}
+    background-color: $colour
+
+
+$filters: ("u_color": #d9f3fd, "g_color": #e7fdd9, "r_color": #fdd7d7, "i_color": #e2d9fd, "z_color": #fdd9fd, "y_color": #ffeed9)
+
+@each $name, $color in $filters
+  .grid-cell.#{$name}
+    background-color: lighten($color, 40%)
+
+.grid-cell
+  &.bad
+    background-color: #ebab93
+  &.warning
+    background-color: #f1f1a7
+  &.ok
+    background-color: #b3f1a7
+  &.measured
+    background-color: #7dc8cf
+
+  &.white_color
+    background-color: #fefefe
+  &.rainbow_color
+    background: linear-gradient(270deg, #fec8c9 0%, #f5dece 16%, #f5f8cd 28%, #e0f5d1 50%, #c9d2fe 66%, #dcddfe 83%, #f1dafe 100%)
+
+  &.r_stripes
+    background: linear-gradient(27deg, #f77171 0%, #f77171 14%, #f0f0f0 14%, #f0f0f0 29%, #f77171 29%, #f77171 43%, #f0f0f0 43%, #f0f0f0 57%,  #f77171 57%, #f77171 71%, #f0f0f0 71%, #f0f0f0 84%, #f77171 84%, #f77171 100%)
+
+  &.b_stripes
+    background: linear-gradient(27deg, #71abf7 0%, #71abf7 14%, #f0f0f0 14%, #f0f0f0 29%, #71abf7 29%, #71abf7 43%, #f0f0f0 43%, #f0f0f0 57%,  #71abf7 57%, #71abf7 71%, #f0f0f0 71%, #f0f0f0 84%, #71abf7 84%, #71abf7 100%)

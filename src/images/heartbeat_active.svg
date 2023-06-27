@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 50 50" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <rect id="active" x="0" y="0" width="50" height="50" style="fill:none;"/>
+    <clipPath id="_clip1">
+        <rect x="0" y="0" width="50" height="50"/>
+    </clipPath>
+    <g clip-path="url(#_clip1)">
+        <path d="M25,9.682C30.263,-0 40.789,-0 46.053,4.841C51.316,9.682 51.316,19.363 46.053,29.045C42.368,36.306 32.895,43.567 25,48.408C17.105,43.567 7.631,36.306 3.947,29.045C-1.316,19.363 -1.316,9.682 3.947,4.841C9.21,-0 19.737,-0 25,9.682Z" style="fill:#e61a1a;"/>
+    </g>
+</svg>
