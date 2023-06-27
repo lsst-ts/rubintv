@@ -444,7 +444,6 @@ MetadataHeadings:
     Test type:
       The type of test being run, e.g. superflats etc
   tma:
-    Seq. No.:
     Event version number:
     Event type:
     End reason:
