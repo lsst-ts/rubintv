@@ -94,7 +94,7 @@ $startrackerfast: ("startracker-fast": #FECC66, "startracker-fast-analysis": #d5
 $slac: ("focal_plane_mosaic": #6fe9ba, "noise_map": #e771a8)
 $tma: ("tma_mount_motion_profile": #799799)
 
-$buttons: map_collect($auxtel, $startracker, $startrackerfast, $slac)
+$buttons: map_collect($auxtel, $startracker, $startrackerfast, $slac, $tma)
 @each $name, $colour in $buttons
   .button.#{$name}
     background-color: $colour
