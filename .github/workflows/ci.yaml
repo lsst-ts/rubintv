@@ -1,29 +1,27 @@
 name: CI
 
-'on':
+"on":
+  merge_group: {}
+  pull_request: {}
   push:
     branches-ignore:
       # These should always correspond to pull requests, so ignore them for
       # the push trigger and let them be triggered by the pull_request
       # trigger, avoiding running the workflow twice.  This is a minor
       # optimization so there's no need to ensure this is comprehensive.
-      - 'dependabot/**'
-      - 'renovate/**'
-      - 'tickets/**'
-      - 'u/**'
+      - "dependabot/**"
+      - "gh-readonly-queue/**"
+      - "renovate/**"
+      - "tickets/**"
+      - "u/**"
     tags:
-      - '*'
-  pull_request: {}
+      - "*"
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  lint:
 
-    strategy:
-      matrix:
-        python:
-          - '3.9'
-          - '3.10'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - uses: actions/checkout@v3
@@ -42,39 +40,35 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python }}
+          python-version: "3.11"
 
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.0
 
-      - name: Install tox
-        run: pip install tox
+  test:
 
-      - name: Cache tox environments
-        id: cache-tox
-        uses: actions/cache@v3
-        with:
-          path: .tox
-          # requirements/*.txt and pyproject.toml have versioning info
-          # that would impact the tox environment.
-          key: tox-${{ matrix.python }}-${{ hashFiles('requirements/*.txt') }}-${{ hashFiles('pyproject.toml') }}
-          restore-keys: |
-            tox-${{ matrix.python }}-${{ hashFiles('requirements/*.txt') }}-
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
 
-      - name: Stash Google credentials
-        run: echo "$GOOGLE_CREDS" > /tmp/google_creds.json
-        shell: bash
-        env:
-          GOOGLE_CREDS: ${{ secrets.GOOGLE_CREDS }}
+    strategy:
+      matrix:
+        python:
+          - "3.11"
+
+    steps:
+      - uses: actions/checkout@v3
 
       - name: Run tox
-        run: tox -e py,coverage-report,typing
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: '/tmp/google_creds.json'
+        uses: lsst-sqre/run-tox@v1
+        with:
+          python-version: ${{ matrix.python }}
+          tox-envs: "py,coverage-report,typing"
 
   build:
+
     runs-on: ubuntu-latest
-    needs: [test]
+    needs: [lint, test]
+    timeout-minutes: 10
 
     # Only do Docker builds of tagged releases and pull requests from ticket
     # branches.  This will still trigger on pull requests from untrusted
@@ -82,8 +76,9 @@ jobs:
     # but in this case the build will fail with an error since the secret
     # won't be set.
     if: >
-      startsWith(github.ref, 'refs/tags/') || startsWith(github.head_ref, 'tickets/') || startsWith(github.ref, 'refs/heads/develop')
-
+      github.event_name != 'merge_group'
+      && (startsWith(github.ref, 'refs/tags/')
+          || startsWith(github.head_ref, 'tickets/'))
 
     steps:
       - uses: actions/checkout@v3
@@ -102,7 +97,7 @@ jobs:
 
       - name: Define the Docker tag
         id: vars
-        run: echo "tag=$(scripts/docker-tag.sh)" >> $GITHUB_OUTPUT
+        run: echo ::set-output name=tag::$(scripts/docker-tag.sh)
 
       - name: Print the tag
         id: print
@@ -110,12 +105,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
@@ -125,12 +114,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v3
         with:
           context: .
           push: true
           tags: |
-            lsstsqre/rubintv:${{ steps.vars.outputs.tag }}
-            ghcr.io/lsst-sqre/rubintv:${{ steps.vars.outputs.tag }}
+            ghcr.io/lsst-dm/rubintv:${{ steps.vars.outputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
