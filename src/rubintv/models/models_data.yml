@@ -443,9 +443,27 @@ MetadataHeadings:
       The image type, e.g. bias, dark, flat etc
     Test type:
       The type of test being run, e.g. superflats etc
+
   tma:
     Event version number:
+      The code version which generated the event. Events only necessarily have the same timespans when their version numbers match!
     Event type:
+        The type of event, i.e. was it a regular move (MOVING) or were we tracking the sky (TRACKING)?
     End reason:
+        Why did the event end? Did we turn off, stop, go to fault, or change movement type?
     Duration:
+        The duration of the event, in seconds.
     Time UTC:
+        The start time of the event, as a UTC time string.
+    Elevation start:
+        The starting elevation value, in degrees.
+    Elevation move:
+        The total net elevation move, in degrees.
+    Largest elevation torque:
+        The largest elevation torque during the event, in Nm, including its sign. So, if the largest toque magnitude is a negative one, it will be a large negative value, if the largest toque seen was positive, it will be large and positive.
+    Azimuth start:
+        The starting azimuth value, in degrees.
+    Azimuth move:
+        The total net azimuth move, in degrees.
+    Largest azimuth torque:
+        The largest azimuth torque during the event, in Nm, including its sign. So, if the largest toque magnitude is a negative one, it will be a large negative value, if the largest toque seen was positive, it will be large and positive.
