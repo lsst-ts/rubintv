@@ -1,0 +1,9 @@
+{% extends "_layout.jinja" %}
+{% block pagetitle %}
+  {{ camera.title }}
+{% endblock pagetitle %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('home') }}">Home</a>>
+<p>{{ location.title }}</p>
+{% endblock breadcrumb %}
