@@ -67,6 +67,12 @@ async def get_location_camera(
     return (location, camera)
 
 
+# @external_router.get(
+#     "/api/location/{location_name}/camera/{camera_name}",
+#     response_model=Tuple[Location, Camera],
+# )
+
+
 @external_router.get(
     "/{location_name}", response_class=HTMLResponse, name="location"
 )
@@ -93,7 +99,10 @@ async def get_camera_page(
     location, camera = await get_location_camera(
         location_name, camera_name, request
     )
+    template = "camera"
+    if not camera.online:
+        template = "not_online"
     return templates.TemplateResponse(
-        "camera.jinja",
+        f"{template}.jinja",
         {"request": request, "location": location, "camera": camera},
     )
