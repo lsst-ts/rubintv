@@ -245,6 +245,7 @@ metadata_cols:
       The image type, e.g. bias, dark, flat etc
     Test type:
       The type of test being run, e.g. superflats
+
   ts8:
     Run number:
       The run number, as taken from the exposure record's science_program field
@@ -256,6 +257,7 @@ metadata_cols:
       The image type, e.g. bias, dark, flat etc
     Test type:
       The type of test being run, e.g. superflats etc
+
   auxtel:
     Exposure log entries:
       Any exposure log entries which have been made, click to pop out the details
@@ -277,6 +279,7 @@ metadata_cols:
       The TAI of the observation
     DIMM Seeing:
       The seeing, as measured by the DIMM, if available
+
   startracker:
     Header values:
       Exposure Time:
@@ -320,6 +323,7 @@ metadata_cols:
         The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
       RMS scatter pixels:
         The RMS distance between the measured position of each source and its position in the catalog, in pixels
+
   startracker-wide:
     Star Tracker Wide:
       Exposure Time wide:
@@ -363,6 +367,7 @@ metadata_cols:
         The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
       RMS scatter pixels wide:
         The RMS distance between the measured position of each source and its position in the catalog, in pixels
+
   startracker-fast:
     Star Tracker Fast:
       Exposure Time fast:
@@ -406,6 +411,7 @@ metadata_cols:
         The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
       RMS scatter pixels fast:
         The RMS distance between the measured position of each source and its position in the catalog, in pixels
+
   comcam:
     Exposure time:
       The image exposure time
@@ -415,13 +421,30 @@ metadata_cols:
       The image type, e.g. bias, dark, flat etc
     Test type:
       The type of test being run, e.g. superflats etc
+
   tma:
-    Seq. No.:
     Event version number:
+      The code version which generated the event. Events only necessarily have the same timespans when their version numbers match!
     Event type:
+        The type of event, i.e. was it a regular move (MOVING) or were we tracking the sky (TRACKING)?
     End reason:
+        Why did the event end? Did we turn off, stop, go to fault, or change movement type?
     Duration:
+        The duration of the event, in seconds.
     Time UTC:
+        The start time of the event, as a UTC time string.
+    Elevation start:
+        The starting elevation value, in degrees.
+    Elevation move:
+        The total net elevation move, in degrees.
+    Largest elevation torque:
+        The largest elevation torque during the event, in Nm, including its sign. So, if the largest toque magnitude is a negative one, it will be a large negative value, if the largest toque seen was positive, it will be large and positive.
+    Azimuth start:
+        The starting azimuth value, in degrees.
+    Azimuth move:
+        The total net azimuth move, in degrees.
+    Largest azimuth torque:
+        The largest azimuth torque during the event, in Nm, including its sign. So, if the largest toque magnitude is a negative one, it will be a large negative value, if the largest toque seen was positive, it will be large and positive.
 
 
 heartbeats:
