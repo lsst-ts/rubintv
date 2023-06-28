@@ -58,11 +58,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Stash Google credentials
+        run: echo "$GOOGLE_CREDS" > /tmp/google_creds.json
+        shell: bash
+        env:
+          GOOGLE_CREDS: ${{ secrets.GOOGLE_CREDS }}
+
       - name: Run tox
         uses: lsst-sqre/run-tox@v1
         with:
           python-version: ${{ matrix.python }}
           tox-envs: "py,coverage-report,typing"
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: '/tmp/google_creds.json'
+
 
   build:
 
