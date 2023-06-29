@@ -13,6 +13,7 @@ locations:
     logo: cactus.svg
     camera_groups:
       Cameras: [ auxtel, fake_auxtel, comcam ]
+      Telescopes: [ tma ]
     services: [ auxtel, comcam, misc ]
 
   - name: summit
