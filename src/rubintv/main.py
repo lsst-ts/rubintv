@@ -16,11 +16,11 @@ from safir.dependencies.http_client import http_client_dependency
 from safir.logging import configure_logging, configure_uvicorn_logging
 from safir.middleware.x_forwarded import XForwardedMiddleware
 
-from .buckethandler import BucketHandlerInterface, BucketHandlerMaker
 from .config import config
 from .handlers.external import external_router
 from .handlers.internal import internal_router
-from .models_init import ModelsInitiator
+from .models.buckethandler import BucketHandlerInterface, BucketHandlerMaker
+from .models.models_init import ModelsInitiator
 
 __all__ = ["app", "config"]
 
@@ -47,15 +47,10 @@ app = FastAPI(
 m = ModelsInitiator()
 app.state.fixtures = m
 
-# Fetch some test data
-bucket_maker = BucketHandlerMaker("gcs")
-bucket: BucketHandlerInterface = bucket_maker.get_bucket_handler(
-    "rubintv_data"
-)
-test_blobs = bucket.list_objects(
-    "auxtel_monitor/auxtel-monitor_dayObs_2023-05-31"
-)
-app.state.test_blobs = test_blobs
+# Attach a bucket
+bhm = BucketHandlerMaker("gcs")
+bucket_handler: BucketHandlerInterface = bhm.get_bucket_handler("rubintv_data")
+app.state.bucket_handler = bucket_handler
 
 # Intwine jinja2 templating
 app.mount(

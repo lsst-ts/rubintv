@@ -1,4 +1,5 @@
 """Handlers for the app's external root, ``/rubintv/``."""
+from datetime import date
 from itertools import chain
 from typing import Tuple
 
@@ -9,7 +10,13 @@ from structlog.stdlib import BoundLogger
 
 from rubintv.dependencies import get_templates
 from rubintv.handlers.helpers import find_first
-from rubintv.models import Camera, Location
+from rubintv.models.buckethandler import BucketHandlerInterface
+from rubintv.models.models import (
+    Camera,
+    Location,
+    build_prefix_with_date,
+    get_current_day_obs,
+)
 
 __all__ = ["get_home", "external_router", "templates"]
 
@@ -67,10 +74,31 @@ async def get_location_camera(
     return (location, camera)
 
 
-# @external_router.get(
-#     "/api/location/{location_name}/camera/{camera_name}",
-#     response_model=Tuple[Location, Camera],
-# )
+@external_router.get(
+    "/api/location/{location_name}/camera/{camera_name}/latest"
+)
+async def get_camera_latest_data(
+    location_name: str,
+    camera_name: str,
+    request: Request,
+    logger: BoundLogger = Depends(logger_dependency),
+) -> dict[str, date | list]:
+    location, camera = await get_location_camera(
+        location_name, camera_name, request
+    )
+    day_obs = get_current_day_obs()
+    prefix = build_prefix_with_date(camera, day_obs)
+    logger.info(f"Looking for data for :{prefix}")
+    channel_data = scrape_data_for_prefix(location.bucket, prefix, request)
+    return {"date": day_obs, "channels": channel_data}
+
+
+def scrape_data_for_prefix(
+    bucket_name: str, prefix: str, request: Request
+) -> list:
+    bucket_handler: BucketHandlerInterface = request.app.state.bucket_handler
+    objects = bucket_handler.list_objects(prefix)
+    return objects
 
 
 @external_router.get(

@@ -29,7 +29,7 @@ async def _find_by_key_and_value(
     if not a_list:
         return None
     try:
-        result = (o for o in a_list if o.dict()[key] == to_match)
+        result = (o for o in a_list if o.model_dump()[key] == to_match)
     except IndexError:
         pass
     return result
