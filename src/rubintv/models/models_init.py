@@ -4,7 +4,7 @@ from typing import Any, Type
 import yaml
 from pydantic import BaseModel
 
-from rubintv.models import Camera, Heartbeat, Location
+from .models import Camera, Heartbeat, Location
 
 __all__ = ["ModelsInitiator", "dict_from_list_of_named_objects"]
 

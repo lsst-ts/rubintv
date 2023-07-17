@@ -9,8 +9,8 @@ from bs4 import BeautifulSoup
 from httpx import AsyncClient
 
 from rubintv.handlers.helpers import find_first
-from rubintv.models import Location
-from rubintv.models_init import ModelsInitiator
+from rubintv.models.models import Location
+from rubintv.models.models_init import ModelsInitiator
 
 m = ModelsInitiator()
 

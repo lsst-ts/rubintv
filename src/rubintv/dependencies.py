@@ -3,7 +3,9 @@ from pathlib import Path
 from fastapi.templating import Jinja2Templates
 
 from rubintv import __version__
-from rubintv.models_init import dict_from_list_of_named_objects as list_to_dict
+from rubintv.models.models_init import (
+    dict_from_list_of_named_objects as list_to_dict,
+)
 
 __all__ = ["get_templates"]
 
