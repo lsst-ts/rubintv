@@ -152,6 +152,9 @@ Cameras:
       noise_map:
         name: Noise Map
         prefix: slac_lsstcam_noise_map
+      ccob_analysis:
+        name: CCOB Analysis
+        prefix: slac_lsstcam_ccob_analysis
     js_entry: auxtel
     logo: slac_lsstcam.png
     night_report_prefix: slac_lsstcam_night_reports
