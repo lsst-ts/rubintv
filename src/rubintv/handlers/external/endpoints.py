@@ -659,3 +659,21 @@ async def current(request: web.Request) -> Dict[str, Any]:
         "date": the_date,
         "seq": seq,
     }
+
+
+@routes.get(
+    "/{location}/{camera}/{channel}_current_update", name="current_update"
+)
+async def get_channel_current_update(request: web.Request) -> web.Response:
+    location_name = request.match_info["location"]
+    location = find_location(location_name, request)
+    cameras = request.config_dict["rubintv/models"].cameras
+    camera = cameras[request.match_info["camera"]]
+    bucket = request.config_dict[f"rubintv/buckets/{location.slug}"]
+    historical = request.config_dict[f"rubintv/cached_data/{location.slug}"]
+    channel = camera.channels[request.match_info["channel"]]
+    event: Event = get_current_event(camera, channel, bucket, historical)
+    json_event = json.dumps(
+        {"seqNum": event.seq, "url": event.url, "date": event.clean_date()}
+    )
+    return web.Response(text=json_event, content_type="application/json")
