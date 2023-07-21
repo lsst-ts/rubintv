@@ -1,7 +1,7 @@
 locations:
   - name: slac
     title: SLAC
-    bucket: rubintv_data_slac
+    bucket_name: rubintv_data_slac
     logo: SLAC_Logo.svg
     camera_groups:
       Cameras: [ slac_lsstcam, ts8 ]
@@ -9,7 +9,7 @@ locations:
 
   - name: tucson
     title: Tucson
-    bucket: rubintv_data_tts
+    bucket_name: rubintv_data_tts
     logo: cactus.svg
     camera_groups:
       Cameras: [ auxtel, fake_auxtel, comcam ]
@@ -18,7 +18,7 @@ locations:
 
   - name: summit
     title: Summit
-    bucket: rubintv_data
+    bucket_name: rubintv_data
     logo: Summit.jpg
     camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
@@ -155,6 +155,9 @@ cameras:
       - name: noise_map
         title: Noise Map
         prefix: slac_lsstcam_noise_map
+      - name: ccob_analysis
+        title: CCOB Analysis
+        prefix: slac_lsstcam_ccob_analysis
     js_entry: auxtel
     logo: slac_lsstcam.png
     night_report_prefix: slac_lsstcam_night_reports

@@ -8,11 +8,11 @@ from fastapi.responses import HTMLResponse, Response
 from safir.dependencies.logger import logger_dependency
 from structlog.stdlib import BoundLogger
 
-from rubintv.dependencies import get_templates
-from rubintv.handlers.helpers import find_first
-from rubintv.models.buckethandler import BucketHandlerInterface
+from rubintv.inittemplates import get_templates
+from rubintv.models.helpers import find_first
 from rubintv.models.models import (
     Camera,
+    Event,
     Location,
     build_prefix_with_date,
     get_current_day_obs,
@@ -41,12 +41,12 @@ async def get_home(
 
 
 @external_router.get("/api/location/{location_name}", response_model=Location)
-async def get_location(
+def get_location(
     location_name: str,
     request: Request,
 ) -> Location:
     locations = request.app.state.fixtures.locations
-    if not (location := await find_first(locations, "name", location_name)):
+    if not (location := find_first(locations, "name", location_name)):
         raise HTTPException(status_code=404, detail="Location not found.")
     return location
 
@@ -55,20 +55,17 @@ async def get_location(
     "/api/location/{location_name}/camera/{camera_name}",
     response_model=Tuple[Location, Camera],
 )
-async def get_location_camera(
+def get_location_camera(
     location_name: str,
     camera_name: str,
     request: Request,
 ) -> Tuple[Location, Camera]:
-    locations = request.app.state.fixtures.locations
-    if not (location := await find_first(locations, "name", location_name)):
-        raise HTTPException(status_code=404, detail="Location not found.")
-
+    location = get_location(location_name, request)
     cameras = request.app.state.fixtures.cameras
     camera_groups = location.camera_groups.values()
     location_cams = chain(*camera_groups)
     if camera_name not in location_cams or not (
-        camera := await find_first(cameras, "name", camera_name)
+        camera := find_first(cameras, "name", camera_name)
     ):
         raise HTTPException(status_code=404, detail="Camera not found.")
     return (location, camera)
@@ -77,28 +74,30 @@ async def get_location_camera(
 @external_router.get(
     "/api/location/{location_name}/camera/{camera_name}/latest"
 )
-async def get_camera_latest_data(
+def get_camera_latest_data(
     location_name: str,
     camera_name: str,
     request: Request,
     logger: BoundLogger = Depends(logger_dependency),
 ) -> dict[str, date | list]:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
+    location, camera = get_location_camera(location_name, camera_name, request)
     day_obs = get_current_day_obs()
     prefix = build_prefix_with_date(camera, day_obs)
-    logger.info(f"Looking for data for :{prefix}")
-    channel_data = scrape_data_for_prefix(location.bucket, prefix, request)
-    return {"date": day_obs, "channels": channel_data}
+    logger.info(f"Looking for data for: {prefix}")
+    events = scrape_data_for_prefix(location, prefix)
+    return {"date": day_obs, "events": events}
 
 
-def scrape_data_for_prefix(
-    bucket_name: str, prefix: str, request: Request
-) -> list:
-    bucket_handler: BucketHandlerInterface = request.app.state.bucket_handler
+def scrape_data_for_prefix(location: Location, prefix: str) -> list:
+    bucket_handler = location.bucket_handler
     objects = bucket_handler.list_objects(prefix)
-    return objects
+    events = objects_to_events(objects)
+    return events
+
+
+def objects_to_events(objects: list[dict]) -> list[Event]:
+    events = [Event(**object) for object in objects]
+    return events
 
 
 @external_router.get(
@@ -108,7 +107,7 @@ async def get_location_page(
     location_name: str,
     request: Request,
 ) -> Response:
-    location = await get_location(location_name, request)
+    location = get_location(location_name, request)
     return templates.TemplateResponse(
         "location.jinja", {"request": request, "location": location}
     )
@@ -124,13 +123,16 @@ async def get_camera_page(
     camera_name: str,
     request: Request,
 ) -> Response:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
+    location, camera = get_location_camera(location_name, camera_name, request)
     template = "camera"
     if not camera.online:
         template = "not_online"
     return templates.TemplateResponse(
         f"{template}.jinja",
-        {"request": request, "location": location, "camera": camera},
+        {
+            "request": request,
+            "location": location,
+            "camera": camera,
+            "camera_json": camera.model_dump(),
+        },
     )
