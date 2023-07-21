@@ -2,11 +2,14 @@
 
 import re
 from datetime import date, datetime, timedelta
+from functools import cached_property
 from typing import Any, Type
 
 from dateutil.tz import gettz
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, computed_field, field_validator
 from pydantic.dataclasses import dataclass
+
+from rubintv.models.buckethandler import S3BucketHandler
 
 __all__ = [
     "Location",
@@ -20,13 +23,21 @@ __all__ = [
 ]
 
 
-class Location(BaseModel):
+class Location(BaseModel, arbitrary_types_allowed=True):
     name: str
     title: str
-    bucket: str
+    bucket_name: str
     services: list[str]
     camera_groups: dict[str, list[str]]
     logo: str = ""
+    # bucket_handler: S3BucketHandler | None = None
+
+    # see https://docs.pydantic.dev/dev-v2/usage/computed_fields/ and
+    # https://github.com/python/mypy/issues/1362 for mypy ignore explanation
+    @computed_field  # type: ignore[misc]
+    @cached_property
+    def bucket_handler(self) -> S3BucketHandler:
+        return S3BucketHandler(self.bucket_name)
 
 
 class Channel(BaseModel):
@@ -75,18 +86,27 @@ class Event:
     hash: str
     # derived fields:
     name: str = ""
-    day_obs: date = date.today()
-    seq_num: int | str = 0
-    bucket_name: str = ""
     camera_name: str = ""
+    day_obs: date = date(1970, 1, 1)
     channel_name: str = ""
-    #
+    seq_num: int | str = 0
+    ext: str = ""
 
     def __post_init__(self) -> None:
-        self.name, self.day_obs, self.seq_num = self.parse_url()
+        (
+            self.name,
+            self.camera_name,
+            self.day_obs,
+            self.channel_name,
+            self.seq_num,
+            self.ext,
+        ) = self.parse_url()
 
     def parse_url(self) -> tuple:
         """Parses the object URL.
+
+        URL is as ``f"{camera}/{date_str}/{channel}/{seq:06}.{ext}"``.
+        There should only be one dot (.) which should precede the extension.
 
         Returns
         -------
@@ -98,37 +118,39 @@ class Event:
             Thrown if any part of the parsing process breaks.
         """
         url = self.url
-        name_re = re.compile(r"^http[s]:\/\/[\w*\.]+\/[\w*\.]+\/")
+        name_re = re.compile(r"\w+\/[\d-]+\/\w+\/(\d{6}|final)\.\w+$")
         if match := name_re.match(url):
-            name = url[match.end() :]
+            name = match.group()
         else:
-            raise EventInitialisationError(url)
-        date_re = re.compile(r"dayObs_([\d-]+)")
-        if match := date_re.search(url):
-            day_obs_str = match.group(1)
-        else:
-            raise EventInitialisationError()
+            raise EventInitialisationError(f"url can't be parsed: {url}")
+
+        rest, ext = name.split(".")
+        parts = rest.split("/")
+        # parts == [camera, date_str, channel, seq]
+        camera = parts.pop(0)
+
+        day_obs_str = parts.pop(0)
         y, m, d = day_obs_str.split("-")
         try:
             day_obs = date(int(y), int(m), int(d))
         except ValueError:
-            raise EventInitialisationError(url)
-        if not url.rfind("seqNum_final") == -1:
-            seq_num: str | int = "final"
-        else:
-            seq_re = re.compile(r"seqNum_(\d+)")
-            if match := seq_re.search(url):
-                seq_num = int(match.group(1))
-            else:
-                raise EventInitialisationError(url)
-        return (name, day_obs, seq_num)
+            raise EventInitialisationError(
+                f"date can't be parsed: {day_obs_str}"
+            )
+
+        channel = parts.pop(0)
+
+        seq_num: str | int = parts.pop()
+        if seq_num != "final":
+            seq_num = int(seq_num)
+
+        return (name, camera, day_obs, channel, seq_num, ext)
 
 
 def build_prefix_with_date(camera: Camera, day_obs: date) -> str:
     camera_name = camera.name
-    # eventually the prefix will be formed something like:
-    # return f"{location_name}/{camera_name}/{day_obs}/{channel_name}"
-    return f"{camera_name}_monitor/{camera_name}-monitor_dayObs_{day_obs}"
+    prefix = f"{camera_name}/{day_obs}/"
+    return prefix
 
 
 def get_current_day_obs() -> date:

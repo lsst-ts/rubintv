@@ -12,6 +12,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from moto import mock_s3
 from safir.dependencies.http_client import http_client_dependency
 from safir.logging import configure_logging, configure_uvicorn_logging
 from safir.middleware.x_forwarded import XForwardedMiddleware
@@ -19,7 +20,7 @@ from safir.middleware.x_forwarded import XForwardedMiddleware
 from .config import config
 from .handlers.external import external_router
 from .handlers.internal import internal_router
-from .models.buckethandler import BucketHandlerInterface, BucketHandlerMaker
+from .mockdata import mock_up_data
 from .models.models_init import ModelsInitiator
 
 __all__ = ["app", "config"]
@@ -43,14 +44,23 @@ app = FastAPI(
     debug=True,
 )
 
-# Initialise model data fixtures
-m = ModelsInitiator()
-app.state.fixtures = m
+# Start mocking for s3 buckets.
+# Remove when actual s3 is populated.
+mock = mock_s3()
+mock.start()
 
-# Attach a bucket
-bhm = BucketHandlerMaker("gcs")
-bucket_handler: BucketHandlerInterface = bhm.get_bucket_handler("rubintv_data")
-app.state.bucket_handler = bucket_handler
+# Initialise model data fixtures
+models = ModelsInitiator()
+app.state.fixtures = models
+
+# Initialise bucket handlers
+# for loc in models.locations:
+#     loc: Location
+#     loc.bucket_handler = S3BucketHandler(loc.bucket_name)
+
+# Generate mock test buckets
+# Remove when actual s3 is populated.
+mock_up_data(models.locations, models.cameras)
 
 # Intwine jinja2 templating
 app.mount(
@@ -69,4 +79,6 @@ app.add_middleware(XForwardedMiddleware)
 
 @app.on_event("shutdown")
 async def shutdown_event() -> None:
+    # Remove mocking when actual s3 is populated.
+    mock.stop()
     await http_client_dependency.aclose()
