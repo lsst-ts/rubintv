@@ -10,13 +10,14 @@ class S3BucketHandler:
         The BucketHandler interface.
     """
 
+    _client = boto3.client("s3")
+
     def __init__(self, bucket_handle: str) -> None:
-        self.client = boto3.client("s3")
         self.bucket_handle = bucket_handle
 
     def list_objects(self, prefix: str) -> list[dict]:
         objects = []
-        response = self.client.list_objects_v2(
+        response = self._client.list_objects_v2(
             Bucket=self.bucket_handle, Prefix=prefix
         )
         while True:
@@ -27,7 +28,7 @@ class S3BucketHandler:
                 objects.append(object)
             if "NextContinuationToken" not in response:
                 break
-            response = self.client.list_objects_v2(
+            response = self._client.list_objects_v2(
                 Bucket=self.bucket_handle,
                 Prefix=prefix,
                 ContinuationToken=response["NextContinuationToken"],
@@ -35,4 +36,6 @@ class S3BucketHandler:
         return objects
 
     def get_object(self, object_id: str) -> dict:
-        return self.client.get_object(Bucket=self.bucket_handle, Key=object_id)
+        return self._client.get_object(
+            Bucket=self.bucket_handle, Key=object_id
+        )

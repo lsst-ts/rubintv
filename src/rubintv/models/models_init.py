@@ -1,10 +1,12 @@
+from itertools import chain
 from pathlib import Path
 from typing import Any, Type
 
 import yaml
 from pydantic import BaseModel
 
-from .models import Camera, Heartbeat, Location
+from rubintv.models.helpers import find_first
+from rubintv.models.models import Camera, Heartbeat, Location
 
 __all__ = ["ModelsInitiator", "dict_from_list_of_named_objects"]
 
@@ -26,13 +28,28 @@ class ModelsInitiator:
         models_file_path = Path(__file__).parent / "models_data.yaml"
         with open(models_file_path, "r") as file:
             data = yaml.safe_load(file)
-        self.locations = self._populate_model(Location, data["locations"])
         cameras = self._populate_model(Camera, data["cameras"])
         self.cameras = self._attach_metadata_cols(
             cameras, data["metadata_cols"]
         )
+        locations = self._populate_model(Location, data["locations"])
+        self.locations = self._attach_cameras_to_locations(
+            self.cameras, locations
+        )
         heartbeats = self._populate_model(Heartbeat, data["heartbeats"])
         self.heartbeats = self._inject_heartbeat_channels(heartbeats)
+
+    def _attach_cameras_to_locations(
+        self, cameras: list[Camera], locations: list[Location]
+    ) -> list[Location]:
+        for location in locations:
+            camera_groups = location.camera_groups.values()
+            location_cams = chain(*camera_groups)
+            for cam_name in location_cams:
+                camera = find_first(cameras, "name", cam_name)
+                if camera:
+                    location.cameras.append(camera)
+        return locations
 
     def _populate_model(
         self, cls: Type[BaseModel], data_dict: dict[str, list]

@@ -45,25 +45,30 @@ def mock_up_data(locations: list[Location], cameras: list[Camera]) -> None:
                 if camera.channels:
                     for index, channel in enumerate(camera.channels):
                         print(
-                            f"Uploading testcard to {bucket_name} for \
-                            {camera_name} in {channel.name}"
+                            f"Uploading testcard to {location.name} for"
+                            f"{camera_name} in {channel.name}"
                         )
                         # upload a file for today
                         upload_file(
                             Path(__file__).parent
                             / "static/images/testcard_f.jpg",
                             bucket_name,
-                            f"{camera_name}/{today}/{channel.name}/\
-                              {index:06}.jpg",
+                            (
+                                f"{camera_name}/{today}/{channel.name}/"
+                                f"{index:06}.jpg"
+                            ),
                         )
                         # upload one for 100 days ago
                         upload_file(
                             Path(__file__).parent
                             / "static/images/testcard_f.jpg",
                             bucket_name,
-                            f"{camera_name}/{the_past}/{channel.name}/\
-                              {index:06}.jpg",
+                            (
+                                f"{camera_name}/{the_past}/{channel.name}/"
+                                f"{index:06}.jpg"
+                            ),
                         )
+    print()
 
 
 def upload_file(

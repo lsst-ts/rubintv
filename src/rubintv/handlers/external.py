@@ -1,5 +1,4 @@
 """Handlers for the app's external root, ``/rubintv/``."""
-from datetime import date
 from itertools import chain
 from typing import Tuple
 
@@ -8,15 +7,9 @@ from fastapi.responses import HTMLResponse, Response
 from safir.dependencies.logger import logger_dependency
 from structlog.stdlib import BoundLogger
 
-from rubintv.inittemplates import get_templates
 from rubintv.models.helpers import find_first
-from rubintv.models.models import (
-    Camera,
-    Event,
-    Location,
-    build_prefix_with_date,
-    get_current_day_obs,
-)
+from rubintv.models.models import Camera, Location
+from rubintv.templates_init import get_templates
 
 __all__ = ["get_home", "external_router", "templates"]
 
@@ -69,35 +62,6 @@ def get_location_camera(
     ):
         raise HTTPException(status_code=404, detail="Camera not found.")
     return (location, camera)
-
-
-@external_router.get(
-    "/api/location/{location_name}/camera/{camera_name}/latest"
-)
-def get_camera_latest_data(
-    location_name: str,
-    camera_name: str,
-    request: Request,
-    logger: BoundLogger = Depends(logger_dependency),
-) -> dict[str, date | list]:
-    location, camera = get_location_camera(location_name, camera_name, request)
-    day_obs = get_current_day_obs()
-    prefix = build_prefix_with_date(camera, day_obs)
-    logger.info(f"Looking for data for: {prefix}")
-    events = scrape_data_for_prefix(location, prefix)
-    return {"date": day_obs, "events": events}
-
-
-def scrape_data_for_prefix(location: Location, prefix: str) -> list:
-    bucket_handler = location.bucket_handler
-    objects = bucket_handler.list_objects(prefix)
-    events = objects_to_events(objects)
-    return events
-
-
-def objects_to_events(objects: list[dict]) -> list[Event]:
-    events = [Event(**object) for object in objects]
-    return events
 
 
 @external_router.get(
