@@ -2,14 +2,11 @@
 
 import re
 from datetime import date, datetime, timedelta
-from functools import cached_property
 from typing import Any, Type
 
 from dateutil.tz import gettz
-from pydantic import BaseModel, computed_field, field_validator
+from pydantic import BaseModel, field_validator
 from pydantic.dataclasses import dataclass
-
-from rubintv.models.buckethandler import S3BucketHandler
 
 __all__ = [
     "Location",
@@ -21,23 +18,6 @@ __all__ = [
     "get_current_day_obs",
     "build_prefix_with_date",
 ]
-
-
-class Location(BaseModel, arbitrary_types_allowed=True):
-    name: str
-    title: str
-    bucket_name: str
-    services: list[str]
-    camera_groups: dict[str, list[str]]
-    logo: str = ""
-    # bucket_handler: S3BucketHandler | None = None
-
-    # see https://docs.pydantic.dev/dev-v2/usage/computed_fields/ and
-    # https://github.com/python/mypy/issues/1362 for mypy ignore explanation
-    @computed_field  # type: ignore[misc]
-    @cached_property
-    def bucket_handler(self) -> S3BucketHandler:
-        return S3BucketHandler(self.bucket_name)
 
 
 class Channel(BaseModel):
@@ -66,6 +46,16 @@ class Camera(BaseModel):
     @field_validator("metadata_slug", "js_entry")
     def default_as_name(cls: Type, v: str, values: Any) -> str:
         return v or values.get("name")
+
+
+class Location(BaseModel, arbitrary_types_allowed=True):
+    name: str
+    title: str
+    bucket_name: str
+    services: list[str]
+    camera_groups: dict[str, list[str]]
+    cameras: list[Camera] = []
+    logo: str = ""
 
 
 class Heartbeat(BaseModel):

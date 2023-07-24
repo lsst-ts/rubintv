@@ -6,9 +6,11 @@ Be aware that, following the normal pattern for FastAPI services, the app is
 constructed when this module is loaded and is not deferred until a function is
 called.
 """
-
+import asyncio
+from contextlib import asynccontextmanager
 from importlib.metadata import metadata, version
 from pathlib import Path
+from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -17,6 +19,7 @@ from safir.dependencies.http_client import http_client_dependency
 from safir.logging import configure_logging, configure_uvicorn_logging
 from safir.middleware.x_forwarded import XForwardedMiddleware
 
+from .background.bucketpoller import BucketPoller
 from .config import config
 from .handlers.external import external_router
 from .handlers.internal import internal_router
@@ -33,6 +36,34 @@ configure_logging(
 )
 configure_uvicorn_logging(config.log_level)
 
+# Initialise model data fixtures
+models = ModelsInitiator()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator:
+    # Start mocking for s3 buckets.
+    # Remove when actual s3 is populated.
+    mock = mock_s3()
+    mock.start()
+
+    # Generate mock test buckets
+    # Remove when actual s3 is populated.
+    mock_up_data(models.locations, models.cameras)
+
+    # initialise the background bucket poller
+    bp = BucketPoller(models.locations)
+    polling = asyncio.create_task(bp.poll_buckets_for_todays_data())
+
+    yield
+
+    polling.cancel()
+
+    # Remove mocking when actual s3 is populated.
+    mock.stop()
+    await http_client_dependency.aclose()
+
+
 """The main FastAPI application for rubintv."""
 app = FastAPI(
     title="rubintv",
@@ -42,25 +73,10 @@ app = FastAPI(
     docs_url=f"/{config.path_prefix}/docs",
     redoc_url=f"/{config.path_prefix}/redoc",
     debug=True,
+    lifespan=lifespan,
 )
 
-# Start mocking for s3 buckets.
-# Remove when actual s3 is populated.
-mock = mock_s3()
-mock.start()
-
-# Initialise model data fixtures
-models = ModelsInitiator()
 app.state.fixtures = models
-
-# Initialise bucket handlers
-# for loc in models.locations:
-#     loc: Location
-#     loc.bucket_handler = S3BucketHandler(loc.bucket_name)
-
-# Generate mock test buckets
-# Remove when actual s3 is populated.
-mock_up_data(models.locations, models.cameras)
 
 # Intwine jinja2 templating
 app.mount(
@@ -75,10 +91,3 @@ app.include_router(external_router, prefix=f"{config.path_prefix}")
 
 # Add middleware.
 app.add_middleware(XForwardedMiddleware)
-
-
-@app.on_event("shutdown")
-async def shutdown_event() -> None:
-    # Remove mocking when actual s3 is populated.
-    mock.stop()
-    await http_client_dependency.aclose()
