@@ -14,26 +14,34 @@ class Configuration(BaseSettings):
 
     name: str = Field(
         "rubintv",
-        title="Name of application",
-        validation_alias="SAFIR_NAME",
+        json_schema_extra={
+            "title": "Name of application",
+            "validation_alias": "SAFIR_NAME",
+        },
     )
 
     path_prefix: str = Field(
         "/rubintv",
-        title="URL prefix for application",
-        validation_alias="SAFIR_PATH_PREFIX",
+        json_schema_extra={
+            "title": "URL prefix for application",
+            "validation_alias": "SAFIR_PATH_PREFIX",
+        },
     )
 
     profile: Profile = Field(
         Profile.development,
-        title="Application logging profile",
-        validation_alias="SAFIR_PROFILE",
+        json_schema_extra={
+            "title": "Application logging profile",
+            "validation_alias": "SAFIR_PROFILE",
+        },
     )
 
     log_level: LogLevel = Field(
         LogLevel.INFO,
-        title="Log level of the application's logger",
-        validation_alias="SAFIR_LOG_LEVEL",
+        json_schema_extra={
+            "title": "Log level of the application's logger",
+            "validation_alias": "SAFIR_LOG_LEVEL",
+        },
     )
 
 

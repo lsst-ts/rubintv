@@ -14,6 +14,5 @@ uvicorn[standard]
 pydantic_settings
 # Other dependencies.
 safir>=3.4.0
-google-cloud-storage
 boto3
 jinja2
