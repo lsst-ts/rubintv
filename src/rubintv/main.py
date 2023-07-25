@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from importlib.metadata import metadata, version
 from pathlib import Path
 from typing import AsyncGenerator
+from weakref import WeakSet
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -21,6 +22,7 @@ from safir.middleware.x_forwarded import XForwardedMiddleware
 
 from .background.bucketpoller import BucketPoller
 from .config import config
+from .handlers.api import api_router
 from .handlers.external import external_router
 from .handlers.internal import internal_router
 from .mockdata import mock_up_data
@@ -39,6 +41,9 @@ configure_uvicorn_logging(config.log_level)
 # Initialise model data fixtures
 models = ModelsInitiator()
 
+# initialise the background bucket poller
+bp = BucketPoller(models.locations)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
@@ -51,14 +56,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     # Remove when actual s3 is populated.
     mock_up_data(models.locations, models.cameras)
 
-    # initialise the background bucket poller
-    bp = BucketPoller(models.locations)
+    # start polling buckets for data
     polling = asyncio.create_task(bp.poll_buckets_for_todays_data())
+
+    connected_clients: WeakSet = WeakSet()
 
     yield
 
+    del connected_clients
     polling.cancel()
-
     # Remove mocking when actual s3 is populated.
     mock.stop()
     await http_client_dependency.aclose()
@@ -69,14 +75,15 @@ app = FastAPI(
     title="rubintv",
     description=metadata("rubintv")["Summary"],
     version=version("rubintv"),
-    openapi_url=f"/{config.path_prefix}/openapi.json",
-    docs_url=f"/{config.path_prefix}/docs",
-    redoc_url=f"/{config.path_prefix}/redoc",
+    openapi_url=f"{config.path_prefix}/openapi.json",
+    docs_url=f"{config.path_prefix}/docs",
+    redoc_url=f"{config.path_prefix}/redoc",
     debug=True,
     lifespan=lifespan,
 )
 
 app.state.fixtures = models
+app.state.bucket_poller = bp
 
 # Intwine jinja2 templating
 app.mount(
@@ -87,6 +94,7 @@ app.mount(
 
 # Attach the routers.
 app.include_router(internal_router)
+app.include_router(api_router, prefix=f"{config.path_prefix}/api")
 app.include_router(external_router, prefix=f"{config.path_prefix}")
 
 # Add middleware.
