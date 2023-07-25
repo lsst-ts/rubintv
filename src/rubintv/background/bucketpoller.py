@@ -13,7 +13,7 @@ class BucketPoller:
         self.locations = locations
         # cam list is None by default or list if polled
         self._current_lists = {
-            loc.name: {cam.name: None for cam in loc.cameras}
+            loc.name: {cam.name: None for cam in loc.cameras if cam.online}
             for loc in locations
         }
 
@@ -22,15 +22,25 @@ class BucketPoller:
             current_day_obs = get_current_day_obs()
             for loc in self.locations:
                 for camera in loc.cameras:
+                    if not camera.online:
+                        continue
                     prefix = f"{camera.name}/{current_day_obs}"
                     objects = self.list_objects(loc.bucket_name, prefix)
                     if objects != self._current_lists[loc.name][camera.name]:
-                        #  msg = {f"{loc.name}/{camera.name}", objects}
-                        print(f"{loc.name}/{camera.name}")
-                        print(objects)
+                        msg = {
+                            f"{loc.name}/{camera.name}": objects_to_events(
+                                objects
+                            )
+                        }
+                        print(msg)
                         #  await notify_current_camera_table_clients(msg)
                         self._current_lists[loc.name][camera.name] = objects
                     await asyncio.sleep(0.5)
+
+    async def get_current_state(
+        self, location_name: str, camera_name: str
+    ) -> list[Event] | None:
+        return self._current_lists[location_name][camera_name]
 
     def list_objects(self, bucket_name: str, prefix: str) -> list[dict]:
         objects = []

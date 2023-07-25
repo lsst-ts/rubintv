@@ -1,14 +1,11 @@
 """Handlers for the app's external root, ``/rubintv/``."""
-from itertools import chain
-from typing import Tuple
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, Response
 from safir.dependencies.logger import logger_dependency
 from structlog.stdlib import BoundLogger
 
-from rubintv.models.helpers import find_first
-from rubintv.models.models import Camera, Location
+from rubintv.handlers.api import get_location, get_location_camera
 from rubintv.templates_init import get_templates
 
 __all__ = ["get_home", "external_router", "templates"]
@@ -33,37 +30,6 @@ async def get_home(
     )
 
 
-@external_router.get("/api/location/{location_name}", response_model=Location)
-def get_location(
-    location_name: str,
-    request: Request,
-) -> Location:
-    locations = request.app.state.fixtures.locations
-    if not (location := find_first(locations, "name", location_name)):
-        raise HTTPException(status_code=404, detail="Location not found.")
-    return location
-
-
-@external_router.get(
-    "/api/location/{location_name}/camera/{camera_name}",
-    response_model=Tuple[Location, Camera],
-)
-def get_location_camera(
-    location_name: str,
-    camera_name: str,
-    request: Request,
-) -> Tuple[Location, Camera]:
-    location = get_location(location_name, request)
-    cameras = request.app.state.fixtures.cameras
-    camera_groups = location.camera_groups.values()
-    location_cams = chain(*camera_groups)
-    if camera_name not in location_cams or not (
-        camera := find_first(cameras, "name", camera_name)
-    ):
-        raise HTTPException(status_code=404, detail="Camera not found.")
-    return (location, camera)
-
-
 @external_router.get(
     "/{location_name}", response_class=HTMLResponse, name="location"
 )
@@ -71,7 +37,7 @@ async def get_location_page(
     location_name: str,
     request: Request,
 ) -> Response:
-    location = get_location(location_name, request)
+    location = await get_location(location_name, request)
     return templates.TemplateResponse(
         "location.jinja", {"request": request, "location": location}
     )
@@ -87,7 +53,9 @@ async def get_camera_page(
     camera_name: str,
     request: Request,
 ) -> Response:
-    location, camera = get_location_camera(location_name, camera_name, request)
+    location, camera = await get_location_camera(
+        location_name, camera_name, request
+    )
     template = "camera"
     if not camera.online:
         template = "not_online"
