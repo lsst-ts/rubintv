@@ -2,6 +2,7 @@ import asyncio
 
 import boto3
 
+from rubintv.handlers.websocket import notify_camera_clients
 from rubintv.models.models import Event, Location, get_current_day_obs
 
 
@@ -27,19 +28,18 @@ class BucketPoller:
                     prefix = f"{camera.name}/{current_day_obs}"
                     objects = self.list_objects(loc.bucket_name, prefix)
                     if objects != self._current_lists[loc.name][camera.name]:
+                        self._current_lists[loc.name][camera.name] = objects
                         msg = {
                             f"{loc.name}/{camera.name}": objects_to_events(
                                 objects
                             )
                         }
-                        print(msg)
-                        #  await notify_current_camera_table_clients(msg)
-                        self._current_lists[loc.name][camera.name] = objects
-                    await asyncio.sleep(0.5)
+                    await notify_camera_clients(msg)
+            await asyncio.sleep(1)
 
     async def get_current_state(
         self, location_name: str, camera_name: str
-    ) -> list[Event] | None:
+    ) -> list[dict[str, str]] | None:
         return self._current_lists[location_name][camera_name]
 
     def list_objects(self, bucket_name: str, prefix: str) -> list[dict]:
@@ -66,6 +66,8 @@ class BucketPoller:
         return self._client.get_object(Bucket=bucket_name, Key=object_id)
 
 
-def objects_to_events(objects: list[dict]) -> list[Event]:
+def objects_to_events(objects: list[dict] | None) -> list[Event] | None:
+    if objects is None:
+        return None
     events = [Event(**object) for object in objects]
     return events

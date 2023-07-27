@@ -1,5 +1,4 @@
 """Models for rubintv."""
-
 import re
 from datetime import date, datetime, timedelta
 from typing import Any, Type
@@ -14,7 +13,6 @@ __all__ = [
     "Camera",
     "Heartbeat",
     "Event",
-    "EventInitialisationError",
     "get_current_day_obs",
     "build_prefix_with_date",
 ]
@@ -66,10 +64,6 @@ class Heartbeat(BaseModel):
     services: dict[str, str] = {}
 
 
-class EventInitialisationError(RuntimeError):
-    pass
-
-
 @dataclass
 class Event:
     url: str
@@ -77,7 +71,7 @@ class Event:
     # derived fields:
     name: str = ""
     camera_name: str = ""
-    day_obs: date = date(1970, 1, 1)
+    day_obs: str = ""
     channel_name: str = ""
     seq_num: int | str = 0
     ext: str = ""
@@ -101,18 +95,13 @@ class Event:
         Returns
         -------
         url_parts: `tuple`
-
-        Raises
-        ------
-        EventInitialisationError
-            Thrown if any part of the parsing process breaks.
         """
         url = self.url
         name_re = re.compile(r"\w+\/[\d-]+\/\w+\/(\d{6}|final)\.\w+$")
         if match := name_re.match(url):
             name = match.group()
         else:
-            raise EventInitialisationError(f"url can't be parsed: {url}")
+            raise ValueError(f"url can't be parsed: {url}")
 
         rest, ext = name.split(".")
         parts = rest.split("/")
@@ -122,11 +111,9 @@ class Event:
         day_obs_str = parts.pop(0)
         y, m, d = day_obs_str.split("-")
         try:
-            day_obs = date(int(y), int(m), int(d))
+            date(int(y), int(m), int(d))
         except ValueError:
-            raise EventInitialisationError(
-                f"date can't be parsed: {day_obs_str}"
-            )
+            raise ValueError(f"date can't be parsed: {day_obs_str}")
 
         channel = parts.pop(0)
 
@@ -134,7 +121,7 @@ class Event:
         if seq_num != "final":
             seq_num = int(seq_num)
 
-        return (name, camera, day_obs, channel, seq_num, ext)
+        return (name, camera, day_obs_str, channel, seq_num, ext)
 
 
 def build_prefix_with_date(camera: Camera, day_obs: date) -> str:

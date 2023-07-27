@@ -11,7 +11,6 @@ from contextlib import asynccontextmanager
 from importlib.metadata import metadata, version
 from pathlib import Path
 from typing import AsyncGenerator
-from weakref import WeakSet
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -25,6 +24,7 @@ from .config import config
 from .handlers.api import api_router
 from .handlers.external import external_router
 from .handlers.internal import internal_router
+from .handlers.websocket import ws_router
 from .mockdata import mock_up_data
 from .models.models_init import ModelsInitiator
 
@@ -59,11 +59,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     # start polling buckets for data
     polling = asyncio.create_task(bp.poll_buckets_for_todays_data())
 
-    connected_clients: WeakSet = WeakSet()
-
     yield
 
-    del connected_clients
     polling.cancel()
     # Remove mocking when actual s3 is populated.
     mock.stop()
@@ -82,8 +79,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.state.fixtures = models
+app.state.models = models
 app.state.bucket_poller = bp
+# app.state.connected_clients = connected_clients
 
 # Intwine jinja2 templating
 app.mount(
@@ -95,6 +93,7 @@ app.mount(
 # Attach the routers.
 app.include_router(internal_router)
 app.include_router(api_router, prefix=f"{config.path_prefix}/api")
+app.include_router(ws_router, prefix=f"{config.path_prefix}/ws")
 app.include_router(external_router, prefix=f"{config.path_prefix}")
 
 # Add middleware.

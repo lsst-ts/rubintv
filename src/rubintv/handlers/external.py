@@ -24,7 +24,7 @@ async def get_home(
 ) -> Response:
     """GET ``/rubintv/`` (the app's external root)."""
     logger.info("Request for the app home page")
-    locations = request.app.state.fixtures.locations
+    locations = request.app.state.models.locations
     return templates.TemplateResponse(
         "home.jinja", {"request": request, "locations": locations}
     )
@@ -53,9 +53,8 @@ async def get_camera_page(
     camera_name: str,
     request: Request,
 ) -> Response:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
+    location = await get_location(location_name, request)
+    camera = await get_location_camera(location_name, camera_name, request)
     template = "camera"
     if not camera.online:
         template = "not_online"
