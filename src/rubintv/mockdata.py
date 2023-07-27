@@ -44,10 +44,6 @@ def mock_up_data(locations: list[Location], cameras: list[Camera]) -> None:
             if camera := find_first(cameras, "name", camera_name):
                 if camera.channels:
                     for index, channel in enumerate(camera.channels):
-                        print(
-                            f"Uploading testcard to {location.name} for"
-                            f"{camera_name} in {channel.name}"
-                        )
                         # upload a file for today
                         upload_file(
                             Path(__file__).parent
@@ -68,7 +64,6 @@ def mock_up_data(locations: list[Location], cameras: list[Camera]) -> None:
                                 f"{index:06}.jpg"
                             ),
                         )
-    print()
 
 
 def upload_file(

@@ -22,14 +22,14 @@ locations:
     logo: Summit.jpg
     camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
-      Other Cameras: [ allsky, startracker, startracker-wide, startracker-fast ]
+      Other Cameras: [ allsky, startracker, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
     services: [ auxtel, startracker, allsky, comcam, misc ]
 
 cameras:
   - name: tma
     title: TMA
-    online: true
+    online: True
     channels:
       - name: tma_mount_motion_profile
         title: Mount motion profile
@@ -85,31 +85,31 @@ cameras:
         prefix: startracker_analysis
     night_report_prefix: startracker_night_reports
 
-  - name: startracker-wide
+  - name: startracker_wide
     title: StarTracker Wide
     online: True
     metadata_slug: startracker
     channels:
-      - name: startracker-wide
+      - name: startracker_wide
         title: StarTracker Wide
         prefix: startracker_wide_raw
         label: ST Wide
-      - name: startracker-wide-analysis
+      - name: startracker_wide_analysis
         title: Wide Analysis
         prefix: startracker_wide_analysis
         label: ST Wide Analysis
     night_report_prefix: startracker_night_reports
     js_entry: startracker
 
-  - name: startracker-fast
+  - name: startracker_fast
     title: StarTracker Fast
     online: True
     metadata_slug: startracker
     channels:
-      - name: startracker-fast
+      - name: startracker_fast
         title: StarTrackerFast
         prefix: startracker_fast_raw
-      - name: startracker-fast-analysis
+      - name: startracker_fast_analysis
         title: Analysis
         prefix: startracker_fast_analysis
     night_report_prefix: startracker_night_reports
@@ -328,7 +328,7 @@ metadata_cols:
       RMS scatter pixels:
         The RMS distance between the measured position of each source and its position in the catalog, in pixels
 
-  startracker-wide:
+  startracker_wide:
     Star Tracker Wide:
       Exposure Time wide:
         The image exposure time
@@ -372,7 +372,7 @@ metadata_cols:
       RMS scatter pixels wide:
         The RMS distance between the measured position of each source and its position in the catalog, in pixels
 
-  startracker-fast:
+  startracker_fast:
     Star Tracker Fast:
       Exposure Time fast:
         The image exposure time

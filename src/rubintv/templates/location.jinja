@@ -17,7 +17,7 @@
       <ul class="cameras flr">
         {% for cam_name in cam_names %}
           <li>
-            {% set cameras = request.app.state.fixtures.cameras|list_to_dict %}
+            {% set cameras = request.app.state.models.cameras|list_to_dict %}
             {% set camera = cameras[cam_name] %}
             {% if camera.logo %}
               <a
