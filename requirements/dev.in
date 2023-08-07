@@ -21,4 +21,3 @@ pytest-cov
 types-PyYAML
 beautifulsoup4
 types-python-dateutil
-moto
