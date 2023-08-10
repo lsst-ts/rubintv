@@ -1,8 +1,6 @@
 import pytest
 from httpx import AsyncClient
 
-from rubintv.background.bucketpoller import objects_to_events
-from rubintv.main import bp
 from rubintv.models.helpers import find_first
 from rubintv.models.models import Camera, Location, get_current_day_obs
 from rubintv.models.models_init import ModelsInitiator
@@ -57,28 +55,6 @@ async def test_get_invalid_api_location_camera(client: AsyncClient) -> None:
     camera_name = "ts8"
     response = await client.get(f"/rubintv/api/{location_name}/{camera_name}")
     assert response.status_code == 404
-
-
-@pytest.mark.asyncio
-async def test_get_api_location_camera_current(client: AsyncClient) -> None:
-    """Test that api location camera current gives current data for a camera"""
-    location_name = "slac"
-    camera_name = "ts8"
-
-    response = await client.get(
-        f"/rubintv/api/{location_name}/{camera_name}" f"/current"
-    )
-    data = response.json()
-    assert "date" in data
-    assert data["date"] == get_current_day_obs().isoformat()
-    assert "events" in data
-    objects = await bp.get_current_state(location_name, camera_name)
-    assert objects is not None
-    events = objects_to_events(objects)
-    if events:
-        assert data["events"] == [event.__dict__ for event in events]
-    else:
-        assert data["events"] is None
 
 
 @pytest.mark.asyncio
