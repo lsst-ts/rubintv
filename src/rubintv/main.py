@@ -85,7 +85,7 @@ app.state.bucket_poller = bp
 
 # Intwine jinja2 templating
 app.mount(
-    "/static",
+    "/rubintv/static",
     StaticFiles(directory=Path(__file__).parent / "static"),
     name="static",
 )
