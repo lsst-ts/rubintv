@@ -1,14 +1,18 @@
 {
   "name": "rubintv",
-  "version": "1.0.0",
-  "description": "Client Side scripts for RubinTV",
+  "version": "2.0.0",
+  "description": "Web app to display Butler datasets from various collated locations.",
+  "main": "webpack.config.js",
+  "directories": {
+    "test": "tests"
+  },
   "scripts": {
     "build": "webpack --progress --no-devtool",
     "dev-build": "webpack --progress --mode development",
     "watch": "webpack --watch --progress --mode development",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "rubintv",
+  "author": "ugyballoons",
   "license": "ISC",
   "devDependencies": {
     "css-loader": "^6.7.3",

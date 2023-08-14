@@ -1,17 +1,20 @@
+# -*- conf -*-
+#
 # Editable runtime dependencies (equivalent to install_requires)
 # Add direct runtime dependencies here, as well as implicit dependencies
 # with constrained versions.
 #
 # After editing, update requirements/main.txt by running:
-#     make update
+#     make update-deps
 
-aiodns
-aiohttp
-aiohttp-jinja2
-cchardet
-click
-google-cloud-storage
+# These dependencies are for fastapi including some optional features.
+fastapi
+starlette
+uvicorn[standard]
+pydantic_settings
+# Other dependencies.
+safir>=3.4.0
+boto3
 jinja2
-safir<2
-python-dateutil
-PyYAML
+websockets
+moto

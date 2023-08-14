@@ -1,19 +1,23 @@
+# -*- conf -*-
+#
 # Editable development dependencies
 # Add direct development, test, and documentation dependencies here, as well
 # as implicit dev dependencies with constrained versions.
 #
 # After editing, update requirements/dev.txt by running:
-#     make update
+#     make update-deps
 
 -c main.txt
 
-aiohttp-devtools
+asgi-lifespan
 coverage[toml]
+httpx
 mypy
 pre-commit
+pydantic
 pytest
-pytest-aiohttp
-python-dateutil
-types-python-dateutil
+pytest-asyncio
+pytest-cov
 types-PyYAML
 beautifulsoup4
+types-python-dateutil

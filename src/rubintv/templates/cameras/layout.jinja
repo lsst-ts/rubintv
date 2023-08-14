@@ -1,8 +1,0 @@
-{% extends "layout.jinja" %}
-{% block pagetitle %}
-  <a href="{{ url('camera', location=location.slug, camera=camera.slug) }}">
-    {{ camera.name }}
-  </a>
-  {% block inline_status %}
-  {% endblock inline_status %}
-{% endblock pagetitle %}

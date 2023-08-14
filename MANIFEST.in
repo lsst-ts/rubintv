@@ -1,1 +1,2 @@
+include src/rubintv/models/models_data.yaml
 graft src/rubintv/static/assets

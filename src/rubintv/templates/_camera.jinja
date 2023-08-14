@@ -1,0 +1,12 @@
+{% extends "_layout.jinja" %}
+{% block pagetitle %}
+  <a href="{{
+    url_for('camera',
+    location_name=location.name,
+    camera_name=camera.name)
+  }}">
+    {{ camera.title }}
+  </a>
+  {% block inline_status %}
+  {% endblock inline_status %}
+{% endblock pagetitle %}

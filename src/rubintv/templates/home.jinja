@@ -1,4 +1,4 @@
-{% extends "layout.jinja" %}
+{% extends "_layout.jinja" %}
 {% block pagetitle %}
 RubinTV
 {% endblock pagetitle %}
@@ -9,13 +9,13 @@ Locations
   <section>
     <nav class="location-menu">
       <ul class="locations flr">
-        {% for loc in locations.values() %}
+        {% for loc in locations %}
           <li>
             <a
                 class="button button-large button-logo"
-                href="{{ url('location', location=loc.slug) }}"
-                style="background-image: url({{ url('static', filename='images/logos/' + loc.logo) }})">
-              {{ loc.name }}
+                href="{{ url_for('location', location_name=loc.name) }}"
+                style="background-image: url({{ url_for('static', path='images/logos/' + loc.logo) }})">
+              {{ loc.title }}
             </a>
           </li>
         {% endfor %}
