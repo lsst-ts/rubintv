@@ -27,7 +27,7 @@ rubintv = "rubintv.cli:main"
 
 [project.urls]
 Homepage = "https://rubintv.lsst.io"
-Source = "https://github.com/lsst-dm/rubintv"
+Source = "https://github.com/lsst-sqre/rubintv"
 
 [build-system]
 requires = ["setuptools>=61", "wheel", "setuptools_scm[toml]>=6.2"]
