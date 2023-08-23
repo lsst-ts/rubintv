@@ -11,7 +11,9 @@ connected_clients: dict[WebSocket, Tuple[str, str]] = {}
 
 
 @ws_router.websocket("/")
-async def websocket_endpoint(websocket: WebSocket) -> None:
+async def websocket_endpoint(
+    websocket: WebSocket,
+) -> None:
     """Websocket endpoint for proving updates for camera data, channels or
     night reports.
 
@@ -51,13 +53,19 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
 
 
 async def notify_camera_clients(
-    message_for_cam: dict[str, list[Event] | None]
+    message_for_cam: dict[str, list[Event] | None] | dict[str, dict | None]
 ) -> None:
     ((msg_cam_loc, events),) = message_for_cam.items()
-    for websocket, (updater, loc_cam_id) in connected_clients.items():
-        if updater == "camera" and loc_cam_id == msg_cam_loc:
+    for websocket, (to_update, loc_cam_id) in connected_clients.items():
+        if to_update == "camera" and loc_cam_id == msg_cam_loc:
             if events:
-                serialised = [ev.__dict__ for ev in events]
+                # events can either be a list of channel events or a metadata
+                # dict
+                serialised: list | dict | None
+                if isinstance(events, list):
+                    serialised = [ev.__dict__ for ev in events]
+                else:
+                    serialised = events
             else:
                 serialised = None
             await websocket.send_json(serialised)

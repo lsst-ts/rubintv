@@ -57,11 +57,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     mock_up_data(models.locations, models.cameras)
 
     # start polling buckets for data
-    polling = asyncio.create_task(bp.poll_buckets_for_todays_data())
+    today_polling = asyncio.create_task(bp.poll_buckets_for_todays_data())
 
     yield
 
-    polling.cancel()
+    today_polling.cancel()
     # Remove mocking when actual s3 is populated.
     mock.stop()
     await http_client_dependency.aclose()

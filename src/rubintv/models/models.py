@@ -87,7 +87,7 @@ class Event:
         ) = self.parse_url()
 
     def parse_url(self) -> tuple:
-        """Parses the object URL.
+        """Parses a channel event object URL.
 
         URL is as ``f"{camera}/{date_str}/{channel}/{seq:06}.{ext}"``.
         There should only be one dot (.) which should precede the extension.

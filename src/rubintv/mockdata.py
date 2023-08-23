@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import timedelta
 from itertools import chain
@@ -40,35 +41,41 @@ def mock_up_data(locations: list[Location], cameras: list[Camera]) -> None:
         groups = location.camera_groups.values()
         camera_names = list(chain(*groups))
 
+        metadata = {f"col{n}": "dummy" for n in range(1, 6)}
+        md_json = json.dumps(metadata)
+
         for camera_name in camera_names:
+            camera: Camera | None
             if camera := find_first(cameras, "name", camera_name):
-                if camera.channels:
-                    for index, channel in enumerate(camera.channels):
-                        # upload a file for today
-                        upload_file(
-                            Path(__file__).parent
-                            / "static/images/testcard_f.jpg",
-                            bucket_name,
-                            (
-                                f"{camera_name}/{today}/{channel.name}/"
-                                f"{index:06}.jpg"
-                            ),
-                        )
-                        # upload one for 100 days ago
-                        upload_file(
-                            Path(__file__).parent
-                            / "static/images/testcard_f.jpg",
-                            bucket_name,
-                            (
-                                f"{camera_name}/{the_past}/{channel.name}/"
-                                f"{index:06}.jpg"
-                            ),
-                        )
+                if not camera.channels:
+                    continue
+                for index, channel in enumerate(camera.channels):
+                    print(f"Uploading for {camera_name}/{channel.name}")
+                    # upload a file for today.
+                    upload_file(
+                        Path(__file__).parent / "static/images/testcard_f.jpg",
+                        bucket_name,
+                        (
+                            f"{camera_name}/{today}/{channel.name}/"
+                            f"{index:06}.jpg"
+                        ),
+                    )
+                    # upload one for 100 days ago.
+                    upload_file(
+                        Path(__file__).parent / "static/images/testcard_f.jpg",
+                        bucket_name,
+                        (
+                            f"{camera_name}/{the_past}/{channel.name}/"
+                            f"{index:06}.jpg"
+                        ),
+                    )
+            # upload a dummy metadata file.
+            upload_fileobj(
+                md_json, bucket_name, f"{camera_name}/{today}/metadata.json"
+            )
 
 
-def upload_file(
-    file_name: Path | str, bucket_name: str, object_name: str
-) -> bool:
+def upload_file(file_name: Path | str, bucket_name: str, key: str) -> bool:
     """Upload a file to an S3 bucket.
 
     Parameters
@@ -77,6 +84,8 @@ def upload_file(
       Name/path of file to upload.
     bucket: `str`
       Name of bucket to upload to.
+    key: `str`
+      Name for the file in the bucket.
 
     Returns
     -------
@@ -85,7 +94,33 @@ def upload_file(
     """
     s3_client = boto3.client("s3")
     try:
-        s3_client.upload_file(file_name, bucket_name, object_name)
+        s3_client.upload_file(file_name, bucket_name, key)
+    except ClientError as e:
+        logging.error(e)
+        return False
+    return True
+
+
+def upload_fileobj(json_str: str, bucket_name: str, key: str) -> bool:
+    """Upload a file-like object to an S3 bucket.
+
+    Parameters
+    ----------
+    file_obj:
+      File-like object to upload.
+    bucket: `str`
+      Name of bucket to upload to.
+    key: `str`
+      Name for the file in the bucket.
+
+    Returns
+    -------
+    uploaded: `bool`
+      True if object was uploaded, else False.
+    """
+    s3_client = boto3.client("s3")
+    try:
+        s3_client.put_object(Bucket=bucket_name, Body=json_str, Key=key)
     except ClientError as e:
         logging.error(e)
         return False

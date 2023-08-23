@@ -67,10 +67,10 @@ async def test_get_api_location_camera_current_for_offline(
     camera_name = "lsstcam"
 
     response = await client.get(
-        f"/rubintv/api/{location_name}/{camera_name}" f"/current"
+        f"/rubintv/api/{location_name}/{camera_name}/current"
     )
     data = response.json()
     assert "date" in data
     assert data["date"] == get_current_day_obs().isoformat()
-    assert "events" in data
-    assert data["events"] is None
+    assert "channel_events" in data
+    assert data["channel_events"] is None
