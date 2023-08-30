@@ -5,6 +5,7 @@ const TerserPlugin = require('terser-webpack-plugin')
 
 const pagesWithHeartbeats = [
   'auxtel',
+  'allsky',
   'startracker',
   'admin'
 ].reduce((pages, page) => ({
