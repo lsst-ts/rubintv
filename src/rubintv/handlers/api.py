@@ -82,10 +82,12 @@ async def get_camera_current_events(
     channel_events = md = None
     if camera.online:
         bucket_poller: BucketPoller = request.app.state.bucket_poller
-        objects = await bucket_poller.get_current_state(
+        objects = await bucket_poller.get_current_camera(
             location_name, camera_name
         )
-        channel_events = objects_to_events(objects)
+        channel_events = None
+        if objects:
+            channel_events = objects_to_events(objects)
 
         md = bucket_poller.get_object(
             location.bucket_name,

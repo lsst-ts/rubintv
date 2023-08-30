@@ -48,28 +48,28 @@ cameras:
       -
         name: monitor
         title: Monitor
-        prefix: auxtel_monitor
+        prefix: monitor
         service_dependency: auxtel_isr_runner
       -
         name: im
         title: Image Analysis
         label: ImAnalysis
-        prefix: summit_imexam
+        prefix: imexam
         service_dependency: auxtel_isr_runner
       -
         name: spec
         title: Spectrum
-        prefix: summit_specexam
+        prefix: specexam
         service_dependency: auxtel_isr_runner
       -
         name: mount
         title: Mount
-        prefix: auxtel_mount_torques
+        prefix: mount
 
     per_day_channels:
       - name: movie
         title: Tonight's Movie
-        prefix: auxtel_movies
+        prefix: movies
         label: "Movie for "
 
 
@@ -79,10 +79,10 @@ cameras:
     channels:
       - name: startracker
         title: StarTracker
-        prefix: startracker_raw
+        prefix: raw
       - name: analysis
         title: Analysis
-        prefix: startracker_analysis
+        prefix: analysis
     night_report_prefix: startracker_night_reports
 
   - name: startracker_wide
@@ -92,11 +92,11 @@ cameras:
     channels:
       - name: startracker_wide
         title: StarTracker Wide
-        prefix: startracker_wide_raw
+        prefix: raw
         label: ST Wide
       - name: startracker_wide_analysis
         title: Wide Analysis
-        prefix: startracker_wide_analysis
+        prefix: analysis
         label: ST Wide Analysis
     night_report_prefix: startracker_night_reports
     js_entry: startracker
@@ -108,10 +108,10 @@ cameras:
     channels:
       - name: startracker_fast
         title: StarTrackerFast
-        prefix: startracker_fast_raw
+        prefix: raw
       - name: startracker_fast_analysis
         title: Analysis
-        prefix: startracker_fast_analysis
+        prefix: analysis
     night_report_prefix: startracker_night_reports
     js_entry: startracker
 
@@ -121,10 +121,10 @@ cameras:
     channels:
       - name: movie
         title: Current Movie
-        prefix: all_sky_movies
+        prefix: movies
       - name: image
         title: Current Image
-        prefix: all_sky_current
+        prefix: stills
     js_entry: allsky
 
   - name: comcam
@@ -133,10 +133,10 @@ cameras:
     channels:
       - name: focal_plane_mosaic
         title: Focal Plane mosaic
-        prefix: comcam_focal_plane_mosaic
+        prefix: focal_plane_mosaic
       - name: noise_map
         title: Noise Map
-        prefix: comcam_noise_map
+        prefix: noise_map
     js_entry: auxtel
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
     view.html?image=CC_O_{day_obs}_{seq_num:06}"
@@ -151,13 +151,13 @@ cameras:
     channels:
       - name: focal_plane_mosaic
         title: Focal Plane mosaic
-        prefix: slac_lsstcam_focal_plane_mosaic
+        prefix: focal_plane_mosaic
       - name: noise_map
         title: Noise Map
-        prefix: slac_lsstcam_noise_map
+        prefix: noise_map
       - name: ccob_analysis
         title: CCOB Analysis
-        prefix: slac_lsstcam_ccob_analysis
+        prefix: ccob_analysis
     js_entry: auxtel
     logo: slac_lsstcam.png
     night_report_prefix: slac_lsstcam_night_reports
@@ -192,24 +192,24 @@ cameras:
     channels:
       - name: monitor
         title: Monitor
-        prefix: fake_auxtel_monitor
+        prefix: monitor
         service_dependency: fake_auxtel_isr_runner
       - name: im
         title: Image Analysis
         label: ImAnalysis
-        prefix: fake_summit_imexam
+        prefix: imexam
         service_dependency: fake_auxtel_isr_runner
       - name: spec
         title: Spectrum
-        prefix: fake_summit_specexam
+        prefix: specexam
         service_dependency: fake_auxtel_isr_runner
       - name: mount
         title: Mount
-        prefix: fake_auxtel_mount_torques
+        prefix: mount
     per_day_channels:
       - name: movie
         title: Tonight's Movie
-        prefix: fake_auxtel_movies
+        prefix: movies
         label: "Movie for "
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/view.html?\
     image=AT_O_{day_obs}_{seq_num:06}\
