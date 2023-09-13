@@ -11,7 +11,6 @@ __all__ = [
     "Location",
     "Channel",
     "Camera",
-    "Heartbeat",
     "Event",
     "get_current_day_obs",
     "build_prefix_with_date",
@@ -21,9 +20,7 @@ __all__ = [
 class Channel(BaseModel):
     name: str
     title: str
-    prefix: str
     label: str = ""
-    service_dependency: str = ""
 
 
 class Camera(BaseModel):
@@ -50,78 +47,151 @@ class Location(BaseModel, arbitrary_types_allowed=True):
     name: str
     title: str
     bucket_name: str
-    services: list[str]
     camera_groups: dict[str, list[str]]
     cameras: list[Camera] = []
     logo: str = ""
 
 
-class Heartbeat(BaseModel):
-    name: str
-    title: str
-    channels_as_cam_name: str = ""
-    channels: None | list[Channel] = None
-    services: dict[str, str] = {}
-
-
 @dataclass
 class Event:
-    url: str
+    key: str
     hash: str
     # derived fields:
-    name: str = ""
     camera_name: str = ""
     day_obs: str = ""
     channel_name: str = ""
-    seq_num: int | str = 0
+    seq_num: int | str = ""
+    filename = ""
     ext: str = ""
 
     def __post_init__(self) -> None:
         (
-            self.name,
             self.camera_name,
             self.day_obs,
             self.channel_name,
             self.seq_num,
+            self.filename,
             self.ext,
-        ) = self.parse_url()
+        ) = self.parse_key()
 
-    def parse_url(self) -> tuple:
-        """Parses a channel event object URL.
+    def parse_key(self) -> tuple:
+        """Parses a channel event object's key.
 
-        URL is as ``f"{camera}/{date_str}/{channel}/{seq:06}.{ext}"``.
-        There should only be one dot (.) which should precede the extension.
+        A key is as:
+        ``f"{camera}/{date_str}/{channel}/{seq:06}/{filename}.{ext}"``
 
         Returns
         -------
         url_parts: `tuple`
         """
-        url = self.url
-        name_re = re.compile(r"\w+\/[\d-]+\/\w+\/(\d{6}|final)\.\w+$")
-        if match := name_re.match(url):
-            name = match.group()
+        key = self.key
+        name_re = re.compile(
+            r"(\w+)\/([\d-]+)\/(\w+)\/(\d{6}|final)\/([\w-]+)\.(\w+)$"
+        )
+        if match := name_re.match(key):
+            parts = match.groups()
         else:
-            raise ValueError(f"url can't be parsed: {url}")
+            raise ValueError(f"Key can't be parsed: {key}")
 
-        rest, ext = name.split(".")
-        parts = rest.split("/")
-        # parts == [camera, date_str, channel, seq]
-        camera = parts.pop(0)
+        camera, day_obs_str, channel, seq_num, filename, ext = parts
 
-        day_obs_str = parts.pop(0)
-        y, m, d = day_obs_str.split("-")
         try:
-            date(int(y), int(m), int(d))
+            self.date_str_to_date(day_obs_str)
         except ValueError:
-            raise ValueError(f"date can't be parsed: {day_obs_str}")
+            raise ValueError(f"Date can't be parsed: {key}")
 
-        channel = parts.pop(0)
-
-        seq_num: str | int = parts.pop()
         if seq_num != "final":
             seq_num = int(seq_num)
 
-        return (name, camera, day_obs_str, channel, seq_num, ext)
+        return (camera, day_obs_str, channel, seq_num, filename, ext)
+
+    def date_str_to_date(self, date_str: str) -> date:
+        y, m, d = date_str.split("-")
+        return date(int(y), int(m), int(d))
+
+    def day_obs_date(self) -> date:
+        return self.date_str_to_date(self.day_obs)
+
+
+@dataclass
+class NightReport:
+    """Wrapper for a night report blob.
+
+        -   Night Reports can be located in a given bucket using the prefix:
+            ``f"/{camera_name}/{date_str}/night_report/"``.
+
+        -   Plots take the form:
+            ``f"/{camera_name}/{date_str}/night_report/{group}/{filename}.{ext}"``.
+
+        -   Metadata takes the form:
+             ``f"/{camera_name}/{date_str}/night_report/{filename}_md.json"``.
+
+
+    Parameters
+    ----------
+    key: `str`
+        The name used to find the object in the bucket.
+    hash: `str`
+        The md5 hash of the blob. This is used to keep plot images up-to-date
+        onsite.
+    camera: `str`
+        The name of the camera the report belongs to.
+    day_obs: `str`
+        A hyphenated string representing the date i.e. ``"2023-12-31"``
+    group: `str`
+        The name of the group the data belogs to. In the case the file is
+        metadata, the group is set as ``"metadata"``
+    filename: `str`
+        The fully qualified name of the plot or text item of data.
+    ext: `str`
+        The file extension.
+    """
+
+    key: str
+    hash: str
+    # derived fields
+    camera: str = ""
+    day_obs: str = ""
+    group: str = ""
+    name: str = ""
+    ext: str = ""
+
+    def parse_key(self) -> tuple:
+        """Split the filename into parts.
+
+        Returns
+        -------
+        `tuple`
+             Tuple of values used by `__post_init__` to fully init the object.
+        """
+        key = self.key
+        metadata_re = re.compile(
+            r"(\w+)\/([\d-]+)\/night_report\/([\w-]+_md)\.(\w+)$"
+        )
+        if match := metadata_re.match(key):
+            parts = match.groups()
+            camera, day_obs_str, filename, ext = parts
+            group = "metadata"
+        else:
+            plot_re = re.compile(
+                r"(\w+)\/([\d-]+)\/night_report\/([\w-]+)\/([\w-]+)\.(\w+)$"
+            )
+            if match := plot_re.match(key):
+                parts = match.groups()
+                camera, day_obs_str, group, filename, ext = parts
+            else:
+                raise ValueError(f"Key can't be parsed: {key}")
+
+        return (camera, day_obs_str, group, filename, ext)
+
+    def __post_init__(self) -> None:
+        (
+            self.camera,
+            self.day_obs,
+            self.group,
+            self.filename,
+            self.ext,
+        ) = self.parse_key()
 
 
 def build_prefix_with_date(camera: Camera, day_obs: date) -> str:

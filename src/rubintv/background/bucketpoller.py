@@ -1,15 +1,14 @@
 import asyncio
-import json
 
-import boto3
 import structlog
-from botocore.exceptions import ClientError
 
 from rubintv.handlers.websocket import (
     notify_camera_update,
     notify_channel_update,
 )
+from rubintv.models.helpers import objects_to_events
 from rubintv.models.models import Event, Location, get_current_day_obs
+from rubintv.s3bucketinterface import S3BucketInterface
 
 
 class BucketPoller:
@@ -17,7 +16,7 @@ class BucketPoller:
     notifies the websocket server of changes.
     """
 
-    _client = boto3.client("s3")
+    _client = S3BucketInterface()
     _current_objects: dict[str, list | None] = {}
     _current_metadata: dict[str, dict | None] = {}
     _current_channels: dict[str, Event | None] = {}
@@ -38,7 +37,9 @@ class BucketPoller:
                             continue
 
                         prefix = f"{camera.name}/{current_day_obs}"
-                        objects = self.list_objects(loc.bucket_name, prefix)
+                        objects = self._client.list_objects(
+                            loc.bucket_name, prefix
+                        )
 
                         camera_ref = f"{loc.name}/{camera.name}"
                         try:
@@ -99,7 +100,7 @@ class BucketPoller:
         Parameters
         ----------
         objects : `list` [`dict`[`str`, `str`]]
-            A list of dicts that represent s3 objects comprising `"url"` and
+            A list of dicts that represent s3 objects comprising `"key"` and
             `"hash"` keys.
 
         Returns
@@ -113,7 +114,7 @@ class BucketPoller:
         ValueError
             If there is more than one metadata file, a ValueError is raised.
         """
-        md_objs = [o for o in objects if o["url"].endswith("metadata.json")]
+        md_objs = [o for o in objects if o["key"].endswith("metadata.json")]
         if len(md_objs) > 1:
             raise ValueError()
         md_obj = None
@@ -126,7 +127,7 @@ class BucketPoller:
     async def process_metadata_file(
         self, md_obj: dict[str, str], camera_ref: str, bucket_name: str
     ) -> None:
-        data = self.get_object(bucket_name, md_obj["url"])
+        data = self._client.get_object(bucket_name, md_obj["key"])
         if (
             camera_ref not in self._current_metadata
             or data != self._current_metadata[camera_ref]
@@ -138,7 +139,7 @@ class BucketPoller:
     def filter_night_report_objects(
         self, objects: list[dict[str, str]]
     ) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
-        reports = [o for o in objects if o["url"].find("night_report")]
+        reports = [o for o in objects if o["key"].find("night_report")]
         filtered = [o for o in objects if o not in reports]
         return (reports, filtered)
 
@@ -158,47 +159,3 @@ class BucketPoller:
             return self._current_objects[lookup]
         else:
             return None
-
-    def list_objects(
-        self, bucket_name: str, prefix: str
-    ) -> list[dict[str, str]]:
-        objects = []
-        response = self._client.list_objects_v2(
-            Bucket=bucket_name, Prefix=prefix
-        )
-        while True:
-            for content in response.get("Contents", []):
-                object = {}
-                object["url"] = content["Key"]
-                object["hash"] = content["ETag"].strip('"')
-                objects.append(object)
-            if "NextContinuationToken" not in response:
-                break
-            response = self._client.list_objects_v2(
-                Bucket=bucket_name,
-                Prefix=prefix,
-                ContinuationToken=response["NextContinuationToken"],
-            )
-        return objects
-
-    def get_object(self, bucket_name: str, key: str) -> dict | None:
-        logger = structlog.get_logger(__name__)
-        try:
-            obj = self._client.get_object(Bucket=bucket_name, Key=key)
-            return json.loads(obj["Body"].read())
-        except ClientError as e:
-            if e.response["Error"]["Code"] == "NoSuchKey":
-                logger.info(f"Object for key: {key} not found.")
-            return None
-
-
-def objects_to_events(objects: list[dict]) -> list[Event]:
-    logger = structlog.get_logger(__name__)
-    events = []
-    for object in objects:
-        try:
-            event = Event(**object)
-            events.append(event)
-        except ValueError as e:
-            logger.info(e)
-    return events

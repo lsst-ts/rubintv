@@ -4,9 +4,10 @@ from itertools import chain
 
 from fastapi import APIRouter, HTTPException, Request
 
-from rubintv.background.bucketpoller import BucketPoller, objects_to_events
-from rubintv.models.helpers import find_first
+from rubintv.background.bucketpoller import BucketPoller
+from rubintv.models.helpers import find_first, objects_to_events
 from rubintv.models.models import Camera, Event, Location, get_current_day_obs
+from rubintv.s3bucketinterface import S3BucketInterface
 
 __all__ = [
     "api_router",
@@ -82,6 +83,7 @@ async def get_camera_current_events(
     channel_events = md = None
     if camera.online:
         bucket_poller: BucketPoller = request.app.state.bucket_poller
+        bucket: S3BucketInterface = request.app.state.bucket
         objects = await bucket_poller.get_current_camera(
             location_name, camera_name
         )
@@ -89,7 +91,7 @@ async def get_camera_current_events(
         if objects:
             channel_events = objects_to_events(objects)
 
-        md = bucket_poller.get_object(
+        md = bucket.get_object(
             location.bucket_name,
             f"{camera_name}/{current_day_obs}/metadata.json",
         )

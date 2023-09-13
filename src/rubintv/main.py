@@ -27,6 +27,7 @@ from .handlers.internal import internal_router
 from .handlers.websocket import ws_router
 from .mockdata import mock_up_data
 from .models.models_init import ModelsInitiator
+from .s3bucketinterface import S3BucketInterface
 
 __all__ = ["app", "config"]
 
@@ -43,6 +44,7 @@ models = ModelsInitiator()
 
 # initialise the background bucket poller
 bp = BucketPoller(models.locations)
+bucket = S3BucketInterface()
 
 
 @asynccontextmanager
@@ -81,6 +83,7 @@ app = FastAPI(
 
 app.state.models = models
 app.state.bucket_poller = bp
+app.state.bucket = bucket
 # app.state.connected_clients = connected_clients
 
 # Intwine jinja2 templating

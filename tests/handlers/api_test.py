@@ -39,7 +39,7 @@ async def test_get_invalid_api_location(client: AsyncClient) -> None:
 async def test_get_api_location_camera(client: AsyncClient) -> None:
     """Test that api location camera gives data for a particular camera"""
     location_name = "slac"
-    camera_name = "ts8"
+    camera_name = "slac_ts8"
     camera: Camera | None = find_first(m.cameras, "name", camera_name)
     assert camera is not None
     response = await client.get(f"/rubintv/api/{location_name}/{camera_name}")

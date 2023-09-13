@@ -4,8 +4,7 @@ locations:
     bucket_name: rubintv_data_slac
     logo: SLAC_Logo.svg
     camera_groups:
-      Cameras: [ slac_lsstcam, ts8 ]
-    services: []
+      Cameras: [ slac_lsstcam, slac_ts8 ]
 
   - name: tucson
     title: Tucson
@@ -14,7 +13,6 @@ locations:
     camera_groups:
       Cameras: [ auxtel, fake_auxtel, comcam ]
       Telescopes: [ tma ]
-    services: [ auxtel, comcam, misc ]
 
   - name: summit
     title: Summit
@@ -24,7 +22,6 @@ locations:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
       Other Cameras: [ allsky, startracker, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
-    services: [ auxtel, startracker, allsky, comcam, misc ]
 
 cameras:
   - name: tma
@@ -48,19 +45,13 @@ cameras:
       -
         name: monitor
         title: Monitor
-        prefix: monitor
-        service_dependency: auxtel_isr_runner
       -
-        name: im
+        name: imexam
         title: Image Analysis
         label: ImAnalysis
-        prefix: imexam
-        service_dependency: auxtel_isr_runner
       -
-        name: spec
+        name: specexam
         title: Spectrum
-        prefix: specexam
-        service_dependency: auxtel_isr_runner
       -
         name: mount
         title: Mount
@@ -77,12 +68,10 @@ cameras:
     title: StarTracker
     online: True
     channels:
-      - name: startracker
+      - name: raw
         title: StarTracker
-        prefix: raw
       - name: analysis
         title: Analysis
-        prefix: analysis
     night_report_prefix: startracker_night_reports
 
   - name: startracker_wide
@@ -90,13 +79,11 @@ cameras:
     online: True
     metadata_slug: startracker
     channels:
-      - name: startracker_wide
+      - name: raw
         title: StarTracker Wide
-        prefix: raw
         label: ST Wide
-      - name: startracker_wide_analysis
+      - name: analysis
         title: Wide Analysis
-        prefix: analysis
         label: ST Wide Analysis
     night_report_prefix: startracker_night_reports
     js_entry: startracker
@@ -106,10 +93,10 @@ cameras:
     online: True
     metadata_slug: startracker
     channels:
-      - name: startracker_fast
+      - name: raw
         title: StarTrackerFast
         prefix: raw
-      - name: startracker_fast_analysis
+      - name: analysis
         title: Analysis
         prefix: analysis
     night_report_prefix: startracker_night_reports
@@ -119,12 +106,10 @@ cameras:
     title: All Sky
     online: True
     channels:
-      - name: movie
+      - name: movies
         title: Current Movie
-        prefix: movies
-      - name: image
+      - name: stills
         title: Current Image
-        prefix: stills
     js_entry: allsky
 
   - name: comcam
@@ -133,10 +118,8 @@ cameras:
     channels:
       - name: focal_plane_mosaic
         title: Focal Plane mosaic
-        prefix: focal_plane_mosaic
       - name: noise_map
         title: Noise Map
-        prefix: noise_map
     js_entry: auxtel
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
     view.html?image=CC_O_{day_obs}_{seq_num:06}"
@@ -151,13 +134,10 @@ cameras:
     channels:
       - name: focal_plane_mosaic
         title: Focal Plane mosaic
-        prefix: focal_plane_mosaic
       - name: noise_map
         title: Noise Map
-        prefix: noise_map
       - name: ccob_analysis
         title: CCOB Analysis
-        prefix: ccob_analysis
     js_entry: auxtel
     logo: slac_lsstcam.png
     night_report_prefix: slac_lsstcam_night_reports
@@ -166,16 +146,14 @@ cameras:
     FITSInfo/view.html?image=MC_C_{day_obs}_{seq_num:06}"
 
 
-  - name: ts8
+  - name: slac_ts8
     title: TS8
     online: True
     channels:
       - name: focal_plane_mosaic
         title: Focal Plane mosaic
-        prefix: ts8_focal_plane_mosaic
       - name: noise_map
         title: Noise Map
-        prefix: ts8_noise_map
     js_entry: auxtel
     logo: ts8.png
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
@@ -192,20 +170,13 @@ cameras:
     channels:
       - name: monitor
         title: Monitor
-        prefix: monitor
-        service_dependency: fake_auxtel_isr_runner
-      - name: im
+      - name: imexam
         title: Image Analysis
         label: ImAnalysis
-        prefix: imexam
-        service_dependency: fake_auxtel_isr_runner
-      - name: spec
+      - name: specexam
         title: Spectrum
-        prefix: specexam
-        service_dependency: fake_auxtel_isr_runner
       - name: mount
         title: Mount
-        prefix: mount
     per_day_channels:
       - name: movie
         title: Tonight's Movie
@@ -215,6 +186,8 @@ cameras:
     image=AT_O_{day_obs}_{seq_num:06}\
     &raft=R00&color=grey&bias=Simple+Overscan+Correction\
     &scale=Per-Segment&source=RubinTV"
+
+    # TODO: Check the channel names/prefixes
 
 metadata_cols:
   fake_auxtel:

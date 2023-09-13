@@ -6,7 +6,7 @@ import yaml
 from pydantic import BaseModel
 
 from rubintv.models.helpers import find_first
-from rubintv.models.models import Camera, Heartbeat, Location
+from rubintv.models.models import Camera, Location
 
 __all__ = ["ModelsInitiator", "dict_from_list_of_named_objects"]
 
@@ -36,8 +36,6 @@ class ModelsInitiator:
         self.locations = self._attach_cameras_to_locations(
             self.cameras, locations
         )
-        heartbeats = self._populate_model(Heartbeat, data["heartbeats"])
-        self.heartbeats = self._inject_heartbeat_channels(heartbeats)
 
     def _attach_cameras_to_locations(
         self, cameras: list[Camera], locations: list[Location]
@@ -99,32 +97,6 @@ class ModelsInitiator:
                 cam.metadata_cols = cols
             updated_cams.append(cam)
         return updated_cams
-
-    def _inject_heartbeat_channels(
-        self, heartbeats: list[Heartbeat]
-    ) -> list[Heartbeat]:
-        """Inject a camera's channels into each heartbeat wherever a camera
-        name has been used as a reference in the creation of the heartbeat.
-
-        Parameters
-        ----------
-        heartbeats : `list` [`Heartbeat`]
-            A list of heartbeats.
-
-        Returns
-        -------
-        hbs: `list`[`Heartbeat`]
-            Updated heartbeats.
-        """
-        hbs = []
-        for heartbeat in heartbeats:
-            if cam_name := heartbeat.channels_as_cam_name:
-                cam = next(
-                    iter(cam for cam in self.cameras if cam.name == cam_name)
-                )
-                heartbeat.channels = cam.channels
-            hbs.append(heartbeat)
-        return hbs
 
 
 def dict_from_list_of_named_objects(a_list: list[Any]) -> dict[str, Any]:

@@ -1,191 +1,130 @@
+import asyncio
+import re
 from datetime import date
-from typing import Dict, List
 
-from google.api_core.exceptions import NotFound
-from google.cloud.storage import Blob, Bucket
-
+from rubintv.models.helpers import objects_to_events, objects_to_night_reports
 from rubintv.models.models import (
     Camera,
     Channel,
     Event,
     Location,
-    Night_Report_Event,
+    NightReport,
     get_current_day_obs,
 )
-from rubintv.models.models_helpers import get_prefix_from_date
+from rubintv.s3bucketinterface import S3BucketInterface
 
 
-class HistoricalData:
+class HistoricalPoller:
     """Provide a cache of the historical data.
 
     Provides a cache of the historical data which updates when the day rolls
-    over, but means that the full blob contents can be looped over without
-    making a request for the full data for each operation.
+    over.
     """
 
-    def __init__(
-        self,
-        location: Location,
-        bucket: Bucket,
-        cameras: Dict[str, Camera],
-        load_minimal_data: bool,
-        date_to_load: str,
-    ) -> None:
+    _events: list[Event] = []
+    _metadata: list[dict[str, str]] = []
+    _night_reports: list[NightReport] = []
+    _camera_years: dict[str, set[int]] = {}
+    # _event_months = []
+
+    # polling period in seconds
+    CHECK_NEW_DAY_PERIOD = 60
+
+    def __init__(self, location: Location) -> None:
         self._location = location
-        self._bucket = bucket
-        self._cameras = cameras
-        self._events = {}
-        self._night_reports = {}
-        if not load_minimal_data:
-            self._events = self._get_events()
+        self._client = S3BucketInterface()
+        self._cameras = location.cameras
+
+        self._have_downloaded = False
+        self._last_reload = get_current_day_obs()
+
+        self.cam_year_rgx = re.compile(r"(\w+)\/([\d]{4})-[\d]{2}-[\d]{2}")
+
+    async def check_for_new_day(self) -> None:
+        while True:
+            if (
+                self._last_reload > get_current_day_obs()
+                or not self._have_downloaded
+            ):
+                self._last_reload = get_current_day_obs()
+                self._have_downloaded = True
+                await self.refresh_store()
+            else:
+                await asyncio.sleep(self.CHECK_NEW_DAY_PERIOD)
+
+    async def refresh_store(self) -> None:
+        up_to_date_objects = self._get_objects()
+        self.filter_convert_store_objects(up_to_date_objects)
+
+    def _get_objects(self) -> list[dict[str, str]]:
+        """Downloads objects from the bucket for each online camera for the
+        location.
+
+        Returns
+        -------
+        objects :  `list` [`dict` [`str`, `str`]]
+            A list of dicts representing bucket objects.
+        """
+        objects = []
+        for cam in self._cameras:
+            if cam.online:
+                objects.extend(
+                    self._client.list_objects(
+                        self._location.bucket_name, prefix=cam.name
+                    )
+                )
+        return objects
+
+    def filter_convert_store_objects(
+        self, objects: list[dict[str, str]]
+    ) -> None:
+        self._camera_years = self.build_year_dict(objects)
+
+        metadata_objs = [o for o in objects if "metadata.json" in o["key"]]
+        n_report_objs = [o for o in objects if "night_report" in o["key"]]
+        event_objs = [
+            o
+            for o in objects
+            if (o not in metadata_objs) or (o not in n_report_objs)
+        ]
+
+        self._metadata_objs = metadata_objs
+        self._night_reports = objects_to_night_reports(n_report_objs)
+        self._events = objects_to_events(event_objs)
+
+    def build_year_dict(
+        self, objects: list[dict[str, str]]
+    ) -> dict[str, set[int]]:
+        """
+        Builds a dictionary of lists of years keyed by camera name.
+
+        Returns:
+            `dict` [`str`, `list` [`int`]]: A dictionary containing lists of
+            years keyed by camera name.
+        """
+        year_dict: dict[str, set[int]] = {}
+        for obj in objects:
+            cam_name, year = self.extract_cam_year(obj)
+            if year is not None and cam_name is not None:
+                if cam_name not in year_dict:
+                    year_dict[cam_name] = set()
+                year_dict[cam_name].add(year)
+        return year_dict
+
+    def extract_cam_year(
+        self, obj: dict[str, str]
+    ) -> tuple[str | None, int | None]:
+        if match := self.cam_year_rgx.match(obj["key"]):
+            cam, year = match.groups()
+            return cam, int(year)
         else:
-            self._events = self._get_events_for_single_day(date_to_load)
-        self._night_reports = self._get_night_reports()
-        self._last_events_refresh = get_current_day_obs()
-        self._last_reports_refresh = get_current_day_obs()
-
-    def _get_events_for_single_day(
-        self, date_to_load: str
-    ) -> Dict[str, List[Event]]:
-        """Returns events for every `Camera` for a `Location` for a single date.
-
-        Parameters
-        ----------
-        date_to_load : `str`
-            The date as ``"YYYY-MM-DD"``.
-
-        Returns
-        -------
-        events : `Dict` [`str`, `List` [`Event`]]
-            Keyed per camera, each list of Events is sorted by date and
-            sequence number (in descending number and date order).
-        """
-        blobs: Dict[str, List[Blob]] = {}
-        for cam_name in self._location.all_cameras():
-            camera: Camera = self._cameras[cam_name]
-            if not camera.online:
-                continue
-            blobs[cam_name] = []
-            y, m, d = map(int, date_to_load.split("-"))
-            the_date = date(y, m, d)
-            channel: Channel
-            for channel in camera.channels.values():
-                prefix = get_prefix_from_date(channel.prefix, the_date)
-                try:
-                    found_blobs = list(self._bucket.list_blobs(prefix=prefix))
-                    print(f"channel: {channel.name} found {len(found_blobs)}")
-                    blobs[cam_name] += found_blobs
-                except NotFound:
-                    print(
-                        f"Bucket retrieval error. {self._bucket.name} not found"
-                    )
-        return self._sort_events_from_blobs(blobs)
-
-    def _get_blobs(self) -> Dict[str, List[Blob]]:
-        """Downloads Blob metadata from the Bucket for every Camera registered
-        as having historical data.
-
-        Returns
-        -------
-        blobs : `Dict` [`str`, `List` [`Blob`]]
-            A dict of lists of Blob objects, keyed by camera name.
-        """
-        print(f"Getting blobs for location: {self._location.name}")
-        blobs: Dict[str, List[Blob]] = {}
-        for cam_name in self._location.all_cameras():
-            cam = self._cameras[cam_name]
-            blobs[cam_name] = []
-            for channel in cam.channels.values():
-                prefix = channel.prefix
-                try:
-                    cam_blobs = list(self._bucket.list_blobs(prefix=prefix))
-                except NotFound:
-                    print(
-                        f"Bucket retrieval error. {self._bucket.name}:{prefix} not found"
-                    )
-                print(f"Blobs for {prefix} found: {len(cam_blobs)}")
-                blobs[cam_name] += cam_blobs
-        return blobs
-
-    def reload(self) -> None:
-        """Reloads the historical data cache"""
-        self._events = self._get_events(reload=True)
-        self._night_reports = self._get_night_reports(reload=True)
-        return
-
-    def _get_night_reports(
-        self, reload: bool = False
-    ) -> Dict[str, Dict[date, List[Night_Report_Event]]]:
-        """Returns a list of all Night Report Events that can be found
-        in the bucket.
-
-        Results are held in a cache until either the day
-        rolls over or a reload is requested.
-
-        Parameters
-        ----------
-        reload : `bool`, optional
-            True to request a reload of the cache, by default ``False``.
-
-        Returns
-        -------
-        reports : `Dict` [`str`, `Dict` [`date`, `List` [`Night_Report_Event`]]]
-            A two dimensional dictionary with outer key camera name and
-            inner key the date (as a date object) which co-identify
-            a list of Night Reports Events objects.
-        """
-        if (
-            reload
-            or not self._night_reports
-            or get_current_day_obs() > self._last_reports_refresh
-        ):
-            self._night_reports = self._scrape_night_reports()
-            self._last_reports_refresh = get_current_day_obs()
-        return self._night_reports
-
-    def _scrape_night_reports(
-        self,
-    ) -> Dict[str, Dict[date, List[Night_Report_Event]]]:
-        """Downloads and builds a cache of Night Report Events from the GCS
-        bucket.
-
-        Returns
-        -------
-        night_reports : `Dict` [`str`, `Dict` [`str`, `List`
-        [`Night_Report_Event`]]]
-            A two dimensional dictionary with outer key camera name and
-            inner key the date (as a date object) which co-identify
-            a list of Night Reports Events objects.
-        """
-        night_reports: Dict[str, Dict] = {}
-        for cam_name in self._location.all_cameras():
-            cam: Camera = self._cameras[cam_name]
-            if prefix := cam.night_report_prefix:
-                print(f"Retrieving night reports for {prefix}")
-                blobs = list(self._bucket.list_blobs(prefix=prefix))
-                if blobs:
-                    night_reports[cam_name] = {}
-                    for blob in blobs:
-                        report = Night_Report_Event(
-                            blob.public_url,
-                            prefix,
-                            blob.md5_hash,
-                            blobname=blob.name,
-                        )
-                        the_date = report.obs_date
-                        if the_date in night_reports[cam_name]:
-                            night_reports[cam_name][the_date].append(report)
-                        else:
-                            night_reports[cam_name].update(
-                                {the_date: [report]}
-                            )
-                    print(f"Found {len(night_reports[cam_name])} reports")
-        return night_reports
+            return None, None
 
     def get_night_reports_for(
-        self, camera: Camera, obs_date: date
-    ) -> List[Night_Report_Event]:
-        """Returns a list of Night Reports Event objects for the camera and date.
+        self, camera: Camera, date_str: str
+    ) -> list[NightReport]:
+        """Returns a list of Night Reports Event objects for the camera and
+        date.
 
         Parameters
         ----------
@@ -196,92 +135,17 @@ class HistoricalData:
 
         Returns
         -------
-        reports : `List` [`Night_Report_Event`]
-            A list of Night Reports Events in time order.
+        reports : `List` [`NightReport`]
+            A list of Night Reports.
         """
-        all_night_reports = self._get_night_reports()
-        reports = []
-        if (
-            camera.slug in all_night_reports
-            and obs_date in all_night_reports[camera.slug]
-        ):
-            reports = sorted(
-                all_night_reports[camera.slug][obs_date],
-                key=lambda x: x.hash,
-            )
+        reports = [
+            report
+            for report in self._night_reports
+            if report.camera == camera.name and report.day_obs == date_str
+        ]
         return reports
 
-    def _get_events(self, reload: bool = False) -> Dict[str, List[Event]]:
-        """Returns a dict of dicts of sorted lists of Events
-
-        Either simply returns the cache of events or populates the cache before
-        returning it.
-        It will (re)populate the cache if any of the following are ``True``:
-        - There is no existing cache
-        - The day has rolled over
-        - ``reload`` is set to ``True``
-
-
-        Parameters
-        ----------
-        reload : `bool`, optional
-            if ``True`` causes the cache of events to be reloaded, by default
-            ``False``.
-
-        Returns
-        -------
-        events : `Dict` [`str`, `List` [`Event`]
-            Keyed per camera, each list of Events is sorted by date and
-            sequence number (in descending number and date order).
-        """
-        if (
-            reload
-            or not self._events
-            or get_current_day_obs() > self._last_events_refresh
-        ):
-            blobs = self._get_blobs()
-            self._events = self._sort_events_from_blobs(blobs)
-            self._last_events_refresh = get_current_day_obs()
-        return self._events
-
-    def _sort_events_from_blobs(
-        self, blobs: Dict[str, List[Blob]]
-    ) -> Dict[str, List[Event]]:
-        """Returns a dict of dicts of sorted lists of Events.
-
-        This method takes a dict of list of Blobs, filters out any that don't
-        match the filetypes associated with camera events then recasts and
-        sorts them as Events by day and sequence number.
-        Those Events are then organised by camera.
-
-        Parameters
-        ----------
-        blobs : `Dict` [`str`, `List` [`Blob`]]
-            A dict of list of blobs, keyed by camera name.
-
-        Returns
-        -------
-        events : `Dict` [`str`, `List` [`Event`]]
-            Keyed per camera, each list of Events is sorted by date and
-            sequence number (in descending number and date order.
-        """
-        events_dict: Dict[str, List[Event]] = {}
-
-        for cam_name in blobs:
-            events = [
-                Event(blob.public_url)
-                for blob in blobs[cam_name]
-                if list(
-                    filter(blob.public_url.endswith, [".png", ".jpg", ".mp4"])
-                )
-                != []
-            ]
-            events_dict[cam_name] = sorted(
-                events, key=lambda x: (x.obs_date, x.seq), reverse=True
-            )
-        return events_dict
-
-    def get_years(self, camera: Camera) -> List[int]:
+    def get_years(self, camera: Camera) -> list[int]:
         """Returns a list of years for a given Camera in which there are Events
         in the bucket.
 
@@ -292,16 +156,12 @@ class HistoricalData:
 
         Returns
         -------
-        years : `List` [`int`]
-            A list of years.
+        years : `list` [`int`]
+            A sorted list of years as integers.
         """
-        camera_name = camera.slug
-        years = set(
-            [event.obs_date.year for event in self._get_events()[camera_name]]
-        )
-        return list(years)
+        return sorted(list(self._camera_years[camera.name]))
 
-    def get_months_for_year(self, camera: Camera, year: int) -> List[int]:
+    def get_months_for_year(self, camera: Camera, year: int) -> list[int]:
         """Returns a list of months for the given Camera and year
         for which there are Events in the bucket.
 
@@ -314,15 +174,15 @@ class HistoricalData:
 
         Returns
         -------
-        months : `List` [`int`]
+        months : `list` [`int`]
             List of month numbers (1..12 inclusive).
         """
-        camera_name = camera.slug
         months = set(
             [
-                event.obs_date.month
-                for event in self._get_events()[camera_name]
-                if event.obs_date.year == year
+                event.day_obs_date().month
+                for event in self._events
+                if (event.day_obs_date().year == year)
+                and (event.camera_name == camera.name)
             ]
         )
         reverse_months = sorted(months, reverse=True)
@@ -330,13 +190,10 @@ class HistoricalData:
 
     def get_days_for_month_and_year(
         self, camera: Camera, month: int, year: int
-    ) -> Dict[int, int]:
-        """Given a Camera, year and number of month, returns a dict of all
-        the days that have a record of Events with the seq_num of the last
-        Event for each day.
-
-        The dict is keyed by each day number with the corresponding value
-        of the last sequence number of Events recorded that day.
+    ) -> list[tuple[int, int | str]]:
+        """Given a Camera, year and number of month, returns a list of tuples
+        of each day that has a record of Events paired with the max seq_num for
+        that day.
 
         Parameters
         ----------
@@ -349,83 +206,89 @@ class HistoricalData:
 
         Returns
         -------
-        days_dict : `Dict` [`int`, `int`]
+        day_and_seqmax_list : `list` [`tuple` [`int`, `int` | `str`]]
             A dict with day number for key and last seq_num for that day as
             value.
         """
-        camera_name = camera.slug
+
+        month_str = "{:02}".format(month)
         days = set(
             [
-                event.obs_date.day
-                for event in self._get_events()[camera_name]
-                if event.obs_date.month == month
-                and event.obs_date.year == year
+                event.day_obs_date().day
+                for event in self._events
+                if event.day_obs.startswith(f"{year}-{month_str}-")
+                and event.camera_name == camera.name
             ]
         )
-        days_dict = {
-            day: self.get_max_event_seq_for_date(
-                camera, date(year, month, day)
-            )
+        day_and_seqmax_list = [
+            (day, self.get_max_seq_for_date(camera, date(year, month, day)))
             for day in sorted(list(days))
-        }
-        return days_dict
+        ]
+        return day_and_seqmax_list
 
-    def get_max_event_seq_for_date(self, camera: Camera, a_date: date) -> int:
-        """Takes a Camera and date and returns the highest sequence number
-        for Events recorded on that date (i.e. the last Event).
+    def get_max_seq_for_date(self, camera: Camera, a_date: date) -> int | str:
+        """Takes a Camera and date and returns the max sequence number
+        for Events recorded on that date.
 
         Parameters
         ----------
         camera : `Camera`
             The given Camera.
-        a_date : `datetime.date`
-            The given date.
+        date_str : `str`
+            The given date as a `Datetime.date`.
 
         Returns
         -------
-        seq_num : `int`
-            The seq_num of the last Event for that Camera and day.
+        seq_num : `int | str`
+            The seq_num of the last Event for that Camera and day. In All Sky's
+            case, the max_seq can be the string ``"final"``.
         """
-        camera_name = camera.slug
-        cam_events = self._get_events()[camera_name]
-        days_events = (ev for ev in cam_events if ev.obs_date == a_date)
-        return next(days_events).seq
+        date_str = f"{a_date}"
+        events = [
+            e
+            for e in self._events
+            if e.camera_name == camera.name and e.day_obs == date_str
+        ]
+        max_seq = max(events, key=lambda e: e.seq_num).seq_num
+        return max_seq
 
     def get_events_for_date(
-        self, camera: Camera, a_date: date
-    ) -> Dict[str, List[Event]]:
-        """Takes a Camera and date and returns a dict of list of Events, keyed
-        by Channel name.
+        self, camera: Camera, date_str: str
+    ) -> dict[str, list[Event]]:
+        """Given camera and date, returns a dict of list of events, keyed
+        by channel name.
 
         Parameters
         ----------
         camera : `Camera`
             The given Camera object.
 
-        a_date : `datetime.date`
+        date_str: `str`
             The date to find Events for.
 
         Returns
         -------
-        days_events_dict : `Dict` [`str`, `List` [`Event`]]
+        days_events_dict : `dict` [`str`, `list` [`Event`]]
 
         Example
         -------
         Return values are in the format:
         ``{ 'chan_name1': [Event 1, Event 2, ...], 'chan_name2': [...], ...}``.
         """
-        camera_name = camera.slug
-        events_list = self._get_events()[camera_name]
+
         days_events_dict = {}
-        for chan_name, channel in camera.channels.items():
-            days_events_dict[chan_name] = [
-                event
-                for event in events_list
-                if event.obs_date == a_date and event.prefix == channel.prefix
-            ]
+        if camera.channels:
+            for channel in camera.channels:
+                days_events_dict[channel.name] = [
+                    event
+                    for event in self._events
+                    if event.camera_name == camera.name
+                    and event.day_obs == date_str
+                    and event.channel_name == channel.name
+                ]
         return days_events_dict
 
-    def get_most_recent_day(self, camera: Camera) -> date:
+    def get_most_recent_day(self, camera: Camera) -> str:
         """Returns most recent day for which there is data in the bucket for
         the given Camera.
 
@@ -438,12 +301,14 @@ class HistoricalData:
         Returns
         -------
 
-        most_recent : `datetime.date`
-            The date of the most recent day's Event.
+        most_recent : `str`
+            The date of the most recent day's Event in the form
+            ``"YYYY-MM-DD"``.
         """
-        camera_name = camera.slug
-        events = self._get_events()[camera_name]
-        most_recent = events[0].obs_date
+        events = [
+            event for event in self._events if event.camera_name == camera.name
+        ]
+        most_recent = events.pop().day_obs
         return most_recent
 
     def get_most_recent_event(self, camera: Camera, channel: Channel) -> Event:
@@ -463,21 +328,21 @@ class HistoricalData:
             The most recent Event for the given Camera
 
         """
-        camera_name = camera.slug
-        events = (
-            e
-            for e in self._get_events()[camera_name]
-            if e.prefix == channel.prefix
-        )
-        return next(events)
+        events = [
+            event
+            for event in self._events
+            if event.camera_name == camera.name
+            and event.channel_name == channel.name
+        ]
+        return events.pop()
 
     def get_camera_calendar(
         self, camera: Camera
-    ) -> Dict[int, Dict[int, Dict[int, int]]]:
+    ) -> dict[int, dict[int, list[tuple[int, int | str]]]]:
         """Returns a dict representing a calendar for the given Camera
 
-        Provides a dict of days and last seq_num of Events, within a dict of
-        months, within a dict keyed by year for the given Camera.
+        Provides a list of tuples for (days and max seq_num of Events), within
+        a dict of months, within a dict keyed by year for the given Camera.
 
         Parameters
         ----------
@@ -486,15 +351,15 @@ class HistoricalData:
 
         Returns
         -------
-        years : `Dict[int, Dict[int, Dict[int, int]]]`
+        years : `dict` [`int`, `dict` [`int`, `list` [`tuple` [`int`, `int` |
+        `str`]]]]
             A data structure for the view to iterate over with years, months,
             days and num. of events for that day for the given Camera.
 
         """
         active_years = self.get_years(camera)
-        reverse_years = sorted(active_years, reverse=True)
         years = {}
-        for year in reverse_years:
+        for year in active_years:
             months = self.get_months_for_year(camera, year)
             months_days = {
                 month: self.get_days_for_month_and_year(camera, month, year)
