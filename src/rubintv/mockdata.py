@@ -11,7 +11,7 @@ from rubintv.models.helpers import find_first
 from rubintv.models.models import Camera, Location, get_current_day_obs
 
 
-def mock_up_data(locations: list[Location], cameras: list[Camera]) -> None:
+def mock_up_data(locations: list[Location]) -> None:
     """Given the list of locations and cameras, cycles round the channels of
     each referenced camera and uploads a testcard image with the corresponding
     key to the bucket.
@@ -44,6 +44,8 @@ def mock_up_data(locations: list[Location], cameras: list[Camera]) -> None:
         metadata = {f"col{n}": "dummy" for n in range(1, 6)}
         md_json = json.dumps(metadata)
 
+        cameras = location.cameras
+
         for camera_name in camera_names:
             camera: Camera | None
             if camera := find_first(cameras, "name", camera_name):
@@ -56,8 +58,8 @@ def mock_up_data(locations: list[Location], cameras: list[Camera]) -> None:
                         Path(__file__).parent / "static/images/testcard_f.jpg",
                         bucket_name,
                         (
-                            f"{camera_name}/{today}/{channel.name}/"
-                            f"{index:06}.jpg"
+                            f"{camera_name}/{today}/{channel.name}/{index:06}/"
+                            f"mocked_event.jpg"
                         ),
                     )
                     # upload one for 100 days ago.
@@ -66,7 +68,7 @@ def mock_up_data(locations: list[Location], cameras: list[Camera]) -> None:
                         bucket_name,
                         (
                             f"{camera_name}/{the_past}/{channel.name}/"
-                            f"{index:06}.jpg"
+                            f"{index:06}/mocked_past_event.jpg"
                         ),
                     )
             # upload a dummy metadata file.

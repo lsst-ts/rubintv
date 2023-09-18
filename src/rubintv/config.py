@@ -1,6 +1,5 @@
 """Configuration definition."""
-
-from __future__ import annotations
+import os
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -27,6 +26,8 @@ class Configuration(BaseSettings):
             "validation_alias": "SAFIR_PATH_PREFIX",
         },
     )
+
+    s3_endpoint_url: str | None = Field(os.getenv("S3_ENDPOINT_URL"))
 
     profile: Profile = Field(
         Profile.development,

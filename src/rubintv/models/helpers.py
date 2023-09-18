@@ -9,8 +9,9 @@ __all__ = [
     "find_first",
     "find_all",
     "string_int_to_date",
+    "date_str_to_date",
     "objects_to_events",
-    "objects_to_night_reports",
+    "objects_to_ngt_reports",
 ]
 
 
@@ -44,6 +45,11 @@ def _find_by_key_and_value(
     return result
 
 
+def date_str_to_date(date_string: str) -> date:
+    y, m, d = date_string.split("-")
+    return date(int(y), int(m), int(d))
+
+
 def string_int_to_date(date_string: str) -> date:
     """Returns a date object from a given date string in the
     form ``"YYYYMMDD"``.
@@ -74,7 +80,7 @@ def objects_to_events(objects: list[dict]) -> list[Event]:
     return events
 
 
-def objects_to_night_reports(objects: list[dict]) -> list[NightReport]:
+def objects_to_ngt_reports(objects: list[dict]) -> list[NightReport]:
     logger = structlog.get_logger(__name__)
     night_reports = []
     for object in objects:

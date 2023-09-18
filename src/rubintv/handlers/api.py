@@ -1,13 +1,17 @@
 """Handlers for the app's api root, ``/rubintv/api/``."""
 from datetime import date
-from itertools import chain
 
 from fastapi import APIRouter, HTTPException, Request
 
 from rubintv.background.bucketpoller import BucketPoller
-from rubintv.models.helpers import find_first, objects_to_events
+from rubintv.background.historicaldata import HistoricalPoller
+from rubintv.models.helpers import (
+    date_str_to_date,
+    find_first,
+    objects_to_events,
+)
 from rubintv.models.models import Camera, Event, Location, get_current_day_obs
-from rubintv.s3bucketinterface import S3BucketInterface
+from rubintv.s3client import S3Client
 
 __all__ = [
     "api_router",
@@ -36,20 +40,16 @@ async def get_location(location_name: str, request: Request) -> Location:
 
 @api_router.get(
     "/{location_name}/{camera_name}",
-    response_model=Camera,
+    response_model=tuple[Location, Camera],
 )
 async def get_location_camera(
     location_name: str, camera_name: str, request: Request
-) -> Camera:
+) -> tuple[Location, Camera]:
     location = await get_location(location_name, request)
-    cameras = request.app.state.models.cameras
-    camera_groups = location.camera_groups.values()
-    location_cams = chain(*camera_groups)
-    if camera_name not in location_cams or not (
-        camera := find_first(cameras, "name", camera_name)
-    ):
+    cameras = location.cameras
+    if not (camera := find_first(cameras, "name", camera_name)):
         raise HTTPException(status_code=404, detail="Camera not found.")
-    return camera
+    return (location, camera)
 
 
 @api_router.get(
@@ -77,13 +77,14 @@ async def get_camera_current_events(
         of events or none if there are no channel events and a dict which
         contains any current metadata for the given camera.
     """
-    location = await get_location(location_name, request)
-    camera = await get_location_camera(location_name, camera_name, request)
+    location, camera = await get_location_camera(
+        location_name, camera_name, request
+    )
     current_day_obs = get_current_day_obs()
     channel_events = md = None
     if camera.online:
         bucket_poller: BucketPoller = request.app.state.bucket_poller
-        bucket: S3BucketInterface = request.app.state.bucket
+        bucket: S3Client = request.app.state.s3_clients[location_name]
         objects = await bucket_poller.get_current_camera(
             location_name, camera_name
         )
@@ -92,12 +93,39 @@ async def get_camera_current_events(
             channel_events = objects_to_events(objects)
 
         md = bucket.get_object(
-            location.bucket_name,
-            f"{camera_name}/{current_day_obs}/metadata.json",
+            f"{camera_name}/{current_day_obs}/metadata.json"
         )
+        # md = bucket.list_objects(f"{camera_name}/2023-09-14/stills")
 
     return {
         "date": current_day_obs,
         "channel_events": channel_events,
+        "metadata": md,
+    }
+
+
+@api_router.get(
+    "/{location_name}/{camera_name}/{date_str}",
+    response_model=dict[str, date | list[Event] | None | dict],
+)
+async def get_camera_events_for_date(
+    location_name: str, camera_name: str, date_str: str, request: Request
+) -> dict[str, date | list[Event] | None | dict]:
+    location, camera = await get_location_camera(
+        location_name, camera_name, request
+    )
+    events = md = None
+    if camera.online:
+        historical: HistoricalPoller = request.app.state.historical
+        bucket: S3Client = request.app.state.s3_clients[location_name]
+
+        events = historical.get_events_for_date(location, camera, date_str)
+        md = bucket.get_object(f"{camera_name}/{date_str}/metadata.json")
+
+    day_obs = date_str_to_date(date_str)
+
+    return {
+        "date": day_obs,
+        "channel_events": events,
         "metadata": md,
     }

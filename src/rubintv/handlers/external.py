@@ -53,8 +53,9 @@ async def get_camera_page(
     camera_name: str,
     request: Request,
 ) -> Response:
-    location = await get_location(location_name, request)
-    camera = await get_location_camera(location_name, camera_name, request)
+    location, camera = await get_location_camera(
+        location_name, camera_name, request
+    )
     template = "camera"
     if not camera.online:
         template = "not_online"

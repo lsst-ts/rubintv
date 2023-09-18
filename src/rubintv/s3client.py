@@ -4,17 +4,25 @@ import boto3
 import structlog
 from botocore.exceptions import ClientError
 
+from rubintv.config import config
 
-class S3BucketInterface:
-    def __init__(self) -> None:
-        self._client = boto3.client("s3")
 
-    def list_objects(
-        self, bucket_name: str, prefix: str
-    ) -> list[dict[str, str]]:
+class S3Client:
+    def __init__(self, profile_name: str) -> None:
+        endpoint_url = config.s3_endpoint_url
+        session = boto3.Session(
+            region_name="us-east-1", profile_name=profile_name
+        )
+        if endpoint_url:
+            self._client = session.client("s3", endpoint_url=endpoint_url)
+        else:
+            self._client = session.client("s3")
+        self._bucket_name = profile_name
+
+    def list_objects(self, prefix: str) -> list[dict[str, str]]:
         objects = []
         response = self._client.list_objects_v2(
-            Bucket=bucket_name, Prefix=prefix
+            Bucket=self._bucket_name, Prefix=prefix
         )
         while True:
             for content in response.get("Contents", []):
@@ -25,16 +33,16 @@ class S3BucketInterface:
             if "NextContinuationToken" not in response:
                 break
             response = self._client.list_objects_v2(
-                Bucket=bucket_name,
+                Bucket=self._bucket_name,
                 Prefix=prefix,
                 ContinuationToken=response["NextContinuationToken"],
             )
         return objects
 
-    def get_object(self, bucket_name: str, key: str) -> dict | None:
+    def get_object(self, key: str) -> dict | None:
         logger = structlog.get_logger(__name__)
         try:
-            obj = self._client.get_object(Bucket=bucket_name, Key=key)
+            obj = self._client.get_object(Bucket=self._bucket_name, Key=key)
             return json.loads(obj["Body"].read())
         except ClientError as e:
             if e.response["Error"]["Code"] == "NoSuchKey":

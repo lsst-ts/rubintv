@@ -8,7 +8,7 @@ from rubintv.handlers.websocket import (
 )
 from rubintv.models.helpers import objects_to_events
 from rubintv.models.models import Event, Location, get_current_day_obs
-from rubintv.s3bucketinterface import S3BucketInterface
+from rubintv.s3client import S3Client
 
 
 class BucketPoller:
@@ -16,15 +16,19 @@ class BucketPoller:
     notifies the websocket server of changes.
     """
 
-    _client = S3BucketInterface()
+    _clients: dict[str, S3Client] = {}
+
     _current_objects: dict[str, list | None] = {}
     _current_metadata: dict[str, dict | None] = {}
     _current_channels: dict[str, Event | None] = {}
     _current_nr_metadata: dict[str, dict] = {}
-    # _current_
 
     def __init__(self, locations: list[Location]) -> None:
         self.locations = locations
+        for location in locations:
+            self._clients[location.name] = S3Client(
+                profile_name=location.bucket_name
+            )
 
     async def poll_buckets_for_todays_data(self) -> None:
         logger = structlog.get_logger(__name__)
@@ -32,14 +36,13 @@ class BucketPoller:
             try:
                 current_day_obs = get_current_day_obs()
                 for loc in self.locations:
+                    client = self._clients[loc.name]
                     for camera in loc.cameras:
                         if not camera.online:
                             continue
 
                         prefix = f"{camera.name}/{current_day_obs}"
-                        objects = self._client.list_objects(
-                            loc.bucket_name, prefix
-                        )
+                        objects = client.list_objects(prefix)
 
                         camera_ref = f"{loc.name}/{camera.name}"
                         try:
@@ -55,7 +58,7 @@ class BucketPoller:
 
                         if md_obj:
                             await self.process_metadata_file(
-                                md_obj, camera_ref, loc.bucket_name
+                                md_obj, camera_ref, loc
                             )
 
                         (
@@ -86,7 +89,7 @@ class BucketPoller:
                         cam_msg = (f"{loc.name}/{camera.name}", changed_events)
                         await notify_camera_update(cam_msg)
 
-                await asyncio.sleep(3)
+                await asyncio.sleep(10)
             except Exception as e:
                 logger.error(e)
 
@@ -125,9 +128,10 @@ class BucketPoller:
         return (md_obj, filtered_objs)
 
     async def process_metadata_file(
-        self, md_obj: dict[str, str], camera_ref: str, bucket_name: str
+        self, md_obj: dict[str, str], camera_ref: str, location: Location
     ) -> None:
-        data = self._client.get_object(bucket_name, md_obj["key"])
+        client = self._clients[location.name]
+        data = client.get_object(md_obj["key"])
         if (
             camera_ref not in self._current_metadata
             or data != self._current_metadata[camera_ref]
