@@ -47,27 +47,24 @@
         </ul>
       </nav>
   </section>
-
-  <div class="metadata-status">
-    <h4>metadata service:&nbsp;</h4>
-    <div class="service" id="{{ camera.metadata_slug }}_metadata">
-      <div class="heartbeat"></div>
-    </div>
-  </div>
-
+  {% if historical_busy %}
+    <p>There's nothing to show from today and the historical data is being processed...
+    Please wait...</p>
+  {% else %}
     <section id="channel-day-data">
-      {# {% include "cameras/data-table-header.jinja" %} #}
+      {% include "camera_parts/data-table-header.jinja" %}
     </section>
+  {% endif %}
 
-    <script type="application/json" id="camera_json">
+    {# <script type="application/json" id="camera_json">
       {{ camera_json|tojson }}
-    </script>
+    </script> #}
 {% endblock content %}
 
 {% block footer_scripts %}
   {% if camera.js_entry %}
     {% set cam_js = "assets/" + camera.js_entry + ".js" %}
-    <script src='{{ url_for("static", path=cam_js) }}'></script>
+    {# <script src='{{ url_for("static", path=cam_js) }}'></script> #}
   {% endif %}
   {{ super() }}
 {% endblock footer_scripts  %}

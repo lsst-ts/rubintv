@@ -1,0 +1,26 @@
+{% for seq in table %}
+  <tr id="seqno-{{ seq }}">
+    <td class="grid-cell seq">
+      {{ seq }}
+    </td>
+    {% for chan in camera.channels %}
+        <td class="grid-cell">
+          {% set event = table[seq][chan.name] %}
+          {% if table[seq][chan.name] %}
+              <a
+              class="button button-table {{ chan.name }}"
+              data-event-key="{{ table[seq][chan.name].key }}"
+              href="{{ event.location_name }}">
+              </a>
+          {% endif %}
+        </td>
+    {% endfor %}
+    {% if camera.image_viewer_link %}
+      <td class="grid-cell">
+        <a class="button button-table image-viewer-link"
+        {# href="{{ viewer_link(camera, date, seq) }}" #}
+        href="#"
+        ></a>
+      </td>
+    {% endif %}
+{% endfor %}

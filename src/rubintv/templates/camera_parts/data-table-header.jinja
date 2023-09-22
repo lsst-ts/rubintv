@@ -1,0 +1,34 @@
+<div id="table-top"></div>
+<div class="channel-grid-heading">
+  <h3 id="the-date" data-date="{{ date }}">Data for day: <span class="data">{{ date }}</span></h3>
+  <div id="table-controls"></div>
+</div>
+<div class="table-spacer">
+  <div class="jump-buttons">
+  </div>
+</div>
+  <table class="channel-grid">
+    <thead>
+        <tr>
+        <th class="grid-title sideways">Seq. No.</th>
+        {% for channel in camera.channels %}
+          {% if channel.label %}
+            <th class="grid-title gt-channel sideways">{{ channel.label }}</th>
+          {% else %}
+            <th class="grid-title gt-channel sideways">{{ channel.title }}</th>
+          {% endif %}
+        {% endfor %}
+
+        {% if camera.image_viewer_link %}
+          <th class="grid-title sideways">CCS Image Viewer</th>
+        {% endif %}
+
+      </tr>
+    </thead>
+    <tbody>
+      {% include "camera_parts/data-table.jinja" %}
+    </tbody>
+  </table>
+  {# <script type="application/json" id="table-metadata">
+    {{ metadata|tojson }}
+  </script> #}

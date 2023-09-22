@@ -1,5 +1,6 @@
 import asyncio
 import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
 import structlog
@@ -35,7 +36,6 @@ class HistoricalPoller:
     CHECK_NEW_DAY_PERIOD = 60
 
     def __init__(self, locations: list[Location]) -> None:
-        # locations = [locations[0]]
         self._locations = locations
         self._clients = {
             location.name: S3Client(location.bucket_name)
@@ -47,11 +47,14 @@ class HistoricalPoller:
 
         self.cam_year_rgx = re.compile(r"(\w+)\/([\d]{4})-[\d]{2}-[\d]{2}")
 
+    async def is_busy(self) -> bool:
+        return not self._have_downloaded
+
     async def check_for_new_day(self) -> None:
         while True:
             if (
-                self._last_reload > get_current_day_obs()
-                or not self._have_downloaded
+                not self._have_downloaded
+                or self._last_reload > get_current_day_obs()
             ):
                 for location in self._locations:
                     await self._refresh_location_store(location)
@@ -62,19 +65,23 @@ class HistoricalPoller:
                 await asyncio.sleep(self.CHECK_NEW_DAY_PERIOD)
 
     async def _refresh_location_store(self, location: Location) -> None:
+        # handle blocking call in async code
         logger = structlog.get_logger(__name__)
-
+        executor = ThreadPoolExecutor(max_workers=3)
+        loop = asyncio.get_event_loop()
         try:
-            up_to_date_objects = await self._get_objects(location)
+            up_to_date_objects = await loop.run_in_executor(
+                executor, self._get_objects, location
+            )
             await self.filter_convert_store_objects(
                 up_to_date_objects, location
             )
         except Exception as e:
             logger.error(e)
 
-    async def _get_objects(self, location: Location) -> list[dict[str, str]]:
+    def _get_objects(self, location: Location) -> list[dict[str, str]]:
         """Downloads objects from the bucket for each online camera for the
-        location.
+        location. Is a blocking call so is called via run_in_executor
 
         Returns
         -------
@@ -170,7 +177,7 @@ class HistoricalPoller:
         ]
         return reports
 
-    def get_years(self, location: Location, camera: Camera) -> list[int]:
+    async def get_years(self, location: Location, camera: Camera) -> list[int]:
         """Returns a list of years for a given Camera in which there are Events
         in the bucket.
 
@@ -186,7 +193,7 @@ class HistoricalPoller:
         """
         return sorted(list(self._camera_years[location.name][camera.name]))
 
-    def get_months_for_year(
+    async def get_months_for_year(
         self, location: Location, camera: Camera, year: int
     ) -> list[int]:
         """Returns a list of months for the given Camera and year
@@ -215,7 +222,7 @@ class HistoricalPoller:
         reverse_months = sorted(months, reverse=True)
         return list(reverse_months)
 
-    def get_days_for_month_and_year(
+    async def get_days_for_month_and_year(
         self, location: Location, camera: Camera, month: int, year: int
     ) -> list[tuple[int, int | str]]:
         """Given a Camera, year and number of month, returns a list of tuples
@@ -250,7 +257,7 @@ class HistoricalPoller:
         day_and_seqmax_list = [
             (
                 day,
-                self.get_max_seq_for_date(
+                await self.get_max_seq_for_date(
                     location, camera, date(year, month, day)
                 ),
             )
@@ -258,7 +265,7 @@ class HistoricalPoller:
         ]
         return day_and_seqmax_list
 
-    def get_max_seq_for_date(
+    async def get_max_seq_for_date(
         self, location: Location, camera: Camera, a_date: date
     ) -> int | str:
         """Takes a Camera and date and returns the max sequence number
@@ -277,7 +284,7 @@ class HistoricalPoller:
             The seq_num of the last Event for that Camera and day. In All Sky's
             case, the max_seq can be the string ``"final"``.
         """
-        date_str = f"{a_date}"
+        date_str = a_date.isoformat()
         events = [
             e
             for e in self._events[location.name]
@@ -286,8 +293,8 @@ class HistoricalPoller:
         max_seq = max(events, key=lambda e: e.seq_num).seq_num
         return max_seq
 
-    def get_events_for_date(
-        self, location: Location, camera: Camera, date_str: str
+    async def get_events_for_date(
+        self, location: Location, camera: Camera, a_date: date
     ) -> dict[str, list[Event]]:
         """Given camera and date, returns a dict of list of events, keyed
         by channel name.
@@ -309,7 +316,7 @@ class HistoricalPoller:
         Return values are in the format:
         ``{ 'chan_name1': [Event 1, Event 2, ...], 'chan_name2': [...], ...}``.
         """
-
+        date_str = a_date.isoformat()
         days_events_dict = {}
         if camera.channels:
             for channel in camera.channels:
@@ -324,7 +331,7 @@ class HistoricalPoller:
 
     async def get_most_recent_day(
         self, location: Location, camera: Camera
-    ) -> str:
+    ) -> date:
         """Returns most recent day for which there is data in the bucket for
         the given Camera.
 
@@ -341,13 +348,27 @@ class HistoricalPoller:
             The date of the most recent day's Event in the form
             ``"YYYY-MM-DD"``.
         """
-        events = [
-            event
-            for event in self._events[location.name]
-            if event.camera_name == camera.name
-        ]
-        most_recent = events.pop().day_obs
-        return most_recent
+        most_recent = max(
+            (
+                event
+                for event in self._events[location.name]
+                if event.camera_name == camera.name
+            ),
+            key=lambda ev: ev.seq_num
+            if isinstance(ev.seq_num, int)
+            else 99999,
+        )
+        most_recent_day = most_recent.day_obs_date()
+        return most_recent_day
+
+    async def get_most_recent_events(
+        self, location: Location, camera: Camera
+    ) -> dict[str, list[Event]]:
+        most_recent_day = await self.get_most_recent_day(location, camera)
+        events = await self.get_events_for_date(
+            location, camera, most_recent_day
+        )
+        return events
 
     async def get_most_recent_event(
         self, location: Location, camera: Camera, channel: Channel
@@ -397,12 +418,12 @@ class HistoricalPoller:
             days and num. of events for that day for the given Camera.
 
         """
-        active_years = self.get_years(location, camera)
+        active_years = await self.get_years(location, camera)
         years = {}
         for year in active_years:
-            months = self.get_months_for_year(location, camera, year)
+            months = await self.get_months_for_year(location, camera, year)
             months_days = {
-                month: self.get_days_for_month_and_year(
+                month: await self.get_days_for_month_and_year(
                     location, camera, month, year
                 )
                 for month in months

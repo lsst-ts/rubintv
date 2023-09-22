@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 import boto3
 import structlog
@@ -44,6 +45,19 @@ class S3Client:
         try:
             obj = self._client.get_object(Bucket=self._bucket_name, Key=key)
             return json.loads(obj["Body"].read())
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "NoSuchKey":
+                logger.info(f"Object for key: {key} not found.")
+            return None
+
+    def get_binary_object(self, key: str) -> Any | None:
+        # TODO: use some kind of caching to store the last few images
+        # so they don't need to be downloaded from the bucket for every client
+        logger = structlog.get_logger(__name__)
+        try:
+            obj = self._client.get_object(Bucket=self._bucket_name, Key=key)
+            data: bytes = obj["Body"].read()
+            return data
         except ClientError as e:
             if e.response["Error"]["Code"] == "NoSuchKey":
                 logger.info(f"Object for key: {key} not found.")

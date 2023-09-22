@@ -6,6 +6,7 @@ from typing import Any, Type
 from dateutil.tz import gettz
 from pydantic import BaseModel, field_validator
 from pydantic.dataclasses import dataclass
+from typing_extensions import TypedDict
 
 __all__ = [
     "Location",
@@ -55,7 +56,7 @@ class Location(BaseModel, arbitrary_types_allowed=True):
 @dataclass
 class Event:
     key: str
-    hash: str
+    hash: str = ""
     # derived fields:
     camera_name: str = ""
     day_obs: str = ""
@@ -192,6 +193,18 @@ class NightReport:
             self.filename,
             self.ext,
         ) = self.parse_key()
+
+
+@dataclass
+class EventImage:
+    event: Event
+    image_data: bytes
+
+
+class EventJSONDict(TypedDict):
+    date: date | None
+    channel_events: dict[str, list[Event]]
+    metadata: dict[str, str] | None
 
 
 def build_prefix_with_date(camera: Camera, day_obs: date) -> str:
