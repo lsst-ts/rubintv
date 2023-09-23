@@ -1,34 +1,25 @@
-{% extends "cameras/layout.jinja" %}
+{% extends "_camera.jinja" %}
 
 {% block pagesubtitle %}
-  {{ channel }}
+  {{ channel.title }}
 {% endblock pagesubtitle %}
 
 {% block undertitle %}
- {{ date }}
+ {{ event.date }}
 {% endblock undertitle %}
 
 {% block content %}
 
   <div class="event-info">
-    <h2><span id="date">{{ date }}</span> : Sequence <span id="seqNum">{{ seq }}</span></h2>
+    <h2>
+      <span id="date">{{ event.day_obs }}</span> : Sequence
+      <span id="seqNum">{{ event.seq_num }}</span>
+    </h2>
     <nav class="prev-next-nav">
 
     </nav>
   </div>
-  {% if event %}
-    <a id="eventLink" href="{{ event.url }}">
-    {% set image_class = "resp" %}
-    {# {% if channel=="Monitor" %}
-      {% set image_class = "resp behind" %}
-    {% endif %} #}
-      <img id="eventImage" class="{{ image_class }}" src="{{ event.url }}">
-    </a>
-    {% if channel != "Monitor" %}
-      <div id="eventName" class="desc">{{ event.name }}</div>
-    {% endif %}
-  {% else %}
-    <p>Event not found</p>
-  {% endif %}
+      <img id="eventImage" src="data:image/{{ event.ext }};base64,{{ image_data }}">
+      <div id="eventName" class="desc">{{ event.key }}</div>
 
 {% endblock content %}

@@ -10,8 +10,11 @@ from rubintv.handlers.api import (
     get_camera_current_events,
     get_location,
     get_location_camera,
+    get_specific_channel_event,
 )
 from rubintv.handlers.pages_helpers import make_table_rows_from_columns_by_seq
+from rubintv.models.helpers import find_first
+from rubintv.models.models import Event
 from rubintv.templates_init import get_templates
 
 __all__ = ["get_home", "pages_router", "templates"]
@@ -92,5 +95,41 @@ async def get_camera_page(
             "table": table,
             "date": day_obs,
             "historical_busy": historical_busy,
+        },
+    )
+
+
+@pages_router.get(
+    "/{location_name}/{camera_name}/event",
+    response_class=HTMLResponse,
+    name="single_event",
+)
+async def get_specific_channel_event_page(
+    location_name: str,
+    camera_name: str,
+    key: str,
+    request: Request,
+) -> Response:
+    location, camera = await get_location_camera(
+        location_name, camera_name, request
+    )
+    event: Event | None = None
+    image_data: str | None = None
+    event_image = await get_specific_channel_event(
+        location_name, camera_name, key, request
+    )
+    if event_image:
+        event = event_image.event
+        image_data = event_image.image_data.decode()
+        channel = find_first(camera.channels, "name", event.channel_name)
+    return templates.TemplateResponse(
+        "single_event.jinja",
+        {
+            "request": request,
+            "location": location,
+            "camera": camera,
+            "channel": channel,
+            "event": event,
+            "image_data": image_data,
         },
     )

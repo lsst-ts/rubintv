@@ -1,7 +1,6 @@
 """Handlers for the app's api root, ``/rubintv/api/``."""
 import asyncio
 import base64
-import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
@@ -210,7 +209,6 @@ async def get_specific_channel_event(
     request: Request,
     logger: BoundLogger = Depends(logger_dependency),
 ) -> EventImage | None:
-    t = time.time()
     location, camera = await get_location_camera(
         location_name, camera_name, request
     )
@@ -231,8 +229,5 @@ async def get_specific_channel_event(
         return None
     image = base64.b64encode(object)
     event_image = EventImage(event, image)
-
-    elapsed = time.time() - t
-    logger.info(f"Time elapsed: {elapsed}")
 
     return event_image

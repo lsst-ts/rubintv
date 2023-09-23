@@ -14,7 +14,7 @@ class S3Client:
         session = boto3.Session(
             region_name="us-east-1", profile_name=profile_name
         )
-        if endpoint_url:
+        if endpoint_url is not None and not endpoint_url == "testing":
             self._client = session.client("s3", endpoint_url=endpoint_url)
         else:
             self._client = session.client("s3")

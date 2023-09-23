@@ -316,17 +316,17 @@ class HistoricalPoller:
         Return values are in the format:
         ``{ 'chan_name1': [Event 1, Event 2, ...], 'chan_name2': [...], ...}``.
         """
+        print(f"stored data for: {[l for l in self._events]}")
         date_str = a_date.isoformat()
         days_events_dict = {}
-        if camera.channels:
-            for channel in camera.channels:
-                days_events_dict[channel.name] = [
-                    event
-                    for event in self._events[location.name]
-                    if event.camera_name == camera.name
-                    and event.day_obs == date_str
-                    and event.channel_name == channel.name
-                ]
+        for channel in camera.channels:
+            days_events_dict[channel.name] = [
+                event
+                for event in self._events[location.name]
+                if event.camera_name == camera.name
+                and event.day_obs == date_str
+                and event.channel_name == channel.name
+            ]
         return days_events_dict
 
     async def get_most_recent_day(

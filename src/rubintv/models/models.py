@@ -31,7 +31,7 @@ class Camera(BaseModel):
     metadata_slug: str = ""
     logo: str = ""
     image_viewer_link: str = ""
-    channels: list[Channel] | None = None
+    channels: list[Channel] = []
     per_day_channels: list[Channel] | None = None
     night_report_prefix: str = ""
     night_report_label: str = "Night Report"
