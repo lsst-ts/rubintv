@@ -1,26 +1,26 @@
-{% for seq in table %}
+{% for seq_num in table %}
   <tr id="seqno-{{ seq }}">
     <td class="grid-cell seq">
-      {{ seq }}
+      {{ seq_num }}
     </td>
     {% for chan in camera.channels %}
         <td class="grid-cell">
-          {% set event = table[seq][chan.name] %}
-          {% if table[seq][chan.name] %}
+          {% set event = table[seq_num][chan.name] %}
+          {% if table[seq_num][chan.name] %}
+            {% set key = table[seq_num][chan.name].key %}
               <a
               class="button button-table {{ chan.name }}"
-              data-event-key="{{ table[seq][chan.name].key }}"
-              href="{{ event.location_name }}">
+              href="{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}?key={{ event.key }}">
               </a>
           {% endif %}
         </td>
     {% endfor %}
     {% if camera.image_viewer_link %}
       <td class="grid-cell">
-        <a class="button button-table image-viewer-link"
-        {# href="{{ viewer_link(camera, date, seq) }}" #}
-        href="#"
-        ></a>
+        <a
+          class="button button-table image-viewer-link"
+          href="{{ viewer_link(camera, date, seq_num) }}">
+        </a>
       </td>
     {% endif %}
 {% endfor %}

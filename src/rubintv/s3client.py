@@ -1,9 +1,10 @@
 import json
-from typing import Any
 
 import boto3
 import structlog
 from botocore.exceptions import ClientError
+from botocore.response import StreamingBody
+from fastapi.exceptions import HTTPException
 
 from rubintv.config import config
 
@@ -50,15 +51,24 @@ class S3Client:
                 logger.info(f"Object for key: {key} not found.")
             return None
 
-    def get_binary_object(self, key: str) -> Any | None:
-        # TODO: use some kind of caching to store the last few images
-        # so they don't need to be downloaded from the bucket for every client
+    def get_raw_object(self, key: str) -> StreamingBody:
+        try:
+            data = self._client.get_object(Bucket=self._bucket_name, Key=key)
+            return data["Body"]
+        except ClientError:
+            raise HTTPException(
+                status_code=404, detail=f"No such file for: {key}"
+            )
+
+    async def get_presigned_url(self, key: str) -> str:
         logger = structlog.get_logger(__name__)
         try:
-            obj = self._client.get_object(Bucket=self._bucket_name, Key=key)
-            data: bytes = obj["Body"].read()
-            return data
-        except ClientError as e:
-            if e.response["Error"]["Code"] == "NoSuchKey":
-                logger.info(f"Object for key: {key} not found.")
-            return None
+            url = self._client.generate_presigned_url(
+                ClientMethod="get_object",
+                Params={"Bucket": self._bucket_name, "Key": key},
+                ExpiresIn=300,
+            )
+        except ClientError:
+            logger.error(f"Couldn't generate URL for key: {key}")
+            return ""
+        return url

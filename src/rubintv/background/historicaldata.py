@@ -5,7 +5,11 @@ from datetime import date
 
 import structlog
 
-from rubintv.models.helpers import objects_to_events, objects_to_ngt_reports
+from rubintv.models.helpers import (
+    event_list_to_channel_keyed_dict,
+    objects_to_events,
+    objects_to_ngt_reports,
+)
 from rubintv.models.models import (
     Camera,
     Channel,
@@ -122,7 +126,8 @@ class HistoricalPoller:
         self._metadata[locname] = metadata_objs
         self._nr_metadata[locname] = objects_to_ngt_reports(n_report_objs)
         logger.info(f"Building historical events for {locname}")
-        self._events[locname] = objects_to_events(event_objs)
+        events = objects_to_events(event_objs)
+        self._events[locname] = events
 
     async def build_year_dict(
         self, objects: list[dict[str, str]]
@@ -316,17 +321,29 @@ class HistoricalPoller:
         Return values are in the format:
         ``{ 'chan_name1': [Event 1, Event 2, ...], 'chan_name2': [...], ...}``.
         """
-        print(f"stored data for: {[l for l in self._events]}")
         date_str = a_date.isoformat()
-        days_events_dict = {}
-        for channel in camera.channels:
-            days_events_dict[channel.name] = [
-                event
-                for event in self._events[location.name]
-                if event.camera_name == camera.name
-                and event.day_obs == date_str
-                and event.channel_name == channel.name
-            ]
+        camera_events = [
+            e
+            for e in self._events[location.name]
+            if e.camera_name == camera.name and e.day_obs == date_str
+        ]
+        days_events_dict = await event_list_to_channel_keyed_dict(
+            camera_events, camera.channels
+        )
+        return days_events_dict
+
+    async def get_per_day_events_for_date(
+        self, location: Location, camera: Camera, a_date: date
+    ) -> dict[str, list[Event]]:
+        date_str = a_date.isoformat()
+        camera_events = [
+            e
+            for e in self._events[location.name]
+            if e.camera_name == camera.name and e.day_obs == date_str
+        ]
+        days_events_dict = await event_list_to_channel_keyed_dict(
+            camera_events, camera.per_day_channels
+        )
         return days_events_dict
 
     async def get_most_recent_day(
@@ -372,7 +389,7 @@ class HistoricalPoller:
 
     async def get_most_recent_event(
         self, location: Location, camera: Camera, channel: Channel
-    ) -> Event:
+    ) -> Event | None:
         """Returns most recent Event for the given Camera.
 
         Parameters
@@ -395,7 +412,9 @@ class HistoricalPoller:
             if event.camera_name == camera.name
             and event.channel_name == channel.name
         ]
-        return events.pop()
+        if events:
+            return events.pop()
+        return None
 
     async def get_camera_calendar(
         self, location: Location, camera: Camera

@@ -49,8 +49,6 @@ def mock_up_data(locations: list[Location]) -> None:
         for camera_name in camera_names:
             camera: Camera | None
             if camera := find_first(cameras, "name", camera_name):
-                if not camera.channels:
-                    continue
                 for index, channel in enumerate(camera.channels):
                     print(f"Uploading for {camera_name}/{channel.name}")
                     # upload a file for today.

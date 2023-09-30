@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi.templating import Jinja2Templates
 
 from rubintv import __version__
+from rubintv.models.helpers import get_image_viewer_link
 from rubintv.models.models_init import (
     dict_from_list_of_named_objects as list_to_dict,
 )
@@ -22,6 +23,7 @@ def get_templates() -> Jinja2Templates:
 
     # Add filter to convert lists to dicts.
     templates.env.filters["list_to_dict"] = list_to_dict
+    templates.env.globals["viewer_link"] = get_image_viewer_link
 
     # Inject version as template global.
     templates.env.globals.update(version=__version__)

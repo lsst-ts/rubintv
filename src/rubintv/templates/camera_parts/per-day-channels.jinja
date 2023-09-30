@@ -1,15 +1,15 @@
- {% if per_day | length %}
+ {% if camera.per_day_channels %}
   <nav id="per-night-menu" class="channel-menu" role="navigation">
     <h3>Per Night Channels</h3>
     <ul class="channels flr">
-      {% for pd_channel_name in per_day %}
+      {% for chan in camera.per_day_channels %}
         <li class="channel">
-          <a  class="button button-large {{ pd_channel_name }}"
-              href="{{ per_day[pd_channel_name] }}">
+          <a  class="button button-large {{ chan.name }}"
+              href="#">
             <img src="{{
-              url_for('static', filename='images/' + pd_channel_name + '.svg')
+              url_for('static', path='images/' + chan.name + '.svg')
             }}">
-            {{ camera.per_day_channels[pd_channel_name]['label'] }}
+            {{ chan.label }}
             <span class="date">
               {{ date }}
             </span>

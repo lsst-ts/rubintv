@@ -1,12 +1,12 @@
 import re
-from typing import Tuple
+from typing import Any, Tuple
 
 from rubintv.handlers.websockets_clients import connected_clients
 from rubintv.models.helpers import find_first
 from rubintv.models.models import Camera, Event, Location
 
 __all__ = [
-    "notify_camera_update",
+    "notify_camera_events_update",
     "notify_channel_update",
     "is_valid_client_request",
     "is_valid_location_camera",
@@ -14,7 +14,33 @@ __all__ = [
 ]
 
 
-async def notify_camera_update(
+async def notify_camera_events_update(
+    message_for_cam: Tuple[str, list[Event]]
+) -> None:
+    """Receives and processes messages to pass on to connected clients.
+
+
+    Parameters
+    ----------
+    message_for_cam : `Tuple` [`str`, `dict` [`list` [`Event`]]]
+        Messages take the form: {f"{location_name}/{camera_name}": payload}
+        where payload is a dict of list of events, keyed by channel name.
+    """
+    loc_cam, events_list = message_for_cam
+    for websocket, (to_update, loc_cam_id) in connected_clients.items():
+        if to_update == "camera" and loc_cam_id == loc_cam:
+            events_dict: dict[str, list[dict[str, Any]]] = {}
+            for e in events_list:
+                if e.channel_name in events_dict:
+                    events_dict[e.channel_name].append(e.__dict__)
+                else:
+                    events_dict[e.channel_name] = [e.__dict__]
+            await websocket.send_json(
+                {"data_type": "event_list", "payload": events_dict}
+            )
+
+
+async def notify_camera_metadata_update(
     message_for_cam: Tuple[str, list[Event] | None] | Tuple[str, dict | None]
 ) -> None:
     """Receives and processes messages to pass on to connected clients.
@@ -22,26 +48,17 @@ async def notify_camera_update(
 
     Parameters
     ----------
-    message_for_cam : `Tuple` [`str`, `list` [`Event`]  |  `None`] | `Tuple`
-    [`str`, `dict`  |  `None`]
+    message_for_cam :  `Tuple` [`str`, `dict`]
         Messages take the form: {f"{location_name}/{camera_name}": payload}
         where payload is either a list of channel-related events or a single
         dict of metadata.
     """
-    loc_cam, events = message_for_cam
+    loc_cam, metadata = message_for_cam
     for websocket, (to_update, loc_cam_id) in connected_clients.items():
         if to_update == "camera" and loc_cam_id == loc_cam:
-            if events:
-                # events can either be a list of channel events or a metadata
-                # dict
-                serialised: list | dict | None
-                if isinstance(events, list):
-                    serialised = [ev.__dict__ for ev in events]
-                else:
-                    serialised = events
-            else:
-                serialised = None
-            await websocket.send_json(serialised)
+            await websocket.send_json(
+                {"data_type": "metadata", "payload": metadata}
+            )
 
 
 async def notify_channel_update(message_for_chan: Tuple[str, Event]) -> None:

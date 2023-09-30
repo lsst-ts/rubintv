@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 from httpx import AsyncClient
 
@@ -83,6 +85,8 @@ async def test_get_api_location_camera_current_for_offline(
 async def test_get_api_camera_for_date(client: AsyncClient) -> None:
     """Test that api location/camera/current day obs yields a result"""
     today = get_current_day_obs()
+    # wait for historical data to become unlocked
+    await asyncio.sleep(1)
     response = await client.get(f"/rubintv/api/slac/slac_ts8/date/{today}")
     data = response.json()
     print(f"data is: {data}")

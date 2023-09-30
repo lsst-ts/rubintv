@@ -4,11 +4,12 @@
 {% endblock pagesubtitle  %}
 
 {% block undertitle %}
+{% if date %}
   {{ date }}
+{% endif %}
   <a
     class="button historical"
-    {# href="{{ url_for('historical', location=location_name.name, camera_name=camera.name) }}" #}
-  >
+    href="{{ url_for('historical', location_name=location.name, camera_name=camera.name) }}">
     Historical<img src="{{ url_for('static', path='images/history-line.svg') }}">
   </a>
 {% endblock undertitle %}
@@ -34,12 +35,10 @@
         <ul class="channels flr">
           {% for channel in camera.channels %}
             <li class="channel service"
-                id="{{ channel.prefix }}"
-                data-dependent-on="{{ channel.service_dependency }}">
+                id="{{ channel.name }}">
               <a  class="button button-large {{ channel.name }}"
-                  {# href="{{ url_for('current', location=location.slug, camera=camera.slug, channel=channel.slug) }}" #}
+                  href="{{ url_for('current_event', location_name=location.name, camera_name=camera.name, channel_name=channel.name) }}"
                   target="_blank">
-                <div class="heartbeat"></div>
                 <span>{{ channel.title }}</span>
               </a>
             </li>

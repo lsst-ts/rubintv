@@ -3,7 +3,7 @@ from typing import Any, Iterable
 
 import structlog
 
-from rubintv.models.models import Event, NightReport
+from rubintv.models.models import Camera, Channel, Event, NightReport
 
 __all__ = [
     "find_first",
@@ -90,3 +90,41 @@ def objects_to_ngt_reports(objects: list[dict]) -> list[NightReport]:
         except ValueError as e:
             logger.info(e)
     return night_reports
+
+
+async def event_list_to_channel_keyed_dict(
+    event_list: list[Event], channels: list[Channel]
+) -> dict[str, list[Event]]:
+    days_events_dict = {}
+    for channel in channels:
+        days_events_dict[channel.name] = [
+            event for event in event_list if event.channel_name == channel.name
+        ]
+    return days_events_dict
+
+
+def get_image_viewer_link(camera: Camera, day_obs: date, seq_num: int) -> str:
+    """Returns the url for the camera's external image viewer for a given date
+    and seq num.
+
+    Used in the template.
+
+    Parameters
+    ----------
+    camera : `Camera`
+        The given camera.
+    day_obs : `date`
+        The given date.
+    seq_num : `int`
+        The given seq num.
+
+    Returns
+    -------
+    url : `str`
+        The url for the image viewer for a single image.
+    """
+    date_int_str = day_obs.isoformat().replace("-", "")
+    url = camera.image_viewer_link.format(
+        day_obs=date_int_str, seq_num=seq_num
+    )
+    return url

@@ -1,12 +1,15 @@
+from calendar import Calendar
+from datetime import date
+
 import structlog
 
-from rubintv.models.models import Channel, Event, EventJSONDict
+from rubintv.models.models import Channel, Event
 
 __all__ = ["make_table_rows_from_columns_by_seq", "build_title"]
 
 
 def make_table_rows_from_columns_by_seq(
-    event_data: EventJSONDict, channels: list[Channel]
+    event_data: dict, channels: list[Channel]
 ) -> dict[int, dict[str, Event]]:
     """Returns a dict of dicts of `Events`, keyed outwardly by sequence number
     and inwardly by channel name for displaying as a table.
@@ -61,6 +64,23 @@ def make_table_rows_from_columns_by_seq(
     # make sure the table is in order
     rows_dict = {k: v for k, v in sorted(d.items(), reverse=True)}
     return rows_dict
+
+
+def month_names() -> list[str]:
+    """Returns a list of month names as words.
+
+    Returns
+    -------
+    List[str]
+        A list of month names.
+    """
+    return [date(2000, m, 1).strftime("%B") for m in list(range(1, 13))]
+
+
+def calendar_factory() -> Calendar:
+    # first weekday 0 is Monday
+    calendar = Calendar(firstweekday=0)
+    return calendar
 
 
 def build_title() -> None:

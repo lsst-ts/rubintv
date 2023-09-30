@@ -32,7 +32,7 @@ class Camera(BaseModel):
     logo: str = ""
     image_viewer_link: str = ""
     channels: list[Channel] = []
-    per_day_channels: list[Channel] | None = None
+    per_day_channels: list[Channel] = []
     night_report_prefix: str = ""
     night_report_label: str = "Night Report"
     metadata_cols: dict[str, dict[str, str]] | dict[str, str] | None = None
@@ -64,6 +64,7 @@ class Event:
     seq_num: int | str = ""
     filename = ""
     ext: str = ""
+    url: str = ""
 
     def __post_init__(self) -> None:
         (
@@ -112,6 +113,9 @@ class Event:
 
     def day_obs_date(self) -> date:
         return self.date_str_to_date(self.day_obs)
+
+    def seq_num_force_int(self) -> int:
+        return self.seq_num if isinstance(self.seq_num, int) else 99999
 
 
 @dataclass

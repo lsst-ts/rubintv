@@ -58,7 +58,7 @@ cameras:
         prefix: mount
 
     per_day_channels:
-      - name: movie
+      - name: movies
         title: Tonight's Movie
         prefix: movies
         label: "Movie for "

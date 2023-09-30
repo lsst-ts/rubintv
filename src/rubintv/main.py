@@ -18,7 +18,7 @@ from safir.dependencies.http_client import http_client_dependency
 from safir.logging import configure_logging, configure_uvicorn_logging
 from safir.middleware.x_forwarded import XForwardedMiddleware
 
-from .background.bucketpoller import BucketPoller
+from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
 from .config import config
 from .handlers.api import api_router
@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     models = ModelsInitiator()
 
     # initialise the background bucket pollers
-    bp = BucketPoller(models.locations)
+    bp = CurrentPoller(models.locations)
     hp = HistoricalPoller(models.locations)
 
     # inject app state
