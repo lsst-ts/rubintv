@@ -47,13 +47,13 @@ class CurrentPoller:
                         continue
 
                     prefix = f"{camera.name}/{current_day_obs}"
+
                     # handle blocking call in async code
                     executor = ThreadPoolExecutor(max_workers=3)
                     loop = asyncio.get_event_loop()
                     objects = await loop.run_in_executor(
                         executor, client.list_objects, prefix
                     )
-
                     cam_loc_id = f"{location.name}/{camera.name}"
 
                     objects = await self.seive_out_metadata(
@@ -76,31 +76,23 @@ class CurrentPoller:
                     cam_msg = (cam_loc_id, events)
                     await notify_camera_events_update(cam_msg)
 
-                await asyncio.sleep(10)
+                await asyncio.sleep(3)
 
     async def update_channel_events(
         self, events: list[Event], camera: Camera, cam_loc_id: str
     ) -> None:
+        if not events:
+            return
         for chan in camera.channels:
-            try:
-                # finds latest event even if seq_num is "final"
-                current_event = max(
-                    (e for e in events if e.channel_name == chan.name),
-                    key=lambda e: e.seq_num
-                    if isinstance(e.seq_num, int)
-                    else 99999,
-                )
-            except (ValueError, KeyError):
-                current_event = None
+            ch_events = [e for e in events if e.channel_name == chan.name]
+            if not ch_events:
+                continue
+            # get most recent event for this channel
+            current_event = ch_events.pop()
             chan_lookup = f"{cam_loc_id}/{chan.name}"
-            if (
-                chan_lookup not in self._channels
-                or self._channels[chan_lookup] is None
-                or self._channels[chan_lookup] != current_event
-            ):
+            if self._channels[chan_lookup] != current_event:
                 self._channels[chan_lookup] = current_event
-                if current_event:
-                    await notify_channel_update((chan_lookup, current_event))
+                await notify_channel_update((chan_lookup, current_event))
 
     async def seive_out_metadata(
         self,
@@ -177,7 +169,7 @@ class CurrentPoller:
     def filter_night_report_objects(
         self, objects: list[dict[str, str]]
     ) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
-        reports = [o for o in objects if o["key"].find("night_report")]
+        reports = [o for o in objects if "night_report" in o["key"]]
         filtered = [o for o in objects if o not in reports]
         return (reports, filtered)
 

@@ -1,8 +1,7 @@
 """Handlers for the app's external root, ``/rubintv/``."""
 from datetime import date
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, Response, StreamingResponse
 from safir.dependencies.logger import logger_dependency
 from structlog.stdlib import BoundLogger
@@ -17,7 +16,7 @@ from rubintv.handlers.api import (
 )
 from rubintv.handlers.pages_helpers import make_table_rows_from_columns_by_seq
 from rubintv.models.helpers import find_first
-from rubintv.models.models import Channel
+from rubintv.models.models import Channel, EventJSONDict
 from rubintv.s3client import S3Client
 from rubintv.templates_init import get_templates
 
@@ -74,7 +73,6 @@ def proxy_video(
     location_name: str,
     filename: str,
     request: Request,
-    range: Annotated[str | None, Header()] = None,
     logger: BoundLogger = Depends(logger_dependency),
 ) -> StreamingResponse:
     try:
@@ -118,7 +116,7 @@ async def get_camera_page(
     )
     historical_busy = False
     day_obs: date | None = None
-    table = {}
+    per_day_channels = table = {}
     try:
         event_data = await get_camera_current_events(
             location_name, camera_name, request
@@ -127,6 +125,11 @@ async def get_camera_page(
         table = make_table_rows_from_columns_by_seq(
             event_data, camera.channels
         )
+        per_day_channels = {
+            name: evs
+            for name, evs in event_data["channel_events"].items()
+            if name in [c.name for c in camera.channels if c.per_day]
+        }
     except HTTPException:
         historical_busy = True
 
@@ -144,6 +147,7 @@ async def get_camera_page(
             "table": table,
             "date": day_obs,
             "historical_busy": historical_busy,
+            "per_day_channels": per_day_channels,
         },
     )
 
@@ -220,13 +224,16 @@ async def get_historical_camera_page(
     location, camera = await get_location_camera(
         location_name, camera_name, request
     )
+    if not camera.online:
+        raise HTTPException(404, "Camera not online.")
     historical_busy = False
+    day_obs: date | None = None
     table = {}
     try:
         (day_obs, events, md) = await get_most_recent_historical_data(
             location, camera, request
         )
-        event_data: dict = {
+        event_data: EventJSONDict = {
             "date": day_obs,
             "channel_events": events,
             "metadata": md,

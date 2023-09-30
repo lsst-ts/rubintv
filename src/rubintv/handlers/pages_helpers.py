@@ -3,13 +3,13 @@ from datetime import date
 
 import structlog
 
-from rubintv.models.models import Channel, Event
+from rubintv.models.models import Channel, Event, EventJSONDict
 
 __all__ = ["make_table_rows_from_columns_by_seq", "build_title"]
 
 
 def make_table_rows_from_columns_by_seq(
-    event_data: dict, channels: list[Channel]
+    event_data: EventJSONDict, channels: list[Channel]
 ) -> dict[int, dict[str, Event]]:
     """Returns a dict of dicts of `Events`, keyed outwardly by sequence number
     and inwardly by channel name for displaying as a table.

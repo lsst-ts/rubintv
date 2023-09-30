@@ -332,20 +332,6 @@ class HistoricalPoller:
         )
         return days_events_dict
 
-    async def get_per_day_events_for_date(
-        self, location: Location, camera: Camera, a_date: date
-    ) -> dict[str, list[Event]]:
-        date_str = a_date.isoformat()
-        camera_events = [
-            e
-            for e in self._events[location.name]
-            if e.camera_name == camera.name and e.day_obs == date_str
-        ]
-        days_events_dict = await event_list_to_channel_keyed_dict(
-            camera_events, camera.per_day_channels
-        )
-        return days_events_dict
-
     async def get_most_recent_day(
         self, location: Location, camera: Camera
     ) -> date:

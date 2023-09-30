@@ -64,7 +64,7 @@ async def notify_camera_metadata_update(
 async def notify_channel_update(message_for_chan: Tuple[str, Event]) -> None:
     loc_cam_chan, event = message_for_chan
     for websocket, (to_update, loc_cam_chan_id) in connected_clients.items():
-        if to_update == "camera" and loc_cam_chan_id == loc_cam_chan:
+        if to_update == "channel" and loc_cam_chan_id == loc_cam_chan:
             await websocket.send_json(event.__dict__)
     return
 

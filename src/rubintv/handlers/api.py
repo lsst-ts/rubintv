@@ -11,7 +11,13 @@ from rubintv.models.helpers import (
     find_first,
     objects_to_events,
 )
-from rubintv.models.models import Camera, Event, Location, get_current_day_obs
+from rubintv.models.models import (
+    Camera,
+    Event,
+    EventJSONDict,
+    Location,
+    get_current_day_obs,
+)
 from rubintv.s3client import S3Client
 
 __all__ = [
@@ -59,7 +65,7 @@ async def get_location_camera(
 )
 async def get_camera_current_events(
     location_name: str, camera_name: str, request: Request
-) -> dict:
+) -> EventJSONDict:
     """Returns current channel and meta-data from the requested camera.
 
     The function looks for results from today first. If it finds none from
@@ -108,7 +114,6 @@ async def get_camera_current_events(
             day, events, md = await get_most_recent_historical_data(
                 location, camera, request
             )
-            print(day, events, md)
 
     return {
         "date": day,
@@ -159,7 +164,7 @@ async def get_most_recent_historical_data(
 )
 async def get_camera_events_for_date(
     location_name: str, camera_name: str, date_str: str, request: Request
-) -> dict:
+) -> EventJSONDict:
     today_str = get_current_day_obs().isoformat()
     if date_str == today_str:
         return await get_camera_current_events(
@@ -188,15 +193,10 @@ async def get_camera_events_for_date(
         )
         md = bucket.get_object(f"{camera_name}/{date_str}/metadata.json")
 
-        per_day = await historical.get_per_day_events_for_date(
-            location, camera, day_obs
-        )
-
     return {
         "date": day_obs,
         "channel_events": events,
         "metadata": md,
-        "per_day": per_day,
     }
 
 

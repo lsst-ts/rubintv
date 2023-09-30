@@ -22,6 +22,7 @@ class Channel(BaseModel):
     name: str
     title: str
     label: str = ""
+    per_day: bool = False
 
 
 class Camera(BaseModel):
@@ -32,7 +33,6 @@ class Camera(BaseModel):
     logo: str = ""
     image_viewer_link: str = ""
     channels: list[Channel] = []
-    per_day_channels: list[Channel] = []
     night_report_prefix: str = ""
     night_report_label: str = "Night Report"
     metadata_cols: dict[str, dict[str, str]] | dict[str, str] | None = None
@@ -62,7 +62,7 @@ class Event:
     day_obs: str = ""
     channel_name: str = ""
     seq_num: int | str = ""
-    filename = ""
+    filename: str = ""
     ext: str = ""
     url: str = ""
 
@@ -197,12 +197,6 @@ class NightReport:
             self.filename,
             self.ext,
         ) = self.parse_key()
-
-
-@dataclass
-class EventImage:
-    event: Event
-    image_data: bytes
 
 
 class EventJSONDict(TypedDict):

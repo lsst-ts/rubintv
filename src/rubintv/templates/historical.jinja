@@ -13,23 +13,30 @@ Historical Data
 {% endblock breadcrumb  %}
 
 {% block content %}
-{# <section class="calendar">
-  {% include "cameras/calendar.jinja" %}
-</section> #}
+{% if historical_busy %}
+    {% include "camera_parts/historical-busy-message.jinja" %}
+{% else %}
 
-<section id="channel-day-data">
-  {# <div class="columns">
-    {% include "cameras/night-report-link.jinja" %}
-    {% include "cameras/per-day-channels.jinja" %}
-  </div> #}
-  {% include "camera_parts/data-table-header.jinja" %}
-</section>
+  {# <section class="calendar">
+    {% include "cameras/calendar.jinja" %}
+  </section> #}
 
-{% if camera.metadata_headers %}
-<script type="application/json" id="metadata-headers">
-  {{ camera.metadata_headers|tojson }}
-</script>
+  <section id="channel-day-data">
+    {# <div class="columns">
+      {% include "cameras/night-report-link.jinja" %}
+      {% include "cameras/per-day-channels.jinja" %}
+    </div> #}
+    {% include "camera_parts/data-table-header.jinja" %}
+  </section>
+
 {% endif %}
+
+  {% if camera.metadata_headers %}
+  <script type="application/json" id="metadata-headers">
+    {{ camera.metadata_headers|tojson }}
+  </script>
+  {% endif %}
+
 {% endblock content %}
 
 {% block footer_scripts %}

@@ -55,12 +55,10 @@ cameras:
       -
         name: mount
         title: Mount
-        prefix: mount
-
-    per_day_channels:
-      - name: movies
+      -
+        per_day: True
+        name: movies
         title: Tonight's Movie
-        prefix: movies
         label: "Movie for "
 
 
@@ -177,17 +175,14 @@ cameras:
         title: Spectrum
       - name: mount
         title: Mount
-    per_day_channels:
-      - name: movie
+      - per_day: True
+        name: movie
         title: Tonight's Movie
-        prefix: movies
         label: "Movie for "
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/view.html?\
     image=AT_O_{day_obs}_{seq_num:06}\
     &raft=R00&color=grey&bias=Simple+Overscan+Correction\
     &scale=Per-Segment&source=RubinTV"
-
-    # TODO: Check the channel names/prefixes
 
 metadata_cols:
   fake_auxtel:
