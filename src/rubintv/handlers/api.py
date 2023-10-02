@@ -153,7 +153,7 @@ async def get_most_recent_historical_data(
         raise HTTPException(423, "Historical data is being processed")
 
     day = await historical.get_most_recent_day(location, camera)
-    events = await historical.get_events_for_date(location, camera, day)
+    events = await historical.get_event_dict_for_date(location, camera, day)
     md = bucket.get_object(f"{camera.name}/{day}/metadata.json")
     return (day, events, md)
 
@@ -188,7 +188,7 @@ async def get_camera_events_for_date(
 
         bucket: S3Client = request.app.state.s3_clients[location_name]
 
-        events = await historical.get_events_for_date(
+        events = await historical.get_event_dict_for_date(
             location, camera, day_obs
         )
         md = bucket.get_object(f"{camera_name}/{date_str}/metadata.json")
@@ -268,3 +268,11 @@ async def get_specific_channel_event(
     if not event.url:
         return None
     return event
+
+
+async def get_calendar_of_historical_events(
+    location: Location, camera: Camera, request: Request
+) -> dict[int, dict[int, dict[int, int]]]:
+    historical: HistoricalPoller = request.app.state.historical
+    events_calendar = await historical.get_camera_calendar(location, camera)
+    return events_calendar

@@ -43,6 +43,12 @@ class Camera(BaseModel):
     def default_as_name(cls: Type, v: str, values: Any) -> str:
         return v or values.get("name")
 
+    def seq_channels(self) -> list[Channel]:
+        return [c for c in self.channels if not c.per_day]
+
+    def pd_channels(self) -> list[Channel]:
+        return [c for c in self.channels if c.per_day]
+
 
 class Location(BaseModel, arbitrary_types_allowed=True):
     name: str

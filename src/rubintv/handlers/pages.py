@@ -7,14 +7,21 @@ from safir.dependencies.logger import logger_dependency
 from structlog.stdlib import BoundLogger
 
 from rubintv.handlers.api import (
+    get_calendar_of_historical_events,
     get_camera_current_events,
+    get_camera_events_for_date,
     get_current_channel_event,
     get_location,
     get_location_camera,
     get_most_recent_historical_data,
     get_specific_channel_event,
 )
-from rubintv.handlers.pages_helpers import make_table_rows_from_columns_by_seq
+from rubintv.handlers.pages_helpers import (
+    calendar_factory,
+    get_per_day_channels,
+    make_table_rows_from_columns_by_seq,
+    month_names,
+)
 from rubintv.models.helpers import find_first
 from rubintv.models.models import Channel, EventJSONDict
 from rubintv.s3client import S3Client
@@ -43,18 +50,22 @@ async def get_home(
 
 
 @pages_router.get(
-    "/event_image/{location_name}/{filename}",
+    "/event_image/{location_name}/{camera_name}/{channel_name}/{filename}",
     response_class=StreamingResponse,
     name="event_image",
 )
 def proxy_image(
     location_name: str,
+    camera_name: str,
+    channel_name: str,
     filename: str,
     request: Request,
     logger: BoundLogger = Depends(logger_dependency),
 ) -> StreamingResponse:
     try:
-        camera_name, channel_name, date_str, seq_ext = filename.split("_")
+        to_remove = "_".join((camera_name, channel_name)) + "_"
+        rest = filename.replace(to_remove, "")
+        date_str, seq_ext = rest.split("_")
         seq_str, ext = seq_ext.split(".")
     except ValueError:
         raise HTTPException(404, "Filename not valid.")
@@ -65,18 +76,22 @@ def proxy_image(
 
 
 @pages_router.get(
-    "/event_video/{location_name}/{filename}",
+    "/event_video/{location_name}/{camera_name}/{channel_name}/{filename}",
     response_class=StreamingResponse,
     name="event_video",
 )
 def proxy_video(
     location_name: str,
+    camera_name: str,
+    channel_name: str,
     filename: str,
     request: Request,
     logger: BoundLogger = Depends(logger_dependency),
 ) -> StreamingResponse:
     try:
-        camera_name, channel_name, date_str, seq_ext = filename.split("_")
+        to_remove = "_".join((camera_name, channel_name)) + "_"
+        rest = filename.replace(to_remove, "")
+        date_str, seq_ext = rest.split("_")
         seq_str, ext = seq_ext.split(".")
     except ValueError:
         raise HTTPException(404, "Filename not valid.")
@@ -122,14 +137,10 @@ async def get_camera_page(
             location_name, camera_name, request
         )
         day_obs = event_data["date"]
-        table = make_table_rows_from_columns_by_seq(
-            event_data, camera.channels
+        table = await make_table_rows_from_columns_by_seq(
+            event_data, camera.seq_channels()
         )
-        per_day_channels = {
-            name: evs
-            for name, evs in event_data["channel_events"].items()
-            if name in [c.name for c in camera.channels if c.per_day]
-        }
+        per_day_channels = await get_per_day_channels(event_data, camera)
     except HTTPException:
         historical_busy = True
 
@@ -228,7 +239,7 @@ async def get_historical_camera_page(
         raise HTTPException(404, "Camera not online.")
     historical_busy = False
     day_obs: date | None = None
-    table = {}
+    table = calendar = {}
     try:
         (day_obs, events, md) = await get_most_recent_historical_data(
             location, camera, request
@@ -238,11 +249,17 @@ async def get_historical_camera_page(
             "channel_events": events,
             "metadata": md,
         }
-        table = make_table_rows_from_columns_by_seq(
-            event_data, camera.channels
+        table = await make_table_rows_from_columns_by_seq(
+            event_data, camera.seq_channels()
         )
+        per_day_channels = await get_per_day_channels(event_data, camera)
+        calendar = await get_calendar_of_historical_events(
+            location, camera, request
+        )
+
     except HTTPException:
         historical_busy = True
+
     return templates.TemplateResponse(
         "historical.jinja",
         {
@@ -253,5 +270,61 @@ async def get_historical_camera_page(
             "table": table,
             "date": day_obs,
             "historical_busy": historical_busy,
+            "calendar": calendar,
+            "calendar_frame": calendar_factory(),
+            "month_names": month_names(),
+            "per_day_channels": per_day_channels,
+        },
+    )
+
+
+@pages_router.get(
+    "/{location_name}/{camera_name}/date/{date_str}",
+    response_class=HTMLResponse,
+    name="camera_for_date",
+)
+async def get_camera_for_date_page(
+    location_name: str, camera_name: str, date_str: str, request: Request
+) -> Response:
+    location, camera = await get_location_camera(
+        location_name, camera_name, request
+    )
+    if not camera.online:
+        raise HTTPException(404, "Camera not online.")
+    historical_busy = False
+    day_obs: date | None = None
+    table = calendar = {}
+    try:
+        event_data = await get_camera_events_for_date(
+            location_name, camera_name, date_str, request
+        )
+        table = await make_table_rows_from_columns_by_seq(
+            event_data, camera.seq_channels()
+        )
+        day_obs = event_data["date"]
+        per_day_channels = await get_per_day_channels(event_data, camera)
+        calendar = await get_calendar_of_historical_events(
+            location, camera, request
+        )
+    except HTTPException as http_error:
+        # status 423 is raised if the historical data resource is locked
+        if http_error.status_code == 423:
+            historical_busy = True
+        else:
+            raise http_error
+    return templates.TemplateResponse(
+        "historical.jinja",
+        {
+            "request": request,
+            "location": location,
+            "camera": camera,
+            "camera_json": camera.model_dump(),
+            "table": table,
+            "date": day_obs,
+            "historical_busy": historical_busy,
+            "calendar": calendar,
+            "calendar_frame": calendar_factory(),
+            "month_names": month_names(),
+            "per_day_channels": per_day_channels,
         },
     )

@@ -3,12 +3,12 @@ from datetime import date
 
 import structlog
 
-from rubintv.models.models import Channel, Event, EventJSONDict
+from rubintv.models.models import Camera, Channel, Event, EventJSONDict
 
 __all__ = ["make_table_rows_from_columns_by_seq", "build_title"]
 
 
-def make_table_rows_from_columns_by_seq(
+async def make_table_rows_from_columns_by_seq(
     event_data: EventJSONDict, channels: list[Channel]
 ) -> dict[int, dict[str, Event]]:
     """Returns a dict of dicts of `Events`, keyed outwardly by sequence number
@@ -81,6 +81,17 @@ def calendar_factory() -> Calendar:
     # first weekday 0 is Monday
     calendar = Calendar(firstweekday=0)
     return calendar
+
+
+async def get_per_day_channels(
+    event_data: EventJSONDict, camera: Camera
+) -> dict[str, Event]:
+    per_day_channels = {
+        name: evs[0]
+        for name, evs in event_data["channel_events"].items()
+        if name in [c.name for c in camera.pd_channels()] and evs
+    }
+    return per_day_channels
 
 
 def build_title() -> None:

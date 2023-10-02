@@ -7,12 +7,15 @@
 {% if date %}
   {{ date }}
 {% endif %}
+{% endblock undertitle %}
+
+{% block headerbuttons %}
   <a
     class="button historical"
     href="{{ url_for('historical', location_name=location.name, camera_name=camera.name) }}">
     Historical<img src="{{ url_for('static', path='images/history-line.svg') }}">
   </a>
-{% endblock undertitle %}
+{% endblock headerbuttons %}
 
 {% block breadcrumb %}
   <a href="{{ url_for('home') }}">
@@ -37,17 +40,19 @@
       <nav id="per-image-menu" class="channel-menu" role="navigation">
         <h3>Current image channels</h3>
           <ul class="channels flr">
-            {% for channel in camera.channels %}
-              {% if not channel.per_day %}
-                <li class="channel service"
-                    id="{{ channel.name }}">
-                  <a  class="button button-large {{ channel.name }}"
-                      href="{{ url_for('current_event', location_name=location.name, camera_name=camera.name, channel_name=channel.name) }}"
-                      target="_blank">
-                    <span>{{ channel.title }}</span>
-                  </a>
-                </li>
-              {% endif %}
+            {% for channel in camera.seq_channels() %}
+              <li class="channel service"
+                  id="{{ channel.name }}">
+                <a  class="button button-large {{ channel.name }}"
+                    href="{{
+                      url_for('current_event',
+                      location_name=location.name,
+                      camera_name=camera.name,
+                      channel_name=channel.name) }}"
+                    target="_blank">
+                  <span>{{ channel.title }}</span>
+                </a>
+              </li>
             {% endfor %}
           </ul>
         </nav>

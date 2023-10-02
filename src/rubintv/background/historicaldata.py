@@ -229,10 +229,9 @@ class HistoricalPoller:
 
     async def get_days_for_month_and_year(
         self, location: Location, camera: Camera, month: int, year: int
-    ) -> list[tuple[int, int | str]]:
-        """Given a Camera, year and number of month, returns a list of tuples
-        of each day that has a record of Events paired with the max seq_num for
-        that day.
+    ) -> dict[int, int]:
+        """Given a Camera, year and number of month, returns a dict of each day
+        that has a record of Events with the max seq_num for that day.
 
         Parameters
         ----------
@@ -245,7 +244,7 @@ class HistoricalPoller:
 
         Returns
         -------
-        day_and_seqmax_list : `list` [`tuple` [`int`, `int` | `str`]]
+        day_dict : `dict` [`int`, `int` | `str`]
             A dict with day number for key and last seq_num for that day as
             value.
         """
@@ -259,22 +258,20 @@ class HistoricalPoller:
                 and event.camera_name == camera.name
             ]
         )
-        day_and_seqmax_list = [
-            (
-                day,
-                await self.get_max_seq_for_date(
-                    location, camera, date(year, month, day)
-                ),
+        day_dict = {
+            day: await self.get_max_seq_for_date(
+                location, camera, date(year, month, day)
             )
             for day in sorted(list(days))
-        ]
-        return day_and_seqmax_list
+        }
+        return day_dict
 
     async def get_max_seq_for_date(
         self, location: Location, camera: Camera, a_date: date
-    ) -> int | str:
+    ) -> int:
         """Takes a Camera and date and returns the max sequence number
-        for Events recorded on that date.
+        for Events recorded on that date. This only includes the seq_nums for
+        ordinary channels, not the 'per day' channels.
 
         Parameters
         ----------
@@ -285,20 +282,28 @@ class HistoricalPoller:
 
         Returns
         -------
-        seq_num : `int | str`
-            The seq_num of the last Event for that Camera and day. In All Sky's
-            case, the max_seq can be the string ``"final"``.
+        seq_num : `int`
+            The integer seq_num of the last Event for that Camera and day.
         """
+        events = await self.get_events_for_date(location, camera, a_date)
+        channel_names = [chan.name for chan in camera.seq_channels()]
+        channel_events = [e for e in events if e.channel_name in channel_names]
+        # camera.seq_channels only have integer seq_nums
+        max_seq = max(channel_events, key=lambda e: e.seq_num).seq_num
+        return max_seq  # type: ignore[return-value]
+
+    async def get_events_for_date(
+        self, location: Location, camera: Camera, a_date: date
+    ) -> list[Event]:
         date_str = a_date.isoformat()
         events = [
             e
             for e in self._events[location.name]
             if e.camera_name == camera.name and e.day_obs == date_str
         ]
-        max_seq = max(events, key=lambda e: e.seq_num).seq_num
-        return max_seq
+        return events
 
-    async def get_events_for_date(
+    async def get_event_dict_for_date(
         self, location: Location, camera: Camera, a_date: date
     ) -> dict[str, list[Event]]:
         """Given camera and date, returns a dict of list of events, keyed
@@ -321,12 +326,9 @@ class HistoricalPoller:
         Return values are in the format:
         ``{ 'chan_name1': [Event 1, Event 2, ...], 'chan_name2': [...], ...}``.
         """
-        date_str = a_date.isoformat()
-        camera_events = [
-            e
-            for e in self._events[location.name]
-            if e.camera_name == camera.name and e.day_obs == date_str
-        ]
+        camera_events = await self.get_events_for_date(
+            location, camera, a_date
+        )
         days_events_dict = await event_list_to_channel_keyed_dict(
             camera_events, camera.channels
         )
@@ -368,7 +370,7 @@ class HistoricalPoller:
         self, location: Location, camera: Camera
     ) -> dict[str, list[Event]]:
         most_recent_day = await self.get_most_recent_day(location, camera)
-        events = await self.get_events_for_date(
+        events = await self.get_event_dict_for_date(
             location, camera, most_recent_day
         )
         return events
@@ -404,7 +406,7 @@ class HistoricalPoller:
 
     async def get_camera_calendar(
         self, location: Location, camera: Camera
-    ) -> dict[int, dict[int, list[tuple[int, int | str]]]]:
+    ) -> dict[int, dict[int, dict[int, int]]]:
         """Returns a dict representing a calendar for the given Camera
 
         Provides a list of tuples for (days and max seq_num of Events), within
@@ -417,8 +419,7 @@ class HistoricalPoller:
 
         Returns
         -------
-        years : `dict` [`int`, `dict` [`int`, `list` [`tuple` [`int`, `int` |
-        `str`]]]]
+        years : `dict` [`int`, `dict` [`int`, `dict` [`int`, `int` | `str`]]]
             A data structure for the view to iterate over with years, months,
             days and num. of events for that day for the given Camera.
 

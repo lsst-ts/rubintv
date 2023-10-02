@@ -33,7 +33,11 @@
 
     </nav>
     </div>
-    {% set img_url = url_for('event_image', location_name=location.name, filename=event.filename + '.' + event.ext) %}
+    {% set img_url = url_for('event_image',
+                    location_name=location.name,
+                    camera_name=camera.name,
+                    channel_name=channel.name,
+                    filename=event.filename + '.' + event.ext) %}
     <a href="{{ img_url }}" class="event-link">
       <img id="eventImage" src="{{ img_url }}" class="resp">
       <p id="eventName" class="desc">{{ event.filename }}</p>
