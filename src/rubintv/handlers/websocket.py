@@ -17,8 +17,8 @@ ws_router = APIRouter()
 async def data_websocket(
     websocket: WebSocket,
 ) -> None:
-    """Websocket endpoint for proving updates for camera data, channels or
-    night reports.
+    """Websocket endpoint for providing updates for camera data, channels or
+    night reports services.
 
     Clients wanting to connect to an updater should send either:
 
@@ -41,7 +41,7 @@ async def data_websocket(
             text = data.strip()
             if not await is_valid_client_request(text):
                 continue
-            updater, loc_cam = text.split(" ")
+            service, loc_cam = text.split(" ")
             location, camera_name, *extra = loc_cam.split("/")
 
             locations = websocket.app.state.models.locations
@@ -56,14 +56,17 @@ async def data_websocket(
                 channel = extra[0]
                 if not await is_valid_channel(camera, channel):
                     continue
-            match updater:
+            match service:
                 case "camera":
-                    await websocket.send_text(f"OK {loc_cam}")
-                    connected_clients[websocket] = (updater, loc_cam)
+                    await websocket.send_text(f"OK/{loc_cam}")
+                    connected_clients[websocket] = (service, loc_cam)
                 case "channel":
                     loc_cam_chan = f"{location}/{camera_name}/{channel}"
-                    await websocket.send_text(f"OK {loc_cam_chan}")
-                    connected_clients[websocket] = (updater, loc_cam_chan)
+                    await websocket.send_text(f"OK/{loc_cam_chan}")
+                    connected_clients[websocket] = (service, loc_cam_chan)
+                case "nightreport":
+                    await websocket.send_text(f"OK/Night Report {loc_cam}")
+                    connected_clients[websocket] = (service, loc_cam_chan)
     except WebSocketDisconnect:
         if websocket in connected_clients:
             del connected_clients[websocket]

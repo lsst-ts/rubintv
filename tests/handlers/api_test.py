@@ -4,7 +4,12 @@ import pytest
 from httpx import AsyncClient
 
 from rubintv.models.helpers import find_first
-from rubintv.models.models import Camera, Location, get_current_day_obs
+from rubintv.models.models import (
+    Camera,
+    EventJSONDict,
+    Location,
+    get_current_day_obs,
+)
 from rubintv.models.models_init import ModelsInitiator
 
 m = ModelsInitiator()
@@ -86,11 +91,25 @@ async def test_get_api_camera_for_date(client: AsyncClient) -> None:
     """Test that api location/camera/current day obs yields a result"""
     today = get_current_day_obs()
     # wait for historical data to become unlocked
-    await asyncio.sleep(1)
+    await asyncio.sleep(0.5)
     response = await client.get(f"/rubintv/api/slac/slac_ts8/date/{today}")
     data = response.json()
-    print(f"data is: {data}")
     assert (
         data["channel_events"]["focal_plane_mosaic"][0]["key"]
         == f"slac_ts8/{today}/focal_plane_mosaic/000000/mocked_event.jpg"
     )
+
+
+@pytest.mark.asyncio
+async def test_get_camera_current_events(client: AsyncClient) -> None:
+    """Test that today's data is picked up"""
+    today = get_current_day_obs()
+    response = await client.get("/rubintv/api/slac/slac_lsstcam/current")
+    data: EventJSONDict = response.json()
+    assert data["date"] == today.isoformat()
+    assert (
+        data["channel_events"]["focal_plane_mosaic"][0]["key"]
+        == f"slac_lsstcam/{today}/focal_plane_mosaic/000000/mocked_event.jpg"
+    )
+    metadata = {f"col{n}": "dummy" for n in range(1, 6)}
+    assert data["metadata"] == metadata

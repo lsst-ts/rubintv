@@ -95,9 +95,8 @@ async def get_camera_current_events(
     md = None
     events: dict[str, list[Event]] = {}
     if camera.online:
-        bucket_poller: CurrentPoller = request.app.state.bucket_poller
-        bucket: S3Client = request.app.state.s3_clients[location_name]
-        objects = await bucket_poller.get_current_objects(
+        current_poller: CurrentPoller = request.app.state.current_poller
+        objects = await current_poller.get_current_objects(
             location_name, camera_name
         )
         if objects:
@@ -108,7 +107,11 @@ async def get_camera_current_events(
                 else:
                     events[e.channel_name] = [e]
 
-        md = bucket.get_object(f"{camera_name}/{day}/metadata.json")
+        md = await current_poller.get_current_metadata(
+            location_name, camera_name
+        )
+
+        print(f"in api: {objects, md}")
 
         if not (events and md):
             day, events, md = await get_most_recent_historical_data(
@@ -217,8 +220,8 @@ async def get_current_channel_event(
         raise HTTPException(status_code=404, detail="Channel not found.")
     event = None
     if camera.online:
-        bucket_poller: CurrentPoller = request.app.state.bucket_poller
-        event = await bucket_poller.get_current_channel_event(
+        current_poller: CurrentPoller = request.app.state.current_poller
+        event = await current_poller.get_current_channel_event(
             location_name, camera_name, channel_name
         )
         if not event:

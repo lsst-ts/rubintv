@@ -124,7 +124,9 @@ class HistoricalPoller:
         ]
 
         self._metadata[locname] = metadata_objs
-        self._nr_metadata[locname] = objects_to_ngt_reports(n_report_objs)
+        self._nr_metadata[locname] = await objects_to_ngt_reports(
+            n_report_objs
+        )
         logger.info(f"Building historical events for {locname}")
         events = objects_to_events(event_objs)
         self._events[locname] = events

@@ -45,19 +45,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     models = ModelsInitiator()
 
     # initialise the background bucket pollers
-    bp = CurrentPoller(models.locations)
+    cp = CurrentPoller(models.locations)
     hp = HistoricalPoller(models.locations)
 
     # inject app state
     app.state.models = models
-    app.state.bucket_poller = bp
+    app.state.current_poller = cp
     app.state.historical = hp
     app.state.s3_clients = {}
     for location in models.locations:
         app.state.s3_clients[location.name] = S3Client(location.bucket_name)
 
     # start polling buckets for data
-    today_polling = asyncio.create_task(bp.poll_buckets_for_todays_data())
+    today_polling = asyncio.create_task(cp.poll_buckets_for_todays_data())
     historical_polling = asyncio.create_task(hp.check_for_new_day())
 
     yield

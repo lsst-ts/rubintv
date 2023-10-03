@@ -3,7 +3,7 @@ from typing import Any, Tuple
 
 from rubintv.handlers.websockets_clients import connected_clients
 from rubintv.models.helpers import find_first
-from rubintv.models.models import Camera, Event, Location
+from rubintv.models.models import Camera, Event, Location, NightReportMessage
 
 __all__ = [
     "notify_camera_events_update",
@@ -67,6 +67,14 @@ async def notify_channel_update(message_for_chan: Tuple[str, Event]) -> None:
         if to_update == "channel" and loc_cam_chan_id == loc_cam_chan:
             await websocket.send_json(event.__dict__)
     return
+
+
+async def notify_night_report_update(
+    message: Tuple[str, NightReportMessage]
+) -> None:
+    return
+    # loc_cam, payload = message
+    # for websocket, (to_update, loc_cam_id) in connected_clients.items():
 
 
 async def is_valid_client_request(client_text: str) -> bool:

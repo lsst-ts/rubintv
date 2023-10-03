@@ -80,9 +80,9 @@ def objects_to_events(objects: list[dict]) -> list[Event]:
     return events
 
 
-def objects_to_ngt_reports(objects: list[dict]) -> list[NightReport]:
+async def objects_to_ngt_reports(objects: list[dict]) -> list[NightReport]:
     logger = structlog.get_logger(__name__)
-    night_reports = []
+    night_reports: list[NightReport] = []
     for object in objects:
         try:
             event = NightReport(**object)

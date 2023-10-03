@@ -239,7 +239,7 @@ async def get_historical_camera_page(
         raise HTTPException(404, "Camera not online.")
     historical_busy = False
     day_obs: date | None = None
-    table = calendar = {}
+    table = calendar = per_day_channels = {}
     try:
         (day_obs, events, md) = await get_most_recent_historical_data(
             location, camera, request
@@ -293,7 +293,7 @@ async def get_camera_for_date_page(
         raise HTTPException(404, "Camera not online.")
     historical_busy = False
     day_obs: date | None = None
-    table = calendar = {}
+    table = calendar = per_day_channels = {}
     try:
         event_data = await get_camera_events_for_date(
             location_name, camera_name, date_str, request

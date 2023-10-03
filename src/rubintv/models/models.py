@@ -6,7 +6,7 @@ from typing import Any, Type
 from dateutil.tz import gettz
 from pydantic import BaseModel, field_validator
 from pydantic.dataclasses import dataclass
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 __all__ = [
     "Location",
@@ -209,6 +209,11 @@ class EventJSONDict(TypedDict):
     date: date | None
     channel_events: dict[str, list[Event]]
     metadata: dict[str, str] | None
+
+
+class NightReportMessage(TypedDict):
+    text: NotRequired[dict]
+    plots: NotRequired[list[NightReport]]
 
 
 def build_prefix_with_date(camera: Camera, day_obs: date) -> str:
