@@ -107,11 +107,7 @@ async def get_camera_current_events(
                 else:
                     events[e.channel_name] = [e]
 
-        md = await current_poller.get_current_metadata(
-            location_name, camera_name
-        )
-
-        print(f"in api: {objects, md}")
+        md = await current_poller.get_current_metadata(location_name, camera)
 
         if not (events and md):
             day, events, md = await get_most_recent_historical_data(
@@ -279,3 +275,17 @@ async def get_calendar_of_historical_events(
     historical: HistoricalPoller = request.app.state.historical
     events_calendar = await historical.get_camera_calendar(location, camera)
     return events_calendar
+
+
+async def current_night_report_exists(
+    location: Location, camera: Camera, request: Request
+) -> bool:
+    cp: CurrentPoller = request.app.state.current_poller
+    return await cp.current_night_report_exists(location.name, camera.name)
+
+
+async def night_report_exists_for(
+    location: Location, camera: Camera, day_obs: date, request: Request
+) -> bool:
+    historical: HistoricalPoller = request.app.state.historical
+    return await historical.night_report_exists_for(location, camera, day_obs)

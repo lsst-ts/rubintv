@@ -5,6 +5,8 @@ from datetime import date
 
 import structlog
 
+from rubintv.background.background_helpers import get_metadata_obj
+from rubintv.handlers.websocket_helpers import notify_status_change
 from rubintv.models.helpers import (
     event_list_to_channel_keyed_dict,
     objects_to_events,
@@ -16,6 +18,7 @@ from rubintv.models.models import (
     Event,
     Location,
     NightReport,
+    NightReportPayload,
     get_current_day_obs,
 )
 from rubintv.s3client import S3Client
@@ -55,18 +58,24 @@ class HistoricalPoller:
         return not self._have_downloaded
 
     async def check_for_new_day(self) -> None:
-        while True:
-            if (
-                not self._have_downloaded
-                or self._last_reload > get_current_day_obs()
-            ):
-                for location in self._locations:
-                    await self._refresh_location_store(location)
+        logger = structlog.get_logger(__name__)
+        try:
+            while True:
+                if (
+                    not self._have_downloaded
+                    or self._last_reload > get_current_day_obs()
+                ):
+                    for location in self._locations:
+                        await self._refresh_location_store(location)
 
-                self._last_reload = get_current_day_obs()
-                self._have_downloaded = True
-            else:
-                await asyncio.sleep(self.CHECK_NEW_DAY_PERIOD)
+                    self._last_reload = get_current_day_obs()
+                    self._have_downloaded = True
+                    logger.info("Completed historical")
+                    await notify_status_change(historical_busy=False)
+                else:
+                    await asyncio.sleep(self.CHECK_NEW_DAY_PERIOD)
+        except Exception as e:
+            logger.error(e)
 
     async def _refresh_location_store(self, location: Location) -> None:
         # handle blocking call in async code
@@ -159,11 +168,12 @@ class HistoricalPoller:
         else:
             return None, None
 
-    async def get_night_reports_for(
-        self, location: Location, camera: Camera, date_str: str
-    ) -> list[NightReport]:
-        """Returns a list of Night Reports Event objects for the camera and
-        date.
+    async def get_night_report(
+        self, location: Location, camera: Camera, day_obs: date
+    ) -> NightReportPayload:
+        """Returns a dict containing a list of Night Reports Event objects for
+        the camera and date and a text metadata dict. Both values are
+        optional (see `NightReportPayload`).
 
         Parameters
         ----------
@@ -174,15 +184,41 @@ class HistoricalPoller:
 
         Returns
         -------
-        reports : `List` [`NightReport`]
-            A list of Night Reports.
+        reports : NightReportPayload:
+            A dict containing a list of Night Report objects and text metadata.
         """
-        reports = [
-            report
-            for report in self._nr_metadata[location.name]
-            if report.camera == camera.name and report.day_obs == date_str
+        nr_objs = await self._get_night_reports(location, camera, day_obs)
+        text_reports = [r for r in nr_objs if r.group == "metadata"]
+        report: NightReportPayload = {}
+        if text_reports:
+            text_report = text_reports[0]
+            key = text_report.key
+            client = self._clients[location.name]
+            text_obj = await get_metadata_obj(key, client)
+            report["text"] = text_obj
+            nr_objs.remove(text_report)
+        if nr_objs:
+            report["plots"] = nr_objs
+        return report
+
+    async def _get_night_reports(
+        self, location: Location, camera: Camera, day_obs: date
+    ) -> list[NightReport]:
+        date_str = day_obs.isoformat()
+        return [
+            nr
+            for nr in self._nr_metadata[location.name]
+            if nr.camera == camera.name and nr.day_obs == date_str
         ]
-        return reports
+
+    async def night_report_exists_for(
+        self, location: Location, camera: Camera, day_obs: date
+    ) -> bool:
+        nr_objs = await self._get_night_reports(location, camera, day_obs)
+        if nr_objs:
+            return True
+        else:
+            return False
 
     async def get_years(self, location: Location, camera: Camera) -> list[int]:
         """Returns a list of years for a given Camera in which there are Events

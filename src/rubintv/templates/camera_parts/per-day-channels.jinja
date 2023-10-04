@@ -1,4 +1,4 @@
- {% if per_day_channels %}
+{% if per_day_channels %}
   {% set channels = camera.channels|selectattr("per_day")|list_to_dict %}
   <nav id="per-night-menu" class="channel-menu" role="navigation">
     <h3>Per Day Channels</h3>

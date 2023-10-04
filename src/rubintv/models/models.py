@@ -205,15 +205,15 @@ class NightReport:
         ) = self.parse_key()
 
 
+class NightReportPayload(TypedDict):
+    text: NotRequired[dict]
+    plots: NotRequired[list[NightReport]]
+
+
 class EventJSONDict(TypedDict):
     date: date | None
     channel_events: dict[str, list[Event]]
     metadata: dict[str, str] | None
-
-
-class NightReportMessage(TypedDict):
-    text: NotRequired[dict]
-    plots: NotRequired[list[NightReport]]
 
 
 def build_prefix_with_date(camera: Camera, day_obs: date) -> str:

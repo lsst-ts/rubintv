@@ -1,3 +1,5 @@
+from asyncio import sleep
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from rubintv.handlers.websocket_helpers import (
@@ -72,7 +74,7 @@ async def data_websocket(
             del connected_clients[websocket]
 
 
-@ws_router.websocket("/historical_status")
+@ws_router.websocket("/status")
 async def status_websocket(websocket: WebSocket) -> None:
     """Websocket connection to provide info about the status of the app.
 
@@ -82,14 +84,10 @@ async def status_websocket(websocket: WebSocket) -> None:
         The websocket for requesting/supplying status data.
     """
     await websocket.accept()
+    status_clients.append(websocket)
     try:
         while True:
-            pass
+            await sleep(7)
     except WebSocketDisconnect:
         if websocket in status_clients:
             status_clients.remove(websocket)
-
-
-async def notify_status_change(historical_busy: bool) -> None:
-    for websocket in status_clients:
-        await websocket.send_json({"historicalBusy": historical_busy})

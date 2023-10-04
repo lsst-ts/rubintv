@@ -3,7 +3,7 @@
     <td class="grid-cell seq">
       {{ seq_num }}
     </td>
-    {% for chan in camera.channels %}
+    {% for chan in camera.seq_channels() %}
         <td class="grid-cell">
           {% set event = table[seq_num][chan.name] %}
           {% if table[seq_num][chan.name] %}

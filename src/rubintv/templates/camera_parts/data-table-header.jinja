@@ -11,7 +11,7 @@
     <thead>
         <tr>
         <th class="grid-title sideways">Seq. No.</th>
-        {% for channel in camera.channels %}
+        {% for channel in camera.seq_channels() %}
           {% if channel.label %}
             <th class="grid-title gt-channel sideways">{{ channel.label }}</th>
           {% else %}

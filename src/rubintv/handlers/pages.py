@@ -7,6 +7,7 @@ from safir.dependencies.logger import logger_dependency
 from structlog.stdlib import BoundLogger
 
 from rubintv.handlers.api import (
+    current_night_report_exists,
     get_calendar_of_historical_events,
     get_camera_current_events,
     get_camera_events_for_date,
@@ -15,6 +16,7 @@ from rubintv.handlers.api import (
     get_location_camera,
     get_most_recent_historical_data,
     get_specific_channel_event,
+    night_report_exists_for,
 )
 from rubintv.handlers.pages_helpers import (
     calendar_factory,
@@ -129,7 +131,7 @@ async def get_camera_page(
     location, camera = await get_location_camera(
         location_name, camera_name, request
     )
-    historical_busy = False
+    night_report_link = historical_busy = False
     day_obs: date | None = None
     per_day_channels = table = {}
     try:
@@ -141,6 +143,10 @@ async def get_camera_page(
             event_data, camera.seq_channels()
         )
         per_day_channels = await get_per_day_channels(event_data, camera)
+        night_report_link = await current_night_report_exists(
+            location, camera, request
+        )
+
     except HTTPException:
         historical_busy = True
 
@@ -159,6 +165,123 @@ async def get_camera_page(
             "date": day_obs,
             "historical_busy": historical_busy,
             "per_day_channels": per_day_channels,
+            "night_report_link": night_report_link,
+        },
+    )
+
+
+@pages_router.get(
+    "/{location_name}/{camera_name}/date/{date_str}",
+    response_class=HTMLResponse,
+    name="camera_for_date",
+)
+async def get_camera_for_date_page(
+    location_name: str, camera_name: str, date_str: str, request: Request
+) -> Response:
+    location, camera = await get_location_camera(
+        location_name, camera_name, request
+    )
+    if not camera.online:
+        raise HTTPException(404, "Camera not online.")
+    historical_busy = False
+    night_report_link = False
+    day_obs: date | None = None
+    table = calendar = per_day_channels = {}
+    try:
+        event_data = await get_camera_events_for_date(
+            location_name, camera_name, date_str, request
+        )
+        table = await make_table_rows_from_columns_by_seq(
+            event_data, camera.seq_channels()
+        )
+        day_obs = event_data["date"]
+        per_day_channels = await get_per_day_channels(event_data, camera)
+        calendar = await get_calendar_of_historical_events(
+            location, camera, request
+        )
+        if day_obs:
+            night_report_link = await night_report_exists_for(
+                location, camera, day_obs, request
+            )
+    except HTTPException as http_error:
+        # status 423 is raised if the historical data resource is locked
+        if http_error.status_code == 423:
+            historical_busy = True
+        else:
+            raise http_error
+    return templates.TemplateResponse(
+        "historical.jinja",
+        {
+            "request": request,
+            "location": location,
+            "camera": camera,
+            "camera_json": camera.model_dump(),
+            "table": table,
+            "date": day_obs,
+            "historical_busy": historical_busy,
+            "calendar": calendar,
+            "calendar_frame": calendar_factory(),
+            "month_names": month_names(),
+            "per_day_channels": per_day_channels,
+            "night_report_link": night_report_link,
+        },
+    )
+
+
+@pages_router.get(
+    "/{location_name}/{camera_name}/historical",
+    response_class=HTMLResponse,
+    name="historical",
+)
+async def get_historical_camera_page(
+    location_name: str, camera_name: str, request: Request
+) -> Response:
+    location, camera = await get_location_camera(
+        location_name, camera_name, request
+    )
+    if not camera.online:
+        raise HTTPException(404, "Camera not online.")
+    night_report_link = historical_busy = False
+    day_obs: date | None = None
+    table = calendar = per_day_channels = {}
+    try:
+        (day_obs, events, md) = await get_most_recent_historical_data(
+            location, camera, request
+        )
+        event_data: EventJSONDict = {
+            "date": day_obs,
+            "channel_events": events,
+            "metadata": md,
+        }
+        table = await make_table_rows_from_columns_by_seq(
+            event_data, camera.seq_channels()
+        )
+        per_day_channels = await get_per_day_channels(event_data, camera)
+        calendar = await get_calendar_of_historical_events(
+            location, camera, request
+        )
+        night_report_link = await night_report_exists_for(
+            location, camera, day_obs, request
+        )
+
+    except HTTPException:
+        historical_busy = True
+
+    return templates.TemplateResponse(
+        "historical.jinja",
+        {
+            "request": request,
+            "location": location,
+            "camera": camera,
+            "camera_json": camera.model_dump(),
+            "table": table,
+            "date": day_obs,
+            "historical_busy": historical_busy,
+            "calendar": calendar,
+            "calendar_frame": calendar_factory(),
+            "month_names": month_names(),
+            "per_day_channels": per_day_channels,
+            "night_report_link": night_report_link,
         },
     )
 
@@ -220,111 +343,5 @@ async def get_current_channel_event_page(
             "camera": camera,
             "channel": channel,
             "event": event,
-        },
-    )
-
-
-@pages_router.get(
-    "/{location_name}/{camera_name}/historical",
-    response_class=HTMLResponse,
-    name="historical",
-)
-async def get_historical_camera_page(
-    location_name: str, camera_name: str, request: Request
-) -> Response:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
-    if not camera.online:
-        raise HTTPException(404, "Camera not online.")
-    historical_busy = False
-    day_obs: date | None = None
-    table = calendar = per_day_channels = {}
-    try:
-        (day_obs, events, md) = await get_most_recent_historical_data(
-            location, camera, request
-        )
-        event_data: EventJSONDict = {
-            "date": day_obs,
-            "channel_events": events,
-            "metadata": md,
-        }
-        table = await make_table_rows_from_columns_by_seq(
-            event_data, camera.seq_channels()
-        )
-        per_day_channels = await get_per_day_channels(event_data, camera)
-        calendar = await get_calendar_of_historical_events(
-            location, camera, request
-        )
-
-    except HTTPException:
-        historical_busy = True
-
-    return templates.TemplateResponse(
-        "historical.jinja",
-        {
-            "request": request,
-            "location": location,
-            "camera": camera,
-            "camera_json": camera.model_dump(),
-            "table": table,
-            "date": day_obs,
-            "historical_busy": historical_busy,
-            "calendar": calendar,
-            "calendar_frame": calendar_factory(),
-            "month_names": month_names(),
-            "per_day_channels": per_day_channels,
-        },
-    )
-
-
-@pages_router.get(
-    "/{location_name}/{camera_name}/date/{date_str}",
-    response_class=HTMLResponse,
-    name="camera_for_date",
-)
-async def get_camera_for_date_page(
-    location_name: str, camera_name: str, date_str: str, request: Request
-) -> Response:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
-    if not camera.online:
-        raise HTTPException(404, "Camera not online.")
-    historical_busy = False
-    day_obs: date | None = None
-    table = calendar = per_day_channels = {}
-    try:
-        event_data = await get_camera_events_for_date(
-            location_name, camera_name, date_str, request
-        )
-        table = await make_table_rows_from_columns_by_seq(
-            event_data, camera.seq_channels()
-        )
-        day_obs = event_data["date"]
-        per_day_channels = await get_per_day_channels(event_data, camera)
-        calendar = await get_calendar_of_historical_events(
-            location, camera, request
-        )
-    except HTTPException as http_error:
-        # status 423 is raised if the historical data resource is locked
-        if http_error.status_code == 423:
-            historical_busy = True
-        else:
-            raise http_error
-    return templates.TemplateResponse(
-        "historical.jinja",
-        {
-            "request": request,
-            "location": location,
-            "camera": camera,
-            "camera_json": camera.model_dump(),
-            "table": table,
-            "date": day_obs,
-            "historical_busy": historical_busy,
-            "calendar": calendar,
-            "calendar_frame": calendar_factory(),
-            "month_names": month_names(),
-            "per_day_channels": per_day_channels,
         },
     )

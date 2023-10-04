@@ -25,6 +25,7 @@ from .handlers.api import api_router
 from .handlers.internal import internal_router
 from .handlers.pages import pages_router
 from .handlers.websocket import ws_router
+from .handlers.websockets_clients import connected_clients, status_clients
 from .models.models_init import ModelsInitiator
 from .s3client import S3Client
 
@@ -64,6 +65,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 
     historical_polling.cancel()
     today_polling.cancel()
+    for c in connected_clients:
+        await c.close()
+    for c in status_clients:
+        await c.close()
     await http_client_dependency.aclose()
 
 

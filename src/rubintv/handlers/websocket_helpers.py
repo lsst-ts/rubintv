@@ -1,9 +1,12 @@
 import re
 from typing import Any, Tuple
 
-from rubintv.handlers.websockets_clients import connected_clients
+from rubintv.handlers.websockets_clients import (
+    connected_clients,
+    status_clients,
+)
 from rubintv.models.helpers import find_first
-from rubintv.models.models import Camera, Event, Location, NightReportMessage
+from rubintv.models.models import Camera, Event, Location, NightReportPayload
 
 __all__ = [
     "notify_camera_events_update",
@@ -70,11 +73,17 @@ async def notify_channel_update(message_for_chan: Tuple[str, Event]) -> None:
 
 
 async def notify_night_report_update(
-    message: Tuple[str, NightReportMessage]
+    message: Tuple[str, NightReportPayload]
 ) -> None:
     return
     # loc_cam, payload = message
     # for websocket, (to_update, loc_cam_id) in connected_clients.items():
+
+
+async def notify_status_change(historical_busy: bool) -> None:
+    for websocket in status_clients:
+        await websocket.send_text("Historical change")
+        await websocket.send_json({"historicalBusy": historical_busy})
 
 
 async def is_valid_client_request(client_text: str) -> bool:
