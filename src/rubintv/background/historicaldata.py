@@ -187,7 +187,7 @@ class HistoricalPoller:
         reports : NightReportPayload:
             A dict containing a list of Night Report objects and text metadata.
         """
-        nr_objs = await self._get_night_reports(location, camera, day_obs)
+        nr_objs = await self._get_night_report(location, camera, day_obs)
         text_reports = [r for r in nr_objs if r.group == "metadata"]
         report: NightReportPayload = {}
         if text_reports:
@@ -201,20 +201,23 @@ class HistoricalPoller:
             report["plots"] = nr_objs
         return report
 
-    async def _get_night_reports(
+    async def _get_night_report(
         self, location: Location, camera: Camera, day_obs: date
     ) -> list[NightReport]:
         date_str = day_obs.isoformat()
-        return [
-            nr
-            for nr in self._nr_metadata[location.name]
-            if nr.camera == camera.name and nr.day_obs == date_str
-        ]
+        report = []
+        if location.name in self._nr_metadata:
+            report = [
+                nr
+                for nr in self._nr_metadata[location.name]
+                if nr.camera == camera.name and nr.day_obs == date_str
+            ]
+        return report
 
     async def night_report_exists_for(
         self, location: Location, camera: Camera, day_obs: date
     ) -> bool:
-        nr_objs = await self._get_night_reports(location, camera, day_obs)
+        nr_objs = await self._get_night_report(location, camera, day_obs)
         if nr_objs:
             return True
         else:

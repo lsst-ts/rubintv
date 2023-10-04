@@ -16,7 +16,7 @@ from rubintv.models.models import (
     Event,
     EventJSONDict,
     Location,
-    NightReportPayload,
+    NightReportDataDict,
     get_current_day_obs,
 )
 from rubintv.s3client import S3Client
@@ -154,7 +154,7 @@ async def get_most_recent_historical_data(
 
     day = await historical.get_most_recent_day(location, camera)
     events = await historical.get_event_dict_for_date(location, camera, day)
-    md = bucket.get_object(f"{camera.name}/{day}/metadata.json")
+    md = await bucket.async_get_object(f"{camera.name}/{day}/metadata.json")
     return (day, events, md)
 
 
@@ -191,7 +191,9 @@ async def get_camera_events_for_date(
         events = await historical.get_event_dict_for_date(
             location, camera, day_obs
         )
-        md = bucket.get_object(f"{camera_name}/{date_str}/metadata.json")
+        md = await bucket.async_get_object(
+            f"{camera_name}/{date_str}/metadata.json"
+        )
 
     return {
         "date": day_obs,
@@ -276,7 +278,7 @@ async def get_specific_channel_event(
 )
 async def get_current_night_report(
     location_name: str, camera_name: str, request: Request
-) -> dict[str, date | NightReportPayload]:
+) -> NightReportDataDict:
     location, camera = await get_location_camera(
         location_name, camera_name, request
     )
@@ -294,7 +296,7 @@ async def get_current_night_report(
 )
 async def get_night_report_for_date(
     location_name: str, camera_name: str, date_str: str, request: Request
-) -> dict[str, date | NightReportPayload]:
+) -> NightReportDataDict:
     location, camera = await get_location_camera(
         location_name, camera_name, request
     )

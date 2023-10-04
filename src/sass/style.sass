@@ -526,9 +526,11 @@ section
 
 
 .dashboard
+	display: flex
 	font-family: 'Red Hat Mono', monospace
-	margin: 2em 0
+	gap: 0.5em
 	ul
+		width: 100%
 		list-style: none
 		margin-bottom: 1em
 	li
@@ -537,14 +539,10 @@ section
 		border-radius: 6px
 		padding: 11px 18px
 		margin-bottom: 6px
-		flex-basis: calc(50% - 0.5em)
 		background-color: #fff
 
 	.dashboard-text
-		display: flex
-		flex-direction: row
-		flex-wrap: wrap
-		gap: 1em
+		width: 100%
 
 .tab-titles
 	display: flex
@@ -558,7 +556,7 @@ section
 	cursor: pointer
 	padding: 0.5em 1em 0.7em 1em
 	cursor: pointer
-	background: #eee
+	background: #b0b0b0
 	border-radius: 0px 11px 0 0
 	border: 1px solid transparent
 	border-bottom: none
@@ -566,24 +564,20 @@ section
 	&:last-of-type
 		margin-right: 0
 	&.selected
+		background: #fff
 		border-color: #666
 
 .tab-content:not(.showing)
 	display: none
 
-
 .plots-grid
 	display: grid
 	grid-template-columns: repeat(2,1fr)
 	gap: 1em
-	background-color: #eee
-	padding: 1em
 
 .plot
 	display: flex
 	flex-direction: column
-	justify-content: space-between
-	background: #eee
 	img
 		width: 100%
 		height: auto

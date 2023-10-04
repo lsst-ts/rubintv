@@ -21,7 +21,6 @@ locations:
     camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
       Other Cameras: [ allsky, startracker, startracker_wide, startracker_fast ]
-      # Cameras: [ allsky ]
       Telescopes: [ tma ]
 
 cameras:

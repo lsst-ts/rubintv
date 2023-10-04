@@ -2,15 +2,15 @@
   {% set label = camera.night_report_label %}
   <div id="night_report_link">
     <h3>{{ label }}</h3>
-    {% if night_report_link == "current" %}
-      <a href="{{ url_for('night_reports', location=location.slug, camera=camera.slug) }}" class="button button-large night-report">
+    {% if not calendar %}
+      <a href="{{ url_for('night_report', location_name=location.name, camera_name=camera.name) }}" class="button button-large night-report">
         <img src="{{ url_for('static', path='images/crescent-moon.svg') }}">
         {{ label }}
       </a>
     {% else %}
     {# show historical button with date #}
       <a
-        {# href="{{ url_for('nr_history', location=location.slug, camera=camera.slug, date_str=date|string ) }}" #}
+        href="{{ url_for('historical_nr', location_name=location.name, camera_name=camera.name, date_str=date|string ) }}"
         class="button button-large night-report">
         <img src="{{ url_for('static', path='images/crescent-moon.svg') }}">
         {{ label }} for {{ date }}

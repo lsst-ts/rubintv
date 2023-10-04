@@ -164,7 +164,7 @@ class NightReport:
     camera: str = ""
     day_obs: str = ""
     group: str = ""
-    name: str = ""
+    filename: str = ""
     ext: str = ""
 
     def parse_key(self) -> tuple:
@@ -208,6 +208,11 @@ class NightReport:
 class NightReportPayload(TypedDict):
     text: NotRequired[dict]
     plots: NotRequired[list[NightReport]]
+
+
+class NightReportDataDict(TypedDict):
+    date: date
+    night_report: NightReportPayload
 
 
 class EventJSONDict(TypedDict):

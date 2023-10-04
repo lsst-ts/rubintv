@@ -1,0 +1,49 @@
+{% set plots = night_report["plots"] %}
+
+<h3 id="the-date" data-date="{{ date }}">
+{{ camera.night_report_label }} for: <span class="data">{{ date }}</span></h3>
+<div id="night-report">
+  <div class="plots-section tabs">
+    <div class="tab-titles">
+      <div id="tabtitle-text" class="tab-title disabled">
+        Efficiency
+      </div>
+      {% for group, grouped_plots in plots|groupby("group") %}
+        {% if group == "Elana" or group == "elana" %}
+          {% set is_disabled = "disabled" %}
+        {% endif %}
+        <div id="tabtitle-{{ group|lower }}" class="tab-title {{ is_disabled }}">
+          {{ group }}
+        </div>
+      {% endfor %}
+    </div>
+
+
+    {% include "camera_parts/night-report-text.jinja" %}
+
+      {% for group, grouped_plots in plots|groupby("group") %}
+        <div id="tabgroup-{{ group|lower }}" class="tab-content plots-grid">
+          {% for plot in grouped_plots %}
+            <figure class="plot">
+             {% set img_url = url_for('plot_image',
+                    location_name=location.name,
+                    camera_name=camera.name,
+                    group_name=group,
+                    filename=plot.filename + '.' + plot.ext) %}
+              <a href="{{ img_url }}">
+                <img src="{{ img_url }}">
+              </a>
+              <figcaption>
+                {{ plot.filename }}
+              </figcaption>
+            </figure>
+          {% endfor %}
+        </div>
+      {% endfor %}
+
+
+  </div>
+  <script id="reports-json" type="application/json">
+    {# {{ reports_json|tojson }} #}
+  </script>
+</div>

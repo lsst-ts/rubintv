@@ -1,0 +1,8 @@
+{% extends "_night-report.jinja" %}
+{% block headerbuttons %}
+  <a
+    class="button historical"
+    href="{{ url_for('historical', location_name=location.name, camera_name=camera.name) }}">
+    Historical<img src="{{ url_for('static', path='images/history-line.svg') }}">
+  </a>
+{% endblock headerbuttons %}

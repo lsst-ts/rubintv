@@ -1,4 +1,6 @@
+import asyncio
 import json
+from concurrent.futures import ThreadPoolExecutor
 
 import boto3
 import structlog
@@ -41,7 +43,7 @@ class S3Client:
             )
         return objects
 
-    def get_object(self, key: str) -> dict | None:
+    def _get_object(self, key: str) -> dict | None:
         logger = structlog.get_logger(__name__)
         try:
             obj = self._client.get_object(Bucket=self._bucket_name, Key=key)
@@ -50,6 +52,11 @@ class S3Client:
             if e.response["Error"]["Code"] == "NoSuchKey":
                 logger.info(f"Object for key: {key} not found.")
             return None
+
+    async def async_get_object(self, key: str) -> dict | None:
+        loop = asyncio.get_event_loop()
+        executor = ThreadPoolExecutor(max_workers=3)
+        return await loop.run_in_executor(executor, self._get_object, key)
 
     def get_raw_object(self, key: str) -> StreamingBody:
         try:
