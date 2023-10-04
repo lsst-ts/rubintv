@@ -4,12 +4,7 @@ import pytest
 from httpx import AsyncClient
 
 from rubintv.models.helpers import find_first
-from rubintv.models.models import (
-    Camera,
-    EventJSONDict,
-    Location,
-    get_current_day_obs,
-)
+from rubintv.models.models import Camera, Location, get_current_day_obs
 from rubintv.models.models_init import ModelsInitiator
 
 m = ModelsInitiator()
@@ -105,7 +100,7 @@ async def test_get_camera_current_events(client: AsyncClient) -> None:
     """Test that today's data is picked up"""
     today = get_current_day_obs()
     response = await client.get("/rubintv/api/slac/slac_lsstcam/current")
-    data: EventJSONDict = response.json()
+    data = response.json()
     assert data["date"] == today.isoformat()
     assert (
         data["channel_events"]["focal_plane_mosaic"][0]["key"]

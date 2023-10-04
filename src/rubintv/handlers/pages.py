@@ -25,7 +25,7 @@ from rubintv.handlers.pages_helpers import (
     month_names,
 )
 from rubintv.models.helpers import find_first
-from rubintv.models.models import Channel, EventJSONDict
+from rubintv.models.models import Channel, Event, EventJSONDict
 from rubintv.s3client import S3Client
 from rubintv.templates_init import get_templates
 
@@ -133,12 +133,13 @@ async def get_camera_page(
     )
     night_report_link = historical_busy = False
     day_obs: date | None = None
-    per_day_channels = table = {}
+    events = per_day_channels = table = {}
     try:
         event_data = await get_camera_current_events(
             location_name, camera_name, request
         )
         day_obs = event_data["date"]
+        events = event_data["channel_events"]
         table = await make_table_rows_from_columns_by_seq(
             event_data, camera.seq_channels()
         )
@@ -153,6 +154,8 @@ async def get_camera_page(
     template = "camera"
     if not camera.online:
         template = "not_online"
+    if camera.name == "allsky":
+        template = "allsky"
 
     return templates.TemplateResponse(
         f"{template}.jinja",
@@ -161,6 +164,7 @@ async def get_camera_page(
             "location": location,
             "camera": camera,
             "camera_json": camera.model_dump(),
+            "events": events,
             "table": table,
             "date": day_obs,
             "historical_busy": historical_busy,
@@ -186,7 +190,7 @@ async def get_camera_for_date_page(
     historical_busy = False
     night_report_link = False
     day_obs: date | None = None
-    table = calendar = per_day_channels = {}
+    events = table = calendar = per_day_channels = {}
     try:
         event_data = await get_camera_events_for_date(
             location_name, camera_name, date_str, request
@@ -195,6 +199,7 @@ async def get_camera_for_date_page(
             event_data, camera.seq_channels()
         )
         day_obs = event_data["date"]
+        events = event_data["channel_events"]
         per_day_channels = await get_per_day_channels(event_data, camera)
         calendar = await get_calendar_of_historical_events(
             location, camera, request
@@ -209,13 +214,19 @@ async def get_camera_for_date_page(
             historical_busy = True
         else:
             raise http_error
+
+    template = "historical"
+    if camera.name == "allsky":
+        template = "allsky-historical"
+
     return templates.TemplateResponse(
-        "historical.jinja",
+        f"{template}.jinja",
         {
             "request": request,
             "location": location,
             "camera": camera,
             "camera_json": camera.model_dump(),
+            "events": events,
             "table": table,
             "date": day_obs,
             "historical_busy": historical_busy,
@@ -243,6 +254,7 @@ async def get_historical_camera_page(
         raise HTTPException(404, "Camera not online.")
     night_report_link = historical_busy = False
     day_obs: date | None = None
+    events: dict[str, list[Event]] = {}
     table = calendar = per_day_channels = {}
     try:
         (day_obs, events, md) = await get_most_recent_historical_data(
@@ -267,13 +279,18 @@ async def get_historical_camera_page(
     except HTTPException:
         historical_busy = True
 
+    template = "historical"
+    if camera.name == "allsky":
+        template = "allsky-historical"
+
     return templates.TemplateResponse(
-        "historical.jinja",
+        f"{template}.jinja",
         {
             "request": request,
             "location": location,
             "camera": camera,
             "camera_json": camera.model_dump(),
+            "events": events,
             "table": table,
             "date": day_obs,
             "historical_busy": historical_busy,

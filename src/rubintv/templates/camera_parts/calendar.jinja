@@ -46,6 +46,8 @@
                       <span class="day_num">{{ day }}</span>
                       {% if not no_total_seq %}
                         <span class="num_evs">({{ calendar[year][month][day] }})</span>
+                      {% else %}
+                        <span>*</span>
                       {% endif %}
                     </a>
                   {% else %}

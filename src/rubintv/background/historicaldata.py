@@ -282,7 +282,7 @@ class HistoricalPoller:
 
         Returns
         -------
-        day_dict : `dict` [`int`, `int` | `str`]
+        day_dict : `dict` [`int`, `int`]
             A dict with day number for key and last seq_num for that day as
             value.
         """
@@ -326,9 +326,12 @@ class HistoricalPoller:
         events = await self.get_events_for_date(location, camera, a_date)
         channel_names = [chan.name for chan in camera.seq_channels()]
         channel_events = [e for e in events if e.channel_name in channel_names]
-        # camera.seq_channels only have integer seq_nums
-        max_seq = max(channel_events, key=lambda e: e.seq_num).seq_num
-        return max_seq  # type: ignore[return-value]
+        max_seq = max(
+            channel_events, key=lambda e: e.seq_num_force_int()
+        ).seq_num
+        if isinstance(max_seq, str):
+            return 0
+        return max_seq
 
     async def get_events_for_date(
         self, location: Location, camera: Camera, a_date: date
@@ -397,9 +400,7 @@ class HistoricalPoller:
                 for event in self._events[location.name]
                 if event.camera_name == camera.name
             ),
-            key=lambda ev: ev.seq_num
-            if isinstance(ev.seq_num, int)
-            else 99999,
+            key=lambda ev: ev.day_obs,
         )
         most_recent_day = most_recent.day_obs_date()
         return most_recent_day
@@ -416,7 +417,7 @@ class HistoricalPoller:
     async def get_most_recent_event(
         self, location: Location, camera: Camera, channel: Channel
     ) -> Event | None:
-        """Returns most recent Event for the given Camera.
+        """Returns most recent Event for the given camera and channel.
 
         Parameters
         ----------

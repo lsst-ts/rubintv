@@ -28,7 +28,7 @@ def mock_up_data(locations: list[Location]) -> None:
     """
 
     today = get_current_day_obs()
-    the_past = today - timedelta(days=-100)
+    the_past = today - timedelta(days=100)
 
     for location in locations:
         bucket_name = location.bucket_name

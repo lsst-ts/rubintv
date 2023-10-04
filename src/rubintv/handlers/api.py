@@ -16,6 +16,7 @@ from rubintv.models.models import (
     Event,
     EventJSONDict,
     Location,
+    NightReportPayload,
     get_current_day_obs,
 )
 from rubintv.s3client import S3Client
@@ -267,6 +268,47 @@ async def get_specific_channel_event(
     if not event.url:
         return None
     return event
+
+
+@api_router.get(
+    "/{location_name}/{camera_name}/night_report",
+    response_model=dict,
+)
+async def get_current_night_report(
+    location_name: str, camera_name: str, request: Request
+) -> dict[str, date | NightReportPayload]:
+    location, camera = await get_location_camera(
+        location_name, camera_name, request
+    )
+    day_obs = get_current_day_obs()
+    current_poller: CurrentPoller = request.app.state.current_poller
+    nr = await current_poller.get_current_night_report(
+        location_name, camera_name
+    )
+    return {"date": day_obs, "night_report": nr}
+
+
+@api_router.get(
+    "/{location_name}/{camera_name}/night_report/{date_str}",
+    response_model=dict,
+)
+async def get_night_report_for_date(
+    location_name: str, camera_name: str, date_str: str, request: Request
+) -> dict[str, date | NightReportPayload]:
+    location, camera = await get_location_camera(
+        location_name, camera_name, request
+    )
+    try:
+        day_obs = date_str_to_date(date_str)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Invalid date.")
+
+    historical: HistoricalPoller = request.app.state.historical
+    if await historical.is_busy():
+        raise HTTPException(423, "Historical data is being processed")
+
+    nr = await historical.get_night_report(location, camera, day_obs)
+    return {"date": day_obs, "night_report": nr}
 
 
 async def get_calendar_of_historical_events(
