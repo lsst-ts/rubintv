@@ -3,7 +3,7 @@ import {
   _elWithClass,
   _escapeName,
   _elWithAttrs,
-  drawTableColumnsAndRows
+  drawMetaColumnsAndRows
 } from './utils.js'
 
 /**
@@ -28,7 +28,7 @@ export function addToTable (metaData, selection, headerDescs) {
     lastHeaderCall.after(el)
   })
 
-  drawTableColumnsAndRows(metaData, selection)
+  drawMetaColumnsAndRows(metaData, selection)
 
   // add empty column to table header for 'copy to clipboard'
   if (!_getById('ctbEmpty')) {
@@ -36,7 +36,7 @@ export function addToTable (metaData, selection, headerDescs) {
     // place it after the first column
     document.querySelector('.grid-title').after(ctbColumnHeader)
     // add copy to clipboard buttons to grid
-    Array.from(document.querySelectorAll('tr[id^="seqno-"]')).forEach((row) => {
+    Array.from(document.querySelectorAll('tr[id^="seqNum-"]')).forEach((row) => {
       const seq = row.id.split('-').pop()
       const cell = _elWithClass('td', 'grid-cell copy-to-cb')
       const button = _elWithClass('button', 'button button-table copy')

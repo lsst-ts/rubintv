@@ -30,18 +30,13 @@ Historical Data
   </section>
 
 {% endif %}
-
-  {% if camera.metadata_headers %}
-  <script type="application/json" id="metadata-headers">
-    {{ camera.metadata_headers|tojson }}
-  </script>
-  {% endif %}
-
 {% endblock content %}
 
 {% block footer_scripts %}
   {% if camera.js_entry %}
     {% set filename = "assets/" + camera.js_entry + "_historical.js" %}
-    {# <script src="{{ url('static', filename=filename) }}"></script> #}
+  {% else %}
+    {% set filename = "assets/" + camera.name + "_historical.js" %}
   {% endif %}
+    <script src="{{ url_for('static', path=filename) }}"></script>
 {% endblock footer_scripts %}

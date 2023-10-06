@@ -2,7 +2,8 @@ from asyncio import sleep
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from rubintv.handlers.websocket_helpers import (
+from rubintv.background.historicaldata import HistoricalPoller
+from rubintv.handlers.websocket_notifiers import (
     is_valid_channel,
     is_valid_client_request,
     is_valid_location_camera,
@@ -84,6 +85,9 @@ async def status_websocket(websocket: WebSocket) -> None:
         The websocket for requesting/supplying status data.
     """
     await websocket.accept()
+    historical: HistoricalPoller = websocket.app.state.historical
+    busy = await historical.is_busy()
+    await websocket.send_json({"historicalBusy": busy})
     status_clients.append(websocket)
     try:
         while True:

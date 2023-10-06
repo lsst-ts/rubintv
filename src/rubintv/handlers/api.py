@@ -1,4 +1,5 @@
 """Handlers for the app's api root, ``/rubintv/api/``."""
+import asyncio
 from datetime import date
 from typing import Annotated
 
@@ -97,6 +98,16 @@ async def get_camera_current_events(
     events: dict[str, list[Event]] = {}
     if camera.online:
         current_poller: CurrentPoller = request.app.state.current_poller
+
+        if not current_poller.completed_first_poll:
+            for r in range(1, 3):
+                objects = await current_poller.get_current_objects(
+                    location_name, camera_name
+                )
+                if not objects:
+                    print("Retrying...")
+                    await asyncio.sleep(0.3)
+
         objects = await current_poller.get_current_objects(
             location_name, camera_name
         )
@@ -212,11 +223,11 @@ async def get_current_channel_event(
     location, camera = await get_location_camera(
         location_name, camera_name, request
     )
-    if not camera.channels:
+    if not camera.channels or not (
+        channel := find_first(camera.channels, "name", channel_name)
+    ):
         raise HTTPException(status_code=404, detail="Channel not found.")
-    channel = find_first(camera.channels, "name", channel_name)
-    if not channel:
-        raise HTTPException(status_code=404, detail="Channel not found.")
+
     event = None
     if camera.online:
         current_poller: CurrentPoller = request.app.state.current_poller

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-version="{{ version }}">
+<html lang="en" data-version="{{ version }}" data-location="{{ location.name if location }}">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -13,7 +13,7 @@
 </head>
 {% set body_class = "" %}
 {% if camera %}
-    {% set body_class = camera.slug %}
+    {% set body_class = camera.name %}
 {% endif %}
 {% if event %}
     {% set body_class = body_class ~ " event" %}

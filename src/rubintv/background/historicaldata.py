@@ -6,7 +6,7 @@ from datetime import date
 import structlog
 
 from rubintv.background.background_helpers import get_metadata_obj
-from rubintv.handlers.websocket_helpers import notify_status_change
+from rubintv.handlers.websocket_notifiers import notify_status_change
 from rubintv.models.helpers import (
     event_list_to_channel_keyed_dict,
     objects_to_events,

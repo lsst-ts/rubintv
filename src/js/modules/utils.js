@@ -1,3 +1,5 @@
+import ReconnectingWebSocket from 'reconnecting-websocket'
+
 /**
 * @param {string | any[]} arrayA
 * @param {any} arrayB
@@ -131,7 +133,7 @@ export function parseJsonFromDOM (element) {
  * @param {string} attr
  * @param {string[]} classes
  */
-export function createTableCell (seq, attributes, attr, ...classes) {
+export function createMetaTableCell (seq, attributes, attr, ...classes) {
   const classString = classes.join(' ')
   const el = _elWithClass('td', `meta grid-cell ${classString}`)
   let val = attributes[attr]
@@ -246,9 +248,9 @@ export function removeColumnFromTableFor (attributeName) {
   Array.from(cells).forEach(cell => { cell.remove() })
 }
 
-export function drawTableColumnsAndRows (metaData, columns) {
+export function drawMetaColumnsAndRows (metaData, columns) {
   Object.entries(metaData).forEach(([seq, attributes]) => {
-    const seqRow = _getById(`seqno-${seq}`)
+    const seqRow = _getById(`seqNum-${seq}`)
     if (seqRow) {
       // ...and column
       columns.forEach(attr => {
@@ -256,11 +258,25 @@ export function drawTableColumnsAndRows (metaData, columns) {
         const escapedName = _escapeName(attr)
         // check for indicator attribute (i.e. starts with '_')
         const flag = indicatorForAttr(attributes, attr)
-        const el = createTableCell(seq, attributes, attr, escapedName, flag)
+        const el = createMetaTableCell(seq, attributes, attr, escapedName, flag)
         seqRowLastCell.after(el)
       })
     }
   })
+}
+
+/**
+ * @param {string} endpoint
+ */
+export function initWebSocketClient (endpoint = '/') {
+  const protocol = window.location.protocol
+  const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:'
+  const hostname = window.location.host
+  const appName = window.location.pathname.split('/')[1]
+  const wsUrl = `${wsProtocol}//${hostname}/${appName}/ws${endpoint}`
+
+  const rws = new ReconnectingWebSocket(wsUrl, undefined, { maxRetries: 2 })
+  return rws
 }
 
 function clearLocalStorageOnNewVersion () {
@@ -272,5 +288,4 @@ function clearLocalStorageOnNewVersion () {
     localStorage.setItem('rubintv_version', thisVersion)
   }
 }
-
 clearLocalStorageOnNewVersion()

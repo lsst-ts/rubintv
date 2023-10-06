@@ -82,7 +82,6 @@ async def notify_night_report_update(
 
 async def notify_status_change(historical_busy: bool) -> None:
     for websocket in status_clients:
-        await websocket.send_text("Historical change")
         await websocket.send_json({"historicalBusy": historical_busy})
 
 

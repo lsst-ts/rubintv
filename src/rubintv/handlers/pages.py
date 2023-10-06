@@ -168,6 +168,7 @@ async def get_camera_page(
     )
     night_report_link = historical_busy = False
     day_obs: date | None = None
+    md: dict | None = {}
     events = per_day_channels = table = {}
     try:
         event_data = await get_camera_current_events(
@@ -175,6 +176,7 @@ async def get_camera_page(
         )
         day_obs = event_data["date"]
         events = event_data["channel_events"]
+        md = event_data["metadata"]
         table = await make_table_rows_from_columns_by_seq(
             event_data, camera.seq_channels()
         )
@@ -200,6 +202,7 @@ async def get_camera_page(
             "camera": camera,
             "camera_json": camera.model_dump(),
             "events": events,
+            "metadata": md,
             "table": table,
             "date": day_obs,
             "historical_busy": historical_busy,
@@ -225,6 +228,7 @@ async def get_camera_for_date_page(
     historical_busy = False
     night_report_link = False
     day_obs: date | None = None
+    md: dict | None = {}
     events = table = calendar = per_day_channels = {}
     try:
         event_data = await get_camera_events_for_date(
@@ -235,6 +239,7 @@ async def get_camera_for_date_page(
         )
         day_obs = event_data["date"]
         events = event_data["channel_events"]
+        md = event_data["metadata"]
         per_day_channels = await get_per_day_channels(event_data, camera)
         calendar = await get_calendar_of_historical_events(
             location, camera, request
@@ -262,6 +267,7 @@ async def get_camera_for_date_page(
             "camera": camera,
             "camera_json": camera.model_dump(),
             "events": events,
+            "metadata": md,
             "table": table,
             "date": day_obs,
             "historical_busy": historical_busy,
@@ -290,6 +296,7 @@ async def get_historical_camera_page(
     night_report_link = historical_busy = False
     day_obs: date | None = None
     events: dict[str, list[Event]] = {}
+    md: dict | None = {}
     table = calendar = per_day_channels = {}
     try:
         (day_obs, events, md) = await get_most_recent_historical_data(
@@ -326,6 +333,7 @@ async def get_historical_camera_page(
             "camera": camera,
             "camera_json": camera.model_dump(),
             "events": events,
+            "metadata": md,
             "table": table,
             "date": day_obs,
             "historical_busy": historical_busy,

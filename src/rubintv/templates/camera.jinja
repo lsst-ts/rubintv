@@ -63,16 +63,16 @@
     </section>
 
   {% endif %}
-
-    {# <script type="application/json" id="camera_json">
-      {{ camera_json|tojson }}
-    </script> #}
 {% endblock content %}
 
 {% block footer_scripts %}
+
   {% if camera.js_entry %}
     {% set cam_js = "assets/" + camera.js_entry + ".js" %}
-    {# <script src='{{ url_for("static", path=cam_js) }}'></script> #}
+  {% else %}
+    {% set cam_js = "assets/" + camera.name + ".js" %}
   {% endif %}
+    <script src='{{ url_for("static", path=cam_js) }}'></script>
+
   {{ super() }}
 {% endblock footer_scripts  %}

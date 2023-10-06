@@ -1,37 +1,43 @@
-import {
-  parseJsonFromDOM,
-  _getById
-} from '../modules/utils.js'
-import { addToTable } from '../modules/draw-simple-table.js'
 import { TableControls } from '../modules/table-control.js'
-import { refreshTableLoop } from '../modules/table-refresher.js'
+import { parseJsonFromDOM, initWebSocketClient } from '../modules/utils.js'
+import { addToTable } from '../modules/draw-simple-meta.js'
 
 window.addEventListener('load', function () {
-  const defaultHeadersAndDescs = parseJsonFromDOM('#metadata-headers')
+  const cameraJson = parseJsonFromDOM('#cameraJson')
+  const defaultHeadersAndDescs = cameraJson.metadata_cols
   const meta = parseJsonFromDOM('#table-metadata')
-
-  const tableControls = new TableControls(
-    defaultHeadersAndDescs,
-    meta,
-    '#table-controls',
-    addToTable
-  )
-  addToTable(meta, tableControls.selected, defaultHeadersAndDescs)
-
-  refreshTableLoop(injectHTML, updateTableAndControls, 5)
-
-  /**
-   * @param {{ per_day: string; table: string; }} htmlParts
-   */
-  function injectHTML (htmlParts) {
-    _getById('per-day-refreshable').innerHTML = htmlParts.per_day
-    _getById('channel-day-data').innerHTML = htmlParts.table
+  if (Object.entries(meta).length > 0) {
+    const tableControls = new TableControls(
+      defaultHeadersAndDescs,
+      meta,
+      '#table-controls',
+      addToTable
+    )
+    addToTable(meta, tableControls.selected, defaultHeadersAndDescs)
   }
 
-  function updateTableAndControls (meta) {
-    tableControls.updateMetadata(meta)
-    tableControls.draw()
-    const selected = tableControls.selected
-    addToTable(meta, selected, defaultHeadersAndDescs)
+  const location = this.document.documentElement.dataset.location
+  const camera = cameraJson.name
+  let serviceConnected = false
+  const ws = initWebSocketClient('/')
+  ws.onopen = () => {
+    const req = `camera ${location}/${camera}`
+    console.log(`sending: ${req}`)
+    ws.send(req)
+  }
+  ws.onmessage = (message) => {
+    const res = message.data
+    if (serviceConnected) {
+      const data = JSON.parse(res)
+      consumeWSData(data)
+    }
+    if (res === `OK/${location}/${camera}`) {
+      console.log(res)
+      serviceConnected = true
+    }
+  }
+
+  function consumeWSData (data) {
+    console.log(data)
   }
 })

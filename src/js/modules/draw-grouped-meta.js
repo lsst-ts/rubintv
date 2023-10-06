@@ -1,7 +1,7 @@
 import {
   _escapeName,
   _elWithAttrs,
-  drawTableColumnsAndRows
+  drawMetaColumnsAndRows
 } from './utils.js'
 
 // headerGroups is an array of arrays
@@ -9,7 +9,7 @@ import {
  * @param {{[s: string]: any;} | ArrayLike<any>} metaData
  * @param {ArrayLike<any> | { [s: string]: any; }} headerGroups
  */
-export function drawTable (metaData, headerGroups) {
+export function drawMeta (metaData, headerGroups) {
   // empty object test- there's no data, just go home
   if (Object.keys(metaData).length === 0) return
 
@@ -64,7 +64,7 @@ export function drawTable (metaData, headerGroups) {
 
   // add table entries by row...
   const headers = Object.values(headerGroups).map(h => Object.keys(h)).flat()
-  drawTableColumnsAndRows(metaData, headers)
+  drawMetaColumnsAndRows(metaData, headers)
 
   replaceBraceImgWithSVG()
 }

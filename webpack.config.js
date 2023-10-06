@@ -3,15 +3,15 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 
-const pagesWithHeartbeats = [
-  'auxtel',
-  'startracker',
+const pagesWithoutHistory = [
   'admin'
 ].reduce((pages, page) => ({
-  ...pages, [page]: [`./src/js/pages/${page}.js`, './src/js/heartbeats.js']
+  ...pages, [page]: `./src/js/pages/${page}.js`
 }), {})
 
-const pagesWithout = [
+const pagesWithHistory = [
+  'auxtel',
+  'startracker',
   'current',
   'allsky_historical',
   'auxtel_historical',
@@ -19,17 +19,20 @@ const pagesWithout = [
   'night_report',
   'night_report_historical'
 ].reduce((pages, page) => ({
-  ...pages, [page]: `./src/js/pages/${page}.js`
+  ...pages, [page]: [`./src/js/pages/${page}.js`, './src/js/reload_on_historical.js']
 }), {})
 
 module.exports = {
   mode: 'production',
   devtool: 'source-map',
+  stats: {
+    errorDetails: true
+  },
   entry: {
     style: './src/sass/style.sass',
     hostbanner: './src/js/hostbanner.js',
-    ...pagesWithHeartbeats,
-    ...pagesWithout
+    ...pagesWithoutHistory,
+    ...pagesWithHistory
   },
   output: {
     filename: '[name].js',

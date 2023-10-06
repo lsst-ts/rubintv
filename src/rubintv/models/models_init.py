@@ -14,14 +14,12 @@ __all__ = ["ModelsInitiator", "dict_from_list_of_named_objects"]
 class ModelsInitiator:
     """Loads and substantiates models with data from a yaml file.
 
-    Instance variables
-    ------------------
-    self.locations : `List` [`Location`]
-        The locations or sites where the cameras ar based.
-    self.cameras : `List` [`Camera`]
-        The cameras.
-    self.heartbeats : `List` [`Heartbeat`]
-        The heartbeats represent the health of background services.
+        Instance variables
+    -    ------------------
+    -    self.locations : `List` [`Location`]
+    -        The locations or sites where the cameras ar based.
+    -    self.cameras : `List` [`Camera`]
+    -        The cameras.
     """
 
     def __init__(self) -> None:
@@ -29,9 +27,7 @@ class ModelsInitiator:
         with open(models_file_path, "r") as file:
             data = yaml.safe_load(file)
         cameras = self._populate_model(Camera, data["cameras"])
-        self.cameras = self._attach_metadata_cols(
-            cameras, data["metadata_cols"]
-        )
+        self.cameras = self._attach_metadata_cols(cameras, data)
         locations = self._populate_model(Location, data["locations"])
         self.locations = self._attach_cameras_to_locations(
             self.cameras, locations
@@ -75,9 +71,9 @@ class ModelsInitiator:
         return obj_list
 
     def _attach_metadata_cols(
-        self, cameras: list[Camera], data: dict[str, Any]
+        self, cameras: list[Camera], data: Any
     ) -> list[Camera]:
-        """Attach metadata column heading data into individual cameras.
+        """Attach metadata column heading data to individual cameras.
 
         Parameters
         ----------
@@ -91,9 +87,10 @@ class ModelsInitiator:
         cams: `list`[`Camera`]
             The updated list of cameras.
         """
-        updated_cams = []
+        metadata: dict[str, Any] = data["metadata_cols"]
+        updated_cams: list[Camera] = []
         for cam in cameras:
-            if cam.name in data and (cols := data[cam.name]):
+            if cam.name in metadata and (cols := metadata[cam.name]):
                 cam.metadata_cols = cols
             updated_cams.append(cam)
         return updated_cams

@@ -417,95 +417,9 @@ section
 		padding-right: 2em
 
 
-
 .admin-access
 	margin-top: 3em
 
-.service-group
-	display: flex
-	flex-direction: column
-	align-items: center
-	margin-bottom: 1.5em
-	padding: 1em
-
-	.all-services, .services
-		display: flex
-		flex-direction: row
-		gap: 1em
-
-	.all-services > *
-		padding: 1em
-		border: 1px solid #aaa
-		border-radius: 6px
-		&:nth-child(2)
-			margin-left: 2em
-
-	.all-services h4
-		text-align: center
-		margin-bottom: 0.5em
-
-	.service
-		padding: 0.8em
-		display: flex
-		flex-direction: column
-		align-items: center
-		border-radius: 6px
-		text-align: center
-
-		.heartbeat
-			margin-bottom: 0.3em
-
-
-.heartbeat
-	width: 32px
-	height: 32px
-	background-image: url(../images/heartbeat_unknown.svg)
-
-.active .heartbeat
-	background: url(../images/heartbeat_active.svg)
-	animation: heartbeat 1.5s infinite
-.stopped .heartbeat
-	background: url(../images/heartbeat_stopped.svg)
-	animation:  none
-
-.service.inline-block
-	.heartbeat
-		width: 0.7em
-		height: 0.7em
-		background-image: none
-	&.stopped
-		background: url(../images/heartbeat_stopped.svg)
-
-
-.channel
-	.heartbeat
-		margin: auto
-		height: 50px
-		width: 50px
-		background-image: none
-.channel.active .heartbeat
-	background-image: none
-.channel.stopped .heartbeat
-	background-image: url(../images/heartbeat_channel_stopped.svg)
-
-.metadata-status
-	.heartbeat
-		height: 14px
-		width: 14px
-
-@keyframes heartbeat
-	0%
-		transform: scale(1)
-	5%
-		transform: scale(1.1)
-	10%
-		transform: scale(1)
-	15%
-		transform: scale(1.3)
-	50%
-		transform: scale(1)
-	100%
-		transform: scale(1)
 
 #historicalReset
 	display: flex
@@ -520,10 +434,10 @@ section
 	.hidden
 		display: none
 
+
 #night-report
 		.disabled
 			display: none !important
-
 
 .dashboard
 	display: flex

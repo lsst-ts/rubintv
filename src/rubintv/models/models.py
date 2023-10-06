@@ -204,6 +204,9 @@ class NightReport:
             self.ext,
         ) = self.parse_key()
 
+    def __hash__(self) -> int:
+        return int(f"0x{self.hash}", 0)
+
 
 class NightReportPayload(TypedDict):
     text: NotRequired[dict]

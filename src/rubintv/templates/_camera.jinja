@@ -10,3 +10,11 @@
   {% block inline_status %}
   {% endblock inline_status %}
 {% endblock pagetitle %}
+
+{% block further %}
+  {% if camera_json %}
+      <script type="application/json" id="cameraJson">
+        {{ camera_json|tojson }}
+      </script>
+  {% endif %}
+{% endblock further %}
