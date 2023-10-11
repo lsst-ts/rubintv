@@ -1,19 +1,17 @@
-import re
 from typing import Any, Tuple
+from uuid import UUID
 
 from rubintv.handlers.websockets_clients import (
-    connected_clients,
-    status_clients,
+    clients,
+    clients_lock,
+    services_clients,
+    services_lock,
 )
-from rubintv.models.helpers import find_first
-from rubintv.models.models import Camera, Event, Location, NightReportPayload
+from rubintv.models.models import Event, NightReportPayload
 
 __all__ = [
     "notify_camera_events_update",
     "notify_channel_update",
-    "is_valid_client_request",
-    "is_valid_location_camera",
-    "is_valid_channel",
 ]
 
 
@@ -29,22 +27,21 @@ async def notify_camera_events_update(
         Messages take the form: {f"{location_name}/{camera_name}": payload}
         where payload is a dict of list of events, keyed by channel name.
     """
+    service = "camera"
     loc_cam, events_list = message_for_cam
-    for websocket, (to_update, loc_cam_id) in connected_clients.items():
-        if to_update == "camera" and loc_cam_id == loc_cam:
-            events_dict: dict[str, list[dict[str, Any]]] = {}
-            for e in events_list:
-                if e.channel_name in events_dict:
-                    events_dict[e.channel_name].append(e.__dict__)
-                else:
-                    events_dict[e.channel_name] = [e.__dict__]
-            await websocket.send_json(
-                {"data_type": "event_list", "payload": events_dict}
-            )
+    service_loc_cam_chan = " ".join([service, loc_cam])
+    to_notify = await get_clients_to_notify(service_loc_cam_chan)
+    events_dict: dict[str, list[dict[str, Any]]] = {}
+    for e in events_list:
+        if e.channel_name in events_dict:
+            events_dict[e.channel_name].append(e.__dict__)
+        else:
+            events_dict[e.channel_name] = [e.__dict__]
+    await notify_clients(to_notify, "event_list", events_dict)
 
 
 async def notify_camera_metadata_update(
-    message_for_cam: Tuple[str, list[Event] | None] | Tuple[str, dict | None]
+    message_for_cam: Tuple[str, dict]
 ) -> None:
     """Receives and processes messages to pass on to connected clients.
 
@@ -56,57 +53,59 @@ async def notify_camera_metadata_update(
         where payload is either a list of channel-related events or a single
         dict of metadata.
     """
+    service = "camera"
     loc_cam, metadata = message_for_cam
-    for websocket, (to_update, loc_cam_id) in connected_clients.items():
-        if to_update == "camera" and loc_cam_id == loc_cam:
-            await websocket.send_json(
-                {"data_type": "metadata", "payload": metadata}
-            )
+    service_loc_cam_chan = " ".join([service, loc_cam])
+    to_notify = await get_clients_to_notify(service_loc_cam_chan)
+    await notify_clients(to_notify, "metadata", metadata)
 
 
 async def notify_channel_update(message_for_chan: Tuple[str, Event]) -> None:
+    service = "channel"
     loc_cam_chan, event = message_for_chan
-    for websocket, (to_update, loc_cam_chan_id) in connected_clients.items():
-        if to_update == "channel" and loc_cam_chan_id == loc_cam_chan:
-            await websocket.send_json(event.__dict__)
-    return
+    service_loc_cam_chan = " ".join([service, loc_cam_chan])
+    to_notify = await get_clients_to_notify(service_loc_cam_chan)
+    await notify_clients(to_notify, "event", event.__dict__)
 
 
 async def notify_night_report_update(
     message: Tuple[str, NightReportPayload]
 ) -> None:
-    return
-    # loc_cam, payload = message
-    # for websocket, (to_update, loc_cam_id) in connected_clients.items():
+    service = "nightreport"
+    loc_cam, night_report = message
+    service_loc_cam_chan = " ".join([service, loc_cam])
+    to_notify = await get_clients_to_notify(service_loc_cam_chan)
+    await notify_clients(to_notify, "nightReport", night_report.__dict__)
+
+
+async def notify_clients(
+    clients_list: list[UUID], data_type: str, payload: dict
+) -> None:
+    async with clients_lock:
+        for client_id in clients_list:
+            websocket = clients[client_id]
+            await websocket.send_json(
+                {"data_type": data_type, "payload": payload}
+            )
+
+
+async def get_clients_to_notify(service_cam_id: str) -> list[UUID]:
+    async with services_lock:
+        to_notify = []
+        if service_cam_id in services_clients:
+            for client_id in services_clients[service_cam_id]:
+                to_notify.append(client_id)
+    return to_notify
 
 
 async def notify_status_change(historical_busy: bool) -> None:
-    for websocket in status_clients:
-        await websocket.send_json({"historicalBusy": historical_busy})
-
-
-async def is_valid_client_request(client_text: str) -> bool:
-    valid_req = re.compile(r"^(camera|channel|nightreport)\s+[\w\/]+\w+$")
-    if valid_req.fullmatch(client_text):
-        return True
-    return False
-
-
-async def is_valid_location_camera(
-    location_name: str, camera_name: str, locations: list[Location]
-) -> Camera | None:
-    location: Location | None
-    if not (location := find_first(locations, "name", location_name)):
-        return None
-    camera: Camera | None
-    if not (camera := find_first(location.cameras, "name", camera_name)):
-        return None
-    if not camera.online:
-        return None
-    return camera
-
-
-async def is_valid_channel(camera: Camera, channel_name: str) -> bool:
-    return camera.channels is not None and channel_name in [
-        chan.name for chan in camera.channels
-    ]
+    key = "historicalStatus"
+    async with services_lock:
+        if key not in services_clients:
+            return
+        to_notify = services_clients[key]
+    if to_notify:
+        async with clients_lock:
+            for client_id in to_notify:
+                websocket = clients[client_id]
+                await websocket.send_json({"historicalBusy": historical_busy})

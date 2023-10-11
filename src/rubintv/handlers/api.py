@@ -122,9 +122,11 @@ async def get_camera_current_events(
         md = await current_poller.get_current_metadata(location_name, camera)
 
         if not (events and md):
-            day, events, md = await get_most_recent_historical_data(
+            h_data = await get_most_recent_historical_data(
                 location, camera, request
             )
+            if h_data:
+                day, events, md = h_data
 
     return {
         "date": day,
@@ -135,7 +137,7 @@ async def get_camera_current_events(
 
 async def get_most_recent_historical_data(
     location: Location, camera: Camera, request: Request
-) -> tuple[date, dict[str, list[Event]], dict | None]:
+) -> tuple[date, dict[str, list[Event]], dict | None] | None:
     """_summary_
 
     Parameters
@@ -164,6 +166,8 @@ async def get_most_recent_historical_data(
         raise HTTPException(423, "Historical data is being processed")
 
     day = await historical.get_most_recent_day(location, camera)
+    if not day:
+        return None
     events = await historical.get_event_dict_for_date(location, camera, day)
     md = await bucket.async_get_object(f"{camera.name}/{day}/metadata.json")
     return (day, events, md)

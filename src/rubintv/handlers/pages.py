@@ -258,6 +258,8 @@ async def get_camera_for_date_page(
     template = "historical"
     if camera.name == "allsky":
         template = "allsky-historical"
+    if not table:
+        template = "camera_empty"
 
     return templates.TemplateResponse(
         f"{template}.jinja",
@@ -299,24 +301,26 @@ async def get_historical_camera_page(
     md: dict | None = {}
     table = calendar = per_day_channels = {}
     try:
-        (day_obs, events, md) = await get_most_recent_historical_data(
+        h_data = await get_most_recent_historical_data(
             location, camera, request
         )
-        event_data: EventJSONDict = {
-            "date": day_obs,
-            "channel_events": events,
-            "metadata": md,
-        }
-        table = await make_table_rows_from_columns_by_seq(
-            event_data, camera.seq_channels()
-        )
-        per_day_channels = await get_per_day_channels(event_data, camera)
-        calendar = await get_calendar_of_historical_events(
-            location, camera, request
-        )
-        night_report_link = await night_report_exists_for(
-            location, camera, day_obs, request
-        )
+        if h_data:
+            (day_obs, events, md) = h_data
+            event_data: EventJSONDict = {
+                "date": day_obs,
+                "channel_events": events,
+                "metadata": md,
+            }
+            table = await make_table_rows_from_columns_by_seq(
+                event_data, camera.seq_channels()
+            )
+            per_day_channels = await get_per_day_channels(event_data, camera)
+            calendar = await get_calendar_of_historical_events(
+                location, camera, request
+            )
+            night_report_link = await night_report_exists_for(
+                location, camera, day_obs, request
+            )
 
     except HTTPException:
         historical_busy = True
@@ -324,6 +328,8 @@ async def get_historical_camera_page(
     template = "historical"
     if camera.name == "allsky":
         template = "allsky-historical"
+    if not table:
+        template = "camera_empty"
 
     return templates.TemplateResponse(
         f"{template}.jinja",

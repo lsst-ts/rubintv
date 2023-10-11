@@ -64,8 +64,8 @@ async def make_table_rows_from_columns_by_seq(
                 logger.warn("Warning: Non-integer seq num ignored")
     # d == {seq: {chan1: event, chan2: event, ... }}
     # make sure the table is in order
-    # rows_dict = {k: v for k, v in sorted(d.items(), reverse=True)}
-    return d
+    rows_dict = {k: v for k, v in sorted(d.items(), reverse=True)}
+    return rows_dict
 
 
 def month_names() -> list[str]:

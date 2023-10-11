@@ -50,7 +50,7 @@ class S3Client:
             return json.loads(obj["Body"].read())
         except ClientError as e:
             if e.response["Error"]["Code"] == "NoSuchKey":
-                logger.info(f"Object for key: {key} not found.")
+                logger.info("Object for key: {key} not found.", key=key)
             return None
 
     async def async_get_object(self, key: str) -> dict | None:

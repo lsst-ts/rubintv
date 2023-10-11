@@ -237,7 +237,13 @@ class HistoricalPoller:
         years : `list` [`int`]
             A sorted list of years as integers.
         """
-        return sorted(list(self._camera_years[location.name][camera.name]))
+        try:
+            years = sorted(
+                list(self._camera_years[location.name][camera.name])
+            )
+        except KeyError:
+            return []
+        return years
 
     async def get_months_for_year(
         self, location: Location, camera: Camera, year: int
@@ -380,7 +386,7 @@ class HistoricalPoller:
 
     async def get_most_recent_day(
         self, location: Location, camera: Camera
-    ) -> date:
+    ) -> date | None:
         """Returns most recent day for which there is data in the bucket for
         the given Camera.
 
@@ -397,14 +403,17 @@ class HistoricalPoller:
             The date of the most recent day's Event in the form
             ``"YYYY-MM-DD"``.
         """
-        most_recent = max(
-            (
-                event
-                for event in self._events[location.name]
-                if event.camera_name == camera.name
-            ),
-            key=lambda ev: ev.day_obs,
-        )
+        try:
+            most_recent = max(
+                (
+                    event
+                    for event in self._events[location.name]
+                    if event.camera_name == camera.name
+                ),
+                key=lambda ev: ev.day_obs,
+            )
+        except ValueError:
+            return None
         most_recent_day = most_recent.day_obs_date()
         return most_recent_day
 
@@ -412,6 +421,8 @@ class HistoricalPoller:
         self, location: Location, camera: Camera
     ) -> dict[str, list[Event]]:
         most_recent_day = await self.get_most_recent_day(location, camera)
+        if not most_recent_day:
+            return {}
         events = await self.get_event_dict_for_date(
             location, camera, most_recent_day
         )
