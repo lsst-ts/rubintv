@@ -193,6 +193,8 @@ async def get_camera_page(
         template = "not_online"
     if camera.name == "allsky":
         template = "allsky"
+    if not table:
+        template = "camera_empty"
 
     return templates.TemplateResponse(
         f"{template}.jinja",

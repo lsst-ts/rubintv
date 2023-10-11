@@ -209,6 +209,11 @@ section
 		left: 0
 		pointer-events: none
 
+.per-day-channels
+	margin-bottom: 1em
+	> *
+		margin-right: 1em
+
 .event-info
 	display: flex
 	flex-direction: row
@@ -228,7 +233,10 @@ section
 	margin-left: 1em
 	height: 42px
 
-.channel-grid-heading
+#channel-day-data
+	width: max-content
+
+.above-table-sticky
 	padding-top: 1em
 	position: sticky
 	top: 0
@@ -240,20 +248,22 @@ section
 	h3
 		margin-bottom: 0
 
-.per-day-channels
-	margin-bottom: 1em
-	> *
-		margin-right: 1em
+.table-container
+	width: 100%
 
-.channel-grid
+.camera-table
 	font-family: 'Red Hat Mono', monospace
 	border-spacing: 2px
 	border-collapse: separate
+	thead
+		position: sticky
+		top: 3.7em
 
 .grid-title
 	text-align: left
-	position: sticky
-	top: 13em
+	position: relative
+	height: 10em
+	top: 8.8em
 	font-size: 14px
 	cursor: pointer
 	&.sideways
@@ -269,11 +279,6 @@ section
 	height: 42px
 	box-sizing: border-box
 
-
-.table-spacer
-	height: 8.7em
-	position: sticky
-	top: 3.7em
 
 .meta-group
 	height: 20px
@@ -382,7 +387,7 @@ section
 	display: flex
 	flex-direction: column
 	justify-content: space-between
-	top: 157px
+	top: 12.4em
 	left: -30px
 	gap: 2px
 	.jump-button
