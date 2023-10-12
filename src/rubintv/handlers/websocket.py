@@ -1,3 +1,4 @@
+import json
 import re
 import uuid
 
@@ -35,14 +36,22 @@ async def data_websocket(
 
     try:
         while True:
-            data: dict = await websocket.receive_json()
-            if not await is_valid_client_request(data):
+            raw: str = await websocket.receive_text()
+            logger.info("Received:", raw=raw)
+            try:
+                data: dict = json.loads(raw)
+            except json.JSONDecodeError as e:
+                logger.error("JSON not well formed", error=e)
                 continue
-            r_client_id = data["clientID"]
+            if not await is_valid_client_request(data):
+                logger.error("Not valid request", data=data)
+                continue
+            r_client_id = uuid.UUID(data["clientID"])
             if "messageType" not in data:
                 logger.warn(
-                    "No message type found in message from client",
+                    "No message type found in data from client",
                     client_id=r_client_id,
+                    data=data,
                 )
                 continue
             message_type = data["messageType"]
@@ -58,6 +67,15 @@ async def data_websocket(
                         )
                     continue
                 case "historicalStatus":
+                    historical_busy = (
+                        await websocket.app.state.historical.is_busy()
+                    )
+                    await websocket.send_json(
+                        {
+                            "dataType": "historicalStatus",
+                            "payload": historical_busy,
+                        }
+                    )
                     async with services_lock:
                         if "historicalStatus" not in services_clients:
                             services_clients["historicalStatus"] = [
@@ -139,10 +157,11 @@ async def attach_service(
 async def is_valid_client_request(data: dict) -> bool:
     logger = structlog.get_logger(__name__)
     try:
-        client_id = data["clientID"]
-    except KeyError:
+        client_id = uuid.UUID(data["clientID"])
+    except (KeyError, ValueError):
         logger.warn("Received json without client_id")
         return False
+    logger.info("Looking for", client_id=client_id, clients=clients)
     return client_id in clients.keys()
 
 

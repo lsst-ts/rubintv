@@ -1,34 +1,21 @@
-import { initWebSocketClient } from './modules/utils.js'
+import { _getById } from './modules/utils.js'
+import { WebsocketClient } from './modules/websocket_client.js'
 /*
-Listens for the status of the historical poller via websocket.
-If it's not busy, all is well and the connection is closed.
-If it is busy but we haven't been notified before, make a note of the
-busy-ness.
-If it's been busy before and now it's not, reload the page and close the
-connection.
-This can re-run safely when the page is reloaded.
+Listens for the status of the historical poller via an event from the websocket
+client if the #historicalBusy element shows that historical data for the site
+is still loading. Reloads the page once notified that historical data is ready.
 */
 
-const socket = initWebSocketClient('/status')
-
-let hasBeenBusy = null
-socket.onmessage = (message) => {
-  const data = JSON.parse(message.data)
-  if (Object.hasOwn(data, 'historicalBusy')) {
-    const isBusy = data.historicalBusy
-    if (!isBusy && hasBeenBusy) {
-      window.location.reload()
-      socket.close()
-    } else if (!isBusy) {
-      socket.close()
-    } else {
-      hasBeenBusy = true
-    }
+window.addEventListener('load', () => {
+  if (_getById('historicalbusy') && _getById('historicalbusy').dataset.historicalbusy === 'False') {
+    return
   }
-}
-socket.onopen = () => {
-  console.log('Listening for historical status...')
-}
-socket.onclose = () => {
-  console.log('Status websocket closed')
-}
+  // eslint-disable-next-line no-undef
+  ws = new WebsocketClient('historicalStatus')
+  window.addEventListener('historicalStatus', (message) => {
+    const isBusy = message.data
+    if (!isBusy) {
+      window.location.reload()
+    }
+  })
+})

@@ -193,7 +193,7 @@ async def get_camera_page(
         template = "not_online"
     if camera.name == "allsky":
         template = "allsky"
-    if not table:
+    if not table and not historical_busy:
         template = "camera_empty"
 
     return templates.TemplateResponse(
@@ -260,7 +260,7 @@ async def get_camera_for_date_page(
     template = "historical"
     if camera.name == "allsky":
         template = "allsky-historical"
-    if not table:
+    if not table and not historical_busy:
         template = "camera_empty"
 
     return templates.TemplateResponse(
@@ -330,7 +330,7 @@ async def get_historical_camera_page(
     template = "historical"
     if camera.name == "allsky":
         template = "allsky-historical"
-    if not table:
+    if not table and not historical_busy and not historical_busy:
         template = "camera_empty"
 
     return templates.TemplateResponse(

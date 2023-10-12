@@ -6,7 +6,7 @@ from datetime import date
 import structlog
 
 from rubintv.background.background_helpers import get_metadata_obj
-from rubintv.handlers.websocket_notifiers import notify_status_change
+from rubintv.handlers.websocket_notifiers import notify_all_status_change
 from rubintv.models.helpers import (
     event_list_to_channel_keyed_dict,
     objects_to_events,
@@ -71,7 +71,7 @@ class HistoricalPoller:
                     self._last_reload = get_current_day_obs()
                     self._have_downloaded = True
                     logger.info("Completed historical")
-                    await notify_status_change(historical_busy=False)
+                    await notify_all_status_change(historical_busy=False)
                 else:
                     await asyncio.sleep(self.CHECK_NEW_DAY_PERIOD)
         except Exception as e:

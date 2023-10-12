@@ -1,6 +1,7 @@
 import { TableControls } from '../modules/table-control.js'
-import { parseJsonFromDOM, initWebSocketClient } from '../modules/utils.js'
+import { parseJsonFromDOM } from '../modules/utils.js'
 import { addToTable } from '../modules/draw-simple-meta.js'
+// import { initWebSocketClient } from '../modules/websocket_client.js'
 
 window.addEventListener('load', function () {
   const cameraJson = parseJsonFromDOM('#cameraJson')
@@ -16,28 +17,28 @@ window.addEventListener('load', function () {
     addToTable(meta, tableControls.selected, defaultHeadersAndDescs)
   }
 
-  const location = this.document.documentElement.dataset.location
-  const camera = cameraJson.name
-  let serviceConnected = false
-  const ws = initWebSocketClient('/')
-  ws.onopen = () => {
-    const req = `camera ${location}/${camera}`
-    console.log(`sending: ${req}`)
-    ws.send(req)
-  }
-  ws.onmessage = (message) => {
-    const res = message.data
-    if (serviceConnected) {
-      const data = JSON.parse(res)
-      consumeWSData(data)
-    }
-    if (res === `OK/${location}/${camera}`) {
-      console.log(res)
-      serviceConnected = true
-    }
-  }
+  // const location = this.document.documentElement.dataset.location
+  // const camera = cameraJson.name
+  // let serviceConnected = false
+  // initWebSocketClient('/')
+  // ws.onopen = () => {
+  //   const req = `camera ${location}/${camera}`
+  //   console.log(`sending: ${req}`)
+  //   ws.send(req)
+  // }
+  // ws.onmessage = (message) => {
+  //   const res = message.data
+  //   if (serviceConnected) {
+  //     const data = JSON.parse(res)
+  //     consumeWSData(data)
+  //   }
+  //   if (res === `OK/${location}/${camera}`) {
+  //     console.log(res)
+  //     serviceConnected = true
+  //   }
+  // }
 
-  function consumeWSData (data) {
-    console.log(data)
-  }
+  // function consumeWSData (data) {
+  //   console.log(data)
+  // }
 })

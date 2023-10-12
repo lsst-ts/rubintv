@@ -1,5 +1,3 @@
-import ReconnectingWebSocket from 'reconnecting-websocket'
-
 /**
 * @param {string | any[]} arrayA
 * @param {any} arrayB
@@ -263,20 +261,6 @@ export function drawMetaColumnsAndRows (metaData, columns) {
       })
     }
   })
-}
-
-/**
- * @param {string} endpoint
- */
-export function initWebSocketClient (endpoint = '/') {
-  const protocol = window.location.protocol
-  const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:'
-  const hostname = window.location.host
-  const appName = window.location.pathname.split('/')[1]
-  const wsUrl = `${wsProtocol}//${hostname}/${appName}/ws${endpoint}`
-
-  const rws = new ReconnectingWebSocket(wsUrl, undefined, { maxRetries: 2 })
-  return rws
 }
 
 function clearLocalStorageOnNewVersion () {

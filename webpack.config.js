@@ -4,22 +4,24 @@ const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 
 const pagesWithoutHistory = [
-  'admin'
+  'admin',
+  'night_report'
 ].reduce((pages, page) => ({
   ...pages, [page]: `./src/js/pages/${page}.js`
 }), {})
 
 const pagesWithHistory = [
-  'auxtel',
-  'startracker',
   'current',
-  'allsky_historical',
+  'auxtel',
   'auxtel_historical',
+  'allsky',
+  'allsky_historical',
+  'startracker',
   'startracker_historical',
-  'night_report',
   'night_report_historical'
 ].reduce((pages, page) => ({
-  ...pages, [page]: [`./src/js/pages/${page}.js`, './src/js/reload_on_historical.js']
+  ...pages,
+  [page]: [`./src/js/pages/${page}.js`, './src/js/modules/websocket_client.js', './src/js/reload_on_historical.js']
 }), {})
 
 module.exports = {

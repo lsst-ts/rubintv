@@ -52,38 +52,39 @@ class CurrentPoller:
         self._channels = {}
 
     async def poll_buckets_for_todays_data(self) -> None:
-        # try:
-        while True:
-            if self._current_day_obs != get_current_day_obs():
-                await self.clear_all_data()
-            day_obs = self._current_day_obs = get_current_day_obs()
-            for location in self.locations:
-                client = self._clients[location.name]
-                for camera in location.cameras:
-                    if not camera.online:
-                        continue
-                    prefix = f"{camera.name}/{day_obs}"
-                    # handle blocking call in async code
-                    executor = ThreadPoolExecutor(max_workers=3)
-                    loop = asyncio.get_event_loop()
-                    objects = await loop.run_in_executor(
-                        executor, client.list_objects, prefix
-                    )
-                    loc_cam = await self.build_loc_cam(location, camera)
+        try:
+            while True:
+                if self._current_day_obs != get_current_day_obs():
+                    await self.clear_all_data()
+                day_obs = self._current_day_obs = get_current_day_obs()
+                logger = structlog.get_logger(__name__)
+                for location in self.locations:
+                    client = self._clients[location.name]
+                    for camera in location.cameras:
+                        if not camera.online:
+                            continue
+                        prefix = f"{camera.name}/{day_obs}"
+                        # handle blocking call in async code
+                        executor = ThreadPoolExecutor(max_workers=3)
+                        loop = asyncio.get_event_loop()
+                        objects = await loop.run_in_executor(
+                            executor, client.list_objects, prefix
+                        )
+                        loc_cam = await self.build_loc_cam(location, camera)
 
-                    objects = await self.seive_out_metadata(
-                        objects, prefix, location, camera
-                    )
-                    objects = await self.seive_out_night_reports(
-                        objects, loc_cam, location
-                    )
-                    await self.process_channel_objects(
-                        objects, loc_cam, camera
-                    )
-            self.completed_first_poll = True
-            await asyncio.sleep(3)
-        # except Exception as e:
-        #     logger.error(e)
+                        objects = await self.seive_out_metadata(
+                            objects, prefix, location, camera
+                        )
+                        objects = await self.seive_out_night_reports(
+                            objects, loc_cam, location
+                        )
+                        await self.process_channel_objects(
+                            objects, loc_cam, camera
+                        )
+                self.completed_first_poll = True
+                await asyncio.sleep(3)
+        except Exception as e:
+            logger.error("Error", error=e)
 
     async def build_loc_cam(self, location: Location, camera: Camera) -> str:
         return f"{location.name}/{camera.name}"
@@ -95,10 +96,10 @@ class CurrentPoller:
             loc_cam not in self._objects or objects != self._objects[loc_cam]
         ):
             self._objects[loc_cam] = objects
-        events = objects_to_events(objects)
-        await self.update_channel_events(events, camera, loc_cam)
-        cam_msg = (loc_cam, events)
-        await notify_camera_events_update(cam_msg)
+            events = objects_to_events(objects)
+            await self.update_channel_events(events, camera, loc_cam)
+            cam_msg = (loc_cam, events)
+            await notify_camera_events_update(cam_msg)
 
     async def update_channel_events(
         self, events: list[Event], camera: Camera, loc_cam: str
@@ -117,8 +118,8 @@ class CurrentPoller:
                 or self._channels[chan_lookup] != current_event
             ):
                 self._channels[chan_lookup] = current_event
-                # logger.info(f"Notifying {chan_lookup} with {current_event}")
-                await notify_channel_update((chan_lookup, current_event))
+                message = (chan_lookup, current_event)
+                await notify_channel_update(message)
 
     async def seive_out_metadata(
         self,
@@ -130,7 +131,7 @@ class CurrentPoller:
         logger = structlog.get_logger(__name__)
         # if the metadata for this camera is under another camera's name, this
         # is a no op.
-        if camera.metadata_slug:
+        if camera.metadata_from:
             return objects
         try:
             md_obj, objects = await self.filter_camera_metadata_object(objects)
@@ -185,8 +186,9 @@ class CurrentPoller:
             loc_cam not in self._metadata or data != self._metadata[loc_cam]
         ):
             self._metadata[loc_cam] = data
-            to_notify = (
-                c for c in location.cameras if c.metadata_slug == camera.name
+            to_notify = [camera]
+            to_notify.extend(
+                c for c in location.cameras if c.metadata_from == camera.name
             )
             for cam in to_notify:
                 loc_cam = await self.build_loc_cam(location, cam)
@@ -267,8 +269,8 @@ class CurrentPoller:
         self, location_name: str, camera: Camera
     ) -> dict | None:
         name = camera.name
-        if camera.metadata_slug:
-            name = camera.metadata_slug
+        if camera.metadata_from:
+            name = camera.metadata_from
         loc_cam = f"{location_name}/{name}"
         if loc_cam in self._metadata:
             return self._metadata[loc_cam]

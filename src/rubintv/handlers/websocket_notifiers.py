@@ -1,4 +1,4 @@
-from typing import Any, Tuple
+from typing import Any, Mapping, Tuple
 from uuid import UUID
 
 from rubintv.handlers.websockets_clients import (
@@ -8,11 +8,6 @@ from rubintv.handlers.websockets_clients import (
     services_lock,
 )
 from rubintv.models.models import Event, NightReportPayload
-
-__all__ = [
-    "notify_camera_events_update",
-    "notify_channel_update",
-]
 
 
 async def notify_camera_events_update(
@@ -75,17 +70,17 @@ async def notify_night_report_update(
     loc_cam, night_report = message
     service_loc_cam_chan = " ".join([service, loc_cam])
     to_notify = await get_clients_to_notify(service_loc_cam_chan)
-    await notify_clients(to_notify, "nightReport", night_report.__dict__)
+    await notify_clients(to_notify, "nightReport", night_report)
 
 
 async def notify_clients(
-    clients_list: list[UUID], data_type: str, payload: dict
+    clients_list: list[UUID], data_type: str, payload: Mapping
 ) -> None:
     async with clients_lock:
         for client_id in clients_list:
             websocket = clients[client_id]
             await websocket.send_json(
-                {"data_type": data_type, "payload": payload}
+                {"dataType": data_type, "payload": payload}
             )
 
 
@@ -98,7 +93,7 @@ async def get_clients_to_notify(service_cam_id: str) -> list[UUID]:
     return to_notify
 
 
-async def notify_status_change(historical_busy: bool) -> None:
+async def notify_all_status_change(historical_busy: bool) -> None:
     key = "historicalStatus"
     async with services_lock:
         if key not in services_clients:
@@ -108,4 +103,12 @@ async def notify_status_change(historical_busy: bool) -> None:
         async with clients_lock:
             for client_id in to_notify:
                 websocket = clients[client_id]
-                await websocket.send_json({"historicalBusy": historical_busy})
+                await websocket.send_json(
+                    {
+                        "dataType": "historicalStatus",
+                        "payload": historical_busy,
+                    }
+                )
+
+
+# async def notify_of_status(client_id: UUID, historical_busy: bool) -> None:

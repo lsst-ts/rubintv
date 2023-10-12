@@ -6,7 +6,7 @@ import { applyYearControls } from '../modules/calendar-controls.js'
 window.addEventListener('DOMContentLoaded', () => {
   const headers = parseJsonFromDOM('#metadata-headers')
   const meta = parseJsonFromDOM('#table-metadata')
-  const tableControls = new TableControls(headers, meta, '.channel-grid-heading', drawMeta)
+  const tableControls = new TableControls(headers, meta, '.above-table-sticky', drawMeta)
   drawMeta(meta, tableControls.groupedSelected)
   applyYearControls()
 })

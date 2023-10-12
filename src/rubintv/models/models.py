@@ -29,7 +29,7 @@ class Camera(BaseModel):
     name: str
     title: str
     online: bool
-    metadata_slug: str = ""
+    metadata_from: str = ""
     logo: str = ""
     image_viewer_link: str = ""
     channels: list[Channel] = []
@@ -38,8 +38,8 @@ class Camera(BaseModel):
     metadata_cols: dict[str, dict[str, str]] | dict[str, str] | None = None
     js_entry: str = ""
 
-    # If metadata_slug/js_entry not set, use name as default
-    @field_validator("metadata_slug", "js_entry")
+    # If metadata_from/js_entry not set, use name as default
+    @field_validator("metadata_from", "js_entry")
     def default_as_name(cls: Type, v: str, values: Any) -> str:
         return v or values.get("name")
 
