@@ -10,12 +10,12 @@ __all__ = ["make_table_rows_from_columns_by_seq", "build_title"]
 
 async def make_table_rows_from_columns_by_seq(
     event_data: EventJSONDict, channels: list[Channel]
-) -> dict[int, dict[str, Event]]:
-    """Returns a dict of dicts of `Events`, keyed outwardly by sequence number
+) -> dict[int, dict[str, dict]]:
+    """Returns a dict of dicts of Event-based dicts, keyed outwardly by seq num
     and inwardly by channel name for displaying as a table.
 
-    If a sequence number appears in the given metadata that is not otherwise
-    in the given `events_dict` it is appended as the key for an empty dict.
+    If a sequence number appears in the metadata that is not otherwise in the
+    given `"channel_events"` then it is appended as the key for an empty dict.
     This is so that if metadata exists, a row can be drawn on the table without
     there needing to be anything in the channels.
 
@@ -39,7 +39,7 @@ async def make_table_rows_from_columns_by_seq(
 
     """
     logger = structlog.get_logger(__name__)
-    d: dict[int, dict[str, Event]] = {}
+    d: dict[int, dict[str, dict]] = {}
     if dict_events := event_data["channel_events"]:
         for chan in channels:
             if chan.name not in dict_events:
@@ -50,9 +50,9 @@ async def make_table_rows_from_columns_by_seq(
                     if not isinstance(e.seq_num, int):
                         continue
                     if e.seq_num in d:
-                        d[e.seq_num].update({chan.name: e})
+                        d[e.seq_num].update({chan.name: e.__dict__})
                     else:
-                        d.update({e.seq_num: {chan.name: e}})
+                        d.update({e.seq_num: {chan.name: e.__dict__}})
     # add an empty row for sequence numbers found only in metadata
     if metadata := event_data["metadata"]:
         for seq_str in metadata:

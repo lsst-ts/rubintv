@@ -10,22 +10,22 @@ import {
  * @param {string[]} selection
  * @param {{ [s: string]: any; } | ArrayLike<any>} metaData
  */
-export function addToTable (metaData, selection, headerDescs) {
+export function addToTable (metaData, selection, columnNames) {
   // remove existing metadata part of table
   Array.from(document.querySelectorAll('.meta')).forEach(gridElement => {
     gridElement.remove()
   })
 
   // add metadata headers to the table
-  selection.forEach((/** @type {string} */ attr) => {
-    const escapedName = _escapeName(attr)
-    const lastHeaderCall = Array.from(document.querySelectorAll('.grid-title')).pop()
+  selection.forEach((/** @type {string} */ colName) => {
+    const escapedName = _escapeName(colName)
+    const lastChannelCol = Array.from(document.querySelectorAll('.grid-title')).pop()
     const el = _elWithClass('th', `grid-title sideways meta ${escapedName}`)
-    el.textContent = attr
-    if (headerDescs[attr]) {
-      el.title = headerDescs[attr]
+    el.textContent = colName
+    if (columnNames[colName]) {
+      el.title = columnNames[colName]
     }
-    lastHeaderCall.after(el)
+    lastChannelCol.after(el)
   })
 
   drawMetaColumnsAndRows(metaData, selection)
@@ -46,6 +46,10 @@ export function addToTable (metaData, selection, headerDescs) {
     })
   }
 
+  addClickListenerToCopyButtons()
+}
+
+function addClickListenerToCopyButtons () {
   Array.from(document.querySelectorAll('.button.copy')).forEach(button => {
     button.addEventListener('click', function () {
       const seq = this.dataset.seq

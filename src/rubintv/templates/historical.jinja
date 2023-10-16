@@ -1,4 +1,4 @@
-{% extends "_camera.jinja" %}
+{% extends "camera.jinja" %}
 {% block pagesubtitle %}
 Historical Data
 {% endblock pagesubtitle %}
@@ -22,21 +22,21 @@ Historical Data
   </section>
 
   <section id="channel-day-data">
-    <div class="columns">
+    {# <div class="columns">
       {% include "camera_parts/night-report-link.jinja" %}
       {% include "camera_parts/per-day-channels.jinja" %}
     </div>
-    {% include "camera_parts/data-table-header.jinja" %}
+    {% include "camera_parts/data-table-header.jinja" %} #}
   </section>
 
 {% endif %}
 {% endblock content %}
 
-{% block footer_scripts %}
+{# {% block footer_scripts %}
   {% if camera.js_entry %}
-    {% set filename = "assets/" + camera.js_entry + "_historical.js" %}
+    {% set filename = "assets/" + camera.js_entry + ".js" %}
   {% else %}
-    {% set filename = "assets/" + camera.name + "_historical.js" %}
+    {% set filename = "assets/" + camera.name + ".js" %}
   {% endif %}
     <script src="{{ url_for('static', path=filename) }}"></script>
-{% endblock footer_scripts %}
+{% endblock footer_scripts %} #}

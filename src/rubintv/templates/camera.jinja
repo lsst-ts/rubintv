@@ -58,13 +58,18 @@
       </section>
 
       <section id="channel-day-data">
-        {% include "camera_parts/data-table-header.jinja" %}
+        {# {% include "camera_parts/data-table-header.jinja" %} #}
       </section>
+
   {% endif %}
 {% endblock content %}
 
 {% block footer_scripts %}
-
+    <script>
+      window.APP_DATA.tableMetadata = {{ metadata|tojson }}
+      window.APP_DATA.tableChannels = {{ table|tojson }}
+      window.APP_DATA.eventURL = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}"
+    </script>
   {% if camera.js_entry %}
     {% set cam_js = "assets/" + camera.js_entry + ".js" %}
   {% else %}

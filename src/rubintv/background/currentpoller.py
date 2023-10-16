@@ -58,6 +58,7 @@ class CurrentPoller:
                     await self.clear_all_data()
                 day_obs = self._current_day_obs = get_current_day_obs()
                 logger = structlog.get_logger(__name__)
+
                 for location in self.locations:
                     client = self._clients[location.name]
                     for camera in location.cameras:

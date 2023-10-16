@@ -38,7 +38,7 @@ cameras:
     online: True
     night_report_prefix: auxtel_night_reports
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/view.html?\
-    image=AT_O_{day_obs}_{seq_num:06}\
+    image=AT_O_{dayObs}_{seqNum}\
     &raft=R00&color=grey&bias=Simple+Overscan+Correction\
     &scale=Per-Segment&source=RubinTV"
     channels:
@@ -120,7 +120,7 @@ cameras:
         title: Noise Map
     js_entry: auxtel
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
-    view.html?image=CC_O_{day_obs}_{seq_num:06}"
+    view.html?image=CC_O_{dayObs}_{seqNum}"
 
   - name: lsstcam
     title: LSSTCam
@@ -141,7 +141,7 @@ cameras:
     night_report_prefix: slac_lsstcam_night_reports
     night_report_label: Trending Plots
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
-    FITSInfo/view.html?image=MC_C_{day_obs}_{seq_num:06}"
+    FITSInfo/view.html?image=MC_C_{dayObs}_{seqNum}"
 
 
   - name: slac_ts8
@@ -155,7 +155,7 @@ cameras:
     js_entry: auxtel
     logo: ts8.png
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
-    FITSInfo/view.html?image=TS_C_{day_obs}_{seq_num:06}"
+    FITSInfo/view.html?image=TS_C_{dayObs}_{seqNum}"
     night_report_prefix: ts8_night_reports
     night_report_label: Trending Plots
 
@@ -180,7 +180,7 @@ cameras:
         title: Tonight's Movie
         label: "Movie for "
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/view.html?\
-    image=AT_O_{day_obs}_{seq_num:06}\
+    image=AT_O_{dayObs}_{seqNum}\
     &raft=R00&color=grey&bias=Simple+Overscan+Correction\
     &scale=Per-Segment&source=RubinTV"
 

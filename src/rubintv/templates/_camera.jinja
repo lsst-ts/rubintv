@@ -13,8 +13,9 @@
 
 {% block further %}
   {% if camera_json %}
-      <script type="application/json" id="cameraJson">
-        {{ camera_json|tojson }}
+      <script>
+        window.APP_DATA.camera = {{ camera_json|tojson }}
+        window.APP_DATA.date = "{{ date }}"
       </script>
   {% endif %}
   <div id="historicalbusy" data-historicalbusy="{{ historical_busy }}">

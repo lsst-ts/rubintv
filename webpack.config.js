@@ -48,15 +48,27 @@ module.exports = {
       new CssMinimizerPlugin()
     ]
   },
+  resolve: {
+    extensions: ['.js', '.jsx']
+  },
   module: {
-    rules: [{
-      test: /\.(s[ac]ss|css)$/i,
-      use: [
-        MiniCssExtractPlugin.loader,
-        { loader: 'css-loader', options: { sourceMap: true } },
-        { loader: 'postcss-loader', options: { sourceMap: true } },
-        { loader: 'sass-loader', options: { sourceMap: true } }
-      ]
-    }]
+    rules: [
+      {
+        test: /\.(s[ac]ss|css)$/i,
+        use: [
+          MiniCssExtractPlugin.loader,
+          { loader: 'css-loader', options: { sourceMap: true } },
+          { loader: 'postcss-loader', options: { sourceMap: true } },
+          { loader: 'sass-loader', options: { sourceMap: true } }
+        ]
+      },
+      {
+        test: /\.(js|jsx)$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader'
+        }
+      }
+    ]
   }
 }
