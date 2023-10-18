@@ -83,7 +83,7 @@ class CurrentPoller:
                             objects, loc_cam, camera
                         )
                 self.completed_first_poll = True
-                await asyncio.sleep(3)
+                await asyncio.sleep(5)
         except Exception as e:
             logger.error("Error", error=e)
 

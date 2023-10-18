@@ -1,6 +1,9 @@
 import ReconnectingWebSocket from 'reconnecting-websocket'
+import { validate } from 'uuid'
 
 export class WebsocketClient {
+  // wsType is either 'historicalStatus' or 'service'
+  // pageType for 'service's are either 'camera', 'channel' or 'nightreport'
   constructor (wsType, pageType = null, location = null, camera = null, channel = null) {
     this.clientID = null
     const pageID = [location, camera, channel].filter((el) => el).join('/')
@@ -11,7 +14,7 @@ export class WebsocketClient {
     this.ws.onmessage = this.handleMessage.bind(this)
     // this.ws.onopen = this.handleOpen.bind(this)
     // this.ws.onerror = this.handleError.bind(this)
-    // this.ws.onclose = this.handleClose.bind(this)
+    this.ws.onclose = this.handleClose.bind(this)
   }
 
   #getInitMessage (wsType, pageType, pageID) {
@@ -43,24 +46,52 @@ export class WebsocketClient {
     return new Event(eventName, { data: null })
   }
 
+  handleClose (e) {
+    console.debug(e)
+  }
+
   handleMessage (messageEvent) {
-    console.log(messageEvent)
+    console.debug(messageEvent)
     if (!this.clientID) {
-      this.clientID = messageEvent.data
-      const clientID = this.clientID
-      console.log(`Received client ID: ${clientID}`)
-      const message = this.initMessage
-      message.clientID = this.clientID
-      this.ws.send(JSON.stringify(message))
-      return
+      const id = this.setClientID(messageEvent.data)
+      if (id) {
+        this.sendInitialMessage()
+        return
+      }
     }
-    const data = JSON.parse(messageEvent.data)
-    console.log(data)
+    let data
+    try {
+      data = JSON.parse(messageEvent.data)
+    } catch (error) {
+      const valid = this.setClientID(messageEvent.data)
+      if (valid) {
+        this.sendInitialMessage()
+        return
+      } else {
+        console.debug('Couldn\'t parse message:', messageEvent.data)
+      }
+    }
     if (!data.dataType || !Object.hasOwn(data, 'payload')) {
       return
     }
     const event = this.wsEvent
     event.data = data.payload
     window.dispatchEvent(event)
+  }
+
+  setClientID (messageData) {
+    const id = messageData
+    if (validate(id)) {
+      this.clientID = id
+      console.debug(`Received client ID: ${id}`)
+      return id
+    }
+    return null
+  }
+
+  sendInitialMessage () {
+    const message = this.initMessage
+    message.clientID = this.clientID
+    this.ws.send(JSON.stringify(message))
   }
 }

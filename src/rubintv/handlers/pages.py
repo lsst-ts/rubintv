@@ -469,6 +469,6 @@ async def get_current_channel_event_page(
             "location": location,
             "camera": camera,
             "channel": channel,
-            "event": event,
+            "event": event.__dict__,
         },
     )

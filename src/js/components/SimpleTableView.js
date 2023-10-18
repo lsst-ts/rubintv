@@ -169,7 +169,6 @@ TableHeader.propTypes = {
 }
 
 export default function SimpleTableView ({ camera, channelData, metadata, metadataColumns }) {
-  console.log('simpleTable', metadataColumns)
   return (
       <table className="camera-table">
         <TableHeader camera={camera}

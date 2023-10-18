@@ -23,8 +23,8 @@
 
 {% block content %}
 
+{% if event %}
   <div class="event-info">
-  {% if event %}
     <h2>
       <span id="date">{{ event.day_obs }}</span>: Sequence
       <span id="seqNum">{{ event.seq_num }}</span>
@@ -32,18 +32,25 @@
     <nav class="prev-next-nav">
 
     </nav>
-    </div>
+  </div>
     {% set img_url = url_for('event_image',
                     location_name=location.name,
                     camera_name=camera.name,
                     channel_name=channel.name,
                     filename=event.filename + '.' + event.ext) %}
-    <a href="{{ img_url }}" class="event-link">
+    <a href="{{ img_url }}" class="event-link" id="eventLink">
       <img id="eventImage" src="{{ img_url }}" class="resp">
       <p id="eventName" class="desc">{{ event.filename }}</p>
     </a>
   {% else %}
     <h2>There are no events for this channel</h2>
   {% endif %}
-
 {% endblock content %}
+{% block further %}
+  {% set img_url = url_for('event_image',
+                    location_name=location.name,
+                    camera_name=camera.name,
+                    channel_name=channel.name,
+                    filename=event.filename + '.' + event.ext) %}
+ <script>window.APP_DATA.imgURL = "{{ img_url|safe }}"</script>
+{% endblock further %}
