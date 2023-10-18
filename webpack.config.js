@@ -11,17 +11,17 @@ const pagesWithoutHistory = [
 }), {})
 
 const pagesWithHistory = [
+  'camera-table',
   'current',
-  'auxtel',
-  'auxtel_historical',
   'allsky',
-  'allsky_historical',
-  'startracker',
-  'startracker_historical',
   'night_report_historical'
 ].reduce((pages, page) => ({
   ...pages,
-  [page]: [`./src/js/pages/${page}.js`, './src/js/modules/websocket_client.js', './src/js/reload_on_historical.js']
+  [page]: [`./src/js/pages/${page}.js`,
+    './src/js/modules/websocket_client.js',
+    './src/js/reload_on_historical.js',
+    './src/js/modules/calendar-controls.js'
+  ]
 }), {})
 
 module.exports = {

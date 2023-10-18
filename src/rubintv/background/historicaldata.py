@@ -108,11 +108,11 @@ class HistoricalPoller:
             if cam.online:
                 logger.info(f"Listing objects for {location.name}/{cam.name}")
                 try:
-                    objects.extend(
-                        self._clients[location.name].list_objects(
-                            prefix=cam.name
-                        )
+                    one_load = self._clients[location.name].list_objects(
+                        prefix=cam.name
                     )
+                    objects.extend(one_load)
+                    logger.info("Found:", num_objects=len(one_load))
                 except Exception as e:
                     logger.error(e)
         return objects
@@ -138,6 +138,7 @@ class HistoricalPoller:
         )
         logger.info(f"Building historical events for {locname}")
         events = objects_to_events(event_objs)
+        logger.info("Events created:", num_events=len(events))
         self._events[locname] = events
 
     async def build_year_dict(
@@ -333,13 +334,13 @@ class HistoricalPoller:
             The integer seq_num of the last Event for that Camera and day.
         """
         events = await self.get_events_for_date(location, camera, a_date)
-        channel_names = [chan.name for chan in camera.seq_channels()]
+        channel_names = [chan.name for chan in camera.channels]
         channel_events = [e for e in events if e.channel_name in channel_names]
         max_seq = max(
             channel_events, key=lambda e: e.seq_num_force_int()
         ).seq_num
         if isinstance(max_seq, str):
-            return 0
+            return 1
         return max_seq
 
     async def get_events_for_date(

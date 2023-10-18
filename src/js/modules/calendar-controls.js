@@ -1,6 +1,6 @@
 import { _getById } from './utils.js'
 
-export function applyYearControls () {
+function applyYearControls () {
   const years = document.querySelectorAll('.year-title')
   const yearPanels = document.querySelectorAll('.year')
   Array.from(years).forEach(year => {
@@ -17,3 +17,5 @@ export function applyYearControls () {
     })
   })
 }
+
+applyYearControls()

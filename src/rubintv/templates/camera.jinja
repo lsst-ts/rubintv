@@ -57,11 +57,11 @@
           </nav>
       </section>
 
-      <section id="channel-day-data">
-        {# {% include "camera_parts/data-table-header.jinja" %} #}
-      </section>
 
   {% endif %}
+  <section id="channel-day-data">
+    {# {% include "camera_parts/data-table-header.jinja" %} #}
+  </section>
 {% endblock content %}
 
 {% block footer_scripts %}
@@ -70,12 +70,6 @@
       window.APP_DATA.tableChannels = {{ table|tojson }}
       window.APP_DATA.eventURL = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}"
     </script>
-  {% if camera.js_entry %}
-    {% set cam_js = "assets/" + camera.js_entry + ".js" %}
-  {% else %}
-    {% set cam_js = "assets/" + camera.name + ".js" %}
-  {% endif %}
-    <script src='{{ url_for("static", path=cam_js) }}'></script>
-
+    <script src='{{ url_for("static", path="assets/camera-table.js") }}'></script>
   {{ super() }}
 {% endblock footer_scripts  %}

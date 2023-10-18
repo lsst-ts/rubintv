@@ -95,7 +95,6 @@ def proxy_plot_image(
     group_name: str,
     filename: str,
     request: Request,
-    logger: BoundLogger = Depends(logger_dependency),
 ) -> StreamingResponse:
     # auxtel_night_report_2023-08-16_Coverage_airmass
 
@@ -220,7 +219,11 @@ async def get_camera_page(
     name="camera_for_date",
 )
 async def get_camera_for_date_page(
-    location_name: str, camera_name: str, date_str: str, request: Request
+    location_name: str,
+    camera_name: str,
+    date_str: str,
+    request: Request,
+    logger: BoundLogger = Depends(logger_dependency),
 ) -> Response:
     location, camera = await get_location_camera(
         location_name, camera_name, request
@@ -260,7 +263,7 @@ async def get_camera_for_date_page(
     template = "historical"
     if camera.name == "allsky":
         template = "allsky-historical"
-    if not table and not historical_busy:
+    if not calendar and not historical_busy:
         template = "camera_empty"
 
     return templates.TemplateResponse(
@@ -330,7 +333,7 @@ async def get_historical_camera_page(
     template = "historical"
     if camera.name == "allsky":
         template = "allsky-historical"
-    if not table and not historical_busy and not historical_busy:
+    if not calendar and not historical_busy:
         template = "camera_empty"
 
     return templates.TemplateResponse(

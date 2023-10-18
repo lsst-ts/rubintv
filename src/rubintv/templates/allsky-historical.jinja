@@ -21,11 +21,11 @@ Historical Movie
         {% include "camera_parts/calendar.jinja" %}
       </section>
       <section class="current-movie historical">
-        {% include "camera_parts/allsky-movie.jinja" %}
+        {# {% include "camera_parts/allsky-movie.jinja" %} #}
       </section>
     </div>
   {% endif %}
 {% endblock content %}
 {% block footer_scripts %}
-  {# <script src="{{ url('static', filename='assets/allsky_historical.js') }}"></script> #}
+  <script src="{{ url_for('static', path='assets/allsky.js') }}"></script>
 {% endblock footer_scripts %}

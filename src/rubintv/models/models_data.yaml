@@ -31,7 +31,6 @@ cameras:
       - name: tma_mount_motion_profile
         title: Mount motion profile
         prefix: tma_mount_motion_profile
-    js_entry: auxtel
 
   - name: auxtel
     title: AuxTel
@@ -84,7 +83,6 @@ cameras:
         title: Wide Analysis
         label: ST Wide Analysis
     night_report_prefix: startracker_night_reports
-    js_entry: startracker
 
   - name: startracker_fast
     title: StarTracker Fast
@@ -98,7 +96,6 @@ cameras:
         title: Analysis
         prefix: analysis
     night_report_prefix: startracker_night_reports
-    js_entry: startracker
 
   - name: allsky
     title: All Sky
@@ -118,7 +115,6 @@ cameras:
         title: Focal Plane mosaic
       - name: noise_map
         title: Noise Map
-    js_entry: auxtel
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
     view.html?image=CC_O_{dayObs}_{seqNum}"
 
@@ -136,7 +132,6 @@ cameras:
         title: Noise Map
       - name: ccob_analysis
         title: CCOB Analysis
-    js_entry: auxtel
     logo: slac_lsstcam.png
     night_report_prefix: slac_lsstcam_night_reports
     night_report_label: Trending Plots
@@ -152,7 +147,6 @@ cameras:
         title: Focal Plane mosaic
       - name: noise_map
         title: Noise Map
-    js_entry: auxtel
     logo: ts8.png
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
     FITSInfo/view.html?image=TS_C_{dayObs}_{seqNum}"
@@ -164,7 +158,6 @@ cameras:
     title: Fake Auxtel
     online: True
     night_report_prefix: fake_auxtel_night_reports
-    js_entry: auxtel
     channels:
       - name: monitor
         title: Monitor
@@ -254,136 +247,130 @@ metadata_cols:
       The seeing, as measured by the DIMM, if available
 
   startracker:
-    Header values:
-      Exposure Time:
-        The image exposure time
-      MJD:
-        The MJD of the observation
-      UTC:
-        The UTC of the observation - currently misreported, it is actually TAI
-      Ra:
-        The commanded ra from the header, i.e. from the pointing component
-      Dec:
-        The commanded dec from the header, i.e. from the pointing component
-      Alt:
-        The average alt from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
-      Az:
-        The average az from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
-    Astrometric fit:
-      nSources:
-        The total number of sources detected in the image
-      nSources filtered:
-        The total number of sources passed to the fitter
-      Calculated Ra:
-        The calculated ra from the astrometric fit
-      Calculated Dec:
-        The calculated dec from the astrometric fit
-      Delta Ra Arcsec:
-        The difference between the commanded and fitted ra, in arcseconds
-      Delta Dec Arcsec:
-        The difference between the commanded and fitted dec, in arcseconds
-      Calculated Alt:
-        The calculated alt from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
-      Calculated Az:
-        The calculated az from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
-      Delta Alt Arcsec:
-        The difference between the commanded and fitted alt, in arcseconds
-      Delta Az Arcsec:
-        The difference between the commanded and fitted az, in arcseconds
-      Delta Rot Arcsec:
-        The difference between the commanded and fitted rotator angle, in arcseconds. Note that as we don't have a rotator, this is more or less arbitrary.
-      RMS scatter arcsec:
-        The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
-      RMS scatter pixels:
-        The RMS distance between the measured position of each source and its position in the catalog, in pixels
+    Exposure Time:
+      The image exposure time
+    MJD:
+      The MJD of the observation
+    UTC:
+      The UTC of the observation - currently misreported, it is actually TAI
+    Ra:
+      The commanded ra from the header, i.e. from the pointing component
+    Dec:
+      The commanded dec from the header, i.e. from the pointing component
+    Alt:
+      The average alt from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
+    Az:
+      The average az from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
+    nSources:
+      The total number of sources detected in the image
+    nSources filtered:
+      The total number of sources passed to the fitter
+    Calculated Ra:
+      The calculated ra from the astrometric fit
+    Calculated Dec:
+      The calculated dec from the astrometric fit
+    Delta Ra Arcsec:
+      The difference between the commanded and fitted ra, in arcseconds
+    Delta Dec Arcsec:
+      The difference between the commanded and fitted dec, in arcseconds
+    Calculated Alt:
+      The calculated alt from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
+    Calculated Az:
+      The calculated az from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
+    Delta Alt Arcsec:
+      The difference between the commanded and fitted alt, in arcseconds
+    Delta Az Arcsec:
+      The difference between the commanded and fitted az, in arcseconds
+    Delta Rot Arcsec:
+      The difference between the commanded and fitted rotator angle, in arcseconds. Note that as we don't have a rotator, this is more or less arbitrary.
+    RMS scatter arcsec:
+      The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
+    RMS scatter pixels:
+      The RMS distance between the measured position of each source and its position in the catalog, in pixels
 
   startracker_wide:
-    Star Tracker Wide:
-      Exposure Time wide:
-        The image exposure time
-      MJD:
-        The MJD of the observation
-      UTC:
-        The UTC of the observation - currently misreported, it is actually TAI
-      Ra wide:
-        The commanded ra from the header, i.e. from the pointing component
-      Dec wide:
-        The commanded dec from the header, i.e. from the pointing component
-      Alt wide:
-        The average alt from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
-      Az wide:
-        The average az from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
-    Star Tracker Solve Wide:
-      nSources wide:
-        The total number of sources detected in the image
-      nSources filtered wide:
-        The total number of sources passed to the fitter
-      Calculated Ra wide:
-        The calculated ra from the astrometric fit
-      Calculated Dec wide:
-        The calculated dec from the astrometric fit
-      Delta Ra Arcsec wide:
-        The difference between the commanded and fitted ra, in arcseconds
-      Delta Dec Arcsec wide:
-        The difference between the commanded and fitted dec, in arcseconds
-      Calculated Alt wide:
-        The calculated alt from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
-      Calculated Az wide:
-        The calculated az from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
-      Delta Alt Arcsec wide:
-        The difference between the commanded and fitted alt, in arcseconds
-      Delta Az Arcsec wide:
-        The difference between the commanded and fitted az, in arcseconds
-      Delta Rot Arcsec wide:
-        The difference between the commanded and fitted rotator angle, in arcseconds. Note that as we don't have a rotator, this is more or less arbitrary.
-      RMS scatter arcsec wide:
-        The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
-      RMS scatter pixels wide:
-        The RMS distance between the measured position of each source and its position in the catalog, in pixels
+    Exposure Time wide:
+      The image exposure time
+    MJD:
+      The MJD of the observation
+    UTC:
+      The UTC of the observation - currently misreported, it is actually TAI
+    Ra wide:
+      The commanded ra from the header, i.e. from the pointing component
+    Dec wide:
+      The commanded dec from the header, i.e. from the pointing component
+    Alt wide:
+      The average alt from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
+    Az wide:
+      The average az from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
+    nSources wide:
+      The total number of sources detected in the image
+    nSources filtered wide:
+      The total number of sources passed to the fitter
+    Calculated Ra wide:
+      The calculated ra from the astrometric fit
+    Calculated Dec wide:
+      The calculated dec from the astrometric fit
+    Delta Ra Arcsec wide:
+      The difference between the commanded and fitted ra, in arcseconds
+    Delta Dec Arcsec wide:
+      The difference between the commanded and fitted dec, in arcseconds
+    Calculated Alt wide:
+      The calculated alt from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
+    Calculated Az wide:
+      The calculated az from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
+    Delta Alt Arcsec wide:
+      The difference between the commanded and fitted alt, in arcseconds
+    Delta Az Arcsec wide:
+      The difference between the commanded and fitted az, in arcseconds
+    Delta Rot Arcsec wide:
+      The difference between the commanded and fitted rotator angle, in arcseconds. Note that as we don't have a rotator, this is more or less arbitrary.
+    RMS scatter arcsec wide:
+      The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
+    RMS scatter pixels wide:
+      The RMS distance between the measured position of each source and its position in the catalog, in pixels
 
   startracker_fast:
-    Star Tracker Fast:
-      Exposure Time fast:
-        The image exposure time
-      MJD:
-        The MJD of the observation
-      UTC:
-        The UTC of the observation - currently misreported, it is actually TAI
-      Ra fast:
-        The commanded ra from the header, i.e. from the pointing component
-      Dec fast:
-        The commanded dec from the header, i.e. from the pointing component
-      Alt fast:
-        The average alt from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
-      Az fast:
-        The average az from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
-    Star Tracker Solve Fast:
-      nSources fast:
-        The total number of sources detected in the image
-      nSources filtered fast:
-        The total number of sources passed to the fitter
-      Calculated Ra fast:
-        The calculated ra from the astrometric fit
-      Calculated Dec fast:
-        The calculated dec from the astrometric fit
-      Delta Ra Arcsec fast:
-        The difference between the commanded and fitted ra, in arcseconds
-      Delta Dec Arcsec fast:
-        The difference between the commanded and fitted dec, in arcseconds
-      Calculated Alt fast:
-        The calculated alt from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
-      Calculated Az fast:
-        The calculated az from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
-      Delta Alt Arcsec fast:
-        The difference between the commanded and fitted alt, in arcseconds
-      Delta Az Arcsec fast:
-        The difference between the commanded and fitted az, in arcseconds
-      Delta Rot Arcsec fast:
-        The difference between the commanded and fitted rotator angle, in arcseconds. Note that as we don't have a rotator, this is more or less arbitrary.
-      RMS scatter arcsec fast:
-        The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
-      RMS scatter pixels fast:
-        The RMS distance between the measured position of each source and its position in the catalog, in pixels
+    Exposure Time fast:
+      The image exposure time
+    MJD:
+      The MJD of the observation
+    UTC:
+      The UTC of the observation - currently misreported, it is actually TAI
+    Ra fast:
+      The commanded ra from the header, i.e. from the pointing component
+    Dec fast:
+      The commanded dec from the header, i.e. from the pointing component
+    Alt fast:
+      The average alt from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
+    Az fast:
+      The average az from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
+    nSources fast:
+      The total number of sources detected in the image
+    nSources filtered fast:
+      The total number of sources passed to the fitter
+    Calculated Ra fast:
+      The calculated ra from the astrometric fit
+    Calculated Dec fast:
+      The calculated dec from the astrometric fit
+    Delta Ra Arcsec fast:
+      The difference between the commanded and fitted ra, in arcseconds
+    Delta Dec Arcsec fast:
+      The difference between the commanded and fitted dec, in arcseconds
+    Calculated Alt fast:
+      The calculated alt from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
+    Calculated Az fast:
+      The calculated az from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
+    Delta Alt Arcsec fast:
+      The difference between the commanded and fitted alt, in arcseconds
+    Delta Az Arcsec fast:
+      The difference between the commanded and fitted az, in arcseconds
+    Delta Rot Arcsec fast:
+      The difference between the commanded and fitted rotator angle, in arcseconds. Note that as we don't have a rotator, this is more or less arbitrary.
+    RMS scatter arcsec fast:
+      The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
+    RMS scatter pixels fast:
+      The RMS distance between the measured position of each source and its position in the catalog, in pixels
 
   comcam:
     Exposure time:
