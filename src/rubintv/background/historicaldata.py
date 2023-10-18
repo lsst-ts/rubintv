@@ -106,10 +106,15 @@ class HistoricalPoller:
         objects = []
         for cam in location.cameras:
             if cam.online:
-                logger.info(f"Listing objects for {location.name}/{cam.name}")
+                prefix = cam.name
+                logger.info(
+                    "Listing objects for:",
+                    location=location.name,
+                    prefix=prefix,
+                )
                 try:
                     one_load = self._clients[location.name].list_objects(
-                        prefix=cam.name + "/2023"
+                        prefix=prefix
                     )
                     objects.extend(one_load)
                     logger.info("Found:", num_objects=len(one_load))

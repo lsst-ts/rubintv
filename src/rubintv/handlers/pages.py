@@ -217,7 +217,7 @@ async def get_camera_page(
         template = "not_online"
     if camera.name == "allsky":
         template = "allsky"
-    if not table and not historical_busy:
+    if not events and not historical_busy:
         template = "camera_empty"
 
     return templates.TemplateResponse(

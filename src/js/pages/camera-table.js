@@ -15,7 +15,7 @@ import { _getById } from '../modules/utils'
 
   const date = window.APP_DATA.date || ''
 
-  const tableRoot = createRoot(document.getElementById('channel-day-data'))
+  const tableRoot = createRoot(document.getElementById('table'))
   tableRoot.render(
     <TableApp
       camera={camera}
