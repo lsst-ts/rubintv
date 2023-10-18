@@ -1,7 +1,7 @@
 """Handlers for the app's external root, ``/rubintv/``."""
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse, Response, StreamingResponse
 from safir.dependencies.logger import logger_dependency
 from structlog.stdlib import BoundLogger
@@ -122,6 +122,7 @@ def proxy_video(
     channel_name: str,
     filename: str,
     request: Request,
+    range: str = Header(None),  # Get the Range header from the request
     logger: BoundLogger = Depends(logger_dependency),
 ) -> StreamingResponse:
     try:
@@ -133,9 +134,33 @@ def proxy_video(
         raise HTTPException(404, "Filename not valid.")
     key = f"{camera_name}/{date_str}/{channel_name}/{seq_str}/{filename}"
     s3_client: S3Client = request.app.state.s3_clients[location_name]
-    video = s3_client.get_raw_object(key)
+    s3_request_headers = {}
+    if range:
+        byte_range = range.split("=")[1]
+        s3_request_headers["Range"] = f"bytes={byte_range}"
+
+    data = s3_client.get_movie(key, s3_request_headers)
+    video = data["Body"]
+
+    # Modify the response headers to signal that we accept byte range requests
+    response_headers = {
+        "Accept-Ranges": "bytes",
+        "Content-Length": str(data["ContentLength"]),
+        "Content-Type": "video/mp4",
+    }
+
+    # If a range was provided, set the appropriate headers
+    if range:
+        end = data["ContentLength"] - 1
+        start, _ = byte_range.split("-")
+        response_headers[
+            "Content-Range"
+        ] = f"bytes {start}-{end}/{data['ContentLength']}"
+
     return StreamingResponse(
-        content=video.iter_chunks(), status_code=206, media_type="video/mp4"
+        content=video.iter_chunks(),
+        headers=response_headers,
+        status_code=206 if range else 200,
     )
 
 
@@ -440,7 +465,7 @@ async def get_specific_channel_event_page(
             "location": location,
             "camera": camera,
             "channel": channel,
-            "event": event,
+            "event": event.__dict__,
         },
     )
 

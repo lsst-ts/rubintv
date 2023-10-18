@@ -79,7 +79,7 @@ export class WebsocketClient {
       data: data.payload,
       datestamp: data.datestamp
     }
-    window.dispatchEvent(new CustomEvent(this.wsEventName, detail))
+    window.dispatchEvent(new CustomEvent(this.wsEventName, { detail }))
   }
 
   setClientID (messageData) {

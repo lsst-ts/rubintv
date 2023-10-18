@@ -40,7 +40,7 @@
                     filename=event.filename + '.' + event.ext) %}
     <a href="{{ img_url }}" class="event-link" id="eventLink">
       <img id="eventImage" src="{{ img_url }}" class="resp">
-      <p id="eventName" class="desc">{{ event.filename }}</p>
+      <p id="eventName" class="desc">{{ event.filename }}.{{ event.ext }}</p>
     </a>
   {% else %}
     <h2>There are no events for this channel</h2>

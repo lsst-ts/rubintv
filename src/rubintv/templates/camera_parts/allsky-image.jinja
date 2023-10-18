@@ -1,6 +1,6 @@
 {% if "stills" in events and events["stills"] %}
   {% set still = events["stills"]|last %}
-  {% set img_url = url_for('event_video',
+  {% set img_url = url_for('event_image',
                       location_name=location.name,
                       camera_name=camera.name,
                       channel_name=still.channel_name,
@@ -11,5 +11,5 @@
   <a target="_blank" href="{{ img_url }}">
     <img class="resp" src="{{ img_url }}">
   </a>
-  <div class="desc">{{still.filename}}</div>
+  <div class="desc">{{still.filename}}.{{still.ext}}</div>
 {% endif %}

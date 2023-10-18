@@ -67,6 +67,17 @@ class S3Client:
                 status_code=404, detail=f"No such file for: {key}"
             )
 
+    def get_movie(self, key: str, headers: dict | None = None) -> dict:
+        try:
+            data = self._client.get_object(
+                Bucket=self._bucket_name, Key=key, **(headers or {})
+            )
+            return data
+        except ClientError:
+            raise HTTPException(
+                status_code=404, detail=f"No such file for: {key}"
+            )
+
     async def get_presigned_url(self, key: str) -> str:
         logger = structlog.get_logger(__name__)
         try:

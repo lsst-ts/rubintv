@@ -14,6 +14,7 @@ window.addEventListener('load', () => {
   // eslint-disable-next-line no-unused-vars
   const ws = new WebsocketClient('historicalStatus')
   window.addEventListener('historicalStatus', (message) => {
+    console.log('event message:', message)
     const isBusy = message.detail.data
     if (!isBusy) {
       window.location.reload()
