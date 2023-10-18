@@ -15,7 +15,7 @@ function MetadataCell ({ data, indicator }) {
   return (
     <td className={ className }>
       { data &&
-          typeof (data) === 'number' && data > 0 && (data % 1 !== 0)
+          typeof (data) === 'number' && data > 0
         ? data.toFixed(3)
         : data
       }
@@ -133,7 +133,7 @@ function ChannelHeader ({ channel }) {
   }
   return (
     <th {...thProps}>
-      {channel.label || channel.title || channel.name }
+      {channel.label || channel.title || channel.name}
     </th>
   )
 }
@@ -145,6 +145,7 @@ ChannelHeader.propTypes = {
 function TableHeader ({ camera, metadataColumns }) {
   const channelColumns = seqChannels(camera)
   const columns = channelColumns.concat(metadataColumns)
+  // const columns =
   return (
     <thead>
       <tr>
@@ -158,6 +159,7 @@ function TableHeader ({ camera, metadataColumns }) {
         {columns.map(channel => (
           <ChannelHeader key={channel.name} channel={channel} />
         ))}
+        {/* ... additional columns such as CCS Image Viewer if necessary ... */}
       </tr>
     </thead>
   )
@@ -168,7 +170,7 @@ TableHeader.propTypes = {
   selected: propTypes.array
 }
 
-export default function SimpleTableView ({ camera, channelData, metadata, metadataColumns }) {
+export default function TableView ({ camera, channelData, metadata, metadataColumns }) {
   return (
       <table className="camera-table">
         <TableHeader camera={camera}
@@ -183,7 +185,7 @@ export default function SimpleTableView ({ camera, channelData, metadata, metada
       </table>
   )
 }
-SimpleTableView.propTypes = {
+TableView.propTypes = {
   camera: propTypes.object,
   metadataColumns: propTypes.array,
   channelData: propTypes.object,

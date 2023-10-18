@@ -1,10 +1,13 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import propTypes from 'prop-types'
-import SimpleTableView from './SimpleTableView'
+import TableView from './TableView'
 import TableControls from './TableControls'
 import { intersect } from '../modules/utils'
 
-export default function TableApp ({ camera, date, channelData, metadata }) {
+export default function TableApp ({ camera, initialDate, initialChannelData, initialMetadata }) {
+  const [date, setDate] = useState(initialDate)
+  const [channelData, setChannelData] = useState(initialChannelData)
+  const [metadata, setMetadata] = useState(initialMetadata)
   // convert metadata_cols into array of objects if they exist
   let defaultCols
   if (camera.metadata_cols) {
@@ -32,6 +35,28 @@ export default function TableApp ({ camera, date, channelData, metadata }) {
   const selectedMetaCols = defaultCols.filter(c => selected.includes(c.name))
     .concat(selectedObjs.filter(o => !defaultColNames.includes(o.name)))
 
+  useEffect(() => {
+    function handleCameraEvent (event) {
+      const { datestamp, data, dataType } = event.detail
+
+      if (datestamp && datestamp !== date) {
+        setDate(datestamp)
+      }
+
+      if (dataType === 'metadata') {
+        setMetadata(data)
+      } else if (dataType === 'channelData') {
+        setChannelData(data)
+      }
+    }
+    window.addEventListener('camera', handleCameraEvent)
+
+    // Cleanup the event listener on component unmount
+    return () => {
+      window.removeEventListener('camera', handleCameraEvent)
+    }
+  }, [date]) // Only reattach the event listener if the date changes
+
   return (
     <div className="table-container">
       <div className="above-table-sticky">
@@ -45,7 +70,7 @@ export default function TableApp ({ camera, date, channelData, metadata }) {
           metadata={metadata}
         />
       </div>
-        <SimpleTableView
+        <TableView
           camera={camera}
           channelData={channelData}
           metadata={metadata}
@@ -56,13 +81,13 @@ export default function TableApp ({ camera, date, channelData, metadata }) {
 }
 TableApp.propTypes = {
   camera: propTypes.object,
-  date: propTypes.string,
-  channelData: propTypes.object,
-  metadata: propTypes.object
+  initialDate: propTypes.string,
+  initialChannelData: propTypes.object,
+  initialMetadata: propTypes.object
 }
 
 function retrieveSelected (cameraName) {
-  const retrieved = localStorage[cameraName]
+  const retrieved = localStorage.getItem(cameraName)
   return (retrieved && JSON.parse(retrieved))
 }
 

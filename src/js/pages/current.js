@@ -14,7 +14,7 @@ import { WebsocketClient } from '../modules/websocket_client.js'
   const ws = new WebsocketClient('service', 'channel', location, camera, channel)
 
   window.addEventListener('channel', (message) => {
-    const newEvent = message.data
+    const newEvent = message.detail.data
     const filename = [newEvent.filename, newEvent.ext].join('.')
     _getById('date').textContent = newEvent.day_obs
     _getById('seqNum').textContent = newEvent.seq_num
@@ -24,7 +24,7 @@ import { WebsocketClient } from '../modules/websocket_client.js'
     const imgURL = `${baseImgURL}/${filename}`
     newImg.src = imgURL
     newImg.id = oldImg.id
-    newImg.addEventListener('load', (e) => {
+    newImg.addEventListener('load', () => {
       oldImg.replaceWith(newImg)
       _getById('eventLink').href = imgURL
     })

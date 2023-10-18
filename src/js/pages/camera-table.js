@@ -4,7 +4,8 @@ import TableApp from '../components/TableApp'
 import { _getById } from '../modules/utils'
 
 (function () {
-  if (_getById('historicalbusy') && _getById('historicalbusy').dataset.historicalbusy === 'True') {
+  if (_getById('historicalbusy') &&
+   _getById('historicalbusy').dataset.historicalbusy === 'True') {
     return
   }
 
@@ -16,6 +17,11 @@ import { _getById } from '../modules/utils'
 
   const tableRoot = createRoot(document.getElementById('channel-day-data'))
   tableRoot.render(
-    <TableApp camera={camera} date={date} channelData={channelData} metadata={metadata}/>
+    <TableApp
+      camera={camera}
+      initialDate={date}
+      initialChannelData={channelData}
+      initialMetadata={metadata}
+    />
   )
 })()

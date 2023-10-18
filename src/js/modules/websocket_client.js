@@ -9,7 +9,7 @@ export class WebsocketClient {
     const pageID = [location, camera, channel].filter((el) => el).join('/')
     this.initMessage = this.#getInitMessage(wsType, pageType, pageID)
     const wsUrl = this.#getURL
-    this.wsEvent = this.#getWSEvent(wsType, pageType)
+    this.wsEventName = this.#getWSEventName(wsType, pageType)
     this.ws = new ReconnectingWebSocket(wsUrl, undefined, { maxRetries: 2 })
     this.ws.onmessage = this.handleMessage.bind(this)
     // this.ws.onopen = this.handleOpen.bind(this)
@@ -36,14 +36,14 @@ export class WebsocketClient {
     return `${wsProtocol}//${hostname}/${appName}/ws/`
   }
 
-  #getWSEvent (wsType, pageType) {
+  #getWSEventName (wsType, pageType) {
     let eventName
     if (wsType === 'historicalStatus') {
       eventName = wsType
     } else {
       eventName = pageType
     }
-    return new Event(eventName, { data: null })
+    return eventName
   }
 
   handleClose (e) {
@@ -74,9 +74,12 @@ export class WebsocketClient {
     if (!data.dataType || !Object.hasOwn(data, 'payload')) {
       return
     }
-    const event = this.wsEvent
-    event.data = data.payload
-    window.dispatchEvent(event)
+    const detail = {
+      dataType: data.dataType,
+      data: data.payload,
+      datestamp: data.datestamp
+    }
+    window.dispatchEvent(new CustomEvent(this.wsEventName, detail))
   }
 
   setClientID (messageData) {

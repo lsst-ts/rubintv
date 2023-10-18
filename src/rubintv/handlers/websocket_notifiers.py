@@ -7,7 +7,11 @@ from rubintv.handlers.websockets_clients import (
     services_clients,
     services_lock,
 )
-from rubintv.models.models import Event, NightReportPayload
+from rubintv.models.models import (
+    Event,
+    NightReportPayload,
+    get_current_day_obs,
+)
 
 
 async def notify_camera_events_update(
@@ -32,7 +36,7 @@ async def notify_camera_events_update(
             events_dict[e.channel_name].append(e.__dict__)
         else:
             events_dict[e.channel_name] = [e.__dict__]
-    await notify_clients(to_notify, "event_list", events_dict)
+    await notify_clients(to_notify, "channelData", events_dict)
 
 
 async def notify_camera_metadata_update(
@@ -80,7 +84,11 @@ async def notify_clients(
         for client_id in clients_list:
             websocket = clients[client_id]
             await websocket.send_json(
-                {"dataType": data_type, "payload": payload}
+                {
+                    "dataType": data_type,
+                    "payload": payload,
+                    "datestamp": get_current_day_obs().isoformat(),
+                }
             )
 
 
