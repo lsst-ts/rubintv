@@ -12,8 +12,8 @@ from rubintv.handlers.websockets_clients import (
     services_lock,
     websocket_to_client,
 )
-from rubintv.models.helpers import find_first
 from rubintv.models.models import Camera, Location
+from rubintv.models.models_helpers import find_first
 
 ws_router = APIRouter()
 

@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Tuple
+from typing import Mapping, Tuple
 from uuid import UUID
 
 from rubintv.handlers.websockets_clients import (
@@ -15,7 +15,7 @@ from rubintv.models.models import (
 
 
 async def notify_camera_events_update(
-    message_for_cam: Tuple[str, list[Event]]
+    message_for_cam: Tuple[str, dict[int, dict[str, dict]]]
 ) -> None:
     """Receives and processes messages to pass on to connected clients.
 
@@ -27,16 +27,10 @@ async def notify_camera_events_update(
         where payload is a dict of list of events, keyed by channel name.
     """
     service = "camera"
-    loc_cam, events_list = message_for_cam
+    loc_cam, table = message_for_cam
     service_loc_cam_chan = " ".join([service, loc_cam])
     to_notify = await get_clients_to_notify(service_loc_cam_chan)
-    events_dict: dict[str, list[dict[str, Any]]] = {}
-    for e in events_list:
-        if e.channel_name in events_dict:
-            events_dict[e.channel_name].append(e.__dict__)
-        else:
-            events_dict[e.channel_name] = [e.__dict__]
-    await notify_clients(to_notify, "channelData", events_dict)
+    await notify_clients(to_notify, "channelData", table)
 
 
 async def notify_camera_metadata_update(

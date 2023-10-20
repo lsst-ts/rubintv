@@ -1,39 +1,28 @@
 """Handlers for the app's external root, ``/rubintv/``."""
 from datetime import date
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
-from fastapi.responses import HTMLResponse, Response, StreamingResponse
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import HTMLResponse, Response
 from safir.dependencies.logger import logger_dependency
 from structlog.stdlib import BoundLogger
 
 from rubintv.handlers.api import (
-    current_night_report_exists,
-    get_calendar_of_historical_events,
-    get_camera_current_events,
-    get_camera_events_for_date,
     get_current_channel_event,
     get_current_night_report,
     get_location,
     get_location_camera,
-    get_most_recent_historical_data,
     get_night_report_for_date,
     get_specific_channel_event,
-    night_report_exists_for,
 )
-from rubintv.handlers.pages_helpers import (
-    calendar_factory,
-    get_per_day_channels,
-    make_table_rows_from_columns_by_seq,
-    month_names,
+from rubintv.handlers.handlers_helpers import (
+    get_camera_calendar,
+    get_camera_current_events,
+    get_camera_events_for_date,
+    get_most_recent_historical_data,
 )
-from rubintv.models.helpers import find_first
-from rubintv.models.models import (
-    Channel,
-    Event,
-    EventJSONDict,
-    NightReportDataDict,
-)
-from rubintv.s3client import S3Client
+from rubintv.handlers.pages_helpers import calendar_factory, month_names
+from rubintv.models.models import Channel, Event, NightReportDataDict
+from rubintv.models.models_helpers import date_str_to_date, find_first
 from rubintv.templates_init import get_templates
 
 __all__ = ["get_home", "pages_router", "templates"]
@@ -55,112 +44,6 @@ async def get_home(
     locations = request.app.state.models.locations
     return templates.TemplateResponse(
         "home.jinja", {"request": request, "locations": locations}
-    )
-
-
-@pages_router.get(
-    "/event_image/{location_name}/{camera_name}/{channel_name}/{filename}",
-    response_class=StreamingResponse,
-    name="event_image",
-)
-def proxy_image(
-    location_name: str,
-    camera_name: str,
-    channel_name: str,
-    filename: str,
-    request: Request,
-    logger: BoundLogger = Depends(logger_dependency),
-) -> StreamingResponse:
-    try:
-        to_remove = "_".join((camera_name, channel_name)) + "_"
-        rest = filename.replace(to_remove, "")
-        date_str, seq_ext = rest.split("_")
-        seq_str, ext = seq_ext.split(".")
-    except ValueError:
-        raise HTTPException(404, "Filename not valid.")
-    key = f"{camera_name}/{date_str}/{channel_name}/{seq_str}/{filename}"
-    s3_client: S3Client = request.app.state.s3_clients[location_name]
-    data_stream = s3_client.get_raw_object(key)
-    return StreamingResponse(content=data_stream.iter_chunks())
-
-
-@pages_router.get(
-    "/plot_image/{location_name}/{camera_name}/{group_name}/{filename}",
-    response_class=StreamingResponse,
-    name="plot_image",
-)
-def proxy_plot_image(
-    location_name: str,
-    camera_name: str,
-    group_name: str,
-    filename: str,
-    request: Request,
-) -> StreamingResponse:
-    # auxtel_night_report_2023-08-16_Coverage_airmass
-
-    try:
-        to_remove = "_".join((camera_name, "night_report")) + "_"
-        rest = filename.replace(to_remove, "")
-        date_str = rest.split("_")[0]
-        burn, ext = rest.split(".")
-    except ValueError:
-        raise HTTPException(404, "Filename not valid.")
-    key = f"{camera_name}/{date_str}/night_report/{group_name}/{filename}"
-    s3_client: S3Client = request.app.state.s3_clients[location_name]
-    data_stream = s3_client.get_raw_object(key)
-    return StreamingResponse(content=data_stream.iter_chunks())
-
-
-@pages_router.get(
-    "/event_video/{location_name}/{camera_name}/{channel_name}/{filename}",
-    response_class=StreamingResponse,
-    name="event_video",
-)
-def proxy_video(
-    location_name: str,
-    camera_name: str,
-    channel_name: str,
-    filename: str,
-    request: Request,
-    range: str = Header(None),  # Get the Range header from the request
-    logger: BoundLogger = Depends(logger_dependency),
-) -> StreamingResponse:
-    try:
-        to_remove = "_".join((camera_name, channel_name)) + "_"
-        rest = filename.replace(to_remove, "")
-        date_str, seq_ext = rest.split("_")
-        seq_str, ext = seq_ext.split(".")
-    except ValueError:
-        raise HTTPException(404, "Filename not valid.")
-    key = f"{camera_name}/{date_str}/{channel_name}/{seq_str}/{filename}"
-    s3_client: S3Client = request.app.state.s3_clients[location_name]
-    s3_request_headers = {}
-    if range:
-        byte_range = range.split("=")[1]
-        s3_request_headers["Range"] = f"bytes={byte_range}"
-
-    data = s3_client.get_movie(key, s3_request_headers)
-    video = data["Body"]
-
-    # Modify the response headers to signal that we accept byte range requests
-    response_headers = {
-        "Accept-Ranges": "bytes",
-        "Content-Length": str(data["ContentLength"]),
-        "Content-Type": "video/mp4",
-    }
-
-    # If a range was provided, set the appropriate headers
-    if range:
-        end = data["ContentLength"] - 1
-        start, _ = byte_range.split("-")
-        response_headers[
-            "Content-Range"
-        ] = f"bytes {start}-{end}/{data['ContentLength']}"
-
-    return StreamingResponse(
-        content=video.iter_chunks(),
-        headers=response_headers,
-        status_code=206 if range else 200,
     )
 
 
@@ -190,50 +73,42 @@ async def get_camera_page(
     location, camera = await get_location_camera(
         location_name, camera_name, request
     )
-    night_report_link = historical_busy = False
+    nr_exists = historical_busy = False
     day_obs: date | None = None
-    md: dict | None = {}
-    events = per_day_channels = table = {}
+    metadata: dict = {}
+    per_day: dict[str, Event] = {}
+    channel_data: dict[int, dict[str, dict]] = {}
     try:
-        event_data = await get_camera_current_events(
-            location_name, camera_name, request
-        )
-        day_obs = event_data["date"]
-        events = event_data["channel_events"]
-        md = event_data["metadata"]
-        table = await make_table_rows_from_columns_by_seq(
-            event_data, camera.seq_channels()
-        )
-        per_day_channels = await get_per_day_channels(event_data, camera)
-        night_report_link = await current_night_report_exists(
-            location, camera, request
-        )
-
-    except HTTPException:
-        historical_busy = True
+        result = await get_camera_current_events(location, camera, request)
+        if result:
+            (day_obs, channel_data, per_day, metadata, nr_exists) = result
+    except HTTPException as e:
+        if e.status_code == 423:
+            historical_busy = True
+        else:
+            raise e
 
     template = "camera"
     if not camera.online:
         template = "not_online"
-    if camera.name == "allsky":
-        template = "allsky"
-    if not events and not historical_busy:
-        template = "camera_empty"
+    else:
+        if camera.name == "allsky":
+            template = "allsky"
+        if not day_obs and not historical_busy:
+            template = "camera_empty"
 
     return templates.TemplateResponse(
         f"{template}.jinja",
         {
             "request": request,
-            "location": location,
-            "camera": camera,
-            "camera_json": camera.model_dump(),
-            "events": events,
-            "metadata": md,
-            "table": table,
             "date": day_obs,
+            "location": location,
+            "camera": camera.model_dump(),
+            "channelData": channel_data,
+            "per_day_channels": per_day,
+            "metadata": metadata,
             "historical_busy": historical_busy,
-            "per_day_channels": per_day_channels,
-            "night_report_link": night_report_link,
+            "nr_exists": nr_exists,
         },
     )
 
@@ -248,36 +123,30 @@ async def get_camera_for_date_page(
     camera_name: str,
     date_str: str,
     request: Request,
-    logger: BoundLogger = Depends(logger_dependency),
 ) -> Response:
     location, camera = await get_location_camera(
         location_name, camera_name, request
     )
     if not camera.online:
         raise HTTPException(404, "Camera not online.")
-    historical_busy = False
-    night_report_link = False
-    day_obs: date | None = None
-    md: dict | None = {}
-    events = table = calendar = per_day_channels = {}
     try:
-        event_data = await get_camera_events_for_date(
-            location_name, camera_name, date_str, request
+        day_obs = date_str_to_date(date_str)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Invalid date.")
+    historical_busy = False
+    nr_exists = False
+    metadata: dict = {}
+    per_day: dict[str, Event] = {}
+    channel_data: dict[int, dict[str, dict]] = {}
+    calendar: dict[int, dict[int, dict[int, int]]] = {}
+    try:
+        data = await get_camera_events_for_date(
+            location, camera, day_obs, request
         )
-        table = await make_table_rows_from_columns_by_seq(
-            event_data, camera.seq_channels()
-        )
-        day_obs = event_data["date"]
-        events = event_data["channel_events"]
-        md = event_data["metadata"]
-        per_day_channels = await get_per_day_channels(event_data, camera)
-        calendar = await get_calendar_of_historical_events(
-            location, camera, request
-        )
-        if day_obs:
-            night_report_link = await night_report_exists_for(
-                location, camera, day_obs, request
-            )
+        if data:
+            channel_data, per_day, metadata, nr_exists = data
+            calendar = await get_camera_calendar(location, camera, request)
+
     except HTTPException as http_error:
         # status 423 is raised if the historical data resource is locked
         if http_error.status_code == 423:
@@ -295,19 +164,17 @@ async def get_camera_for_date_page(
         f"{template}.jinja",
         {
             "request": request,
-            "location": location,
-            "camera": camera,
-            "camera_json": camera.model_dump(),
-            "events": events,
-            "metadata": md,
-            "table": table,
             "date": day_obs,
+            "location": location,
+            "camera": camera.model_dump(),
+            "channelData": channel_data,
+            "per_day": per_day,
+            "metadata": metadata,
             "historical_busy": historical_busy,
+            "nr_exists": nr_exists,
             "calendar": calendar,
             "calendar_frame": calendar_factory(),
             "month_names": month_names(),
-            "per_day_channels": per_day_channels,
-            "night_report_link": night_report_link,
         },
     )
 
@@ -318,42 +185,33 @@ async def get_camera_for_date_page(
     name="historical",
 )
 async def get_historical_camera_page(
-    location_name: str, camera_name: str, request: Request
+    location_name: str,
+    camera_name: str,
+    request: Request,
+    logger: BoundLogger = Depends(logger_dependency),
 ) -> Response:
     location, camera = await get_location_camera(
         location_name, camera_name, request
     )
     if not camera.online:
         raise HTTPException(404, "Camera not online.")
-    night_report_link = historical_busy = False
+    historical_busy = False
+    nr_exists = False
     day_obs: date | None = None
-    events: dict[str, list[Event]] = {}
-    md: dict | None = {}
-    table = calendar = per_day_channels = {}
+    metadata: dict = {}
+    per_day: dict[str, Event] = {}
+    channel_data: dict[int, dict[str, dict]] = {}
+    calendar: dict[int, dict[int, dict[int, int]]] = {}
     try:
-        h_data = await get_most_recent_historical_data(
-            location, camera, request
-        )
-        if h_data:
-            (day_obs, events, md) = h_data
-            event_data: EventJSONDict = {
-                "date": day_obs,
-                "channel_events": events,
-                "metadata": md,
-            }
-            table = await make_table_rows_from_columns_by_seq(
-                event_data, camera.seq_channels()
-            )
-            per_day_channels = await get_per_day_channels(event_data, camera)
-            calendar = await get_calendar_of_historical_events(
-                location, camera, request
-            )
-            night_report_link = await night_report_exists_for(
-                location, camera, day_obs, request
-            )
-
-    except HTTPException:
-        historical_busy = True
+        data = await get_most_recent_historical_data(location, camera, request)
+        if data:
+            day_obs, channel_data, per_day, metadata, nr_exists = data
+            calendar = await get_camera_calendar(location, camera, request)
+    except HTTPException as e:
+        if e.status_code == 423:
+            historical_busy = True
+        else:
+            raise e
 
     template = "historical"
     if camera.name == "allsky":
@@ -365,19 +223,17 @@ async def get_historical_camera_page(
         f"{template}.jinja",
         {
             "request": request,
-            "location": location,
-            "camera": camera,
-            "camera_json": camera.model_dump(),
-            "events": events,
-            "metadata": md,
-            "table": table,
             "date": day_obs,
+            "location": location,
+            "camera": camera.model_dump(),
+            "channelData": channel_data,
+            "per_day": per_day,
+            "metadata": metadata,
             "historical_busy": historical_busy,
+            "nr_exists": nr_exists,
             "calendar": calendar,
             "calendar_frame": calendar_factory(),
             "month_names": month_names(),
-            "per_day_channels": per_day_channels,
-            "night_report_link": night_report_link,
         },
     )
 

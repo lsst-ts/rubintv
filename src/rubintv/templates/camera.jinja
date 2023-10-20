@@ -39,7 +39,7 @@
       <nav id="per-image-menu" class="channel-menu" role="navigation">
         <h3>Current image channels</h3>
           <ul class="channels flr">
-            {% for channel in camera.seq_channels() %}
+            {% for channel in camera.channels if not channel.per_day %}
               <li class="channel service"
                   id="{{ channel.name }}">
                 <a  class="button button-large {{ channel.name }}"
@@ -66,7 +66,7 @@
 {% block footer_scripts %}
     <script>
       window.APP_DATA.tableMetadata = {{ metadata|tojson }}
-      window.APP_DATA.tableChannels = {{ table|tojson }}
+      window.APP_DATA.tableChannels = {{ channelData|tojson }}
       window.APP_DATA.eventURL = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}"
     </script>
     <script src='{{ url_for("static", path="assets/camera-table.js") }}'></script>

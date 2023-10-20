@@ -70,7 +70,6 @@ class Event:
     seq_num: int | str = ""
     filename: str = ""
     ext: str = ""
-    url: str = ""
 
     def __post_init__(self) -> None:
         (

@@ -7,11 +7,6 @@ import structlog
 
 from rubintv.background.background_helpers import get_metadata_obj
 from rubintv.handlers.websocket_notifiers import notify_all_status_change
-from rubintv.models.helpers import (
-    event_list_to_channel_keyed_dict,
-    objects_to_events,
-    objects_to_ngt_reports,
-)
 from rubintv.models.models import (
     Camera,
     Channel,
@@ -20,6 +15,11 @@ from rubintv.models.models import (
     NightReport,
     NightReportPayload,
     get_current_day_obs,
+)
+from rubintv.models.models_helpers import (
+    make_table_from_event_list,
+    objects_to_events,
+    objects_to_ngt_reports,
 )
 from rubintv.s3client import S3Client
 
@@ -33,11 +33,12 @@ class HistoricalPoller:
 
     _clients: dict[str, S3Client] = {}
 
-    _metadata: dict[str, list[dict[str, str]]] = {}
+    _metadata: dict[str, dict] = {}
     _events: dict[str, list[Event]] = {}
     _nr_metadata: dict[str, list[NightReport]] = {}
 
-    _camera_years: dict[str, dict[str, set[int]]] = {}
+    # {loc_cam: {year: {months: {days : max_seq }}}}
+    _calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
 
     # polling period in seconds
     CHECK_NEW_DAY_PERIOD = 60
@@ -127,7 +128,6 @@ class HistoricalPoller:
     ) -> None:
         logger = structlog.get_logger(__name__)
         locname = location.name
-        self._camera_years[locname] = await self.build_year_dict(objects)
 
         metadata_objs = [o for o in objects if "metadata.json" in o["key"]]
         n_report_objs = [o for o in objects if "night_report" in o["key"]]
@@ -137,42 +137,58 @@ class HistoricalPoller:
             if not (o in metadata_objs or o in n_report_objs)
         ]
 
-        self._metadata[locname] = metadata_objs
+        await self.download_and_store_metadata(locname, metadata_objs)
+
         self._nr_metadata[locname] = await objects_to_ngt_reports(
             n_report_objs
         )
         logger.info(f"Building historical events for {locname}")
-        events = objects_to_events(event_objs)
+        events = await objects_to_events(event_objs)
         logger.info("Events created:", num_events=len(events))
-        self._events[locname] = events
+        await self.store_events(events, locname)
 
-    async def build_year_dict(
-        self, objects: list[dict[str, str]]
-    ) -> dict[str, set[int]]:
-        """
-        Builds a dictionary of lists of years keyed by camera name.
+    async def store_events(self, events: list[Event], locname: str) -> None:
+        calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
+        stored_events: dict[str, list[Event]] = {}
+        for event in events:
+            storage_name = await self.storage_name_for_event(event, locname)
+            if storage_name not in stored_events:
+                stored_events[storage_name] = []
+            stored_events[storage_name].append(event)
+            if isinstance(event.seq_num, str):
+                continue
+            year_str, month_str, day_str = event.day_obs.split("-")
+            year, month, day = (int(year_str), int(month_str), int(day_str))
+            loc_cam = f"{locname}/{event.camera_name}"
+            if loc_cam not in calendar:
+                calendar[loc_cam] = {}
+            if year not in calendar[loc_cam]:
+                calendar[loc_cam][year] = {}
+            if month not in calendar[loc_cam][year]:
+                calendar[loc_cam][year][month] = {}
+            calendar[loc_cam][year][month][day] = event.seq_num
+        self._calendar = calendar
+        self._events = stored_events
 
-        Returns:
-            `dict` [`str`, `list` [`int`]]: A dictionary containing lists of
-            years keyed by camera name.
-        """
-        year_dict: dict[str, set[int]] = {}
-        for obj in objects:
-            cam_name, year = await self.extract_cam_year(obj)
-            if year is not None and cam_name is not None:
-                if cam_name not in year_dict:
-                    year_dict[cam_name] = set()
-                year_dict[cam_name].add(year)
-        return year_dict
+    async def storage_name_for_event(self, event: Event, locname: str) -> str:
+        return f"{locname}/{event.camera_name}"
 
-    async def extract_cam_year(
-        self, obj: dict[str, str]
-    ) -> tuple[str | None, int | None]:
-        if match := self.cam_year_rgx.match(obj["key"]):
-            cam, year = match.groups()
-            return cam, int(year)
-        else:
-            return None, None
+    async def download_and_store_metadata(
+        self, locname: str, metadata_objs: list[dict[str, str]]
+    ) -> None:
+        # metadata is downloaded and stored against it's loc/cam/date
+        # for efficient retrieval
+        logger = structlog.get_logger(__name__)
+        for md_obj in metadata_objs:
+            key = md_obj.get("key")
+            if not key:
+                continue
+            storage_name = locname + "/" + key.split("/metadata")[0]
+            md = await get_metadata_obj(key, self._clients[locname])
+            if not md:
+                logger.info("Missing metadata for:", md_obj=md_obj)
+                continue
+            self._metadata[storage_name] = md
 
     async def get_night_report(
         self, location: Location, camera: Camera, day_obs: date
@@ -229,239 +245,88 @@ class HistoricalPoller:
         else:
             return False
 
-    async def get_years(self, location: Location, camera: Camera) -> list[int]:
-        """Returns a list of years for a given Camera in which there are Events
-        in the bucket.
-
-        Parameters
-        ----------
-        camera : `Camera`
-            The given Camera.
-
-        Returns
-        -------
-        years : `list` [`int`]
-            A sorted list of years as integers.
-        """
-        try:
-            years = sorted(
-                list(self._camera_years[location.name][camera.name])
-            )
-        except KeyError:
-            return []
-        return years
-
-    async def get_months_for_year(
-        self, location: Location, camera: Camera, year: int
-    ) -> list[int]:
-        """Returns a list of months for the given Camera and year
-        for which there are Events in the bucket.
-
-        Parameters
-        ----------
-        camera : `Camera`
-            The given Camera.
-        year : `int`
-            The given year.
-
-        Returns
-        -------
-        months : `list` [`int`]
-            List of month numbers (1..12 inclusive).
-        """
-        months = set(
-            [
-                event.day_obs_date().month
-                for event in self._events[location.name]
-                if (event.day_obs_date().year == year)
-                and (event.camera_name == camera.name)
-            ]
-        )
-        reverse_months = sorted(months, reverse=True)
-        return list(reverse_months)
-
-    async def get_days_for_month_and_year(
-        self, location: Location, camera: Camera, month: int, year: int
-    ) -> dict[int, int]:
-        """Given a Camera, year and number of month, returns a dict of each day
-        that has a record of Events with the max seq_num for that day.
-
-        Parameters
-        ----------
-        camera : `Camera`
-            The given Camera.
-        month : `int`
-            The given month (1...12)
-        year : `int`
-            The given year.
-
-        Returns
-        -------
-        day_dict : `dict` [`int`, `int`]
-            A dict with day number for key and last seq_num for that day as
-            value.
-        """
-
-        month_str = "{:02}".format(month)
-        days = set(
-            [
-                event.day_obs_date().day
-                for event in self._events[location.name]
-                if event.day_obs.startswith(f"{year}-{month_str}-")
-                and event.camera_name == camera.name
-            ]
-        )
-        day_dict = {
-            day: await self.get_max_seq_for_date(
-                location, camera, date(year, month, day)
-            )
-            for day in sorted(list(days))
-        }
-        return day_dict
-
-    async def get_max_seq_for_date(
-        self, location: Location, camera: Camera, a_date: date
-    ) -> int:
-        """Takes a Camera and date and returns the max sequence number
-        for Events recorded on that date. This only includes the seq_nums for
-        ordinary channels, not the 'per day' channels.
-
-        Parameters
-        ----------
-        camera : `Camera`
-            The given Camera.
-        date_str : `str`
-            The given date as a `Datetime.date`.
-
-        Returns
-        -------
-        seq_num : `int`
-            The integer seq_num of the last Event for that Camera and day.
-        """
-        events = await self.get_events_for_date(location, camera, a_date)
-        channel_names = [chan.name for chan in camera.channels]
-        channel_events = [e for e in events if e.channel_name in channel_names]
-        max_seq = max(
-            channel_events, key=lambda e: e.seq_num_force_int()
-        ).seq_num
-        if isinstance(max_seq, str):
-            return 1
-        return max_seq
-
     async def get_events_for_date(
         self, location: Location, camera: Camera, a_date: date
     ) -> list[Event]:
+        loc_cam = f"{location.name}/{camera.name}"
         date_str = a_date.isoformat()
-        events = [
-            e
-            for e in self._events[location.name]
-            if e.camera_name == camera.name and e.day_obs == date_str
-        ]
+        events = [e for e in self._events[loc_cam] if e.day_obs == date_str]
         return events
 
-    async def get_event_dict_for_date(
-        self, location: Location, camera: Camera, a_date: date
-    ) -> dict[str, list[Event]]:
-        """Given camera and date, returns a dict of list of events, keyed
-        by channel name.
-
-        Parameters
-        ----------
-        camera : `Camera`
-            The given Camera object.
-
-        date_str: `str`
-            The date to find Events for.
-
-        Returns
-        -------
-        days_events_dict : `dict` [`str`, `list` [`Event`]]
-
-        Example
-        -------
-        Return values are in the format:
-        ``{ 'chan_name1': [Event 1, Event 2, ...], 'chan_name2': [...], ...}``.
-        """
-        camera_events = await self.get_events_for_date(
-            location, camera, a_date
+    async def get_channel_data_for_date(
+        self, location: Location, camera: Camera, day_obs: date
+    ) -> dict[int, dict[str, dict]]:
+        events = await self.get_events_for_date(location, camera, day_obs)
+        if not events:
+            return {}
+        channel_data = await make_table_from_event_list(
+            events, camera.seq_channels()
         )
-        days_events_dict = await event_list_to_channel_keyed_dict(
-            camera_events, camera.channels
-        )
-        return days_events_dict
+        return channel_data
+
+    async def get_per_day_for_date(
+        self, location: Location, camera: Camera, day_obs: date
+    ) -> dict[str, Event]:
+        events = await self.get_events_for_date(location, camera, day_obs)
+        if not events:
+            return {}
+        chan_names = [c.name for c in camera.pd_channels()]
+        per_day_lists = [e for e in events if e.channel_name in chan_names]
+        if not per_day_lists:
+            return {}
+        per_day = {}
+        for event in per_day_lists:
+            per_day[event.channel_name] = event
+        return per_day
+
+    async def get_metadata_for_date(
+        self, location: Location, camera: Camera, day_obs: date
+    ) -> dict[str, dict]:
+        loc_cam_date = f"{location.name}/{camera.name}/{day_obs}"
+        return self._metadata.get(loc_cam_date, {})
 
     async def get_most_recent_day(
         self, location: Location, camera: Camera
     ) -> date | None:
-        """Returns most recent day for which there is data in the bucket for
-        the given Camera.
-
-        Parameters
-        ----------
-
-        camera : `Camera`
-            The given Camera object.
-
-        Returns
-        -------
-
-        most_recent : `str`
-            The date of the most recent day's Event in the form
-            ``"YYYY-MM-DD"``.
-        """
-        try:
-            most_recent = max(
-                (
-                    event
-                    for event in self._events[location.name]
-                    if event.camera_name == camera.name
-                ),
-                key=lambda ev: ev.day_obs,
-            )
-        except ValueError:
+        loc_cam = f"{location.name}/{camera.name}"
+        calendar = self._calendar.get(loc_cam)
+        if not calendar:
             return None
-        most_recent_day = most_recent.day_obs_date()
-        return most_recent_day
+        year = max(calendar.keys())
+        month = max(calendar[year].keys())
+        day = max(calendar[year][month].keys())
+        return date(year, month, day)
 
     async def get_most_recent_events(
         self, location: Location, camera: Camera
-    ) -> dict[str, list[Event]]:
-        most_recent_day = await self.get_most_recent_day(location, camera)
-        if not most_recent_day:
-            return {}
-        events = await self.get_event_dict_for_date(
-            location, camera, most_recent_day
-        )
-        return events
+    ) -> list[Event]:
+        loc_cam = f"{location.name}/{camera.name}"
+        day_obs = await self.get_most_recent_day(location, camera)
+        if not day_obs:
+            return []
+        date_str = day_obs.isoformat()
+        return [e for e in self._events[loc_cam] if e.day_obs == date_str]
 
     async def get_most_recent_event(
         self, location: Location, camera: Camera, channel: Channel
     ) -> Event | None:
-        """Returns most recent Event for the given camera and channel.
-
-        Parameters
-        ----------
-        camera : `Camera`
-            The given Camera object.
-
-        channel : `Channel`
-            A Channel of the given camera.
-
-        Returns
-        -------
-        event : `Event`
-            The most recent Event for the given Camera
-
-        """
         events = [
             event
-            for event in self._events[location.name]
-            if event.camera_name == camera.name
-            and event.channel_name == channel.name
+            for event in await self.get_most_recent_events(location, camera)
+            if event.channel_name == channel.name
         ]
-        if events:
-            return events.pop()
-        return None
+        if not events:
+            return None
+        return events.pop()
+
+    async def get_most_recent_channel_data(
+        self, location: Location, camera: Camera
+    ) -> dict[int, dict[str, dict]]:
+        day = await self.get_most_recent_day(location, camera)
+        if not day:
+            return {}
+        data = await self.get_channel_data_for_date(location, camera, day)
+        return data
 
     async def get_camera_calendar(
         self, location: Location, camera: Camera
@@ -483,15 +348,5 @@ class HistoricalPoller:
             days and num. of events for that day for the given Camera.
 
         """
-        active_years = await self.get_years(location, camera)
-        years = {}
-        for year in active_years:
-            months = await self.get_months_for_year(location, camera, year)
-            months_days = {
-                month: await self.get_days_for_month_and_year(
-                    location, camera, month, year
-                )
-                for month in months
-            }
-            years[year] = months_days
-        return years
+        loc_cam = f"{location.name}/{camera.name}"
+        return self._calendar.get(loc_cam, {})

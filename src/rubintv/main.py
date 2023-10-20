@@ -24,6 +24,7 @@ from .config import config
 from .handlers.api import api_router
 from .handlers.internal import internal_router
 from .handlers.pages import pages_router
+from .handlers.proxies import proxies_router
 from .handlers.websocket import ws_router
 from .handlers.websockets_clients import clients
 from .models.models_init import ModelsInitiator
@@ -93,6 +94,7 @@ app.mount(
 app.include_router(internal_router)
 app.include_router(api_router, prefix=f"{config.path_prefix}/api")
 app.include_router(ws_router, prefix=f"{config.path_prefix}/ws")
+app.include_router(proxies_router, prefix=f"{config.path_prefix}")
 app.include_router(pages_router, prefix=f"{config.path_prefix}")
 
 # Add middleware.

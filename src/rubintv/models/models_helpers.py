@@ -68,7 +68,7 @@ def string_int_to_date(date_string: str) -> date:
     return date(int(d[0:4]), int(d[4:6]), int(d[6:8]))
 
 
-def objects_to_events(objects: list[dict]) -> list[Event]:
+async def objects_to_events(objects: list[dict]) -> list[Event]:
     logger = structlog.get_logger(__name__)
     events = []
     for object in objects:
@@ -128,3 +128,21 @@ def get_image_viewer_link(camera: Camera, day_obs: date, seq_num: int) -> str:
         day_obs=date_int_str, seq_num=seq_num
     )
     return url
+
+
+async def make_table_from_event_list(
+    events: list[Event], channels: list[Channel]
+) -> dict[int, dict[str, dict]]:
+    d: dict[int, dict[str, dict]] = {}
+    for chan in channels:
+        chan_events = [e for e in events if e.channel_name == chan.name]
+        if chan_events:
+            for e in chan_events:
+                if not isinstance(e.seq_num, int):
+                    continue
+                if e.seq_num in d:
+                    d[e.seq_num].update({chan.name: e.__dict__})
+                else:
+                    d.update({e.seq_num: {chan.name: e.__dict__}})
+    table = {k: v for k, v in sorted(d.items(), reverse=True)}
+    return table

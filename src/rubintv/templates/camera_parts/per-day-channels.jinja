@@ -1,11 +1,13 @@
-{% if per_day_channels %}
-  {% set channels = camera.channels|selectattr("per_day")|list_to_dict %}
+{% if per_day %}
   <nav id="per-night-menu" class="channel-menu" role="navigation">
     <h3>Per Day Channels</h3>
     <ul class="channels flr">
-      {% for chan in per_day_channels %}
-        {% set event = per_day_channels[chan] %}
-        {% set channel = channels[chan] %}
+      {% for chan in per_day %}
+      {% set ns =namespace(camchannel={}) %}
+        {% for camchan in camera.channels %}
+          {% set ns.camchannel = camchan if camchan.name == chan %}
+        {% endfor %}
+        {% set event = per_day[chan] %}
         <li class="channel">
           <a  class="button button-large {{ chan }}"
               href="{{
@@ -18,7 +20,7 @@
             <img src="{{
               url_for('static', path='images/' + chan + '.svg')
             }}">
-            {{ channel.label }}
+            {{ ns.camchannel.label if ns.camchannel.label else ns.camchannel.title }}
             <span class="date">
               {{ date }}
             </span>

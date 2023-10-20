@@ -12,12 +12,10 @@
 {% endblock pagetitle %}
 
 {% block further %}
-  {% if camera_json %}
-      <script>
-        window.APP_DATA.camera = {{ camera_json|tojson }}
-        window.APP_DATA.date = "{{ date }}"
-      </script>
-  {% endif %}
+  <script>
+    window.APP_DATA.camera = {{ camera|tojson }}
+    window.APP_DATA.date = "{{ date }}"
+  </script>
   <div id="historicalbusy" data-historicalbusy="{{ historical_busy }}">
   </div>
 {% endblock further %}

@@ -10,6 +10,12 @@ function formatImageLink (link, seqNum) {
   return formattedLink
 }
 
+// function DictMetadata ({ data }) {
+//   return (
+//     JSON.stringify(data)
+//   )
+// }
+
 function MetadataCell ({ data, indicator }) {
   const className = ['grid-cell meta', indicator].join(' ')
   return (
@@ -60,7 +66,7 @@ function TableRow ({ seqNum, camera, channels, channelRow, metadataColumns, meta
   return (
     <tr>
       <td className="grid-cell seq">{seqNum}</td>
-      {/* copy to cliipboard and CCS viewer cells */}
+      {/* copy to clipboard and CCS viewer cells */}
       <td className='grid-cell copy-to-cb'>
         <button className='button button-table copy'></button>
       </td>
@@ -95,7 +101,10 @@ function TableBody ({ camera, channels, channelData, metadataColumns, metadata }
   const allSeqs = Array.from(
     new Set(
       Object.keys(channelData).concat(Object.keys(metadata))
-    )).reverse()
+    )).map(seq => parseInt(seq))
+    .toSorted((a, b) => a - b)
+    .reverse()
+    .map(seq => `${seq}`)
   return (
       <tbody>
       {allSeqs.map(seqNum => {

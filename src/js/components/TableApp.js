@@ -37,6 +37,7 @@ export default function TableApp ({ camera, initialDate, initialChannelData, ini
 
   useEffect(() => {
     function handleCameraEvent (event) {
+      console.debug('TableApp event:', event)
       const { datestamp, data, dataType } = event.detail
 
       if (datestamp && datestamp !== date) {
