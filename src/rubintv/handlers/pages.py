@@ -16,11 +16,15 @@ from rubintv.handlers.api import (
 )
 from rubintv.handlers.handlers_helpers import (
     get_camera_calendar,
-    get_camera_current_events,
+    get_camera_current_data,
     get_camera_events_for_date,
     get_most_recent_historical_data,
 )
-from rubintv.handlers.pages_helpers import calendar_factory, month_names
+from rubintv.handlers.pages_helpers import (
+    build_title,
+    calendar_factory,
+    month_names,
+)
 from rubintv.models.models import Channel, Event, NightReportDataDict
 from rubintv.models.models_helpers import date_str_to_date, find_first
 from rubintv.templates_init import get_templates
@@ -42,8 +46,10 @@ async def get_home(
     """GET ``/rubintv/`` (the app's external root)."""
     logger.info("Request for the app home page")
     locations = request.app.state.models.locations
+    title = build_title()
     return templates.TemplateResponse(
-        "home.jinja", {"request": request, "locations": locations}
+        "home.jinja",
+        {"request": request, "locations": locations, "title": title},
     )
 
 
@@ -55,8 +61,10 @@ async def get_location_page(
     request: Request,
 ) -> Response:
     location = await get_location(location_name, request)
+    title = build_title(location.title)
     return templates.TemplateResponse(
-        "location.jinja", {"request": request, "location": location}
+        "location.jinja",
+        {"request": request, "location": location, "title": title},
     )
 
 
@@ -78,10 +86,18 @@ async def get_camera_page(
     metadata: dict = {}
     per_day: dict[str, Event] = {}
     channel_data: dict[int, dict[str, dict]] = {}
+    events: dict[str, list[Event]] = {}
     try:
-        result = await get_camera_current_events(location, camera, request)
+        result = await get_camera_current_data(location, camera, request)
         if result:
-            (day_obs, channel_data, per_day, metadata, nr_exists) = result
+            (
+                day_obs,
+                channel_data,
+                per_day,
+                metadata,
+                nr_exists,
+                events,
+            ) = result
     except HTTPException as e:
         if e.status_code == 423:
             historical_busy = True
@@ -97,6 +113,8 @@ async def get_camera_page(
         if not day_obs and not historical_busy:
             template = "camera_empty"
 
+    title = build_title(location.title, camera.title, "Current")
+
     return templates.TemplateResponse(
         f"{template}.jinja",
         {
@@ -104,11 +122,13 @@ async def get_camera_page(
             "date": day_obs,
             "location": location,
             "camera": camera.model_dump(),
+            "events": events,
             "channelData": channel_data,
             "per_day_channels": per_day,
             "metadata": metadata,
             "historical_busy": historical_busy,
             "nr_exists": nr_exists,
+            "title": title,
         },
     )
 
@@ -138,13 +158,14 @@ async def get_camera_for_date_page(
     metadata: dict = {}
     per_day: dict[str, Event] = {}
     channel_data: dict[int, dict[str, dict]] = {}
+    events: dict[str, list[Event]] = {}
     calendar: dict[int, dict[int, dict[int, int]]] = {}
     try:
         data = await get_camera_events_for_date(
             location, camera, day_obs, request
         )
         if data:
-            channel_data, per_day, metadata, nr_exists = data
+            channel_data, per_day, metadata, nr_exists, events = data
             calendar = await get_camera_calendar(location, camera, request)
 
     except HTTPException as http_error:
@@ -160,6 +181,8 @@ async def get_camera_for_date_page(
     if not calendar and not historical_busy:
         template = "camera_empty"
 
+    title = build_title(location.title, camera.title, date_str)
+
     return templates.TemplateResponse(
         f"{template}.jinja",
         {
@@ -167,6 +190,7 @@ async def get_camera_for_date_page(
             "date": day_obs,
             "location": location,
             "camera": camera.model_dump(),
+            "events": events,
             "channelData": channel_data,
             "per_day": per_day,
             "metadata": metadata,
@@ -175,6 +199,7 @@ async def get_camera_for_date_page(
             "calendar": calendar,
             "calendar_frame": calendar_factory(),
             "month_names": month_names(),
+            "title": title,
         },
     )
 
@@ -201,11 +226,12 @@ async def get_historical_camera_page(
     metadata: dict = {}
     per_day: dict[str, Event] = {}
     channel_data: dict[int, dict[str, dict]] = {}
+    events: dict[str, list[Event]] = {}
     calendar: dict[int, dict[int, dict[int, int]]] = {}
     try:
         data = await get_most_recent_historical_data(location, camera, request)
         if data:
-            day_obs, channel_data, per_day, metadata, nr_exists = data
+            day_obs, channel_data, per_day, metadata, nr_exists, events = data
             calendar = await get_camera_calendar(location, camera, request)
     except HTTPException as e:
         if e.status_code == 423:
@@ -219,6 +245,8 @@ async def get_historical_camera_page(
     if not calendar and not historical_busy:
         template = "camera_empty"
 
+    title = build_title(location.title, camera.title, "Historical")
+
     return templates.TemplateResponse(
         f"{template}.jinja",
         {
@@ -226,6 +254,7 @@ async def get_historical_camera_page(
             "date": day_obs,
             "location": location,
             "camera": camera.model_dump(),
+            "events": events,
             "channelData": channel_data,
             "per_day": per_day,
             "metadata": metadata,
@@ -234,6 +263,7 @@ async def get_historical_camera_page(
             "calendar": calendar,
             "calendar_frame": calendar_factory(),
             "month_names": month_names(),
+            "title": title,
         },
     )
 
@@ -254,6 +284,9 @@ async def get_current_night_report_page(
     )
     day_obs = nr_data["date"]
     night_report = nr_data["night_report"]
+
+    title = build_title(location.title, camera.title, "Current Night Report")
+
     return templates.TemplateResponse(
         "night-report.jinja",
         {
@@ -262,6 +295,7 @@ async def get_current_night_report_page(
             "camera": camera,
             "date": day_obs,
             "night_report": night_report,
+            "title": title,
         },
     )
 
@@ -282,6 +316,13 @@ async def get_historical_night_report_page(
     )
     day_obs = nr_data["date"]
     night_report = nr_data["night_report"]
+
+    title = build_title(
+        location.title,
+        camera.title,
+        f"Night Report for {date_str}",
+    )
+
     return templates.TemplateResponse(
         "night-report-historical.jinja",
         {
@@ -290,6 +331,7 @@ async def get_historical_night_report_page(
             "camera": camera,
             "date": day_obs,
             "night_report": night_report,
+            "title": title,
         },
     )
 
@@ -312,8 +354,18 @@ async def get_specific_channel_event_page(
         location_name, camera_name, key, request
     )
     channel: Channel | None = None
+    channel_title = ""
+    event_detail = ""
     if event:
+        event_detail = f"{event.day_obs}/${event.seq_num}"
         channel = find_first(camera.channels, "name", event.channel_name)
+    if channel:
+        channel_title = channel.title
+
+    title = build_title(
+        location.title, camera.title, channel_title, event_detail
+    )
+
     return templates.TemplateResponse(
         "single_event.jinja",
         {
@@ -322,6 +374,7 @@ async def get_specific_channel_event_page(
             "camera": camera,
             "channel": channel,
             "event": event.__dict__,
+            "title": title,
         },
     )
 
@@ -341,8 +394,14 @@ async def get_current_channel_event_page(
         location_name, camera_name, channel_name, request
     )
     channel: Channel | None = None
+    channel_title = ""
     if event:
         channel = find_first(camera.channels, "name", event.channel_name)
+    if channel:
+        channel_title = channel.title
+
+    title = build_title(location.title, camera.title, channel_title, "Current")
+
     return templates.TemplateResponse(
         "current_event.jinja",
         {
@@ -351,5 +410,6 @@ async def get_current_channel_event_page(
             "camera": camera,
             "channel": channel,
             "event": event.__dict__,
+            "title": title,
         },
     )

@@ -18,13 +18,15 @@ function formatImageLink (link, seqNum) {
 
 function MetadataCell ({ data, indicator }) {
   const className = ['grid-cell meta', indicator].join(' ')
+  let toDisplay = data
+  if (typeof data === 'number' && data > 0 && data % 1 !== 0) {
+    toDisplay = data.toFixed(3)
+  } else if (typeof data === 'object') {
+    toDisplay = JSON.stringify(data)
+  }
   return (
     <td className={ className }>
-      { data &&
-          typeof (data) === 'number' && data > 0
-        ? data.toFixed(3)
-        : data
-      }
+      { toDisplay }
     </td>
   )
 }

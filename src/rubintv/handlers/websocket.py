@@ -37,7 +37,6 @@ async def data_websocket(
     try:
         while True:
             raw: str = await websocket.receive_text()
-            logger.info("Received:", raw=raw)
             try:
                 data: dict = json.loads(raw)
             except json.JSONDecodeError as e:
@@ -161,7 +160,6 @@ async def is_valid_client_request(data: dict) -> bool:
     except (KeyError, ValueError):
         logger.warn("Received json without client_id")
         return False
-    logger.info("Looking for", client_id=client_id, clients=clients)
     return client_id in clients.keys()
 
 

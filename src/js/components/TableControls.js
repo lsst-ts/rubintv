@@ -5,14 +5,20 @@ import { _getById } from '../modules/utils'
 function TableControls ({ cameraName, allColNames, selected, setSelected, date, metadata }) {
   const [controlsOpen, setControlsOpen] = useState(false)
 
+  const locationName = document.documentElement.dataset.locationname
+
   const handleCheckboxChange = (name) => {
     setSelected(prevSelected => {
+      let updatedSelected
       if (prevSelected.includes(name)) {
-        return prevSelected.filter(attr => attr !== name)
+        updatedSelected = prevSelected.filter(attr => attr !== name)
+      } else {
+        updatedSelected = [...prevSelected, name]
       }
-      return [...prevSelected, name]
+      console.log('Updating with', updatedSelected)
+      storeSelected(updatedSelected, `${locationName}/${cameraName}`)
+      return updatedSelected
     })
-    storeSelected(selected, cameraName)
   }
   const panelClass = !controlsOpen ? 'table-panel' : 'table-panel open'
 
@@ -73,13 +79,13 @@ function JumpButtons () {
   return (
     <div className='jump-buttons'>
       <button
-        onClick={() => _getById('channel-day-data').scrollIntoView()}
+        onClick={() => _getById('table').scrollIntoView()}
         className='jump-button to-top'
         title='to top'>
         <img src='/rubintv/static/images/jump-arrow.svg'/>
       </button>
       <button
-        onClick={() => _getById('channel-day-data').scrollIntoView(false)}
+        onClick={() => _getById('table').scrollIntoView(false)}
         className='jump-button to-bottom'
         title='to bottom'>
         <img src='/rubintv/static/images/jump-arrow.svg'/>

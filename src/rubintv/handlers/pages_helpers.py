@@ -21,5 +21,9 @@ def calendar_factory() -> Calendar:
     return calendar
 
 
-def build_title() -> None:
-    return
+def build_title(*title_parts: str) -> str:
+    title = "RubinTV"
+    to_append = " - ".join(title_parts)
+    if to_append:
+        title += " - " + to_append
+    return title

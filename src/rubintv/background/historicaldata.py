@@ -155,6 +155,7 @@ class HistoricalPoller:
             if storage_name not in stored_events:
                 stored_events[storage_name] = []
             stored_events[storage_name].append(event)
+
             if isinstance(event.seq_num, str):
                 continue
             year_str, month_str, day_str = event.day_obs.split("-")
@@ -166,7 +167,8 @@ class HistoricalPoller:
                 calendar[loc_cam][year] = {}
             if month not in calendar[loc_cam][year]:
                 calendar[loc_cam][year][month] = {}
-            calendar[loc_cam][year][month][day] = event.seq_num
+            if calendar[loc_cam][year][month].get(day, 0) < event.seq_num:
+                calendar[loc_cam][year][month][day] = event.seq_num
         self._calendar = calendar
         self._events = stored_events
 

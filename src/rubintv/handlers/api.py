@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from rubintv.background.currentpoller import CurrentPoller
 from rubintv.background.historicaldata import HistoricalPoller
 from rubintv.handlers.handlers_helpers import (
-    get_camera_current_events,
+    get_camera_current_data,
     get_camera_events_for_date,
 )
 from rubintv.models.models import (
@@ -90,9 +90,9 @@ async def get_camera_current_events_api(
     location, camera = await get_location_camera(
         location_name, camera_name, request
     )
-    data = await get_camera_current_events(location, camera, request)
+    data = await get_camera_current_data(location, camera, request)
     if data:
-        day_obs, channel_data, metadata, per_day, nr_exists = data
+        day_obs, channel_data, metadata, per_day, nr_exists, events = data
         return {
             "date": day_obs,
             "channelData": channel_data,
@@ -120,7 +120,7 @@ async def get_camera_events_for_date_api(
         raise HTTPException(status_code=404, detail="Invalid date.")
     data = await get_camera_events_for_date(location, camera, day_obs, request)
     if data:
-        channel_data, metadata, per_day, nr_exists = data
+        channel_data, metadata, per_day, nr_exists, events = data
         return {
             "date": day_obs,
             "channelData": channel_data,

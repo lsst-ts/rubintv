@@ -8,6 +8,9 @@ export default function TableApp ({ camera, initialDate, initialChannelData, ini
   const [date, setDate] = useState(initialDate)
   const [channelData, setChannelData] = useState(initialChannelData)
   const [metadata, setMetadata] = useState(initialMetadata)
+
+  const locationName = document.documentElement.dataset.locationname
+
   // convert metadata_cols into array of objects if they exist
   let defaultCols
   if (camera.metadata_cols) {
@@ -22,7 +25,7 @@ export default function TableApp ({ camera, initialDate, initialChannelData, ini
 
   const [selected, setSelected] = useState(
     () => {
-      const savedColumns = retrieveSelected(camera.name)
+      const savedColumns = retrieveSelected(`${locationName}/${camera.name}`)
       if (savedColumns) {
         const intersectedColumns = intersect(savedColumns, allColNames)
         return intersectedColumns

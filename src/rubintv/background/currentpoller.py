@@ -84,7 +84,6 @@ class CurrentPoller:
                         loc_cam = await self._get_loc_cam(
                             location.name, camera
                         )
-
                         objects = await self.seive_out_metadata(
                             objects, prefix, location, camera
                         )
@@ -297,6 +296,12 @@ class CurrentPoller:
     ) -> list[dict[str, str]]:
         loc_cam = await self._get_loc_cam(location_name, camera)
         return self._objects.get(loc_cam, [])
+
+    async def get_current_events(
+        self, location_name: str, camera: Camera
+    ) -> list[Event]:
+        loc_cam = await self._get_loc_cam(location_name, camera)
+        return self._events.get(loc_cam, [])
 
     async def get_current_channel_table(
         self, location_name: str, camera: Camera
