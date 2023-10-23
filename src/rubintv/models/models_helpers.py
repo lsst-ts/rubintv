@@ -69,6 +69,24 @@ def string_int_to_date(date_string: str) -> date:
 
 
 async def objects_to_events(objects: list[dict]) -> list[Event]:
+    """Asynchronously convert a list of dictionaries to a list of Event
+    objects.
+
+    This function attempts to create Event objects from the given dictionaries.
+    If a dictionary does not match the expected structure of an Event, a
+    ValueError is caught, logged, and the function continues to process the
+    next dictionary.
+
+    Parameters
+    ----------
+    objects : list[dict]
+        A list of dictionaries, each representing the data for an Event object.
+
+    Returns
+    -------
+    list[Event]
+        A list of Event objects created from the provided dictionaries.
+    """
     logger = structlog.get_logger(__name__)
     events = []
     for object in objects:
@@ -76,7 +94,7 @@ async def objects_to_events(objects: list[dict]) -> list[Event]:
             event = Event(**object)
             events.append(event)
         except ValueError as e:
-            logger.info(e)
+            logger.error(e)
     return events
 
 

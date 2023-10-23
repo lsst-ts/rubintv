@@ -33,7 +33,8 @@
     {% include "camera_parts/historical-busy-message.jinja" %}
   {% else %}
     <div id="per-day" class="columns">
-      {% include "camera_parts/per-day-refresh.jinja" %}
+      {% include "camera_parts/night-report-link.jinja" %}
+      {% include "camera_parts/per-day-channels.jinja" %}
     </div>
     <section>
       <nav id="per-image-menu" class="channel-menu" role="navigation">

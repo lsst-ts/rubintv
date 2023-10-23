@@ -126,15 +126,15 @@ class HistoricalPoller:
     async def filter_convert_store_objects(
         self, objects: list[dict[str, str]], location: Location
     ) -> None:
-        logger = structlog.get_logger(__name__)
         locname = location.name
 
         metadata_objs = [o for o in objects if "metadata.json" in o["key"]]
         n_report_objs = [o for o in objects if "night_report" in o["key"]]
+
         event_objs = [
             o
             for o in objects
-            if not (o in metadata_objs or o in n_report_objs)
+            if o not in metadata_objs and o not in n_report_objs
         ]
 
         await self.download_and_store_metadata(locname, metadata_objs)
@@ -142,35 +142,32 @@ class HistoricalPoller:
         self._nr_metadata[locname] = await objects_to_ngt_reports(
             n_report_objs
         )
-        logger.info(f"Building historical events for {locname}")
         events = await objects_to_events(event_objs)
-        logger.info("Events created:", num_events=len(events))
         await self.store_events(events, locname)
 
     async def store_events(self, events: list[Event], locname: str) -> None:
-        calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
-        stored_events: dict[str, list[Event]] = {}
         for event in events:
             storage_name = await self.storage_name_for_event(event, locname)
-            if storage_name not in stored_events:
-                stored_events[storage_name] = []
-            stored_events[storage_name].append(event)
+            if storage_name not in self._events:
+                self._events[storage_name] = []
+            self._events[storage_name].append(event)
 
             if isinstance(event.seq_num, str):
                 continue
             year_str, month_str, day_str = event.day_obs.split("-")
             year, month, day = (int(year_str), int(month_str), int(day_str))
             loc_cam = f"{locname}/{event.camera_name}"
-            if loc_cam not in calendar:
-                calendar[loc_cam] = {}
-            if year not in calendar[loc_cam]:
-                calendar[loc_cam][year] = {}
-            if month not in calendar[loc_cam][year]:
-                calendar[loc_cam][year][month] = {}
-            if calendar[loc_cam][year][month].get(day, 0) < event.seq_num:
-                calendar[loc_cam][year][month][day] = event.seq_num
-        self._calendar = calendar
-        self._events = stored_events
+            if loc_cam not in self._calendar:
+                self._calendar[loc_cam] = {}
+            if year not in self._calendar[loc_cam]:
+                self._calendar[loc_cam][year] = {}
+            if month not in self._calendar[loc_cam][year]:
+                self._calendar[loc_cam][year][month] = {}
+            if (
+                self._calendar[loc_cam][year][month].get(day, 0)
+                <= event.seq_num
+            ):
+                self._calendar[loc_cam][year][month][day] = event.seq_num
 
     async def storage_name_for_event(self, event: Event, locname: str) -> str:
         return f"{locname}/{event.camera_name}"
@@ -195,7 +192,7 @@ class HistoricalPoller:
     async def get_night_report(
         self, location: Location, camera: Camera, day_obs: date
     ) -> NightReportPayload:
-        """Returns a dict containing a list of Night Reports Event objects for
+        """Returns a dict containing a list of Night Reports for
         the camera and date and a text metadata dict. Both values are
         optional (see `NightReportPayload`).
 
@@ -208,7 +205,7 @@ class HistoricalPoller:
 
         Returns
         -------
-        reports : NightReportPayload:
+        report : NightReportPayload:
             A dict containing a list of Night Report objects and text metadata.
         """
         nr_objs = await self._get_night_report(location, camera, day_obs)
@@ -294,6 +291,8 @@ class HistoricalPoller:
         calendar = self._calendar.get(loc_cam)
         if not calendar:
             return None
+        logger = structlog.get_logger(__name__)
+        logger.info("calendar:", calendar=calendar)
         year = max(calendar.keys())
         month = max(calendar[year].keys())
         day = max(calendar[year][month].keys())

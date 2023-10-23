@@ -7,8 +7,7 @@ is still loading. Reloads the page once notified that historical data is ready.
 */
 
 window.addEventListener('load', () => {
-  if ((_getById('historicalbusy') && _getById('historicalbusy').dataset.historicalbusy === 'False') ||
-  !_getById('historicalbusy')) {
+  if (_getById('historicalbusy') && _getById('historicalbusy').dataset.historicalbusy !== 'True') {
     return
   }
   // eslint-disable-next-line no-unused-vars

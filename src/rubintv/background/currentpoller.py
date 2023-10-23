@@ -105,7 +105,6 @@ class CurrentPoller:
             loc_cam not in self._objects or objects != self._objects[loc_cam]
         ):
             self._objects[loc_cam] = objects
-
             events = await objects_to_events(objects)
             self._events[loc_cam] = events
             await self.update_channel_events(events, camera, loc_cam)
@@ -146,10 +145,6 @@ class CurrentPoller:
         camera: Camera,
     ) -> list[dict[str, str]]:
         logger = structlog.get_logger(__name__)
-        # if the metadata for this camera is under another camera's name, this
-        # is a no op.
-        if camera.metadata_from:
-            return objects
         try:
             md_obj, objects = await self.filter_camera_metadata_object(objects)
         except ValueError:
@@ -186,10 +181,11 @@ class CurrentPoller:
         if len(md_objs) > 1:
             raise ValueError
         md_obj = None
+        to_return = objects
         if md_objs != []:
             md_obj = md_objs[0]
-            objects.pop(objects.index(md_obj))
-        return (md_obj, objects)
+            to_return = [o for o in objects if not md_obj]
+        return (md_obj, to_return)
 
     async def process_metadata_file(
         self, md_obj: dict[str, str], location: Location, camera: Camera

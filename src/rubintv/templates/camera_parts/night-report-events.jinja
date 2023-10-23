@@ -1,5 +1,4 @@
 {% set plots = night_report["plots"] %}
-
 <h3 id="the-date" data-date="{{ date }}">
 {{ camera.night_report_label }} for: <span class="data">{{ date }}</span></h3>
 <div id="night-report">
@@ -44,6 +43,6 @@
 
   </div>
   <script id="reports-json" type="application/json">
-    {# {{ reports_json|tojson }} #}
+    {{ night_report|tojson }}
   </script>
 </div>

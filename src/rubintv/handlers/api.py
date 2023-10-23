@@ -92,7 +92,7 @@ async def get_camera_current_events_api(
     )
     data = await get_camera_current_data(location, camera, request)
     if data:
-        day_obs, channel_data, metadata, per_day, nr_exists, events = data
+        day_obs, channel_data, per_day, metadata, nr_exists, events = data
         return {
             "date": day_obs,
             "channelData": channel_data,
@@ -120,7 +120,7 @@ async def get_camera_events_for_date_api(
         raise HTTPException(status_code=404, detail="Invalid date.")
     data = await get_camera_events_for_date(location, camera, day_obs, request)
     if data:
-        channel_data, metadata, per_day, nr_exists, events = data
+        channel_data, per_day, metadata, nr_exists, events = data
         return {
             "date": day_obs,
             "channelData": channel_data,

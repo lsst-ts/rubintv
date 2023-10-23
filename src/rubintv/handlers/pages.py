@@ -24,6 +24,7 @@ from rubintv.handlers.pages_helpers import (
     build_title,
     calendar_factory,
     month_names,
+    to_dict,
 )
 from rubintv.models.models import Channel, Event, NightReportDataDict
 from rubintv.models.models_helpers import date_str_to_date, find_first
@@ -292,7 +293,7 @@ async def get_current_night_report_page(
         {
             "request": request,
             "location": location,
-            "camera": camera,
+            "camera": camera.model_dump(),
             "date": day_obs,
             "night_report": night_report,
             "title": title,
@@ -328,7 +329,7 @@ async def get_historical_night_report_page(
         {
             "request": request,
             "location": location,
-            "camera": camera,
+            "camera": camera.model_dump(),
             "date": day_obs,
             "night_report": night_report,
             "title": title,
@@ -356,6 +357,7 @@ async def get_specific_channel_event_page(
     channel: Channel | None = None
     channel_title = ""
     event_detail = ""
+    event_dict: dict | None = None
     if event:
         event_detail = f"{event.day_obs}/${event.seq_num}"
         channel = find_first(camera.channels, "name", event.channel_name)
@@ -371,9 +373,9 @@ async def get_specific_channel_event_page(
         {
             "request": request,
             "location": location,
-            "camera": camera,
-            "channel": channel,
-            "event": event.__dict__,
+            "camera": camera.model_dump(),
+            "channel": to_dict(channel),
+            "event": to_dict(event_dict),
             "title": title,
         },
     )
@@ -407,9 +409,9 @@ async def get_current_channel_event_page(
         {
             "request": request,
             "location": location,
-            "camera": camera,
-            "channel": channel,
-            "event": event.__dict__,
+            "camera": camera.model_dump(),
+            "channel": to_dict(channel),
             "title": title,
+            "event": to_dict(event),
         },
     )

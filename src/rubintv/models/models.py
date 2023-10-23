@@ -14,7 +14,6 @@ __all__ = [
     "Camera",
     "Event",
     "get_current_day_obs",
-    "build_prefix_with_date",
 ]
 
 
@@ -215,18 +214,6 @@ class NightReportPayload(TypedDict):
 class NightReportDataDict(TypedDict):
     date: date
     night_report: NightReportPayload
-
-
-class EventJSONDict(TypedDict):
-    date: date | None
-    channel_events: dict[str, list[Event]]
-    metadata: dict[str, str] | None
-
-
-def build_prefix_with_date(camera: Camera, day_obs: date) -> str:
-    camera_name = camera.name
-    prefix = f"{camera_name}/{day_obs}/"
-    return prefix
 
 
 def get_current_day_obs() -> date:

@@ -47,10 +47,13 @@
   {% endif %}
 {% endblock content %}
 {% block further %}
+{{ super() }}
+{% if event %}
   {% set img_url = url_for('event_image',
                     location_name=location.name,
                     camera_name=camera.name,
                     channel_name=channel.name,
                     filename=event.filename + '.' + event.ext) %}
  <script>window.APP_DATA.imgURL = "{{ img_url|safe }}"</script>
+{% endif %}
 {% endblock further %}

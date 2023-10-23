@@ -49,6 +49,7 @@ async def test_get_api_location_camera(client: AsyncClient) -> None:
     assert camera is not None
     response = await client.get(f"/rubintv/api/{location_name}/{camera_name}")
     data = response.json()
+    print(data)
     assert data == [location.model_dump(), camera.model_dump()]
 
 
@@ -75,10 +76,7 @@ async def test_get_api_location_camera_current_for_offline(
         f"/rubintv/api/{location_name}/{camera_name}/current"
     )
     data = response.json()
-    assert "date" in data
-    assert data["date"] == get_current_day_obs().isoformat()
-    assert "channel_events" in data
-    assert data["channel_events"] == {}
+    assert data == {}
 
 
 @pytest.mark.asyncio
@@ -90,8 +88,8 @@ async def test_get_api_camera_for_date(client: AsyncClient) -> None:
     response = await client.get(f"/rubintv/api/slac/slac_ts8/date/{today}")
     data = response.json()
     assert (
-        data["channel_events"]["focal_plane_mosaic"][0]["key"]
-        == f"slac_ts8/{today}/focal_plane_mosaic/000000/mocked_event.jpg"
+        data["channelData"]["1"]["noise_map"]["key"]
+        == f"slac_ts8/{today}/noise_map/000001/mocked_event.jpg"
     )
 
 
@@ -103,8 +101,8 @@ async def test_get_camera_current_events(client: AsyncClient) -> None:
     data = response.json()
     assert data["date"] == today.isoformat()
     assert (
-        data["channel_events"]["focal_plane_mosaic"][0]["key"]
-        == f"slac_lsstcam/{today}/focal_plane_mosaic/000000/mocked_event.jpg"
+        data["channelData"]["1"]["noise_map"]["key"]
+        == f"slac_lsstcam/{today}/noise_map/000001/mocked_event.jpg"
     )
     metadata = {f"col{n}": "dummy" for n in range(1, 6)}
     assert data["metadata"] == metadata
