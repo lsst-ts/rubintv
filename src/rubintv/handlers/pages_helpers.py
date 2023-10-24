@@ -2,6 +2,8 @@ from calendar import Calendar
 from datetime import date
 from typing import Any
 
+from rubintv.models.models import NightReportPayload
+
 __all__ = ["month_names", "calendar_factory", "build_title", "to_dict"]
 
 
@@ -34,3 +36,14 @@ def to_dict(object: Any | None) -> dict | None:
     if object is None:
         return None
     return object.__dict__
+
+
+async def night_report_to_dict(
+    nr_payload: NightReportPayload,
+) -> dict[str, dict | list[dict]]:
+    if not nr_payload:
+        return {}
+    plots = []
+    for plot in nr_payload.get("plots", []):
+        plots.append(plot.__dict__)
+    return {"text": nr_payload.get("text", {}), "plots": plots}

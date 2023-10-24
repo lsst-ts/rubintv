@@ -29,3 +29,8 @@ Historical Movie
 {% block footer_scripts %}
   <script src="{{ url_for('static', path='assets/allsky.js') }}"></script>
 {% endblock footer_scripts %}
+
+{% block further %}
+ {% {{ super() }} %}
+ <script>window.APP_DATA.ishistorical = true</script>
+{% endblock further %}

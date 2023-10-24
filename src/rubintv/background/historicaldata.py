@@ -189,7 +189,7 @@ class HistoricalPoller:
                 continue
             self._metadata[storage_name] = md
 
-    async def get_night_report(
+    async def get_night_report_payload(
         self, location: Location, camera: Camera, day_obs: date
     ) -> NightReportPayload:
         """Returns a dict containing a list of Night Reports for

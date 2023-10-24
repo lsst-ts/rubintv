@@ -17,7 +17,6 @@
       {% endfor %}
     </div>
 
-
     {% include "camera_parts/night-report-text.jinja" %}
 
       {% for group, grouped_plots in plots|groupby("group") %}
@@ -42,7 +41,4 @@
 
 
   </div>
-  <script id="reports-json" type="application/json">
-    {{ night_report|tojson }}
-  </script>
 </div>

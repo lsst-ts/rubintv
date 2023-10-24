@@ -211,11 +211,6 @@ class NightReportPayload(TypedDict):
     plots: NotRequired[list[NightReport]]
 
 
-class NightReportDataDict(TypedDict):
-    date: date
-    night_report: NightReportPayload
-
-
 def get_current_day_obs() -> date:
     """Get the current day_obs.
 

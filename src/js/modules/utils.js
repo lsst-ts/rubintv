@@ -9,31 +9,6 @@ export function intersect (arrayA, arrayB) {
 /**
  * @param {RequestInfo | URL} url
  */
-export async function getJson (url) {
-  const data = getDataFromURL(url)
-  return data
-}
-
-/**
- * @param {RequestInfo | URL} url
- */
-export async function getHtml (url) {
-  const data = getDataFromURL(url, 'text')
-  return data
-}
-
-/**
- * @param {RequestInfo | URL} url
- */
-async function getDataFromURL (url, dataType = 'json') {
-  const res = await fetch(url)
-  const data = await res[dataType]()
-  return data
-}
-
-/**
- * @param {RequestInfo | URL} url
- */
 export async function simplePost (url) {
   const res = await fetch(url, {
     method: 'POST',

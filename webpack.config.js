@@ -13,8 +13,7 @@ const pagesWithoutHistory = [
 const pagesWithHistory = [
   'current',
   'camera-table',
-  'allsky',
-  'night_report_historical'
+  'allsky'
 ].reduce((pages, page) => ({
   ...pages,
   [page]: [`./src/js/pages/${page}.js`,

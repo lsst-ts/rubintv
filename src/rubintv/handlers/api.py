@@ -1,5 +1,4 @@
 """Handlers for the app's api root, ``/rubintv/api/``."""
-from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -9,14 +8,9 @@ from rubintv.background.historicaldata import HistoricalPoller
 from rubintv.handlers.handlers_helpers import (
     get_camera_current_data,
     get_camera_events_for_date,
+    get_current_night_report_payload,
 )
-from rubintv.models.models import (
-    Camera,
-    Event,
-    Location,
-    NightReportDataDict,
-    get_current_day_obs,
-)
+from rubintv.models.models import Camera, Event, Location, NightReportPayload
 from rubintv.models.models_helpers import date_str_to_date, find_first
 
 __all__ = [
@@ -197,27 +191,25 @@ async def get_specific_channel_event(
     "/{location_name}/{camera_name}/night_report",
     response_model=dict,
 )
-async def get_current_night_report(
+async def get_current_night_report_api(
     location_name: str, camera_name: str, request: Request
-) -> NightReportDataDict:
+) -> dict:
     location, camera = await get_location_camera(
         location_name, camera_name, request
     )
-    day_obs = get_current_day_obs()
-    current_poller: CurrentPoller = request.app.state.current_poller
-    nr = await current_poller.get_current_night_report(
-        location_name, camera_name
+    day_obs, nr = await get_current_night_report_payload(
+        location, camera, request
     )
     return {"date": day_obs, "night_report": nr}
 
 
 @api_router.get(
     "/{location_name}/{camera_name}/night_report/{date_str}",
-    response_model=dict,
+    response_model=NightReportPayload,
 )
 async def get_night_report_for_date(
     location_name: str, camera_name: str, date_str: str, request: Request
-) -> NightReportDataDict:
+) -> NightReportPayload:
     location, camera = await get_location_camera(
         location_name, camera_name, request
     )
@@ -230,27 +222,5 @@ async def get_night_report_for_date(
     if await historical.is_busy():
         raise HTTPException(423, "Historical data is being processed")
 
-    nr = await historical.get_night_report(location, camera, day_obs)
-    return {"date": day_obs, "night_report": nr}
-
-
-async def get_calendar_of_historical_events(
-    location: Location, camera: Camera, request: Request
-) -> dict[int, dict[int, dict[int, int]]]:
-    historical: HistoricalPoller = request.app.state.historical
-    events_calendar = await historical.get_camera_calendar(location, camera)
-    return events_calendar
-
-
-async def current_night_report_exists(
-    location: Location, camera: Camera, request: Request
-) -> bool:
-    cp: CurrentPoller = request.app.state.current_poller
-    return await cp.night_report_exists(location.name, camera.name)
-
-
-async def night_report_exists_for(
-    location: Location, camera: Camera, day_obs: date, request: Request
-) -> bool:
-    historical: HistoricalPoller = request.app.state.historical
-    return await historical.night_report_exists_for(location, camera, day_obs)
+    nr = await historical.get_night_report_payload(location, camera, day_obs)
+    return nr

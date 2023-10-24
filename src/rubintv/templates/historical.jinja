@@ -34,3 +34,8 @@ Historical Data
 
 {% endif %}
 {% endblock content %}
+
+{% block further %}
+ {{ super() }}
+ <script>window.APP_DATA.ishistorical = true</script>
+{% endblock further %}

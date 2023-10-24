@@ -8,7 +8,6 @@ from structlog.stdlib import BoundLogger
 
 from rubintv.handlers.api import (
     get_current_channel_event,
-    get_current_night_report,
     get_location,
     get_location_camera,
     get_night_report_for_date,
@@ -18,15 +17,18 @@ from rubintv.handlers.handlers_helpers import (
     get_camera_calendar,
     get_camera_current_data,
     get_camera_events_for_date,
+    get_current_night_report_payload,
     get_most_recent_historical_data,
+    try_historical_call,
 )
 from rubintv.handlers.pages_helpers import (
     build_title,
     calendar_factory,
     month_names,
+    night_report_to_dict,
     to_dict,
 )
-from rubintv.models.models import Channel, Event, NightReportDataDict
+from rubintv.models.models import Channel, Event, NightReportPayload
 from rubintv.models.models_helpers import date_str_to_date, find_first
 from rubintv.templates_init import get_templates
 
@@ -280,11 +282,10 @@ async def get_current_night_report_page(
     location, camera = await get_location_camera(
         location_name, camera_name, request
     )
-    nr_data: NightReportDataDict = await get_current_night_report(
-        location_name, camera_name, request
+    day_obs: date | None = None
+    day_obs, night_report = await get_current_night_report_payload(
+        location, camera, request
     )
-    day_obs = nr_data["date"]
-    night_report = nr_data["night_report"]
 
     title = build_title(location.title, camera.title, "Current Night Report")
 
@@ -295,7 +296,7 @@ async def get_current_night_report_page(
             "location": location,
             "camera": camera.model_dump(),
             "date": day_obs,
-            "night_report": night_report,
+            "night_report": await night_report_to_dict(night_report),
             "title": title,
         },
     )
@@ -307,16 +308,28 @@ async def get_current_night_report_page(
     name="historical_nr",
 )
 async def get_historical_night_report_page(
-    location_name: str, camera_name: str, date_str: str, request: Request
+    location_name: str,
+    camera_name: str,
+    date_str: str,
+    request: Request,
+    # logger: BoundLogger = Depends(logger_dependency),
 ) -> Response:
     location, camera = await get_location_camera(
         location_name, camera_name, request
     )
-    nr_data: NightReportDataDict = await get_night_report_for_date(
-        location_name, camera_name, date_str, request
+    try:
+        day_obs = date_str_to_date(date_str)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Invalid date.")
+
+    night_report: NightReportPayload
+    night_report, historical_busy = await try_historical_call(
+        get_night_report_for_date,
+        location_name,
+        camera_name,
+        date_str,
+        request,
     )
-    day_obs = nr_data["date"]
-    night_report = nr_data["night_report"]
 
     title = build_title(
         location.title,
@@ -331,7 +344,8 @@ async def get_historical_night_report_page(
             "location": location,
             "camera": camera.model_dump(),
             "date": day_obs,
-            "night_report": night_report,
+            "night_report": await night_report_to_dict(night_report),
+            "historical_busy": historical_busy,
             "title": title,
         },
     )
@@ -357,7 +371,6 @@ async def get_specific_channel_event_page(
     channel: Channel | None = None
     channel_title = ""
     event_detail = ""
-    event_dict: dict | None = None
     if event:
         event_detail = f"{event.day_obs}/${event.seq_num}"
         channel = find_first(camera.channels, "name", event.channel_name)
@@ -375,7 +388,7 @@ async def get_specific_channel_event_page(
             "location": location,
             "camera": camera.model_dump(),
             "channel": to_dict(channel),
-            "event": to_dict(event_dict),
+            "event": to_dict(event),
             "title": title,
         },
     )

@@ -1,4 +1,4 @@
-{% extends "_night-report.jinja" %}
+{% extends "night-report.jinja" %}
 {% block headerbuttons %}
   <a
     class="button historical"
@@ -6,3 +6,16 @@
     Historical<img src="{{ url_for('static', path='images/history-line.svg') }}">
   </a>
 {% endblock headerbuttons %}
+
+{% block content %}
+  {% if historical_busy %}
+    {% include "camera_parts/historical-busy-message.jinja" %}
+  {% else %}
+    {{ super() }}
+  {% endif %}
+{% endblock content %}
+
+{% block further %}
+ {{ super() }}
+ <script>window.APP_DATA.ishistorical = true</script>
+{% endblock further %}

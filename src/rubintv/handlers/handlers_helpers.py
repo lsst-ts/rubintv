@@ -1,13 +1,18 @@
 """Handlers for the app's api root, ``/rubintv/api/``."""
 import asyncio
 from datetime import date
-from typing import Any
+from typing import Any, Callable
 
 from fastapi import HTTPException, Request
 
 from rubintv.background.currentpoller import CurrentPoller
 from rubintv.background.historicaldata import HistoricalPoller
-from rubintv.models.models import Camera, Location, get_current_day_obs
+from rubintv.models.models import (
+    Camera,
+    Location,
+    NightReportPayload,
+    get_current_day_obs,
+)
 from rubintv.models.models_helpers import event_list_to_channel_keyed_dict
 
 
@@ -97,3 +102,27 @@ async def get_camera_calendar(
 ) -> dict[int, dict[int, dict[int, int]]]:
     historical: HistoricalPoller = request.app.state.historical
     return await historical.get_camera_calendar(location, camera)
+
+
+async def get_current_night_report_payload(
+    location: Location, camera: Camera, request: Request
+) -> tuple[date, NightReportPayload]:
+    day_obs = get_current_day_obs()
+    current_poller: CurrentPoller = request.app.state.current_poller
+    night_report = await current_poller.get_current_night_report(
+        location.name, camera.name
+    )
+    return day_obs, night_report
+
+
+async def try_historical_call(
+    async_func: Callable, *args: Any, **kwargs: Any
+) -> tuple[Any, bool]:
+    try:
+        result = await async_func(*args, **kwargs)
+        return result, False
+    except HTTPException as e:
+        if e.status_code == 423:
+            return None, True
+        else:
+            raise e

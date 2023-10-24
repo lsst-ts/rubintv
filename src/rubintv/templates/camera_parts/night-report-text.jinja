@@ -1,4 +1,3 @@
-{% set dashboard_data = {} %}
 {% set texts = night_report["text"] %}
 <div id="tabgroup-text" class="dashboard tab-content">
   {% for text in texts %}
@@ -10,7 +9,7 @@
             <li>
               {% for line in texts[text].split("\n") %}
                 {% if line %}
-                  <p>{{ line.replace(" ", "&nbsp;")|safe }}</p>
+                  <p>{{ line.replace("  ", "&nbsp;&nbsp;")|safe }}</p>
                 {% else %}
                   <br>
                 {% endif %}

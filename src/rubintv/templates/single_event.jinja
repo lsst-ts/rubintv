@@ -22,7 +22,6 @@
 {% endblock breadcrumb  %}
 
 {% block content %}
-
 {% if event %}
   <div class="event-info">
     <h2>
@@ -54,6 +53,6 @@
                     camera_name=camera.name,
                     channel_name=channel.name,
                     filename=event.filename + '.' + event.ext) %}
- <script>window.APP_DATA.imgURL = "{{ img_url|safe }}"</script>
+ <script>window.APP_DATA.imgURL = "{{ img_url }}"</script>
 {% endif %}
 {% endblock further %}
