@@ -1,4 +1,4 @@
-from typing import Mapping, Tuple
+from typing import Any, Mapping
 from uuid import UUID
 
 from rubintv.handlers.websockets_clients import (
@@ -7,68 +7,15 @@ from rubintv.handlers.websockets_clients import (
     services_clients,
     services_lock,
 )
-from rubintv.models.models import (
-    Event,
-    NightReportPayload,
-    get_current_day_obs,
-)
+from rubintv.models.models import get_current_day_obs
 
 
-async def notify_camera_events_update(
-    message_for_cam: Tuple[str, dict[int, dict[str, dict]]]
+async def notify_of_update(
+    service: str, kind: str, loc_cam: str, payload: Any
 ) -> None:
-    """Receives and processes messages to pass on to connected clients.
-
-
-    Parameters
-    ----------
-    message_for_cam : `Tuple` [`str`, `dict` [`list` [`Event`]]]
-        Messages take the form: {f"{location_name}/{camera_name}": payload}
-        where payload is a dict of list of events, keyed by channel name.
-    """
-    service = "camera"
-    loc_cam, table = message_for_cam
     service_loc_cam_chan = " ".join([service, loc_cam])
     to_notify = await get_clients_to_notify(service_loc_cam_chan)
-    await notify_clients(to_notify, "channelData", table)
-
-
-async def notify_camera_metadata_update(
-    message_for_cam: Tuple[str, dict]
-) -> None:
-    """Receives and processes messages to pass on to connected clients.
-
-
-    Parameters
-    ----------
-    message_for_cam :  `Tuple` [`str`, `dict`]
-        Messages take the form: {f"{location_name}/{camera_name}": payload}
-        where payload is either a list of channel-related events or a single
-        dict of metadata.
-    """
-    service = "camera"
-    loc_cam, metadata = message_for_cam
-    service_loc_cam_chan = " ".join([service, loc_cam])
-    to_notify = await get_clients_to_notify(service_loc_cam_chan)
-    await notify_clients(to_notify, "metadata", metadata)
-
-
-async def notify_channel_update(message_for_chan: Tuple[str, Event]) -> None:
-    service = "channel"
-    loc_cam_chan, event = message_for_chan
-    service_loc_cam_chan = " ".join([service, loc_cam_chan])
-    to_notify = await get_clients_to_notify(service_loc_cam_chan)
-    await notify_clients(to_notify, "event", event.__dict__)
-
-
-async def notify_night_report_update(
-    message: Tuple[str, NightReportPayload]
-) -> None:
-    service = "nightreport"
-    loc_cam, night_report = message
-    service_loc_cam_chan = " ".join([service, loc_cam])
-    to_notify = await get_clients_to_notify(service_loc_cam_chan)
-    await notify_clients(to_notify, "nightReport", night_report)
+    await notify_clients(to_notify, kind, payload)
 
 
 async def notify_clients(

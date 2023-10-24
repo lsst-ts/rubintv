@@ -8,7 +8,6 @@
     {% include "camera_parts/historical-busy-message.jinja" %}
   {% else %}
   <div class="columns">
-
     <section class="allsky-current-image">
     <h2>Current image</h2>
       <div class="current-still">
@@ -25,6 +24,11 @@
   </div>
   {% endif %}
 {% endblock content %}
+{% block further %}
+  {{ super() }}
+  {% set home_url = url_for('home') %}
+  <script>window.APP_DATA.baseUrl = "{{ home_url }}"</script>
+{% endblock further %}
 {% block footer_scripts %}
     <script src='{{ url_for("static", path="assets/allsky.js") }}'></script>
 {% endblock footer_scripts %}

@@ -6,7 +6,7 @@ import { WebsocketClient } from '../modules/websocket_client.js'
   if (!initEvent) {
     return
   }
-  const location = document.documentElement.dataset.location
+  const location = document.documentElement.dataset.locationname
   const camera = initEvent.camera_name
   const channel = initEvent.channel_name
   const baseImgURL = window.APP_DATA.imgURL.split('/').slice(0, -1).join('/')

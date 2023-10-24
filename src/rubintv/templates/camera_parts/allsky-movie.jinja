@@ -1,5 +1,5 @@
-{% if "movies" in events and events["movies"] %}
-  {% set movie = events["movies"]|last %}
+{% if "movies" in per_day and per_day["movies"] %}
+  {% set movie = per_day["movies"] %}
   <div class="subheader">
     <h3>
       <span class="movie-date">{{ movie.day_obs }} :</span>

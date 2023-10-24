@@ -1,22 +1,40 @@
-// import { getJson } from '../modules/utils.js'
+import { WebsocketClient } from '../modules/websocket_client.js'
 
-// const urlPath = document.location.pathname
-// const currentImage = document.querySelector('.current-still')
-// const currentMovie = document.querySelector('.current-movie')
+(function () {
+  const locationName = document.documentElement.dataset.locationname
+  console.log('Found locationname', locationName)
+  const camera = window.APP_DATA.camera
+  const baseUrl = window.APP_DATA.baseUrl
+  if (!window.APP_DATA.ishistorical) {
+    // eslint-disable-next-line no-unused-vars
+    const ws = new WebsocketClient('service', 'camera', locationName, camera.name)
+  }
+  window.addEventListener('camera', (message) => {
+    const currentImage = document.querySelector('.current-still')
+    const currentMovie = document.querySelector('.current-movie')
 
+    const newEvent = message.detail.data
+    const filename = newEvent.filename + '.' + newEvent.ext
+    const seqNum = newEvent.seq_num
+    const date = newEvent.day_obs
 
-// currentImage.querySelector('img').setAttribute('src', data.url)
-// currentImage.querySelector('a').setAttribute('href', data.url)
-// currentImage.querySelector('.subheader h3').textContent = `${data.date} : Image ${data.seq}`
-// currentImage.querySelector('.desc').textContent = data.name
-
-
-// const source = video.querySelector('source')
-// const currentMovieUrl = source.getAttribute('src')
-// if (data.channel === 'movie' && data.url !== currentMovieUrl) {
-//   source.setAttribute('src', data.url)
-//   currentMovie.querySelector('.movie-date').textContent = data.date
-//   currentMovie.querySelector('.movie-number').textContent = data.seq
-//   currentMovie.querySelector('.desc').textContent = data.name
-//   video.load()
-// }
+    let url
+    if (newEvent.channel_name === 'stills') {
+      url = `${baseUrl}/event_image/${locationName}/${camera.name}/stills/${filename}`
+      currentImage.querySelector('img').setAttribute('src', url)
+      currentImage.querySelector('a').setAttribute('href', url)
+      currentImage.querySelector('.subheader h3').textContent = `${date} : Image ${seqNum}`
+      currentImage.querySelector('.desc').textContent = filename
+    }
+    if (newEvent.channel_name === 'movies') {
+      url = `${baseUrl}/event_video/${locationName}/${camera.name}/movies/${filename}`
+      const video = currentMovie.querySelector('video')
+      const source = video.querySelector('source')
+      source.setAttribute('src', url)
+      currentMovie.querySelector('.movie-date').textContent = date
+      currentMovie.querySelector('.movie-number').textContent = seqNum
+      currentMovie.querySelector('.desc').textContent = filename
+      video.load()
+    }
+  })
+})()

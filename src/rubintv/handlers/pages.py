@@ -89,7 +89,6 @@ async def get_camera_page(
     metadata: dict = {}
     per_day: dict[str, Event] = {}
     channel_data: dict[int, dict[str, dict]] = {}
-    events: dict[str, list[Event]] = {}
     try:
         result = await get_camera_current_data(location, camera, request)
         if result:
@@ -99,7 +98,6 @@ async def get_camera_page(
                 per_day,
                 metadata,
                 nr_exists,
-                events,
             ) = result
     except HTTPException as e:
         if e.status_code == 423:
@@ -125,9 +123,8 @@ async def get_camera_page(
             "date": day_obs,
             "location": location,
             "camera": camera.model_dump(),
-            "events": events,
             "channelData": channel_data,
-            "per_day_channels": per_day,
+            "per_day": per_day,
             "metadata": metadata,
             "historical_busy": historical_busy,
             "nr_exists": nr_exists,
@@ -161,14 +158,13 @@ async def get_camera_for_date_page(
     metadata: dict = {}
     per_day: dict[str, Event] = {}
     channel_data: dict[int, dict[str, dict]] = {}
-    events: dict[str, list[Event]] = {}
     calendar: dict[int, dict[int, dict[int, int]]] = {}
     try:
         data = await get_camera_events_for_date(
             location, camera, day_obs, request
         )
         if data:
-            channel_data, per_day, metadata, nr_exists, events = data
+            channel_data, per_day, metadata, nr_exists = data
             calendar = await get_camera_calendar(location, camera, request)
 
     except HTTPException as http_error:
@@ -193,7 +189,6 @@ async def get_camera_for_date_page(
             "date": day_obs,
             "location": location,
             "camera": camera.model_dump(),
-            "events": events,
             "channelData": channel_data,
             "per_day": per_day,
             "metadata": metadata,
@@ -229,12 +224,11 @@ async def get_historical_camera_page(
     metadata: dict = {}
     per_day: dict[str, Event] = {}
     channel_data: dict[int, dict[str, dict]] = {}
-    events: dict[str, list[Event]] = {}
     calendar: dict[int, dict[int, dict[int, int]]] = {}
     try:
         data = await get_most_recent_historical_data(location, camera, request)
         if data:
-            day_obs, channel_data, per_day, metadata, nr_exists, events = data
+            day_obs, channel_data, per_day, metadata, nr_exists = data
             calendar = await get_camera_calendar(location, camera, request)
     except HTTPException as e:
         if e.status_code == 423:
@@ -257,7 +251,6 @@ async def get_historical_camera_page(
             "date": day_obs,
             "location": location,
             "camera": camera.model_dump(),
-            "events": events,
             "channelData": channel_data,
             "per_day": per_day,
             "metadata": metadata,

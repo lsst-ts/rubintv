@@ -291,8 +291,6 @@ class HistoricalPoller:
         calendar = self._calendar.get(loc_cam)
         if not calendar:
             return None
-        logger = structlog.get_logger(__name__)
-        logger.info("calendar:", calendar=calendar)
         year = max(calendar.keys())
         month = max(calendar[year].keys())
         day = max(calendar[year][month].keys())

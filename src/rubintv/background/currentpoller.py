@@ -4,12 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 import structlog
 
 from rubintv.background.background_helpers import get_metadata_obj
-from rubintv.handlers.websocket_notifiers import (
-    notify_camera_events_update,
-    notify_camera_metadata_update,
-    notify_channel_update,
-    notify_night_report_update,
-)
+from rubintv.handlers.websocket_notifiers import notify_of_update
 from rubintv.models.models import (
     Camera,
     Event,
@@ -111,11 +106,11 @@ class CurrentPoller:
 
             pd_data = await self.make_per_day_data(camera, events)
             self._per_day[loc_cam] = pd_data
+            await notify_of_update("camera", "per_day", loc_cam, pd_data)
 
             table = await self.make_channel_table(camera, events)
             self._table[loc_cam] = table
-            cam_msg = (loc_cam, table)
-            await notify_camera_events_update(cam_msg)
+            await notify_of_update("camera", "channelData", loc_cam, table)
 
     async def update_channel_events(
         self, events: list[Event], camera: Camera, loc_cam: str
@@ -134,8 +129,9 @@ class CurrentPoller:
                 or self._singles[chan_lookup] != current_event
             ):
                 self._singles[chan_lookup] = current_event
-                message = (chan_lookup, current_event)
-                await notify_channel_update(message)
+                await notify_of_update(
+                    "channel", "event", chan_lookup, current_event
+                )
 
     async def seive_out_metadata(
         self,
@@ -204,7 +200,7 @@ class CurrentPoller:
             )
             for cam in to_notify:
                 loc_cam = await self._get_loc_cam(location.name, cam)
-                await notify_camera_metadata_update((loc_cam, data))
+                await notify_of_update("camera", "metadata", loc_cam, data)
 
     async def seive_out_night_reports(
         self,
@@ -265,7 +261,9 @@ class CurrentPoller:
             message["plots"] = to_update
             self._nr_reports[loc_cam] = set(reports)
         if message:
-            await notify_night_report_update((loc_cam, message))
+            await notify_of_update(
+                "nightreport", "nightReport", loc_cam, message
+            )
         return
 
     async def make_per_day_data(
