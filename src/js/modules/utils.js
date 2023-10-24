@@ -101,102 +101,6 @@ export function parseJsonFromDOM (element) {
 }
 
 /**
- * @param {string} seq
- * @param {{[x: string]: string | number | object}} attributes
- * @param {string} attr
- * @param {string[]} classes
- */
-export function createMetaTableCell (seq, attributes, attr, ...classes) {
-  const classString = classes.join(' ')
-  const el = _elWithClass('td', `meta grid-cell ${classString}`)
-  let val = attributes[attr]
-  if (val || val === 0) {
-    switch (typeof val) {
-      case 'number':
-        val = (+val.toFixed(3)).toString()
-        break
-      case 'object':
-        el.appendChild(_createFoldoutCellButton(seq, attr, val))
-        val = null
-        break
-    }
-  } else {
-    val = ''
-  }
-  if (val) {
-    el.textContent = val
-  }
-  return el
-}
-
-function _createFoldoutCellButton (seq, attr, obj) {
-  const button = _elWithAttrs('button', { class: 'button button-table' })
-  button.dataset.seq = seq
-  button.dataset.column = attr
-  // eslint-disable-next-line dot-notation
-  let displayValue = obj['DISPLAY_VALUE']
-  if (!displayValue) {
-    displayValue = '❓'
-  } else {
-    // eslint-disable-next-line dot-notation
-    delete obj['DISPLAY_VALUE']
-  }
-  button.textContent = displayValue
-  button.dataset.dict = JSON.stringify(obj)
-  button.addEventListener('click', _foldoutCell)
-  return button
-}
-
-/**
- *
- * @param {Event} ev
- */
-
-function _foldoutCell (ev) {
-  const el = ev.target
-  const column = el.dataset.column
-  const seq = el.dataset.seq
-  const dict = JSON.parse(el.dataset.dict)
-
-  const overlay = _elWithClass('div', 'full-overlay')
-  overlay.id = 'overlay'
-  const modal = _elWithClass('div', 'cell-dict-modal')
-  const closeButton = _elWithClass('div', 'close-button')
-  closeButton.textContent = 'x'
-  closeButton.id = 'modal-close'
-  const heading = _elWithAttrs('h3')
-  heading.textContent = `Seq Num: ${seq} - ${column}`
-  modal.appendChild(closeButton)
-  modal.appendChild(heading)
-
-  const table = _elWithClass('table', 'cell-dict')
-  for (const [k, v] of Object.entries(dict)) {
-    const tRow = _elWithAttrs('tr')
-    const head = _elWithAttrs('th', { class: 'key', text: k })
-    const datum = _elWithAttrs('td', { class: 'value', text: v })
-    tRow.appendChild(head)
-    tRow.appendChild(datum)
-    table.appendChild(tRow)
-  }
-  modal.appendChild(table)
-  overlay.appendChild(modal)
-  document.querySelector('main').appendChild(overlay)
-  document.activeElement.blur()
-  overlay.addEventListener('click', (e) => {
-    if (e.target.id === 'overlay' || e.target.id === 'modal-close') {
-      modal.remove()
-      overlay.remove()
-    }
-  })
-  document.body.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      modal.remove()
-      overlay.remove()
-    }
-  })
-}
-
-/**
  * @param {{ [x: string]: string | number }} attributes
  * @param {string} attrToCheck
  */
@@ -211,31 +115,6 @@ export function indicatorForAttr (attributes, attrToCheck) {
     flag = attributes[indicator]
   }
   return flag
-}
-
-/**
- * @param {string} attributeName
- */
-export function removeColumnFromTableFor (attributeName) {
-  const cells = document.querySelectorAll('table .' + _escapeName(attributeName))
-  Array.from(cells).forEach(cell => { cell.remove() })
-}
-
-export function drawMetaColumnsAndRows (metaData, columns) {
-  Object.entries(metaData).forEach(([seq, attributes]) => {
-    const seqRow = _getById(`seqNum-${seq}`)
-    if (seqRow) {
-      // ...and column
-      columns.forEach(attr => {
-        const seqRowLastCell = seqRow.querySelectorAll('td:last-child')[0]
-        const escapedName = _escapeName(attr)
-        // check for indicator attribute (i.e. starts with '_')
-        const flag = indicatorForAttr(attributes, attr)
-        const el = createMetaTableCell(seq, attributes, attr, escapedName, flag)
-        seqRowLastCell.after(el)
-      })
-    }
-  })
 }
 
 function clearLocalStorageOnNewVersion () {

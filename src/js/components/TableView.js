@@ -1,6 +1,6 @@
 import React from 'react'
 import propTypes from 'prop-types'
-import { indicatorForAttr } from '../modules/utils'
+import { indicatorForAttr, _elWithClass, _elWithAttrs } from '../modules/utils'
 
 function formatImageLink (link, seqNum) {
   const date = window.APP_DATA.date
@@ -10,19 +10,38 @@ function formatImageLink (link, seqNum) {
   return formattedLink
 }
 
-// function DictMetadata ({ data }) {
-//   return (
-//     JSON.stringify(data)
-//   )
-// }
+function DictMetadata ({ data, seqNum, columnName }) {
+  let buttonIcon
+  if ('DISPLAY_VALUE' in data) {
+    buttonIcon = data.DISPLAY_VALUE
+  } else {
+    buttonIcon = '❓'
+  }
+  return (
+    <button
+    onClick={() => _foldoutCell(seqNum, columnName, data)}
+    className='button button-table'
+    data-seq = {seqNum}
+    data-column = {columnName}
+    data-dict = { JSON.stringify(data)}
+    >
+      { buttonIcon }
+    </button>
+  )
+}
+DictMetadata.propTypes = {
+  data: propTypes.object,
+  seqNum: propTypes.string,
+  columnName: propTypes.string
+}
 
-function MetadataCell ({ data, indicator }) {
+function MetadataCell ({ data, indicator, seqNum, columnName }) {
   const className = ['grid-cell meta', indicator].join(' ')
   let toDisplay = data
   if (typeof data === 'number' && data > 0 && data % 1 !== 0) {
     toDisplay = data.toFixed(3)
   } else if (typeof data === 'object') {
-    toDisplay = JSON.stringify(data)
+    toDisplay = <DictMetadata data={data} seqNum={seqNum} columnName={columnName} />
   }
   return (
     <td className={ className }>
@@ -32,7 +51,9 @@ function MetadataCell ({ data, indicator }) {
 }
 MetadataCell.propTypes = {
   data: propTypes.any,
-  indicator: propTypes.string
+  indicator: propTypes.string,
+  seqNum: propTypes.string,
+  columnName: propTypes.string
 }
 
 // Component for individual channel cell
@@ -62,6 +83,8 @@ function TableRow ({ seqNum, camera, channels, channelRow, metadataColumns, meta
     return {
       key: `${seqNum}_${md.name}`,
       data: metadataRow[md.name],
+      columnName: md.name,
+      seqNum,
       indicator
     }
   })
@@ -206,4 +229,46 @@ TableView.propTypes = {
 
 function seqChannels (camera) {
   return camera.channels.filter((cam) => !cam.per_day)
+}
+
+function _foldoutCell (seqNum, columnName, data) {
+  const overlay = _elWithClass('div', 'full-overlay')
+  overlay.id = 'overlay'
+  const modal = _elWithClass('div', 'cell-dict-modal')
+  const closeButton = _elWithClass('div', 'close-button')
+  closeButton.textContent = 'x'
+  closeButton.id = 'modal-close'
+  const heading = _elWithAttrs('h3')
+  heading.textContent = `Seq Num: ${seqNum} - ${columnName}`
+  modal.appendChild(closeButton)
+  modal.appendChild(heading)
+
+  const table = _elWithClass('table', 'cell-dict')
+  for (const [k, v] of Object.entries(data)) {
+    if (k === 'DISPLAY_VALUE') {
+      continue
+    }
+    const tRow = _elWithAttrs('tr')
+    const head = _elWithAttrs('th', { class: 'key', text: k })
+    const datum = _elWithAttrs('td', { class: 'value', text: v })
+    tRow.appendChild(head)
+    tRow.appendChild(datum)
+    table.appendChild(tRow)
+  }
+  modal.appendChild(table)
+  overlay.appendChild(modal)
+  document.querySelector('main').appendChild(overlay)
+  document.activeElement.blur()
+  overlay.addEventListener('click', (e) => {
+    if (e.target.id === 'overlay' || e.target.id === 'modal-close') {
+      modal.remove()
+      overlay.remove()
+    }
+  })
+  document.body.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      modal.remove()
+      overlay.remove()
+    }
+  })
 }
