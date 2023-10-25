@@ -5,6 +5,11 @@ RubinTV
 {% block pagesubtitle %}
 Locations
 {% endblock pagesubtitle %}
+{% block headerbuttons %}
+  <a href="{{ url_for('admin')}}" class="button admin">
+    Admin Page
+  </a>
+{% endblock headerbuttons %}
 {% block content %}
 <section class="locations">
   <h2>Locations</h2>

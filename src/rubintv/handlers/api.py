@@ -30,6 +30,12 @@ async def get_api_root(request: Request) -> list[Location]:
     return locations
 
 
+@api_router.post("/historical_reset")
+async def historical_reset(request: Request) -> None:
+    historical: HistoricalPoller = request.app.state.historical
+    await historical.trigger_reload_everything()
+
+
 @api_router.get("/{location_name}", response_model=Location)
 async def get_location(location_name: str, request: Request) -> Location:
     locations = request.app.state.models.locations

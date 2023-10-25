@@ -41,7 +41,7 @@ class HistoricalPoller:
     _calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
 
     # polling period in seconds
-    CHECK_NEW_DAY_PERIOD = 60
+    CHECK_NEW_DAY_PERIOD = 5
 
     def __init__(self, locations: list[Location]) -> None:
         self._locations = locations
@@ -54,6 +54,9 @@ class HistoricalPoller:
         self._last_reload = get_current_day_obs()
 
         self.cam_year_rgx = re.compile(r"(\w+)\/([\d]{4})-[\d]{2}-[\d]{2}")
+
+    async def trigger_reload_everything(self) -> None:
+        self._have_downloaded = False
 
     async def is_busy(self) -> bool:
         return not self._have_downloaded

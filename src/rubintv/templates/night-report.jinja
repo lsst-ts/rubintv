@@ -24,8 +24,6 @@
  {% if night_report %}
   {% set home_url = url_for('home') %}
     <script>window.APP_DATA.nightReport = {{ night_report|tojson }}</script>
-    {# <script>window.APP_DATA.date = "{{ date }}"</script> #}
-    <script>window.APP_DATA.camera = {{ camera|tojson }}</script>
     <script>window.APP_DATA.baseUrl = "{{ home_url }}"</script>
  {% endif %}
 {% endblock further %}

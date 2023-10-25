@@ -180,7 +180,7 @@ class CurrentPoller:
         to_return = objects
         if md_objs != []:
             md_obj = md_objs[0]
-            to_return = [o for o in objects if not md_obj]
+            to_return = [o for o in objects if o != md_obj]
         return (md_obj, to_return)
 
     async def process_metadata_file(
@@ -302,6 +302,8 @@ class CurrentPoller:
     ) -> dict[int, dict[str, dict]]:
         loc_cam = await self._get_loc_cam(location_name, camera)
         events = self._events.get(loc_cam)
+        logger = structlog.get_logger(__name__)
+        logger.info("current_table_events", events=events)
         if not events:
             return {}
         return await make_table_from_event_list(events, camera.seq_channels())

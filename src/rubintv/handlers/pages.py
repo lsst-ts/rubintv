@@ -56,6 +56,14 @@ async def get_home(
     )
 
 
+@pages_router.get("/admin", response_class=HTMLResponse, name="admin")
+async def get_admin_page(request: Request) -> Response:
+    title = build_title("Admin")
+    return templates.TemplateResponse(
+        "admin.jinja", {"request": request, "title": title}
+    )
+
+
 @pages_router.get(
     "/{location_name}", response_class=HTMLResponse, name="location"
 )

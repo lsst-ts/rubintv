@@ -1,0 +1,26 @@
+{% extends "_layout.jinja" %}
+{% block pagetitle %}
+  Admin
+{% endblock pagetitle %}
+{% block pagesubtitle %}
+  Channel and service status
+{% endblock pagesubtitle %}
+{% block undertitle %}
+  {{ version }}
+{% endblock undertitle %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('home') }}">Home</a>>
+<p>Admin</p>
+{% endblock breadcrumb  %}
+
+{% block content %}
+
+  <form action="reload_historical" method="POST" id="historicalReset">
+    <button>Reload All Historical Data</button>
+  </form>
+
+{% endblock content %}
+{% block footer_scripts %}
+<script src="{{ url_for('static', path='assets/admin.js') }}"></script>
+{% endblock footer_scripts %}

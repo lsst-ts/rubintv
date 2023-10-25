@@ -40,7 +40,7 @@ function MetadataCell ({ data, indicator, seqNum, columnName }) {
   let toDisplay = data
   if (typeof data === 'number' && data > 0 && data % 1 !== 0) {
     toDisplay = data.toFixed(3)
-  } else if (typeof data === 'object') {
+  } else if (data && typeof data === 'object') {
     toDisplay = <DictMetadata data={data} seqNum={seqNum} columnName={columnName} />
   }
   return (
