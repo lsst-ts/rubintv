@@ -28,7 +28,12 @@ from rubintv.handlers.pages_helpers import (
     night_report_to_dict,
     to_dict,
 )
-from rubintv.models.models import Channel, Event, NightReportPayload
+from rubintv.models.models import (
+    Channel,
+    Event,
+    NightReportPayload,
+    get_current_day_obs,
+)
 from rubintv.models.models_helpers import date_str_to_date, find_first
 from rubintv.templates_init import get_templates
 
@@ -136,6 +141,7 @@ async def get_camera_page(
             "metadata": metadata,
             "historical_busy": historical_busy,
             "nr_exists": nr_exists,
+            "isToday": day_obs == get_current_day_obs(),
             "title": title,
         },
     )

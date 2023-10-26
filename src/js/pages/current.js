@@ -11,7 +11,8 @@ import { WebsocketClient } from '../modules/websocket_client.js'
   const channel = initEvent.channel_name
   const baseImgURL = window.APP_DATA.imgURL.split('/').slice(0, -1).join('/')
   // eslint-disable-next-line no-unused-vars
-  const ws = new WebsocketClient('service', 'channel', location, camera, channel)
+  const ws = new WebsocketClient()
+  ws.subscribe('service', 'channel', location, camera, channel)
 
   window.addEventListener('channel', (message) => {
     const newEvent = message.detail.data

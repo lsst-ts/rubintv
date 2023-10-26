@@ -30,6 +30,8 @@ cameras:
     channels:
       - name: mount
         title: Mount motion profile
+      - name: m1m3_hardpoint_profile
+        title: M1M3 HP and Slew Profile
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
     {seqNum}}"
 

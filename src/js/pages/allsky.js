@@ -6,8 +6,8 @@ import { WebsocketClient } from '../modules/websocket_client.js'
   const camera = window.APP_DATA.camera
   const baseUrl = window.APP_DATA.baseUrl
   if (!window.APP_DATA.ishistorical) {
-    // eslint-disable-next-line no-unused-vars
-    const ws = new WebsocketClient('service', 'camera', locationName, camera.name)
+    const ws = new WebsocketClient()
+    ws.subscribe('service', 'camera', locationName, camera.name)
   }
   window.addEventListener('camera', (message) => {
     const currentImage = document.querySelector('.current-still')

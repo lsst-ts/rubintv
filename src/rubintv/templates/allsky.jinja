@@ -24,11 +24,7 @@
   </div>
   {% endif %}
 {% endblock content %}
-{% block further %}
-  {{ super() }}
-  {% set home_url = url_for('home') %}
-  <script>window.APP_DATA.baseUrl = "{{ home_url }}"</script>
-{% endblock further %}
+
 {% block footer_scripts %}
     <script src='{{ url_for("static", path="assets/allsky.js") }}'></script>
 {% endblock footer_scripts %}

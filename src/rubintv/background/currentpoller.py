@@ -93,7 +93,7 @@ class CurrentPoller:
                             objects, loc_cam, camera
                         )
                 self.completed_first_poll = True
-                await asyncio.sleep(3)
+                await asyncio.sleep(1)
         except Exception as e:
             logger.error(
                 "Error", error=e, traceback=get_exception_traceback_str(e)
@@ -112,7 +112,7 @@ class CurrentPoller:
 
             pd_data = await self.make_per_day_data(camera, events)
             self._per_day[loc_cam] = pd_data
-            await notify_of_update("camera", "per_day", loc_cam, pd_data)
+            await notify_of_update("camera", "perDay", loc_cam, pd_data)
 
             table = await self.make_channel_table(camera, events)
             self._table[loc_cam] = table
@@ -314,9 +314,10 @@ class CurrentPoller:
 
     async def get_current_per_day_data(
         self, location_name: str, camera: Camera
-    ) -> dict[str, Event]:
+    ) -> dict[str, dict[str, dict]]:
         loc_cam = await self._get_loc_cam(location_name, camera)
-        return self._per_day.get(loc_cam, {})
+        events = self._per_day.get(loc_cam, {})
+        return {chan: event.__dict__ for chan, event in events.items()}
 
     async def get_current_metadata(
         self, location_name: str, camera: Camera

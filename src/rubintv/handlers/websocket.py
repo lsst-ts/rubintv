@@ -58,6 +58,11 @@ async def data_websocket(
                 case "service":
                     if "message" in data:
                         service = data["message"]
+                        logger.info(
+                            "Attaching:",
+                            client_id=r_client_id,
+                            service=service,
+                        )
                         await attach_service(r_client_id, service, websocket)
                     else:
                         logger.warn(

@@ -4,17 +4,21 @@ import { validate } from 'uuid'
 export class WebsocketClient {
   // wsType is either 'historicalStatus' or 'service'
   // pageType for 'service's are either 'camera', 'channel' or 'nightreport'
-  constructor (wsType, pageType = null, location = null, camera = null, channel = null) {
+  constructor () {
     this.clientID = null
+    this.ws = new ReconnectingWebSocket(this.#getURL, undefined, { maxRetries: 2 })
+    this.ws.onmessage = this.handleMessage.bind(this)
+    this.ws.onclose = this.handleClose.bind(this)
+  }
+
+  subscribe (wsType, pageType = null, location = null, camera = null, channel = null) {
     const pageID = [location, camera, channel].filter((el) => el).join('/')
     this.initMessage = this.#getInitMessage(wsType, pageType, pageID)
-    const wsUrl = this.#getURL
     this.wsEventName = this.#getWSEventName(wsType, pageType)
-    this.ws = new ReconnectingWebSocket(wsUrl, undefined, { maxRetries: 2 })
-    this.ws.onmessage = this.handleMessage.bind(this)
-    // this.ws.onopen = this.handleOpen.bind(this)
-    // this.ws.onerror = this.handleError.bind(this)
-    this.ws.onclose = this.handleClose.bind(this)
+    // If clientID exists, send the initial message to subscribe to the new service
+    if (this.clientID) {
+      this.sendInitialMessage()
+    }
   }
 
   #getInitMessage (wsType, pageType, pageID) {
@@ -62,6 +66,9 @@ export class WebsocketClient {
     let data
     try {
       data = JSON.parse(messageEvent.data)
+      // if the connection closes in the meantime
+      // the server might send a new client ID
+      // so catch this in case
     } catch (error) {
       const valid = this.setClientID(messageEvent.data)
       if (valid) {

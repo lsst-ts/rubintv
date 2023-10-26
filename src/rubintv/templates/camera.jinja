@@ -68,7 +68,10 @@
     <script>
       window.APP_DATA.tableMetadata = {{ metadata|tojson }}
       window.APP_DATA.tableChannels = {{ channelData|tojson }}
+      window.APP_DATA.perDay = {{ per_day|tojson }}
       window.APP_DATA.eventURL = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}"
+      window.APP_DATA.hasNightReport = {{ nr_exists|tojson }}
+      window.APP_DATA.isToday = {{ isToday|tojson if isToday else "false "}}
     </script>
     <script src='{{ url_for("static", path="assets/camera-table.js") }}'></script>
   {{ super() }}

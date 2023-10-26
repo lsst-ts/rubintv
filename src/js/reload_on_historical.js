@@ -10,8 +10,8 @@ window.addEventListener('load', () => {
   if (_getById('historicalbusy') && _getById('historicalbusy').dataset.historicalbusy !== 'True') {
     return
   }
-  // eslint-disable-next-line no-unused-vars
-  const ws = new WebsocketClient('historicalStatus')
+  const ws = new WebsocketClient()
+  ws.subscribe('historicalStatus')
   window.addEventListener('historicalStatus', (message) => {
     console.log('event message:', message)
     const isBusy = message.detail.data

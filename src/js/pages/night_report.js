@@ -18,7 +18,8 @@ import { addTabsListeners, listenForKeypresses } from '../night-report/tabs-ui'
   const baseUrl = window.APP_DATA.baseUrl || ''
   if (!window.APP_DATA.ishistorical) {
     // eslint-disable-next-line no-unused-vars
-    const ws = new WebsocketClient('service', 'camera', locationName, camera.name)
+    const ws = new WebsocketClient()
+    ws.subscribe('service', 'camera', locationName, camera.name)
   }
   const tableRoot = createRoot(document.getElementById('night-report'))
   tableRoot.render(

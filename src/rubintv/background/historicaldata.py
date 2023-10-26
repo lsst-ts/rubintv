@@ -268,7 +268,7 @@ class HistoricalPoller:
 
     async def get_per_day_for_date(
         self, location: Location, camera: Camera, day_obs: date
-    ) -> dict[str, Event]:
+    ) -> dict[str, dict[str, dict]]:
         events = await self.get_events_for_date(location, camera, day_obs)
         if not events:
             return {}
@@ -278,7 +278,7 @@ class HistoricalPoller:
             return {}
         per_day = {}
         for event in per_day_lists:
-            per_day[event.channel_name] = event
+            per_day[event.channel_name] = event.__dict__
         return per_day
 
     async def get_metadata_for_date(
