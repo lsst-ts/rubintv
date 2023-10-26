@@ -117,6 +117,13 @@ export function indicatorForAttr (attributes, attrToCheck) {
   return flag
 }
 
+export function replaceInString (link, dayObs, seqNum) {
+  const formattedLink = link
+    .replace('{dayObs}', dayObs)
+    .replace('{seqNum}', seqNum.padStart(6, '0'))
+  return formattedLink
+}
+
 function clearLocalStorageOnNewVersion () {
   const thisVersion = document.documentElement.dataset.version
   if (!thisVersion) return

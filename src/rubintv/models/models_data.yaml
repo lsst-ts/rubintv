@@ -30,11 +30,15 @@ cameras:
     channels:
       - name: mount
         title: Mount motion profile
+    copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
+    {seqNum}}"
 
   - name: auxtel
     title: AuxTel
     online: True
     night_report_prefix: auxtel_night_reports
+    copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
+    {seqNum}, \"detector\": 0}"
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/view.html?\
     image=AT_O_{dayObs}_{seqNum}\
     &raft=R00&color=grey&bias=Simple+Overscan+Correction\
@@ -68,7 +72,6 @@ cameras:
         title: StarTracker
       - name: analysis
         title: Analysis
-    night_report_prefix: startracker_night_reports
 
   - name: startracker_wide
     title: StarTracker Wide
@@ -81,7 +84,6 @@ cameras:
       - name: analysis
         title: Wide Analysis
         label: ST Wide Analysis
-    night_report_prefix: startracker_night_reports
 
   - name: startracker_fast
     title: StarTracker Fast
@@ -94,7 +96,6 @@ cameras:
       - name: analysis
         title: Analysis
         prefix: analysis
-    night_report_prefix: startracker_night_reports
 
   - name: allsky
     title: All Sky
@@ -104,7 +105,6 @@ cameras:
         title: Current Movie
       - name: stills
         title: Current Image
-    js_entry: allsky
 
   - name: comcam
     title: ComCam
@@ -114,6 +114,8 @@ cameras:
         title: Focal Plane mosaic
       - name: noise_map
         title: Noise Map
+    copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
+    {seqNum}}"
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
     view.html?image=CC_O_{dayObs}_{seqNum}"
 
@@ -132,7 +134,6 @@ cameras:
       - name: ccob_analysis
         title: CCOB Analysis
     logo: slac_lsstcam.png
-    night_report_prefix: slac_lsstcam_night_reports
     night_report_label: Trending Plots
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
     FITSInfo/view.html?image=MC_C_{dayObs}_{seqNum}"
@@ -149,14 +150,12 @@ cameras:
     logo: ts8.png
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
     FITSInfo/view.html?image=TS_C_{dayObs}_{seqNum}"
-    night_report_prefix: ts8_night_reports
     night_report_label: Trending Plots
 
 
   - name: fake_auxtel
     title: Fake Auxtel
     online: True
-    night_report_prefix: fake_auxtel_night_reports
     channels:
       - name: monitor
         title: Monitor
@@ -171,6 +170,8 @@ cameras:
         name: movie
         title: Tonight's Movie
         label: "Movie for "
+    copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
+    {seqNum}}"
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/view.html?\
     image=AT_O_{dayObs}_{seqNum}\
     &raft=R00&color=grey&bias=Simple+Overscan+Correction\

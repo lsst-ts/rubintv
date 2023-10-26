@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import propTypes from 'prop-types'
 import TableView from './TableView'
 import TableControls from './TableControls'
-import { intersect } from '../modules/utils'
+import { _getById, intersect } from '../modules/utils'
 
 export default function TableApp ({ camera, initialDate, initialChannelData, initialMetadata }) {
   const [date, setDate] = useState(initialDate)
@@ -44,6 +44,7 @@ export default function TableApp ({ camera, initialDate, initialChannelData, ini
       const { datestamp, data, dataType } = event.detail
 
       if (datestamp && datestamp !== date) {
+        _getById('header-date').textContent = datestamp
         setDate(datestamp)
       }
 

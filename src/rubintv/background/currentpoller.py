@@ -19,6 +19,7 @@ from rubintv.models.models_helpers import (
     objects_to_ngt_reports,
 )
 from rubintv.s3client import S3Client
+from rubintv.utils import get_exception_traceback_str
 
 
 class CurrentPoller:
@@ -51,10 +52,13 @@ class CurrentPoller:
 
     async def clear_all_data(self) -> None:
         self._objects = {}
+        self._events = {}
         self._metadata = {}
+        self._table = {}
+        self._per_day = {}
+        self._singles = {}
         self._nr_metadata = {}
         self._nr_reports = {}
-        self._singles = {}
 
     async def poll_buckets_for_todays_data(self) -> None:
         try:
@@ -91,7 +95,9 @@ class CurrentPoller:
                 self.completed_first_poll = True
                 await asyncio.sleep(3)
         except Exception as e:
-            logger.error("Error", error=e)
+            logger.error(
+                "Error", error=e, traceback=get_exception_traceback_str(e)
+            )
 
     async def process_channel_objects(
         self, objects: list[dict[str, str]], loc_cam: str, camera: Camera
@@ -130,7 +136,7 @@ class CurrentPoller:
             ):
                 self._singles[chan_lookup] = current_event
                 await notify_of_update(
-                    "channel", "event", chan_lookup, current_event
+                    "channel", "event", chan_lookup, current_event.__dict__
                 )
 
     async def seive_out_metadata(
@@ -302,8 +308,6 @@ class CurrentPoller:
     ) -> dict[int, dict[str, dict]]:
         loc_cam = await self._get_loc_cam(location_name, camera)
         events = self._events.get(loc_cam)
-        logger = structlog.get_logger(__name__)
-        logger.info("current_table_events", events=events)
         if not events:
             return {}
         return await make_table_from_event_list(events, camera.seq_channels())

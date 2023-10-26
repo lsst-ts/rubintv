@@ -30,15 +30,14 @@ class Camera(BaseModel):
     online: bool
     metadata_from: str = ""
     logo: str = ""
-    image_viewer_link: str = ""
     channels: list[Channel] = []
-    night_report_prefix: str = ""
     night_report_label: str = "Night Report"
     metadata_cols: dict[str, dict[str, str]] | dict[str, str] | None = None
-    js_entry: str = ""
+    image_viewer_link: str = ""
+    copy_row_template: str = ""
 
-    # If metadata_from/js_entry not set, use name as default
-    @field_validator("metadata_from", "js_entry")
+    # If metadata_from not set, use name as default
+    @field_validator("metadata_from")
     def default_as_name(cls: Type, v: str, values: Any) -> str:
         return v or values.get("name")
 

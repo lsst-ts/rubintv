@@ -1,14 +1,6 @@
 import React from 'react'
 import propTypes from 'prop-types'
-import { indicatorForAttr, _elWithClass, _elWithAttrs } from '../modules/utils'
-
-function formatImageLink (link, seqNum) {
-  const date = window.APP_DATA.date
-  const formattedLink = link
-    .replace('{dayObs}', date.replaceAll('-', ''))
-    .replace('{seqNum}', seqNum.padStart(6, '0'))
-  return formattedLink
-}
+import { indicatorForAttr, _elWithClass, _elWithAttrs, replaceInString, _getById } from '../modules/utils'
 
 function DictMetadata ({ data, seqNum, columnName }) {
   let buttonIcon
@@ -78,10 +70,10 @@ ChannelCell.propTypes = {
 
 // Component for individual table row
 function TableRow ({ seqNum, camera, channels, channelRow, metadataColumns, metadataRow }) {
+  const dayObs = window.APP_DATA.date.replaceAll('-', '')
   const metadataCells = metadataColumns.map(md => {
     const indicator = indicatorForAttr(metadataRow, md.name)
     return {
-      key: `${seqNum}_${md.name}`,
       data: metadataRow[md.name],
       columnName: md.name,
       seqNum,
@@ -90,15 +82,24 @@ function TableRow ({ seqNum, camera, channels, channelRow, metadataColumns, meta
   })
   return (
     <tr>
-      <td className="grid-cell seq">{seqNum}</td>
-      {/* copy to clipboard and CCS viewer cells */}
-      <td className='grid-cell copy-to-cb'>
-        <button className='button button-table copy'></button>
+      <td
+      className="grid-cell seq"
+      id={`seqNum-${seqNum}`}>
+        {seqNum}
       </td>
+      {/* copy to clipboard and CCS viewer cells */}
+      {camera.copy_row_template &&
+        <td className='grid-cell copy-to-cb'>
+          <button
+          className='button button-table copy'
+          onClick={() => handleCopyButton(dayObs, seqNum, camera.copy_row_template, this)}
+          ></button>
+        </td>
+      }
       { camera.image_viewer_link && (
         <td className='grid-cell'>
           <a
-            href={formatImageLink(camera.image_viewer_link, seqNum)}
+            href={replaceInString(camera.image_viewer_link, dayObs, seqNum)}
             className='button button-table image-viewer-link' />
         </td>
       )}
@@ -106,8 +107,7 @@ function TableRow ({ seqNum, camera, channels, channelRow, metadataColumns, meta
         <ChannelCell key={`${seqNum}_${chan.name}`} event={channelRow[chan.name]} chanName={chan.name}/>
       ))}
       {metadataCells.map(md => (
-        // eslint-disable-next-line react/jsx-key
-        <MetadataCell {...md} />
+        <MetadataCell {...md} key={`${seqNum}_${md.columnName}`} />
       ))}
     </tr>
   )
@@ -184,7 +184,9 @@ function TableHeader ({ camera, metadataColumns }) {
     <thead>
       <tr>
         <th className="grid-title sideways">Seq. No.</th>
-        <th id='ctbEmpty'></th>
+        {camera.copy_row_template &&
+          <th id='ctbEmpty'></th>
+        }
         { camera.image_viewer_link && (
           <th className='grid-title sideways'>
             CCS Image Viewer
@@ -271,4 +273,17 @@ function _foldoutCell (seqNum, columnName, data) {
       overlay.remove()
     }
   })
+}
+
+function handleCopyButton (date, seqNum, template) {
+  const dayObs = date.replaceAll('-', '')
+  const dataStr = replaceInString(template, dayObs, seqNum)
+  navigator.clipboard.writeText(dataStr)
+  const responseMsg = _elWithAttrs('div', { class: 'copied', text: `DataId for ${seqNum} copied to clipboard` })
+  const pos = _getById(`seqNum-${seqNum}`).getBoundingClientRect()
+  responseMsg.setAttribute('style', `top: ${pos.y - (pos.height / 2)}px; left: ${pos.x + (pos.width + 8)}px`)
+  responseMsg.addEventListener('animationend', () => {
+    responseMsg.remove()
+  })
+  document.body.append(responseMsg)
 }
