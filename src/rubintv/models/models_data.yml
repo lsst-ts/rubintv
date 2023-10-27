@@ -35,6 +35,9 @@ Cameras:
       tma_mount_motion_profile:
         name: Mount motion profile
         prefix: tma_mount_motion_profile
+      tma_m1m3_hardpoint_profile:
+        name: M1M3 HP and Slew Profile
+        prefix: tma_m1m3_hardpoint_profile
     js_entry: auxtel
 
   auxtel:
