@@ -155,6 +155,9 @@ Cameras:
       noise_map:
         name: Noise Map
         prefix: slac_lsstcam_noise_map
+      photodiode_profile:
+        name: Photodiode profile
+        prefix: slac_lsstcam_photodiode_profile
       ccob_analysis:
         name: CCOB Analysis
         prefix: slac_lsstcam_ccob_analysis
