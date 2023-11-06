@@ -117,8 +117,10 @@ cameras:
     channels:
       - name: movies
         title: Current Movie
+        per_day: True
       - name: stills
         title: Current Image
+        per_day: True
 
   - name: comcam
     title: ComCam
