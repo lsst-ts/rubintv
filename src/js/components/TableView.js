@@ -49,13 +49,16 @@ MetadataCell.propTypes = {
 }
 
 // Component for individual channel cell
-function ChannelCell ({ event, chanName }) {
+function ChannelCell ({ event, chanName, chanColour }) {
   const eventURL = window.APP_DATA.eventURL
   return (
     <td className="grid-cell">
       {event && (
         <a
           className={`button button-table ${chanName}`}
+          style={
+            { backgroundColor: chanColour }
+          }
           href={`${eventURL}?key=${event.key}`}
         />
       )}
@@ -64,8 +67,9 @@ function ChannelCell ({ event, chanName }) {
 }
 ChannelCell.propTypes = {
   event: propTypes.object,
+  eventURL: propTypes.string,
   chanName: propTypes.string,
-  eventURL: propTypes.string
+  chanColour: propTypes.string
 }
 
 // Component for individual table row
@@ -104,7 +108,12 @@ function TableRow ({ seqNum, camera, channels, channelRow, metadataColumns, meta
         </td>
       )}
       {channels.map(chan => (
-        <ChannelCell key={`${seqNum}_${chan.name}`} event={channelRow[chan.name]} chanName={chan.name}/>
+        <ChannelCell
+        key={`${seqNum}_${chan.name}`}
+        event={channelRow[chan.name]}
+        chanName={chan.name}
+        chanColour={chan.colour}
+        />
       ))}
       {metadataCells.map(md => (
         <MetadataCell {...md} key={`${seqNum}_${md.columnName}`} />

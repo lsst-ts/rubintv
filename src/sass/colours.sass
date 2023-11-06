@@ -86,24 +86,11 @@ header
 .button.historical
   background-color: #262534
   color: #fff
-.button.movies
-  background-color: #83daee
 .button.night-report
   background-color:  #696797
   color: #fff
 .button.admin
   background-color: #999
-
-$auxtel: ("monitor":#F07F85, "mount": #F0C87F, "specexam": #7F85F0, "imexam": #7FF094)
-$startracker: ("startracker": #58528b, "analysis": #ba528f, "startracker_wide": #fc6465, "startracker_wide_analysis": #fda529)
-$startrackerfast: ("startracker_fast": #FECC66, "startracker_fast_analysis": #d5fa80)
-$slac: ("focal_plane_mosaic": #6fe9ba, "noise_map": #e771a8, "ccob_analysis": #e7ae71)
-$tma: ("tma_mount_motion_profile": #fa9284)
-
-$buttons: map_collect($auxtel, $startracker, $startrackerfast, $slac, $tma)
-@each $name, $colour in $buttons
-  .button.#{$name}
-    background-color: $colour
 
 
 $filters: ("u_color": #d9f3fd, "g_color": #e7fdd9, "r_color": #fdd7d7, "i_color": #e2d9fd, "z_color": #fdd9fd, "y_color": #ffeed9)

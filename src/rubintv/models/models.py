@@ -22,6 +22,7 @@ class Channel(BaseModel):
     title: str
     label: str = ""
     per_day: bool = False
+    colour: str = ""
 
 
 class Camera(BaseModel):

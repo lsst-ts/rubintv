@@ -16,8 +16,12 @@ function PerDayChannels ({ camera, date, perDay }) {
             const filename = event.filename + '.' + event.ext
             return (
               <li className="channel" key={channelName}>
-                <a className={`button button-large ${channelName}`}
+                <a
+                  className={`button button-large ${channelName}`}
                   href={`${baseUrl}event_video/${locationName}/${camera.name}/${channelName}/${filename}`}
+                  style={
+                    { backgroundColor: channel.colour }
+                  }
                 >
                   <img src={`${baseUrl}static/images/${channelName}.svg`} />
                   {label}

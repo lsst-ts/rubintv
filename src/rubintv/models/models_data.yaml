@@ -30,6 +30,7 @@ cameras:
     channels:
       - name: mount
         title: Mount motion profile
+        colour: "#fa9284"
       - name: m1m3_hardpoint_profile
         title: M1M3 HP and Slew Profile
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
@@ -49,21 +50,26 @@ cameras:
       -
         name: monitor
         title: Monitor
+        colour: "#F07F85"
       -
         name: imexam
         title: Image Analysis
         label: ImAnalysis
+        colour: "#7FF094"
       -
         name: specexam
         title: Spectrum
+        colour: "#7F85F0"
       -
         name: mount
         title: Mount
+        colour: "#F0C87F"
       -
         per_day: True
         name: movies
         title: Tonight's Movie
         label: "Movie for "
+        colour: "#83daee"
 
 
   - name: startracker
@@ -72,8 +78,10 @@ cameras:
     channels:
       - name: raw
         title: StarTracker
+        colour: "#58528b"
       - name: analysis
         title: Analysis
+        colour: "#ba528f"
 
   - name: startracker_wide
     title: StarTracker Wide
@@ -83,9 +91,11 @@ cameras:
       - name: raw
         title: StarTracker Wide
         label: ST Wide
+        colour: "#fc6465"
       - name: analysis
         title: Wide Analysis
         label: ST Wide Analysis
+        colour: "#fda529"
 
   - name: startracker_fast
     title: StarTracker Fast
@@ -95,9 +105,11 @@ cameras:
       - name: raw
         title: StarTrackerFast
         prefix: raw
+        colour: "#FECC66"
       - name: analysis
         title: Analysis
         prefix: analysis
+        colour: "#d5fa80"
 
   - name: allsky
     title: All Sky
@@ -114,8 +126,10 @@ cameras:
     channels:
       - name: focal_plane_mosaic
         title: Focal Plane mosaic
+        colour: "#6fe9ba"
       - name: noise_map
         title: Noise Map
+        colour: "#e771a8"
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
     {seqNum}}"
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
@@ -131,10 +145,13 @@ cameras:
     channels:
       - name: focal_plane_mosaic
         title: Focal Plane mosaic
+        colour: "#6fe9ba"
       - name: noise_map
         title: Noise Map
+        colour: "#e771a8"
       - name: ccob_analysis
         title: CCOB Analysis
+        colour: "#e7ae71"
     logo: slac_lsstcam.png
     night_report_label: Trending Plots
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
@@ -147,8 +164,10 @@ cameras:
     channels:
       - name: focal_plane_mosaic
         title: Focal Plane mosaic
+        colour: "#6fe9ba"
       - name: noise_map
         title: Noise Map
+        colour: "#e771a8"
     logo: ts8.png
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
     FITSInfo/view.html?image=TS_C_{dayObs}_{seqNum}"
@@ -161,17 +180,27 @@ cameras:
     channels:
       - name: monitor
         title: Monitor
+        colour: "#F07F85"
+
       - name: imexam
         title: Image Analysis
         label: ImAnalysis
+        colour: "#7FF094"
+
       - name: specexam
         title: Spectrum
+        colour: "#7F85F0"
+
       - name: mount
         title: Mount
+        colour: "#F0C87F"
+
       - per_day: True
         name: movie
         title: Tonight's Movie
         label: "Movie for "
+        colour: "#83daee"
+
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
     {seqNum}}"
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/view.html?\

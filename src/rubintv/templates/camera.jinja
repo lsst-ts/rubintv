@@ -44,6 +44,7 @@
               <li class="channel service"
                   id="{{ channel.name }}">
                 <a  class="button button-large {{ channel.name }}"
+                    style="background-color: {{ channel.colour }};"
                     href="{{
                       url_for('current_event',
                       location_name=location.name,
