@@ -1,5 +1,6 @@
 import propTypes from 'prop-types'
 import React, { useState } from 'react'
+import Clock from './Clock'
 import { _getById } from '../modules/utils'
 
 function TableControls ({ cameraName, allColNames, selected, setSelected, date, metadata }) {
@@ -56,6 +57,7 @@ function TableControls ({ cameraName, allColNames, selected, setSelected, date, 
         date={date}
         cameraName={cameraName}
         metadata={metadata} />
+      <Clock />
       <JumpButtons />
     </>
   )
