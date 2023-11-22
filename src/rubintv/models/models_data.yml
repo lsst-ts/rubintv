@@ -283,6 +283,35 @@ MetadataHeadings:
       The image type, e.g. bias, dark, flat etc
     Test type:
       The type of test being run, e.g. superflats
+    Carriage axis B:
+      "Camera coordinate value for carriage axis B of CCOB-Narrow projector [deg] - Source: (CATKW101-$CCOBBCAM)"
+    Carriage axis U:
+      "Camera coordinate value for carriage axis U of CCOB-Narrow projector [deg] - Source: (CATKW103-$CCOBUCAM)"
+    Incidence angle FP:
+      "Incidence angle of beam surface FP [deg] - Source: (CATKW10D-$FP_inc)"
+    FP x-coord:
+      "Camera Coordinate System x coordinate of beam at surface FP [mm] - Source: (CATKW10E-$FP_pos_x)"
+    FP y-coord:
+      "Camera Coordinate System y coordinate of beam at surface FP [mm] - Source: (CATKW10F-$FP_pos_y)"
+    Incidence angle FS1:
+      "Incidence angle of beam surface FS1 [deg] - Source: (CATKW110-$FS1_inc)"
+    Convergence test:
+      "Convergence test between target and raytraced position at focal plane for plan [mm] - Source: (CATKW128-$best)"
+    Shutter open (requested):
+      "High speed shutter requested open time [sec] - Source: (CATKW129-$expose)"
+    Exptime (requested):
+      "Requested focal plane exposure time [sec] - Source: (CATKW12A-$exptime)"
+    Filter model:
+      "Filter optic model used for computing this CCOB beam pointing [ugrizy	none - Source: (CATKW12B-$filter)"
+    CCOB catalog exposure id:
+      "Unique CCOB-narrow exposure catalog entry ID number for registration [hex] - Source: (CATKW12C-$id)"
+    Hyperchromator wavelength:
+      "Hyperchromator setting for wavelength output [nm] - Source: (CATKW12D-$lambda)"
+    Sensor address:
+      "Sensor address used in computing target for this CCOB beam pointing	 [Rij_Skl[_Cmn] - Source: (CATKW130-$sens)"
+    Target photon level:
+      "Target photon level target for this exposure's flat top section of CCOB-narrow beam - cf. local calibration file vs. plan file [inc.phot/pixel] - Source: (CATKW131-$target_phot_per_pix)"
+
   ts8:
     Run number:
       The run number, as taken from the exposure record's science_program field
