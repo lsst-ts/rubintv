@@ -1,3 +1,4 @@
+import os
 from itertools import chain
 from pathlib import Path
 from typing import Any, Type
@@ -28,7 +29,10 @@ class ModelsInitiator:
             data = yaml.safe_load(file)
         cameras = self._populate_model(Camera, data["cameras"])
         self.cameras = self._attach_metadata_cols(cameras, data)
-        locations = self._populate_model(Location, data["locations"])
+        current_location = where_am_i()
+        i_can_see = data["bucket_configurations"][current_location]
+        all_locations = self._populate_model(Location, data["locations"])
+        locations = [loc for loc in all_locations if loc.name in i_can_see]
         self.locations = self._attach_cameras_to_locations(
             self.cameras, locations
         )
@@ -94,6 +98,20 @@ class ModelsInitiator:
                 cam.metadata_cols = cols
             updated_cams.append(cam)
         return updated_cams
+
+
+def where_am_i() -> str:
+    location = os.getenv("RAPID_ANALYSIS_LOCATION", "")
+    if location == "TTS":
+        return "tucson"
+    if location == "SUMMIT":
+        return "summit"
+    if location == "USDF":
+        return "usdf-k8s"
+    if os.getenv("GITHUB_ACTIONS", ""):
+        return "gha"
+    else:
+        return "local"
 
 
 def dict_from_list_of_named_objects(a_list: list[Any]) -> dict[str, Any]:

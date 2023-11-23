@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import propTypes from 'prop-types'
+import PropTypes from 'prop-types'
 import TableView from './TableView'
 import TableControls from './TableControls'
 import { _getById, intersect } from '../modules/utils'
@@ -85,10 +85,10 @@ export default function TableApp ({ camera, initialDate, initialChannelData, ini
   )
 }
 TableApp.propTypes = {
-  camera: propTypes.object,
-  initialDate: propTypes.string,
-  initialChannelData: propTypes.object,
-  initialMetadata: propTypes.object
+  camera: PropTypes.object,
+  initialDate: PropTypes.string,
+  initialChannelData: PropTypes.object,
+  initialMetadata: PropTypes.object
 }
 
 function retrieveSelected (cameraName) {

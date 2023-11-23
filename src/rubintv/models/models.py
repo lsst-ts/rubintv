@@ -26,6 +26,53 @@ class Channel(BaseModel):
 
 
 class Camera(BaseModel):
+    """Represents a camera entity, capable of handling different channels like
+    images or movies.
+
+    This class extends the Pydantic BaseModel to leverage data validation. It
+    includes various attributes related to the camera, like its name, online
+    status, and associated channels. It also provides methods for setting
+    default values and categorizing channels.
+
+    Attributes
+    ----------
+    name : str
+        The name of the camera.
+    title : str
+        The title associated with the camera.
+    online : bool
+        Indicates whether the camera is online.
+    metadata_from : str, optional
+        The source of metadata for the camera. Defaults to an empty string and
+        uses `name` if not set.
+    logo : str, optional
+        The logo associated with the camera. Defaults to an empty string.
+    channels : list[Channel], optional
+        A list of channels (either images or movies) associated with the
+        camera. Defaults to an empty list.
+    night_report_label : str, optional
+        Label for the night report. Defaults to "Night Report".
+    metadata_cols : dict[str, str] | None, optional
+        A dictionary defining metadata columns. Defaults to
+        None.
+    image_viewer_link : str, optional
+        A link to the image viewer. Defaults to an empty string.
+    copy_row_template : str, optional
+        Template string for copying a row. Defaults to an empty string.
+
+    Methods
+    -------
+    default_as_name(cls: Type, v: str, values: Any) -> str
+        A class method that acts as a field validator for 'metadata_from'. It
+        defaults to using `name` if `metadata_from` is not set.
+    seq_channels() -> list[Channel]
+        Returns a list of sequential channels, i.e., channels that do not have
+        a per-day configuration.
+    pd_channels() -> list[Channel]
+        Returns a list of per-day channels, i.e., channels that have a per-day
+        configuration.
+    """
+
     name: str
     title: str
     online: bool
@@ -33,7 +80,7 @@ class Camera(BaseModel):
     logo: str = ""
     channels: list[Channel] = []
     night_report_label: str = "Night Report"
-    metadata_cols: dict[str, dict[str, str]] | dict[str, str] | None = None
+    metadata_cols: dict[str, str] | None = None
     image_viewer_link: str = ""
     copy_row_template: str = ""
 

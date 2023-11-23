@@ -148,6 +148,7 @@ jsconfig.json
 *.ipynb
 
 # npm and eslint
+.nvmrc
 */jsconfig.json
 .eslintrc.*
 node_modules/

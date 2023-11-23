@@ -1,4 +1,4 @@
-import { _getById } from './utils.js'
+import { _getById } from './utils'
 
 function applyYearControls () {
   const years = document.querySelectorAll('.year-title')

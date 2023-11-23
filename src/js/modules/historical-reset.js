@@ -1,4 +1,4 @@
-import { simplePost, _getById, _elWithAttrs } from './utils.js'
+import { simplePost, _getById, _elWithAttrs } from './utils'
 
 export function listenForHistoricalReset () {
   const form = _getById('historicalReset')

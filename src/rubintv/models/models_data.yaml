@@ -1,3 +1,15 @@
+bucket_configurations:
+  usdf-k8s:
+    [ slac, tucson, summit ]
+  tucson:
+    [ tucson ]
+  summit:
+    [ summit ]
+  gha:
+    [ slac, tucson, summit ]
+  local:
+    [ slac, tucson, summit ]
+
 locations:
   - name: slac
     title: SLAC

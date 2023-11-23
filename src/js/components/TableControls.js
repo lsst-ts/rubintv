@@ -1,4 +1,4 @@
-import propTypes from 'prop-types'
+import PropTypes from 'prop-types'
 import React, { useState } from 'react'
 import Clock from './Clock'
 import { _getById } from '../modules/utils'
@@ -63,12 +63,12 @@ function TableControls ({ cameraName, allColNames, selected, setSelected, date, 
   )
 }
 TableControls.propTypes = {
-  allColNames: propTypes.array,
-  cameraName: propTypes.string,
-  selected: propTypes.array,
-  setSelected: propTypes.func,
-  date: propTypes.string,
-  metadata: propTypes.object
+  allColNames: PropTypes.array,
+  cameraName: PropTypes.string,
+  selected: PropTypes.array,
+  setSelected: PropTypes.func,
+  date: PropTypes.string,
+  metadata: PropTypes.object
 }
 
 export default TableControls
@@ -107,9 +107,9 @@ function DownloadMetadataButton ({ date, cameraName, metadata }) {
   )
 }
 DownloadMetadataButton.propTypes = {
-  cameraName: propTypes.string,
-  date: propTypes.string,
-  metadata: propTypes.object
+  cameraName: PropTypes.string,
+  date: PropTypes.string,
+  metadata: PropTypes.object
 }
 
 function downloadMetadata (date, cameraName, metadata) {

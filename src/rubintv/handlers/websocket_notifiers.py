@@ -58,6 +58,3 @@ async def notify_all_status_change(historical_busy: bool) -> None:
                         "payload": historical_busy,
                     }
                 )
-
-
-# async def notify_of_status(client_id: UUID, historical_busy: bool) -> None:

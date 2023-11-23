@@ -1,5 +1,5 @@
 import React from 'react'
-import propTypes from 'prop-types'
+import PropTypes from 'prop-types'
 import { indicatorForAttr, _elWithClass, _elWithAttrs, replaceInString, _getById } from '../modules/utils'
 
 function DictMetadata ({ data, seqNum, columnName }) {
@@ -22,9 +22,9 @@ function DictMetadata ({ data, seqNum, columnName }) {
   )
 }
 DictMetadata.propTypes = {
-  data: propTypes.object,
-  seqNum: propTypes.string,
-  columnName: propTypes.string
+  data: PropTypes.object,
+  seqNum: PropTypes.string,
+  columnName: PropTypes.string
 }
 
 function MetadataCell ({ data, indicator, seqNum, columnName }) {
@@ -42,10 +42,10 @@ function MetadataCell ({ data, indicator, seqNum, columnName }) {
   )
 }
 MetadataCell.propTypes = {
-  data: propTypes.any,
-  indicator: propTypes.string,
-  seqNum: propTypes.string,
-  columnName: propTypes.string
+  data: PropTypes.any,
+  indicator: PropTypes.string,
+  seqNum: PropTypes.string,
+  columnName: PropTypes.string
 }
 
 // Component for individual channel cell
@@ -66,10 +66,10 @@ function ChannelCell ({ event, chanName, chanColour }) {
   )
 }
 ChannelCell.propTypes = {
-  event: propTypes.object,
-  eventURL: propTypes.string,
-  chanName: propTypes.string,
-  chanColour: propTypes.string
+  event: PropTypes.object,
+  eventURL: PropTypes.string,
+  chanName: PropTypes.string,
+  chanColour: PropTypes.string
 }
 
 // Component for individual table row
@@ -122,12 +122,12 @@ function TableRow ({ seqNum, camera, channels, channelRow, metadataColumns, meta
   )
 }
 TableRow.propTypes = {
-  seqNum: propTypes.string,
-  camera: propTypes.object,
-  channels: propTypes.array,
-  channelRow: propTypes.object,
-  metadataColumns: propTypes.array,
-  metadataRow: propTypes.object
+  seqNum: PropTypes.string,
+  camera: PropTypes.object,
+  channels: PropTypes.array,
+  channelRow: PropTypes.object,
+  metadataColumns: PropTypes.array,
+  metadataRow: PropTypes.object
 }
 
 // Body component for rendering rows of data
@@ -160,12 +160,12 @@ function TableBody ({ camera, channels, channelData, metadataColumns, metadata }
   )
 }
 TableBody.propTypes = {
-  camera: propTypes.object,
-  channels: propTypes.array,
-  metadataColumns: propTypes.array,
-  channelData: propTypes.object,
-  metadata: propTypes.object,
-  eventURL: propTypes.string
+  camera: PropTypes.object,
+  channels: PropTypes.array,
+  metadataColumns: PropTypes.array,
+  channelData: PropTypes.object,
+  metadata: PropTypes.object,
+  eventURL: PropTypes.string
 }
 
 // Component for individual channel header
@@ -181,7 +181,7 @@ function ChannelHeader ({ channel }) {
   )
 }
 ChannelHeader.propTypes = {
-  channel: propTypes.object
+  channel: PropTypes.object
 }
 
 // Header component for rendering column titles
@@ -210,9 +210,9 @@ function TableHeader ({ camera, metadataColumns }) {
   )
 }
 TableHeader.propTypes = {
-  camera: propTypes.object,
-  metadataColumns: propTypes.array,
-  selected: propTypes.array
+  camera: PropTypes.object,
+  metadataColumns: PropTypes.array,
+  selected: PropTypes.array
 }
 
 export default function TableView ({ camera, channelData, metadata, metadataColumns }) {
@@ -231,11 +231,11 @@ export default function TableView ({ camera, channelData, metadata, metadataColu
   )
 }
 TableView.propTypes = {
-  camera: propTypes.object,
-  metadataColumns: propTypes.array,
-  channelData: propTypes.object,
-  metadata: propTypes.object,
-  eventURL: propTypes.string
+  camera: PropTypes.object,
+  metadataColumns: PropTypes.array,
+  channelData: PropTypes.object,
+  metadata: PropTypes.object,
+  eventURL: PropTypes.string
 }
 
 function seqChannels (camera) {

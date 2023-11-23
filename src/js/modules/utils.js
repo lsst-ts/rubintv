@@ -134,3 +134,19 @@ function clearLocalStorageOnNewVersion () {
   }
 }
 clearLocalStorageOnNewVersion()
+
+// A helper function to mimic Jinja2's groupby
+export function groupBy (array, keyFunction) {
+  const obj = {}
+  if (!array || array.length === 0) {
+    return []
+  }
+  array.forEach(item => {
+    const key = keyFunction(item)
+    if (!obj[key]) {
+      obj[key] = []
+    }
+    obj[key].push(item)
+  })
+  return Object.entries(obj)
+}

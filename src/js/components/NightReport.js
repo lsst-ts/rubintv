@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import propTypes from 'prop-types'
+import PropTypes from 'prop-types'
+import { groupBy } from '../modules/utils'
 
 function NightReportText ({ nightReport }) {
   const texts = nightReport.text || {}
@@ -12,15 +13,23 @@ function NightReportText ({ nightReport }) {
             return (
               <ul className='dashboard-text' key={textName}>
                 <li>
-                {texts[textName].split('\n').map((line, lineNum) => {
-                  if (line) {
-                    return (
-                        <p key={lineNum}>{line.replace('  ', String.fromCharCode(160) + String.fromCharCode(160))}</p>
-                    )
-                  } else {
-                    return <br key={lineNum}/>
-                  }
-                })}
+                  {texts[textName].split('\n').map((line, lineNum) => {
+                    if (line) {
+                      return (
+                          /* char code 160 is non-breaking space- used so that
+                          formatted text lines up as expected. */
+                          <p key={lineNum}>
+                            {
+                              line.replace('  ',
+                                String.fromCharCode(160) +
+                                String.fromCharCode(160))
+                            }
+                          </p>
+                      )
+                    } else {
+                      return <br key={lineNum}/>
+                    }
+                  })}
                   </li>
               </ul>
             )
@@ -31,11 +40,13 @@ function NightReportText ({ nightReport }) {
           // not multiline text so must be a dict of key/value pairs
           return (
             <ul className='dashboard-quantities' key={text}>
-              {Object.entries(texts[textName]).map(([quantity, measurement], lineNum) => (
-                <li key={lineNum}>
-                  {quantity}: {measurement}
-                </li>
-              ))}
+              {Object.entries(texts[textName])
+                .map(([quantity, measurement], lineNum) => (
+                  <li key={lineNum}>
+                    {quantity}: {measurement}
+                  </li>
+                ))
+              }
             </ul>
           )
         }
@@ -44,7 +55,12 @@ function NightReportText ({ nightReport }) {
   )
 }
 NightReportText.propTypes = {
-  nightReport: propTypes.object
+  /**
+   * NightReportText objects have keys that are either `text_${num}` for which
+   * the value is a multiline text string with newline (\n) delimeters or a
+   * quality/measurement pair.
+   */
+  nightReport: PropTypes.object
 }
 
 function NightReport ({ initialNightReport, initialDate, camera, locationName, baseUrl }) {
@@ -53,7 +69,6 @@ function NightReport ({ initialNightReport, initialDate, camera, locationName, b
 
   useEffect(() => {
     function handleNightReportEvent (event) {
-      console.debug('Nightreport event:', event)
       const { datestamp, data, dataType } = event.detail
 
       if (datestamp && datestamp !== date) {
@@ -72,12 +87,12 @@ function NightReport ({ initialNightReport, initialDate, camera, locationName, b
     }
   }, [date]) // Only reattach the event listener if the date changes
 
-  const plots = nightReport.plots
   if (Object.entries(nightReport).length === 0) {
     return (
       <h3>There is no night report for today yet</h3>
     )
   }
+  const plots = nightReport.plots
   return (
     <div>
       <h3 id='the-date'>
@@ -89,7 +104,7 @@ function NightReport ({ initialNightReport, initialDate, camera, locationName, b
             <div id='tabtitle-text' className='tab-title disabled'>Efficiency</div>
             { groupBy(plots, plot => plot.group).map(([group, grouped]) => {
               let isDisabled = ''
-              if (group === 'Elana' || group === 'elana') {
+              if (group.toLowerCase === 'elana') {
                 isDisabled = 'disabled'
               }
               return (
@@ -123,27 +138,36 @@ function NightReport ({ initialNightReport, initialDate, camera, locationName, b
   )
 }
 NightReport.propTypes = {
-  initialDate: propTypes.string,
-  initialNightReport: propTypes.object,
-  camera: propTypes.object,
-  locationName: propTypes.string,
-  baseUrl: propTypes.string
+  /** The date in 'YYYY-MM-DD' format. */
+  initialDate: PropTypes.string,
+  /** NightReport object has optional 'plots' and/or 'text' properties.
+   *  A plot object comprises the following string attributes:
+   * {
+   *  'key': (string) The key of the original object in the bucket.
+   *  'hash': (string) The hash of the object.
+   *  'camera': (string) The camera to which the plot belongs.
+   *  'day_obs': (string) The date of the plot.
+   *  'group': (string) The group to which the plot belongs.
+   *  'filename': (string) The filename for the plot.
+   *  'ext': (string) The file extension.
+   * }
+   * See NightReportText above for a brief description of the 'text' object.
+   */
+  initialNightReport: PropTypes.exact({
+    plots: PropTypes.arrayOf(PropTypes.object),
+    text: PropTypes.object
+  }),
+  /** The camera object. Please see rubin-tv/src/rubintv/models/models.py
+   * for a full description.
+  */
+  camera: PropTypes.object,
+  /** The name of the camera location. */
+  locationName: PropTypes.string,
+  /** Absolute base URL as defined by the app. Injected from the template to
+   * avoid using js string wrangling to find it. Used to construct plot paths
+   * for linking to.
+   */
+  baseUrl: PropTypes.string
 }
 
 export default NightReport
-
-// A helper function to mimic Jinja2's groupby
-function groupBy (array, keyFunction) {
-  const obj = {}
-  if (!array || array.length === 0) {
-    return []
-  }
-  array.forEach(item => {
-    const key = keyFunction(item)
-    if (!obj[key]) {
-      obj[key] = []
-    }
-    obj[key].push(item)
-  })
-  return Object.entries(obj)
-}

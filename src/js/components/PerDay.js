@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import propTypes from 'prop-types'
+import PropTypes from 'prop-types'
 
 function PerDayChannels ({ camera, date, perDay }) {
   const baseUrl = window.APP_DATA.baseUrl
@@ -36,9 +36,38 @@ function PerDayChannels ({ camera, date, perDay }) {
   )
 }
 PerDayChannels.propTypes = {
-  camera: propTypes.object,
-  perDay: propTypes.object,
-  date: propTypes.string
+  /** The current camera has attributes:
+   * {
+      name: <name of the camera>
+      title: <camera display title>
+      online: <true for online i.e. will display web page>
+      metadata_from: <n/a>
+      logo: <filename of logo>
+      channels: <array of channel objects>
+      night_report_label: <display name for Night Report>
+      metadata_cols: <names and optional description of default columns>
+      image_viewer_link: <template for hi-res image viewer link>
+      copy_row_template: <template for copy to clipboard text>
+   * }
+   */
+  camera: PropTypes.shape({
+    name: PropTypes.string,
+    title: PropTypes.string,
+    online: PropTypes.bool,
+    metadata_from: PropTypes.string,
+    logo: PropTypes.string,
+    channels: PropTypes.arrayOf(PropTypes.object),
+    night_report_label: PropTypes.string,
+    metadata_cols: PropTypes.object,
+    image_viewer_link: PropTypes.string,
+    copy_row_template: PropTypes.string
+  }),
+  /** perDay is an object with channel names as keys and single Events as
+   * values.
+   */
+  perDay: PropTypes.object,
+  /** The chosen date. */
+  date: PropTypes.string
 }
 
 function NightReportLink ({ camera, date, nightReportExists }) {
@@ -70,9 +99,9 @@ function NightReportLink ({ camera, date, nightReportExists }) {
   )
 }
 NightReportLink.propTypes = {
-  camera: propTypes.object,
-  date: propTypes.string,
-  nightReportExists: propTypes.bool
+  camera: PropTypes.object,
+  date: PropTypes.string,
+  nightReportExists: PropTypes.bool
 }
 
 export default function PerDay ({ camera, initialDate, initialPerDay, nightReportExists }) {
@@ -81,7 +110,6 @@ export default function PerDay ({ camera, initialDate, initialPerDay, nightRepor
 
   useEffect(() => {
     function handleCameraEvent (event) {
-      console.debug('TableApp event:', event)
       const { datestamp, data, dataType } = event.detail
 
       if (datestamp && datestamp !== date) {
@@ -108,9 +136,9 @@ export default function PerDay ({ camera, initialDate, initialPerDay, nightRepor
   )
 }
 PerDay.propTypes = {
-  camera: propTypes.object,
-  initialPerDay: propTypes.object,
-  initialDate: propTypes.string,
-  nightReportExists: propTypes.bool,
-  hasCalendar: propTypes.bool
+  camera: PropTypes.object,
+  initialPerDay: PropTypes.object,
+  initialDate: PropTypes.string,
+  nightReportExists: PropTypes.bool,
+  hasCalendar: PropTypes.bool
 }
