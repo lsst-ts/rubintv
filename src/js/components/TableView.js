@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { indicatorForAttr, _elWithClass, _elWithAttrs, replaceInString, _getById } from '../modules/utils'
+import { metadatumType } from './componentPropTypes'
 
 function DictMetadata ({ data, seqNum, columnName }) {
   let buttonIcon
@@ -42,7 +43,7 @@ function MetadataCell ({ data, indicator, seqNum, columnName }) {
   )
 }
 MetadataCell.propTypes = {
-  data: PropTypes.any,
+  data: metadatumType,
   indicator: PropTypes.string,
   seqNum: PropTypes.string,
   columnName: PropTypes.string

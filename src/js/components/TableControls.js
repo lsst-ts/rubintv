@@ -2,8 +2,10 @@ import PropTypes from 'prop-types'
 import React, { useState } from 'react'
 import Clock from './Clock'
 import { _getById } from '../modules/utils'
+import { metadataType } from './componentPropTypes'
 
 function TableControls ({ cameraName, allColNames, selected, setSelected, date, metadata }) {
+  console.log('allColNames , selected', allColNames, selected)
   const [controlsOpen, setControlsOpen] = useState(false)
 
   const locationName = document.documentElement.dataset.locationname
@@ -16,7 +18,6 @@ function TableControls ({ cameraName, allColNames, selected, setSelected, date, 
       } else {
         updatedSelected = [...prevSelected, name]
       }
-      console.log('Updating with', updatedSelected)
       storeSelected(updatedSelected, `${locationName}/${cameraName}`)
       return updatedSelected
     })
@@ -63,12 +64,18 @@ function TableControls ({ cameraName, allColNames, selected, setSelected, date, 
   )
 }
 TableControls.propTypes = {
-  allColNames: PropTypes.array,
+  /** the names of all metadata columns */
+  allColNames: PropTypes.arrayOf(PropTypes.string),
+  /** the name of the current camera */
   cameraName: PropTypes.string,
-  selected: PropTypes.array,
+  /** the names of the currently selected columns to display */
+  selected: PropTypes.arrayOf(PropTypes.string),
+  /** callback function from the parent component TableApp */
   setSelected: PropTypes.func,
+  /** the given date */
   date: PropTypes.string,
-  metadata: PropTypes.object
+  /** the current metadata for this camera/date */
+  metadata: metadataType
 }
 
 export default TableControls

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
+import { cameraType, eventType } from './componentPropTypes'
 
 function PerDayChannels ({ camera, date, perDay }) {
   const baseUrl = window.APP_DATA.baseUrl
@@ -36,36 +37,13 @@ function PerDayChannels ({ camera, date, perDay }) {
   )
 }
 PerDayChannels.propTypes = {
-  /** The current camera has attributes:
-   * {
-      name: <name of the camera>
-      title: <camera display title>
-      online: <true for online i.e. will display web page>
-      metadata_from: <n/a>
-      logo: <filename of logo>
-      channels: <array of channel objects>
-      night_report_label: <display name for Night Report>
-      metadata_cols: <names and optional description of default columns>
-      image_viewer_link: <template for hi-res image viewer link>
-      copy_row_template: <template for copy to clipboard text>
-   * }
+  /** The current camera.
    */
-  camera: PropTypes.shape({
-    name: PropTypes.string,
-    title: PropTypes.string,
-    online: PropTypes.bool,
-    metadata_from: PropTypes.string,
-    logo: PropTypes.string,
-    channels: PropTypes.arrayOf(PropTypes.object),
-    night_report_label: PropTypes.string,
-    metadata_cols: PropTypes.object,
-    image_viewer_link: PropTypes.string,
-    copy_row_template: PropTypes.string
-  }),
-  /** perDay is an object with channel names as keys and single Events as
+  camera: cameraType,
+  /** perDay is an object with channel names as keys and single events as
    * values.
    */
-  perDay: PropTypes.object,
+  perDay: PropTypes.objectOf(eventType),
   /** The chosen date. */
   date: PropTypes.string
 }
@@ -99,7 +77,7 @@ function NightReportLink ({ camera, date, nightReportExists }) {
   )
 }
 NightReportLink.propTypes = {
-  camera: PropTypes.object,
+  camera: cameraType,
   date: PropTypes.string,
   nightReportExists: PropTypes.bool
 }
@@ -136,9 +114,9 @@ export default function PerDay ({ camera, initialDate, initialPerDay, nightRepor
   )
 }
 PerDay.propTypes = {
-  camera: PropTypes.object,
-  initialPerDay: PropTypes.object,
+  camera: cameraType,
+  initialPerDay: PropTypes.objectOf(eventType),
   initialDate: PropTypes.string,
-  nightReportExists: PropTypes.bool,
-  hasCalendar: PropTypes.bool
+  /** True if a night report event exists for this date. */
+  nightReportExists: PropTypes.bool
 }

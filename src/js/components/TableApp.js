@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import TableView from './TableView'
 import TableControls from './TableControls'
 import { _getById, intersect } from '../modules/utils'
+import { cameraType, channelDataType, metadataType } from './componentPropTypes'
 
 export default function TableApp ({ camera, initialDate, initialChannelData, initialMetadata }) {
   const [date, setDate] = useState(initialDate)
@@ -85,10 +86,12 @@ export default function TableApp ({ camera, initialDate, initialChannelData, ini
   )
 }
 TableApp.propTypes = {
-  camera: PropTypes.object,
+  camera: cameraType,
+  /** Date given when first landing on the page. */
   initialDate: PropTypes.string,
-  initialChannelData: PropTypes.object,
-  initialMetadata: PropTypes.object
+  /**  */
+  initialChannelData: channelDataType,
+  initialMetadata: metadataType
 }
 
 function retrieveSelected (cameraName) {
