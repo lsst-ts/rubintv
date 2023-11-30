@@ -119,6 +119,6 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/lsst-sqre/rubintv:${{ steps.vars.outputs.tag }}
+            ghcr.io/lsst-ts/rubintv:${{ steps.vars.outputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
