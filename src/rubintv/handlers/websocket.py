@@ -149,8 +149,6 @@ async def attach_service(
             )
             return
 
-    # await websocket.send_text(f"OK/{service_loc_cam}")
-
     async with services_lock:
         if service in services_clients:
             services_clients[service_loc_cam].append(client_id)

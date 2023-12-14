@@ -37,7 +37,6 @@ class HistoricalPoller:
     _events: dict[str, list[Event]] = {}
     _nr_metadata: dict[str, list[NightReport]] = {}
 
-    # {loc_cam: {year: {months: {days : max_seq }}}}
     _calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
 
     # polling period in seconds

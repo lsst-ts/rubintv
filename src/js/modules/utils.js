@@ -150,3 +150,8 @@ export function groupBy (array, keyFunction) {
   })
   return Object.entries(obj)
 }
+
+export function retrieveSelected (cameraName) {
+  const retrieved = localStorage.getItem(cameraName)
+  return (retrieved && JSON.parse(retrieved))
+}

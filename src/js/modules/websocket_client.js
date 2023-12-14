@@ -102,7 +102,6 @@ export class WebsocketClient {
   sendInitialMessage () {
     const message = this.initMessage
     message.clientID = this.clientID
-    console.log('Requesting websocket service:', message)
     this.ws.send(JSON.stringify(message))
   }
 }

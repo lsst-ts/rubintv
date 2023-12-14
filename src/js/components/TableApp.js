@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import TableView from './TableView'
 import TableControls from './TableControls'
-import { _getById, intersect } from '../modules/utils'
+import { _getById, intersect, retrieveSelected } from '../modules/utils'
 import { cameraType, channelDataType, metadataType } from './componentPropTypes'
 
 export default function TableApp ({ camera, initialDate, initialChannelData, initialMetadata }) {
@@ -94,14 +94,6 @@ TableApp.propTypes = {
   initialMetadata: metadataType
 }
 
-function retrieveSelected (cameraName) {
-  const retrieved = localStorage.getItem(cameraName)
-  return (retrieved && JSON.parse(retrieved))
-}
-
-/**
- * @param {{ [s: string]: any }} metadata
- */
 function getAllColumnNames (metadataColNames, defaultMetaColNames) {
   return Array.from(new Set(defaultMetaColNames.concat(metadataColNames)))
 }

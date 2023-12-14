@@ -243,6 +243,11 @@ function seqChannels (camera) {
   return camera.channels.filter((cam) => !cam.per_day)
 }
 
+/** Generate a modal window for displaying a metadata object of
+ * key/value pairs. The function is called when button in a metadata cell of
+ * the table is clicked.
+ */
+
 function _foldoutCell (seqNum, columnName, data) {
   const overlay = _elWithClass('div', 'full-overlay')
   overlay.id = 'overlay'

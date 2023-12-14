@@ -2,7 +2,6 @@ import { WebsocketClient } from '../modules/websocket_client.js'
 
 (function () {
   const locationName = document.documentElement.dataset.locationname
-  console.log('Found locationname', locationName)
   const camera = window.APP_DATA.camera
   const baseUrl = window.APP_DATA.baseUrl
   if (!window.APP_DATA.ishistorical) {
