@@ -33,7 +33,7 @@ async def test_get_home(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_get_location(client: AsyncClient) -> None:
     """Test that location page has links to cameras"""
-    location_name = "summit"
+    location_name = "summit-usdf"
     location = find_first(m.locations, "name", location_name)
     assert type(location) == Location
 

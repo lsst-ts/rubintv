@@ -57,7 +57,7 @@ async def test_get_api_location_camera(client: AsyncClient) -> None:
 async def test_get_invalid_api_location_camera(client: AsyncClient) -> None:
     """Test that api location returns 404 for a camera not at an existing
     location"""
-    location_name = "summit"
+    location_name = "summit-usdf"
     camera_name = "ts8"
     response = await client.get(f"/rubintv/api/{location_name}/{camera_name}")
     assert response.status_code == 404
@@ -69,7 +69,7 @@ async def test_get_api_location_camera_current_for_offline(
 ) -> None:
     """Test that api location camera current gives no events for offline
     camera"""
-    location_name = "summit"
+    location_name = "summit-usdf"
     camera_name = "lsstcam"
 
     response = await client.get(

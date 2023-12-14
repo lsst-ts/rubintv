@@ -45,7 +45,9 @@ class HistoricalPoller:
     def __init__(self, locations: list[Location]) -> None:
         self._locations = locations
         self._clients = {
-            location.name: S3Client(location.bucket_name)
+            location.name: S3Client(
+                location.profile_name, location.bucket_name
+            )
             for location in locations
         }
 

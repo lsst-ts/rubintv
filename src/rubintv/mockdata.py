@@ -31,7 +31,7 @@ def mock_up_data(locations: list[Location]) -> None:
     the_past = today - timedelta(days=100)
 
     for location in locations:
-        bucket_name = location.profile_name
+        bucket_name = location.bucket_name
 
         # mock bucket requires a legit region name
         s3 = boto3.resource("s3", region_name="us-east-1")
