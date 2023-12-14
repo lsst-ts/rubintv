@@ -102,6 +102,8 @@ class ModelsInitiator:
 
 def where_am_i() -> str:
     location = os.getenv("RAPID_ANALYSIS_LOCATION", "")
+    if location == "BTS":
+        return "base"
     if location == "TTS":
         return "tucson"
     if location == "SUMMIT":

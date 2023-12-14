@@ -100,6 +100,7 @@ class Location(BaseModel, arbitrary_types_allowed=True):
     name: str
     title: str
     bucket_name: str
+    profile_name: str
     camera_groups: dict[str, list[str]]
     cameras: list[Camera] = []
     logo: str = ""

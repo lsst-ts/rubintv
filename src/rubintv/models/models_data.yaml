@@ -1,26 +1,67 @@
 bucket_configurations:
   usdf-k8s:
-    [ slac, tucson, summit ]
+    [ slac, base-usdf, tucson-usdf, summit-usdf ]
+  base:
+    [ base ]
   tucson:
     [ tucson ]
   summit:
     [ summit ]
   gha:
-    [ slac, tucson, summit ]
+    [ slac, base-usdf, tucson-usdf, summit-usdf ]
   local:
-    [ slac, tucson, summit ]
+    [ slac, base-usdf, tucson-usdf, summit-usdf ]
 
 locations:
   - name: slac
     title: SLAC
+    profile_name: rubin-rubintv-data-usdf
     bucket_name: rubin-rubintv-data-usdf
     logo: SLAC_Logo.svg
     camera_groups:
       Cameras: [ slac_lsstcam, slac_ts8 ]
+  
+  - name: base-usdf
+    title: Base USDF
+    profile_name: rubin-rubintv-data-bts
+    bucket_name: rubin-rubintv-data-bts
+    logo: Summit.jpg
+    camera_groups:
+      Cameras: [ auxtel, fake_auxtel ]
+      Telescopes: [ tma ]
+  
+  - name: tucson-usdf
+    title: Tucson USDF
+    profile_name: rubin-rubintv-data-tts
+    bucket_name: rubin-rubintv-data-tts
+    logo: cactus.svg
+    camera_groups:
+      Cameras: [ auxtel, fake_auxtel, comcam ]
+      Telescopes: [ tma ]
+  
+  - name: summit-usdf
+    title: Summit USDF
+    profile_name: rubin-rubintv-data-summit
+    bucket_name: rubin-rubintv-data-summit
+    logo: Summit.jpg
+    camera_groups:
+      Telescope Mounted: [ auxtel, comcam, lsstcam ]
+      Other Cameras: [ allsky, startracker, startracker_wide, startracker_fast ]
+      Telescopes: [ tma ]
+
+  - name: base
+    title: Base
+    profile_name: base-data-base
+    bucket_name: rubintv
+    logo: Summit.jpg
+    camera_groups:
+      Cameras: [ auxtel, fake_auxtel ]
+      Telescopes: [ tma ]
 
   - name: tucson
     title: Tucson
-    bucket_name: rubin-rubintv-data-tts
+    profile_name: tucson-data-tucson
+    bucket_name: rubintv
     logo: cactus.svg
     camera_groups:
       Cameras: [ auxtel, fake_auxtel, comcam ]
@@ -28,7 +69,8 @@ locations:
 
   - name: summit
     title: Summit
-    bucket_name: rubin-rubintv-data-summit
+    profile_name: summit-data-summit
+    bucket_name: rubintv
     logo: Summit.jpg
     camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]

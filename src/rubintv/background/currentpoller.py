@@ -47,7 +47,7 @@ class CurrentPoller:
         self._current_day_obs = get_current_day_obs()
         for location in locations:
             self._clients[location.name] = S3Client(
-                profile_name=location.bucket_name
+                location.profile_name, location.bucket_name
             )
 
     async def clear_all_data(self) -> None:

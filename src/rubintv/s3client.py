@@ -12,7 +12,7 @@ from rubintv.config import config
 
 
 class S3Client:
-    def __init__(self, profile_name: str) -> None:
+    def __init__(self, profile_name: str, bucket_name: str) -> None:
         endpoint_url = config.s3_endpoint_url
         session = boto3.Session(
             region_name="us-east-1", profile_name=profile_name
@@ -21,7 +21,7 @@ class S3Client:
             self._client = session.client("s3", endpoint_url=endpoint_url)
         else:
             self._client = session.client("s3")
-        self._bucket_name = profile_name
+        self._bucket_name = bucket_name
 
     def list_objects(self, prefix: str) -> list[dict[str, str]]:
         objects = []
