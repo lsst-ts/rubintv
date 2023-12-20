@@ -13,7 +13,6 @@ window.addEventListener('load', () => {
   const ws = new WebsocketClient()
   ws.subscribe('historicalStatus')
   window.addEventListener('historicalStatus', (message) => {
-    console.log('event message:', message)
     const isBusy = message.detail.data
     if (!isBusy) {
       window.location.reload()

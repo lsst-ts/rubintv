@@ -5,7 +5,6 @@ import { _getById } from '../modules/utils'
 import { metadataType } from './componentPropTypes'
 
 function TableControls ({ cameraName, allColNames, selected, setSelected, date, metadata }) {
-  console.log('allColNames , selected', allColNames, selected)
   const [controlsOpen, setControlsOpen] = useState(false)
 
   const locationName = document.documentElement.dataset.locationname

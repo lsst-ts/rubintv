@@ -47,7 +47,6 @@ export function listenForKeypresses () {
     // has the whole key been typed out?
     if (keyCodes.includes(typed)) {
       // reveal the tab
-      console.log(`added ${typed}`)
       const tabToReveal = keysAndTabs[typed]
       document.querySelectorAll(`[id$="-${tabToReveal}"]`).forEach((el) => {
         el.classList.remove('disabled')
