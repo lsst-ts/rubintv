@@ -142,9 +142,7 @@ def get_image_viewer_link(camera: Camera, day_obs: date, seq_num: int) -> str:
         The url for the image viewer for a single image.
     """
     date_int_str = day_obs.isoformat().replace("-", "")
-    url = camera.image_viewer_link.format(
-        day_obs=date_int_str, seq_num=seq_num
-    )
+    url = camera.image_viewer_link.format(day_obs=date_int_str, seq_num=seq_num)
     return url
 
 

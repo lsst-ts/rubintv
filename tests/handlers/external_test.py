@@ -35,7 +35,7 @@ async def test_get_location(client: AsyncClient) -> None:
     """Test that location page has links to cameras"""
     location_name = "summit-usdf"
     location = find_first(m.locations, "name", location_name)
-    assert type(location) == Location
+    assert type(location) is Location
 
     groups = location.camera_groups.values()
     camera_names = list(chain(*groups))

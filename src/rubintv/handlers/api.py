@@ -87,9 +87,7 @@ async def get_camera_current_events_api(
         contains any current metadata for the given camera.
 
     """
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
+    location, camera = await get_location_camera(location_name, camera_name, request)
     data = await get_camera_current_data(location, camera, request)
     if data:
         day_obs, channel_data, per_day, metadata, nr_exists = data
@@ -111,9 +109,7 @@ async def get_camera_current_events_api(
 async def get_camera_events_for_date_api(
     location_name: str, camera_name: str, date_str: str, request: Request
 ) -> dict:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
+    location, camera = await get_location_camera(location_name, camera_name, request)
     try:
         day_obs = date_str_to_date(date_str)
     except ValueError:
@@ -139,9 +135,7 @@ async def get_camera_events_for_date_api(
 async def get_current_channel_event(
     location_name: str, camera_name: str, channel_name: str, request: Request
 ) -> Event | None:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
+    location, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.channels or not (
         channel := find_first(camera.channels, "name", channel_name)
     ):
@@ -157,9 +151,7 @@ async def get_current_channel_event(
             historical: HistoricalPoller = request.app.state.historical
             if await historical.is_busy():
                 raise HTTPException(421, "Historical data is being processed")
-            event = await historical.get_most_recent_event(
-                location, camera, channel
-            )
+            event = await historical.get_most_recent_event(location, camera, channel)
             if not event:
                 return None
     return event
@@ -175,15 +167,11 @@ async def get_specific_channel_event(
     camera_name: str,
     key: Annotated[
         str,
-        Query(
-            pattern=r"(\w+)\/([\d-]+)\/(\w+)\/(\d{6}|final)\/([\w-]+)\.(\w+)$"
-        ),
+        Query(pattern=r"(\w+)\/([\d-]+)\/(\w+)\/(\d{6}|final)\/([\w-]+)\.(\w+)$"),
     ],
     request: Request,
 ) -> Event | None:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
+    location, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online or not key:
         return None
 
@@ -200,12 +188,8 @@ async def get_specific_channel_event(
 async def get_current_night_report_api(
     location_name: str, camera_name: str, request: Request
 ) -> dict:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
-    day_obs, nr = await get_current_night_report_payload(
-        location, camera, request
-    )
+    location, camera = await get_location_camera(location_name, camera_name, request)
+    day_obs, nr = await get_current_night_report_payload(location, camera, request)
     return {"date": day_obs, "night_report": nr}
 
 
@@ -216,9 +200,7 @@ async def get_current_night_report_api(
 async def get_night_report_for_date(
     location_name: str, camera_name: str, date_str: str, request: Request
 ) -> NightReportPayload:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
+    location, camera = await get_location_camera(location_name, camera_name, request)
     try:
         day_obs = date_str_to_date(date_str)
     except ValueError:

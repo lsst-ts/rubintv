@@ -70,9 +70,7 @@ def mock_up_data(locations: list[Location]) -> None:
                         ),
                     )
             # upload a dummy metadata file.
-            upload_fileobj(
-                md_json, bucket_name, f"{camera_name}/{today}/metadata.json"
-            )
+            upload_fileobj(md_json, bucket_name, f"{camera_name}/{today}/metadata.json")
 
 
 def upload_file(file_name: Path | str, bucket_name: str, key: str) -> bool:

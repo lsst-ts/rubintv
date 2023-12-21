@@ -72,9 +72,7 @@ async def test_get_api_location_camera_current_for_offline(
     location_name = "summit-usdf"
     camera_name = "lsstcam"
 
-    response = await client.get(
-        f"/rubintv/api/{location_name}/{camera_name}/current"
-    )
+    response = await client.get(f"/rubintv/api/{location_name}/{camera_name}/current")
     data = response.json()
     assert data == {}
 

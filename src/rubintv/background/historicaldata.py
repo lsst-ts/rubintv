@@ -45,9 +45,7 @@ class HistoricalPoller:
     def __init__(self, locations: list[Location]) -> None:
         self._locations = locations
         self._clients = {
-            location.name: S3Client(
-                location.profile_name, location.bucket_name
-            )
+            location.name: S3Client(location.profile_name, location.bucket_name)
             for location in locations
         }
 
@@ -91,9 +89,7 @@ class HistoricalPoller:
             up_to_date_objects = await loop.run_in_executor(
                 executor, self._get_objects, location
             )
-            await self.filter_convert_store_objects(
-                up_to_date_objects, location
-            )
+            await self.filter_convert_store_objects(up_to_date_objects, location)
         except Exception as e:
             logger.error(e)
 
@@ -118,9 +114,7 @@ class HistoricalPoller:
                     prefix=prefix,
                 )
                 try:
-                    one_load = self._clients[location.name].list_objects(
-                        prefix=prefix
-                    )
+                    one_load = self._clients[location.name].list_objects(prefix=prefix)
                     objects.extend(one_load)
                     logger.info("Found:", num_objects=len(one_load))
                 except Exception as e:
@@ -136,16 +130,12 @@ class HistoricalPoller:
         n_report_objs = [o for o in objects if "night_report" in o["key"]]
 
         event_objs = [
-            o
-            for o in objects
-            if o not in metadata_objs and o not in n_report_objs
+            o for o in objects if o not in metadata_objs and o not in n_report_objs
         ]
 
         await self.download_and_store_metadata(locname, metadata_objs)
 
-        self._nr_metadata[locname] = await objects_to_ngt_reports(
-            n_report_objs
-        )
+        self._nr_metadata[locname] = await objects_to_ngt_reports(n_report_objs)
         events = await objects_to_events(event_objs)
         await self.store_events(events, locname)
 
@@ -167,10 +157,7 @@ class HistoricalPoller:
                 self._calendar[loc_cam][year] = {}
             if month not in self._calendar[loc_cam][year]:
                 self._calendar[loc_cam][year][month] = {}
-            if (
-                self._calendar[loc_cam][year][month].get(day, 0)
-                <= event.seq_num
-            ):
+            if self._calendar[loc_cam][year][month].get(day, 0) <= event.seq_num:
                 self._calendar[loc_cam][year][month][day] = event.seq_num
 
     async def storage_name_for_event(self, event: Event, locname: str) -> str:
@@ -262,9 +249,7 @@ class HistoricalPoller:
         events = await self.get_events_for_date(location, camera, day_obs)
         if not events:
             return {}
-        channel_data = await make_table_from_event_list(
-            events, camera.seq_channels()
-        )
+        channel_data = await make_table_from_event_list(events, camera.seq_channels())
         return channel_data
 
     async def get_per_day_for_date(

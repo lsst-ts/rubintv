@@ -10,9 +10,7 @@ from rubintv.handlers.websockets_clients import (
 from rubintv.models.models import get_current_day_obs
 
 
-async def notify_of_update(
-    service: str, kind: str, loc_cam: str, payload: Any
-) -> None:
+async def notify_of_update(service: str, kind: str, loc_cam: str, payload: Any) -> None:
     service_loc_cam_chan = " ".join([service, loc_cam])
     to_notify = await get_clients_to_notify(service_loc_cam_chan)
     await notify_clients(to_notify, kind, payload)

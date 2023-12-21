@@ -80,24 +80,18 @@ class CurrentPoller:
                         objects = await loop.run_in_executor(
                             executor, client.list_objects, prefix
                         )
-                        loc_cam = await self._get_loc_cam(
-                            location.name, camera
-                        )
+                        loc_cam = await self._get_loc_cam(location.name, camera)
                         objects = await self.seive_out_metadata(
                             objects, prefix, location, camera
                         )
                         objects = await self.seive_out_night_reports(
                             objects, loc_cam, location
                         )
-                        await self.process_channel_objects(
-                            objects, loc_cam, camera
-                        )
+                        await self.process_channel_objects(objects, loc_cam, camera)
                 self.completed_first_poll = True
                 await asyncio.sleep(1)
         except Exception as e:
-            logger.error(
-                "Error", error=e, traceback=get_exception_traceback_str(e)
-            )
+            logger.error("Error", error=e, traceback=get_exception_traceback_str(e))
 
     async def process_channel_objects(
         self, objects: list[dict[str, str]], loc_cam: str, camera: Camera
@@ -196,9 +190,7 @@ class CurrentPoller:
         md_key = md_obj["key"]
         client = self._clients[location.name]
         data = await get_metadata_obj(md_key, client)
-        if data and (
-            loc_cam not in self._metadata or data != self._metadata[loc_cam]
-        ):
+        if data and (loc_cam not in self._metadata or data != self._metadata[loc_cam]):
             self._metadata[loc_cam] = data
             to_notify = [camera]
             to_notify.extend(
@@ -218,13 +210,9 @@ class CurrentPoller:
         report_objs, objects = await self.filter_night_report_objects(objects)
         if report_objs:
             try:
-                await self.process_night_report_objects(
-                    report_objs, loc_cam, location
-                )
+                await self.process_night_report_objects(report_objs, loc_cam, location)
             except ValueError:
-                logger.error(
-                    "More than one night report metadata file for {loc_cam}"
-                )
+                logger.error("More than one night report metadata file for {loc_cam}")
         return objects
 
     async def filter_night_report_objects(
@@ -267,9 +255,7 @@ class CurrentPoller:
             message["plots"] = to_update
             self._nr_reports[loc_cam] = set(reports)
         if message:
-            await notify_of_update(
-                "nightreport", "nightReport", loc_cam, message
-            )
+            await notify_of_update("nightreport", "nightReport", loc_cam, message)
         return
 
     async def make_per_day_data(
@@ -319,9 +305,7 @@ class CurrentPoller:
         events = self._per_day.get(loc_cam, {})
         return {chan: event.__dict__ for chan, event in events.items()}
 
-    async def get_current_metadata(
-        self, location_name: str, camera: Camera
-    ) -> dict:
+    async def get_current_metadata(self, location_name: str, camera: Camera) -> dict:
         name = camera.name
         if camera.metadata_from:
             name = camera.metadata_from
@@ -350,9 +334,7 @@ class CurrentPoller:
                 payload["plots"] = list(plots)
         return payload
 
-    async def night_report_exists(
-        self, location_name: str, camera_name: str
-    ) -> bool:
+    async def night_report_exists(self, location_name: str, camera_name: str) -> bool:
         loc_cam = f"{location_name}/{camera_name}"
         exists = loc_cam in self._nr_metadata or loc_cam in self._nr_reports
         return exists

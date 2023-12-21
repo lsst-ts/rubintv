@@ -33,9 +33,7 @@ class ModelsInitiator:
         i_can_see = data["bucket_configurations"][current_location]
         all_locations = self._populate_model(Location, data["locations"])
         locations = [loc for loc in all_locations if loc.name in i_can_see]
-        self.locations = self._attach_cameras_to_locations(
-            self.cameras, locations
-        )
+        self.locations = self._attach_cameras_to_locations(self.cameras, locations)
 
     def _attach_cameras_to_locations(
         self, cameras: list[Camera], locations: list[Location]
@@ -74,9 +72,7 @@ class ModelsInitiator:
             obj_list.append(instance)
         return obj_list
 
-    def _attach_metadata_cols(
-        self, cameras: list[Camera], data: Any
-    ) -> list[Camera]:
+    def _attach_metadata_cols(self, cameras: list[Camera], data: Any) -> list[Camera]:
         """Attach metadata column heading data to individual cameras.
 
         Parameters

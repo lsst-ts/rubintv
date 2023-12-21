@@ -71,9 +71,7 @@ async def data_websocket(
                         )
                     continue
                 case "historicalStatus":
-                    historical_busy = (
-                        await websocket.app.state.historical.is_busy()
-                    )
+                    historical_busy = await websocket.app.state.historical.is_busy()
                     await websocket.send_json(
                         {
                             "dataType": "historicalStatus",
@@ -82,13 +80,9 @@ async def data_websocket(
                     )
                     async with services_lock:
                         if "historicalStatus" not in services_clients:
-                            services_clients["historicalStatus"] = [
-                                r_client_id
-                            ]
+                            services_clients["historicalStatus"] = [r_client_id]
                         else:
-                            services_clients["historicalStatus"].append(
-                                r_client_id
-                            )
+                            services_clients["historicalStatus"].append(r_client_id)
     except WebSocketDisconnect:
         async with clients_lock:
             if websocket in websocket_to_client:
@@ -122,9 +116,7 @@ async def attach_service(
 ) -> None:
     logger = structlog.get_logger(__name__)
     if not await is_valid_service(service_loc_cam):
-        logger.error(
-            "Bad request", service_loc=service_loc_cam, client_id=client_id
-        )
+        logger.error("Bad request", service_loc=service_loc_cam, client_id=client_id)
         return
     try:
         service, loc_cam = service_loc_cam.split(" ")
@@ -134,19 +126,13 @@ async def attach_service(
 
     location, camera_name, *extra = loc_cam.split("/")
     locations = websocket.app.state.models.locations
-    if not (
-        camera := await is_valid_location_camera(
-            location, camera_name, locations
-        )
-    ):
+    if not (camera := await is_valid_location_camera(location, camera_name, locations)):
         logger.error("No such camera", service=service, client_id=client_id)
         return
     if extra:
         channel = extra[0]
         if not await is_valid_channel(camera, channel):
-            logger.error(
-                "No such channel", service=service, client_id=client_id
-            )
+            logger.error("No such channel", service=service, client_id=client_id)
             return
 
     async with services_lock:

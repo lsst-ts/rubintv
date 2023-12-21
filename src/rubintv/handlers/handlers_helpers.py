@@ -25,21 +25,13 @@ async def get_camera_current_data(
         await asyncio.sleep(0.3)
 
     day_obs = None
-    channel_data = await current_poller.get_current_channel_table(
-        location.name, camera
-    )
+    channel_data = await current_poller.get_current_channel_table(location.name, camera)
     metadata = await current_poller.get_current_metadata(location.name, camera)
-    per_day = await current_poller.get_current_per_day_data(
-        location.name, camera
-    )
-    nr_exists = await current_poller.night_report_exists(
-        location.name, camera.name
-    )
+    per_day = await current_poller.get_current_per_day_data(location.name, camera)
+    nr_exists = await current_poller.night_report_exists(location.name, camera.name)
 
     if not (per_day or metadata or channel_data):
-        hist_data = await get_most_recent_historical_data(
-            location, camera, request
-        )
+        hist_data = await get_most_recent_historical_data(location, camera, request)
         if hist_data:
             (
                 day_obs,
@@ -74,16 +66,10 @@ async def get_camera_events_for_date(
     historical: HistoricalPoller = request.app.state.historical
     if await historical.is_busy():
         raise HTTPException(423, "Historical data is being processed")
-    channel_data = await historical.get_channel_data_for_date(
-        location, camera, day_obs
-    )
-    metadata = await historical.get_metadata_for_date(
-        location, camera, day_obs
-    )
+    channel_data = await historical.get_channel_data_for_date(location, camera, day_obs)
+    metadata = await historical.get_metadata_for_date(location, camera, day_obs)
     per_day = await historical.get_per_day_for_date(location, camera, day_obs)
-    nr_exists = await historical.night_report_exists_for(
-        location, camera, day_obs
-    )
+    nr_exists = await historical.night_report_exists_for(location, camera, day_obs)
     return (channel_data, per_day, metadata, nr_exists)
 
 

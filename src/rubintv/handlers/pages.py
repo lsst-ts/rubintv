@@ -69,9 +69,7 @@ async def get_admin_page(request: Request) -> Response:
     )
 
 
-@pages_router.get(
-    "/{location_name}", response_class=HTMLResponse, name="location"
-)
+@pages_router.get("/{location_name}", response_class=HTMLResponse, name="location")
 async def get_location_page(
     location_name: str,
     request: Request,
@@ -94,9 +92,7 @@ async def get_camera_page(
     camera_name: str,
     request: Request,
 ) -> Response:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
+    location, camera = await get_location_camera(location_name, camera_name, request)
     nr_exists = historical_busy = False
     day_obs: date | None = None
     metadata: dict = {}
@@ -158,9 +154,7 @@ async def get_camera_for_date_page(
     date_str: str,
     request: Request,
 ) -> Response:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
+    location, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online:
         raise HTTPException(404, "Camera not online.")
     try:
@@ -174,9 +168,7 @@ async def get_camera_for_date_page(
     channel_data: dict[int, dict[str, dict]] = {}
     calendar: dict[int, dict[int, dict[int, int]]] = {}
     try:
-        data = await get_camera_events_for_date(
-            location, camera, day_obs, request
-        )
+        data = await get_camera_events_for_date(location, camera, day_obs, request)
         if data:
             channel_data, per_day, metadata, nr_exists = data
             calendar = await get_camera_calendar(location, camera, request)
@@ -227,9 +219,7 @@ async def get_historical_camera_page(
     request: Request,
     logger: BoundLogger = Depends(logger_dependency),
 ) -> Response:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
+    location, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online:
         raise HTTPException(404, "Camera not online.")
     historical_busy = False
@@ -286,9 +276,7 @@ async def get_historical_camera_page(
 async def get_current_night_report_page(
     location_name: str, camera_name: str, request: Request
 ) -> Response:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
+    location, camera = await get_location_camera(location_name, camera_name, request)
     day_obs: date | None = None
     day_obs, night_report = await get_current_night_report_payload(
         location, camera, request
@@ -320,9 +308,7 @@ async def get_historical_night_report_page(
     date_str: str,
     request: Request,
 ) -> Response:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
+    location, camera = await get_location_camera(location_name, camera_name, request)
     try:
         day_obs = date_str_to_date(date_str)
     except ValueError:
@@ -368,12 +354,8 @@ async def get_specific_channel_event_page(
     key: str,
     request: Request,
 ) -> Response:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
-    event = await get_specific_channel_event(
-        location_name, camera_name, key, request
-    )
+    location, camera = await get_location_camera(location_name, camera_name, request)
+    event = await get_specific_channel_event(location_name, camera_name, key, request)
     channel: Channel | None = None
     channel_title = ""
     event_detail = ""
@@ -383,9 +365,7 @@ async def get_specific_channel_event_page(
     if channel:
         channel_title = channel.title
 
-    title = build_title(
-        location.title, camera.title, channel_title, event_detail
-    )
+    title = build_title(location.title, camera.title, channel_title, event_detail)
 
     return templates.TemplateResponse(
         "single_event.jinja",
@@ -408,9 +388,7 @@ async def get_specific_channel_event_page(
 async def get_current_channel_event_page(
     location_name: str, camera_name: str, channel_name: str, request: Request
 ) -> Response:
-    location, camera = await get_location_camera(
-        location_name, camera_name, request
-    )
+    location, camera = await get_location_camera(location_name, camera_name, request)
     event = await get_current_channel_event(
         location_name, camera_name, channel_name, request
     )

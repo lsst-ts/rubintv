@@ -14,9 +14,7 @@ from rubintv.config import config
 class S3Client:
     def __init__(self, profile_name: str, bucket_name: str) -> None:
         endpoint_url = config.s3_endpoint_url
-        session = boto3.Session(
-            region_name="us-east-1", profile_name=profile_name
-        )
+        session = boto3.Session(region_name="us-east-1", profile_name=profile_name)
         if endpoint_url is not None and not endpoint_url == "testing":
             self._client = session.client("s3", endpoint_url=endpoint_url)
         else:
@@ -25,9 +23,7 @@ class S3Client:
 
     def list_objects(self, prefix: str) -> list[dict[str, str]]:
         objects = []
-        response = self._client.list_objects_v2(
-            Bucket=self._bucket_name, Prefix=prefix
-        )
+        response = self._client.list_objects_v2(Bucket=self._bucket_name, Prefix=prefix)
         while True:
             for content in response.get("Contents", []):
                 object = {}
@@ -63,9 +59,7 @@ class S3Client:
             data = self._client.get_object(Bucket=self._bucket_name, Key=key)
             return data["Body"]
         except ClientError:
-            raise HTTPException(
-                status_code=404, detail=f"No such file for: {key}"
-            )
+            raise HTTPException(status_code=404, detail=f"No such file for: {key}")
 
     def get_movie(self, key: str, headers: dict | None = None) -> dict:
         try:
@@ -74,9 +68,7 @@ class S3Client:
             )
             return data
         except ClientError:
-            raise HTTPException(
-                status_code=404, detail=f"No such file for: {key}"
-            )
+            raise HTTPException(status_code=404, detail=f"No such file for: {key}")
 
     async def get_presigned_url(self, key: str) -> str:
         logger = structlog.get_logger(__name__)
