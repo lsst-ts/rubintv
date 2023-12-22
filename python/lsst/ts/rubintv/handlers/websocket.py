@@ -4,16 +4,15 @@ import uuid
 
 import structlog
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-
-from rubintv.handlers.websockets_clients import (
+from lsst.ts.rubintv.handlers.websockets_clients import (
     clients,
     clients_lock,
     services_clients,
     services_lock,
     websocket_to_client,
 )
-from rubintv.models.models import Camera, Location
-from rubintv.models.models_helpers import find_first
+from lsst.ts.rubintv.models.models import Camera, Location
+from lsst.ts.rubintv.models.models_helpers import find_first
 
 ws_router = APIRouter()
 

@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import pytest
 from httpx import AsyncClient
-
-from rubintv.config import config
+from lsst.ts.rubintv.config import config
 
 
 @pytest.mark.asyncio

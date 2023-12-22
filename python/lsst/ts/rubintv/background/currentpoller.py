@@ -2,10 +2,9 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
 import structlog
-
-from rubintv.background.background_helpers import get_metadata_obj
-from rubintv.handlers.websocket_notifiers import notify_of_update
-from rubintv.models.models import (
+from lsst.ts.rubintv.background.background_helpers import get_metadata_obj
+from lsst.ts.rubintv.handlers.websocket_notifiers import notify_of_update
+from lsst.ts.rubintv.models.models import (
     Camera,
     Event,
     Location,
@@ -13,13 +12,13 @@ from rubintv.models.models import (
     NightReportPayload,
     get_current_day_obs,
 )
-from rubintv.models.models_helpers import (
+from lsst.ts.rubintv.models.models_helpers import (
     make_table_from_event_list,
     objects_to_events,
     objects_to_ngt_reports,
 )
-from rubintv.s3client import S3Client
-from rubintv.utils import get_exception_traceback_str
+from lsst.ts.rubintv.s3client import S3Client
+from lsst.ts.rubintv.utils import get_exception_traceback_str
 
 
 class CurrentPoller:

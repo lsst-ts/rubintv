@@ -7,8 +7,7 @@ import structlog
 from botocore.exceptions import ClientError
 from botocore.response import StreamingBody
 from fastapi.exceptions import HTTPException
-
-from rubintv.config import config
+from lsst.ts.rubintv.config import config
 
 
 class S3Client:

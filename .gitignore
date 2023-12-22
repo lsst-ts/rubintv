@@ -1,5 +1,5 @@
 # webpack build outputs
-src/rubintv/static/assets/
+**/rubintv/static/assets/
 
 
 # Byte-compiled / optimized / DLL files

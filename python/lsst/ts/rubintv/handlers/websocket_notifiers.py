@@ -1,13 +1,13 @@
 from typing import Any, Mapping
 from uuid import UUID
 
-from rubintv.handlers.websockets_clients import (
+from lsst.ts.rubintv.handlers.websockets_clients import (
     clients,
     clients_lock,
     services_clients,
     services_lock,
 )
-from rubintv.models.models import get_current_day_obs
+from lsst.ts.rubintv.models.models import get_current_day_obs
 
 
 async def notify_of_update(service: str, kind: str, loc_cam: str, payload: Any) -> None:

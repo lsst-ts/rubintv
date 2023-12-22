@@ -4,10 +4,9 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
 import structlog
-
-from rubintv.background.background_helpers import get_metadata_obj
-from rubintv.handlers.websocket_notifiers import notify_all_status_change
-from rubintv.models.models import (
+from lsst.ts.rubintv.background.background_helpers import get_metadata_obj
+from lsst.ts.rubintv.handlers.websocket_notifiers import notify_all_status_change
+from lsst.ts.rubintv.models.models import (
     Camera,
     Channel,
     Event,
@@ -16,12 +15,12 @@ from rubintv.models.models import (
     NightReportPayload,
     get_current_day_obs,
 )
-from rubintv.models.models_helpers import (
+from lsst.ts.rubintv.models.models_helpers import (
     make_table_from_event_list,
     objects_to_events,
     objects_to_ngt_reports,
 )
-from rubintv.s3client import S3Client
+from lsst.ts.rubintv.s3client import S3Client
 
 
 class HistoricalPoller:

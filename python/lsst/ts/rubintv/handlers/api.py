@@ -2,16 +2,15 @@
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, Request
-
-from rubintv.background.currentpoller import CurrentPoller
-from rubintv.background.historicaldata import HistoricalPoller
-from rubintv.handlers.handlers_helpers import (
+from lsst.ts.rubintv.background.currentpoller import CurrentPoller
+from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
+from lsst.ts.rubintv.handlers.handlers_helpers import (
     get_camera_current_data,
     get_camera_events_for_date,
     get_current_night_report_payload,
 )
-from rubintv.models.models import Camera, Event, Location, NightReportPayload
-from rubintv.models.models_helpers import date_str_to_date, find_first
+from lsst.ts.rubintv.models.models import Camera, Event, Location, NightReportPayload
+from lsst.ts.rubintv.models.models_helpers import date_str_to_date, find_first
 
 __all__ = [
     "api_router",

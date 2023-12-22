@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi.responses import StreamingResponse
-
-from rubintv.s3client import S3Client
+from lsst.ts.rubintv.s3client import S3Client
 
 proxies_router = APIRouter()
 

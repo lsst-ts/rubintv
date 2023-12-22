@@ -4,10 +4,9 @@ from pathlib import Path
 from typing import Any, Type
 
 import yaml
+from lsst.ts.rubintv.models.models import Camera, Location
+from lsst.ts.rubintv.models.models_helpers import find_first
 from pydantic import BaseModel
-
-from rubintv.models.models import Camera, Location
-from rubintv.models.models_helpers import find_first
 
 __all__ = ["ModelsInitiator", "dict_from_list_of_named_objects"]
 

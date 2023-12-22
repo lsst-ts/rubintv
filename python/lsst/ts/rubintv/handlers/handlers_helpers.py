@@ -4,10 +4,9 @@ from datetime import date
 from typing import Any, Callable
 
 from fastapi import HTTPException, Request
-
-from rubintv.background.currentpoller import CurrentPoller
-from rubintv.background.historicaldata import HistoricalPoller
-from rubintv.models.models import (
+from lsst.ts.rubintv.background.currentpoller import CurrentPoller
+from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
+from lsst.ts.rubintv.models.models import (
     Camera,
     Location,
     NightReportPayload,

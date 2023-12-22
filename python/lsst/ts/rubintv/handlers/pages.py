@@ -3,17 +3,14 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, Response
-from safir.dependencies.logger import logger_dependency
-from structlog.stdlib import BoundLogger
-
-from rubintv.handlers.api import (
+from lsst.ts.rubintv.handlers.api import (
     get_current_channel_event,
     get_location,
     get_location_camera,
     get_night_report_for_date,
     get_specific_channel_event,
 )
-from rubintv.handlers.handlers_helpers import (
+from lsst.ts.rubintv.handlers.handlers_helpers import (
     get_camera_calendar,
     get_camera_current_data,
     get_camera_events_for_date,
@@ -21,21 +18,23 @@ from rubintv.handlers.handlers_helpers import (
     get_most_recent_historical_data,
     try_historical_call,
 )
-from rubintv.handlers.pages_helpers import (
+from lsst.ts.rubintv.handlers.pages_helpers import (
     build_title,
     calendar_factory,
     month_names,
     night_report_to_dict,
     to_dict,
 )
-from rubintv.models.models import (
+from lsst.ts.rubintv.models.models import (
     Channel,
     Event,
     NightReportPayload,
     get_current_day_obs,
 )
-from rubintv.models.models_helpers import date_str_to_date, find_first
-from rubintv.templates_init import get_templates
+from lsst.ts.rubintv.models.models_helpers import date_str_to_date, find_first
+from lsst.ts.rubintv.templates_init import get_templates
+from safir.dependencies.logger import logger_dependency
+from structlog.stdlib import BoundLogger
 
 __all__ = ["get_home", "pages_router", "templates"]
 

@@ -1,4 +1,4 @@
-from rubintv.s3client import S3Client
+from lsst.ts.rubintv.s3client import S3Client
 
 
 async def get_metadata_obj(key: str, s3_client: S3Client) -> dict:

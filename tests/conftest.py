@@ -11,11 +11,10 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from httpx import AsyncClient
+from lsst.ts.rubintv import main
+from lsst.ts.rubintv.mockdata import mock_up_data
+from lsst.ts.rubintv.models.models_init import ModelsInitiator
 from moto import mock_s3
-
-from rubintv import main
-from rubintv.mockdata import mock_up_data
-from rubintv.models.models_init import ModelsInitiator
 
 
 @pytest.fixture(scope="module")

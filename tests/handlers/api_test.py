@@ -2,10 +2,9 @@ import asyncio
 
 import pytest
 from httpx import AsyncClient
-
-from rubintv.models.models import Camera, Location, get_current_day_obs
-from rubintv.models.models_helpers import find_first
-from rubintv.models.models_init import ModelsInitiator
+from lsst.ts.rubintv.models.models import Camera, Location, get_current_day_obs
+from lsst.ts.rubintv.models.models_helpers import find_first
+from lsst.ts.rubintv.models.models_init import ModelsInitiator
 
 m = ModelsInitiator()
 

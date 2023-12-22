@@ -6,9 +6,8 @@ from pathlib import Path
 
 import boto3
 from botocore.exceptions import ClientError
-
-from rubintv.models.models import Camera, Location, get_current_day_obs
-from rubintv.models.models_helpers import find_first
+from lsst.ts.rubintv.models.models import Camera, Location, get_current_day_obs
+from lsst.ts.rubintv.models.models_helpers import find_first
 
 
 def mock_up_data(locations: list[Location]) -> None:

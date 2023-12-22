@@ -7,10 +7,9 @@ from itertools import chain
 import pytest
 from bs4 import BeautifulSoup
 from httpx import AsyncClient
-
-from rubintv.models.models import Location
-from rubintv.models.models_helpers import find_first
-from rubintv.models.models_init import ModelsInitiator
+from lsst.ts.rubintv.models.models import Location
+from lsst.ts.rubintv.models.models_helpers import find_first
+from lsst.ts.rubintv.models.models_init import ModelsInitiator
 
 m = ModelsInitiator()
 

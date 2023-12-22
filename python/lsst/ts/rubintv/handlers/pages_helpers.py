@@ -2,7 +2,7 @@ from calendar import Calendar
 from datetime import date
 from typing import Any
 
-from rubintv.models.models import NightReportPayload
+from lsst.ts.rubintv.models.models import NightReportPayload
 
 __all__ = ["month_names", "calendar_factory", "build_title", "to_dict"]
 

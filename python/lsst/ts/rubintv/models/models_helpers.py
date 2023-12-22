@@ -2,8 +2,7 @@ from datetime import date
 from typing import Any, Iterable
 
 import structlog
-
-from rubintv.models.models import Camera, Channel, Event, NightReport
+from lsst.ts.rubintv.models.models import Camera, Channel, Event, NightReport
 
 __all__ = [
     "find_first",
