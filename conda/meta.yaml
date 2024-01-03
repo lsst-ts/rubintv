@@ -30,6 +30,5 @@ requirements:
     - starlette
     - uvicorn
     - pydantic
-    - pydantic_settings
-    - safir
     - websockets
+    - asgi_lifespan
