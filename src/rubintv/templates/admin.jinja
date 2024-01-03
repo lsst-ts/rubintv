@@ -1,6 +1,6 @@
-{% extends "layout.jinja" %}
+{% extends "_layout.jinja" %}
 {% block pagetitle %}
-  {{ location.name }} Admin
+  Admin
 {% endblock pagetitle %}
 {% block pagesubtitle %}
   Channel and service status
@@ -10,63 +10,17 @@
 {% endblock undertitle %}
 
 {% block breadcrumb %}
-<a href="{{ url('home') }}">Home</a>>
-<a href="{{ url('location', location=location.slug) }}">{{ location.name }}</a>>
+<a href="{{ url_for('home') }}">Home</a>>
 <p>Admin</p>
 {% endblock breadcrumb  %}
 
 {% block content %}
-  {% for group in services %}
-  <div class="service-group {{ group }}">
-    <h3>
-      {{ services[group]['display_name'] }}
-    </h3>
-
-    <div class="all-services">
-
-      {% if services[group]['channels'] | length %}
-        <div>
-         <h4>Channels</h4>
-          <div class="services channels">
-            {% for channel in services[group]['channels'].values() %}
-              <div class="service" id="{{ channel.prefix }}">
-                <div class="heartbeat"></div>
-                {{ channel.name }}
-              </div>
-            {% endfor %}
-          </div>
-        </div>
-      {% endif %}
-
-      {% if services[group]['services'] | length %}
-        <div>
-         <h4>Services</h4>
-         <div class="services">
-            {% for service in services[group]['services'] %}
-              <div class="service" id="{{ service }}">
-                <div class="heartbeat">
-
-                </div>
-                {{ services[group]['services'][service] }}
-              </div>
-            {% endfor %}
-         </div>
-        </div>
-      {% endif %}
-
-    </div>
-  </div>
-  {% endfor %}
 
   <form action="reload_historical" method="POST" id="historicalReset">
     <button>Reload All Historical Data</button>
-    <div class="pending hidden">
-      <img src="{{ url('static', filename='images/pending.gif') }}">
-    </div>
-    <div class="done hidden">✅</div>
   </form>
 
 {% endblock content %}
 {% block footer_scripts %}
-<script src="{{ url('static', filename='assets/admin.js') }}"></script>
+<script src="{{ url_for('static', path='assets/admin.js') }}"></script>
 {% endblock footer_scripts %}

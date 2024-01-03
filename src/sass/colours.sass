@@ -26,12 +26,12 @@ header
   background-color: $dark
 
 .day
-  background: #484848
+  background: #505050
   color: $light
   &:hover
     text-decoration: none
   &.obs
-    background: #404040
+    background: #858383
     &:hover
       background: #887166 !important
 
@@ -51,15 +51,21 @@ header
 
 
 // night report
-#night-report
+.tab-titles
   color: #000
+.plot
+  color: #fff
 
 // table
 .table-control
   color: #222
 
-.channel-grid-heading
+.above-table-sticky
   background-color: $dark
+
+.camera-table
+  thead
+    background-color: $dark
 
 .grid-cell
   background-color: #f0f0f0
@@ -80,24 +86,11 @@ header
 .button.historical
   background-color: #262534
   color: #fff
-.button.movie
-  background-color: #83daee
 .button.night-report
   background-color:  #696797
   color: #fff
 .button.admin
   background-color: #999
-
-$auxtel: ("monitor":#F07F85, "mount": #F0C87F, "spec": #7F85F0, "im": #7FF094)
-$startracker: ("startracker": #58528b, "analysis": #ba528f, "startracker-wide": #fc6465, "startracker-wide-analysis": #fda529)
-$startrackerfast: ("startracker-fast": #FECC66, "startracker-fast-analysis": #d5fa80)
-$slac: ("focal_plane_mosaic": #6fe9ba, "noise_map": #e771a8, "ccob_analysis": #e7ae71)
-$tma: ("tma_mount_motion_profile": #fa9284)
-
-$buttons: map_collect($auxtel, $startracker, $startrackerfast, $slac, $tma)
-@each $name, $colour in $buttons
-  .button.#{$name}
-    background-color: $colour
 
 
 $filters: ("u_color": #d9f3fd, "g_color": #e7fdd9, "r_color": #fdd7d7, "i_color": #e2d9fd, "z_color": #fdd9fd, "y_color": #ffeed9)

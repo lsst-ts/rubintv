@@ -2,6 +2,7 @@
 @import "buttons"
 @import "colours"
 @import "calendar"
+@import "clock"
 
 .flr
 	display: flex
@@ -60,7 +61,6 @@ header
 	margin-top: 12.5px
 
 .header-page-buttons
-	position: relative
 	flex-grow: 1
 	flex-direction: row !important
 	justify-content: flex-start
@@ -104,33 +104,9 @@ header
 	display: flex
 	flex-direction: row
 	justify-content: flex-end
-	margin-bottom: 1em
 	gap: 4px
 	a
 		color: #fff
-
-#clock
-	opacity: 0
-	transition: opacity 0.3s
-	font-size: 0.8em
-	padding: 8px
-	font-family: monospace
-	background-color: #fff
-	color: #000
-	border-radius: 0 0 12px 12px
-	position: absolute
-	top: -16px
-	right: 3em
-	&::after
-		content: "UTC"
-		margin-left: 0.2em
-	&.show
-		opacity: 1
-	.hours-mins
-		font-size: 1.4em
-	.secs
-		color: #5f5f5f
-		margin-left: 0.2em
 
 main
 		padding: 1em 30px 25px
@@ -164,11 +140,11 @@ section
 	gap: 2em
 	margin-bottom: 2em
 
+.locations
+	margin-top: 1em
+
 #per-image-menu
 	flex-basis: 70%
-
-.channel-day-data
-	flex-basis: 50%
 
 .allsky-current-image, .allsky-current-movie
 	flex-basis: 50%
@@ -193,47 +169,73 @@ section
 	position: sticky
 	top: 3em
 
-.event-info
-	display: flex
-	flex-direction: row
-	justify-content: flex-start
-
-.metadata-status
-	display: flex
-	align-items: center
-
-.download-metadata
-	margin-left: 1em
-	height: 42px
-
-.channel-grid-heading
-	padding-top: 1em
-	position: sticky
-	top: 0
-	display: flex
-	flex-direction: row
-	align-items: center
-	height: 3.7em
-	z-index: 23
-	h3
-		margin-bottom: 0
+.video-with-overlay
+	position: relative
+	img
+		position: absolute
+		top: 0
+		left: 0
+		pointer-events: none
 
 .per-day-channels
 	margin-bottom: 1em
 	> *
 		margin-right: 1em
 
-.channel-grid
+.event-info
+	display: flex
+	flex-direction: row
+	justify-content: flex-start
+
+.event-link
+	color: #fff
+	text-decoration-color: #fff
+	p
+		margin-top: 0.8em
+
+.metadata-status
+	display: flex
+	align-items: center
+
+.download-metadata
+	height: 42px
+
+#channel-day-data
+	width: max-content
+
+.above-table-sticky
+	padding-top: 1em
+	position: sticky
+	top: 0
+	display: flex
+	flex-direction: row
+	align-items: center
+	gap: 1em
+	height: 3.7em
+	z-index: 23
+	h3
+		margin-bottom: 0
+
+.table-container
+	width: 100%
+
+.camera-table
 	font-family: 'Red Hat Mono', monospace
 	border-spacing: 2px
 	border-collapse: separate
+	thead
+		position: sticky
+		top: 3.7em
 
 .grid-title
 	text-align: left
-	position: sticky
-	top: 13em
+	position: relative
+	height: 9.7em
+	top: 1.1em
 	font-size: 14px
 	cursor: pointer
+	vertical-align: bottom
+	left: -4.2em
 	&.sideways
 		max-width: 40px
 		transform: rotate(330deg)
@@ -248,11 +250,6 @@ section
 	box-sizing: border-box
 
 
-.table-spacer
-	height: 8.7em
-	position: sticky
-	top: 3.7em
-
 .meta-group
 	height: 20px
 	position: relative
@@ -260,25 +257,6 @@ section
 	img
 		width: 100%
 		height: 100%
-
-.startracker, .startracker-wide, .startracker-fast
-	thead
-		position: sticky
-		top: 11em
-	.grouping
-		height: 6em
-	.braced-group-title
-		margin-bottom: 2px
-	.grid-title
-		position: static
-	.table-spacer
-		height: 11.8em
-	.meta-group
-		top: -5.4em
-		p
-			white-space: nowrap
-	.jump-buttons
-		top: 267px
 
 .copy-to-cb
 	display: flex
@@ -304,7 +282,6 @@ section
 	background: #eee
 	padding: 0.8em 19px
 	border-radius: 20px
-	margin: 0 1em
 
 .table-control-button::after
 	content: "∆"
@@ -359,7 +336,7 @@ section
 	display: flex
 	flex-direction: column
 	justify-content: space-between
-	top: 157px
+	top: 12.4em
 	left: -30px
 	gap: 2px
 	.jump-button
@@ -394,95 +371,9 @@ section
 		padding-right: 2em
 
 
-
 .admin-access
 	margin-top: 3em
 
-.service-group
-	display: flex
-	flex-direction: column
-	align-items: center
-	margin-bottom: 1.5em
-	padding: 1em
-
-	.all-services, .services
-		display: flex
-		flex-direction: row
-		gap: 1em
-
-	.all-services > *
-		padding: 1em
-		border: 1px solid #aaa
-		border-radius: 6px
-		&:nth-child(2)
-			margin-left: 2em
-
-	.all-services h4
-		text-align: center
-		margin-bottom: 0.5em
-
-	.service
-		padding: 0.8em
-		display: flex
-		flex-direction: column
-		align-items: center
-		border-radius: 6px
-		text-align: center
-
-		.heartbeat
-			margin-bottom: 0.3em
-
-
-.heartbeat
-	width: 32px
-	height: 32px
-	background-image: url(../images/heartbeat_unknown.svg)
-
-.active .heartbeat
-	background: url(../images/heartbeat_active.svg)
-	animation: heartbeat 1.5s infinite
-.stopped .heartbeat
-	background: url(../images/heartbeat_stopped.svg)
-	animation:  none
-
-.service.inline-block
-	.heartbeat
-		width: 0.7em
-		height: 0.7em
-		background-image: none
-	&.stopped
-		background: url(../images/heartbeat_stopped.svg)
-
-
-.channel
-	.heartbeat
-		margin: auto
-		height: 50px
-		width: 50px
-		background-image: none
-.channel.active .heartbeat
-	background-image: none
-.channel.stopped .heartbeat
-	background-image: url(../images/heartbeat_channel_stopped.svg)
-
-.metadata-status
-	.heartbeat
-		height: 14px
-		width: 14px
-
-@keyframes heartbeat
-	0%
-		transform: scale(1)
-	5%
-		transform: scale(1.1)
-	10%
-		transform: scale(1)
-	15%
-		transform: scale(1.3)
-	50%
-		transform: scale(1)
-	100%
-		transform: scale(1)
 
 #historicalReset
 	display: flex
@@ -497,15 +388,17 @@ section
 	.hidden
 		display: none
 
+
 #night-report
 		.disabled
 			display: none !important
 
-
 .dashboard
+	display: flex
 	font-family: 'Red Hat Mono', monospace
-	margin: 2em 0
+	gap: 0.5em
 	ul
+		width: 100%
 		list-style: none
 		margin-bottom: 1em
 	li
@@ -514,14 +407,10 @@ section
 		border-radius: 6px
 		padding: 11px 18px
 		margin-bottom: 6px
-		flex-basis: calc(50% - 0.5em)
 		background-color: #fff
 
 	.dashboard-text
-		display: flex
-		flex-direction: row
-		flex-wrap: wrap
-		gap: 1em
+		width: 100%
 
 .tab-titles
 	display: flex
@@ -535,7 +424,7 @@ section
 	cursor: pointer
 	padding: 0.5em 1em 0.7em 1em
 	cursor: pointer
-	background: #eee
+	background: #b0b0b0
 	border-radius: 0px 11px 0 0
 	border: 1px solid transparent
 	border-bottom: none
@@ -543,24 +432,20 @@ section
 	&:last-of-type
 		margin-right: 0
 	&.selected
+		background: #fff
 		border-color: #666
 
 .tab-content:not(.showing)
 	display: none
 
-
 .plots-grid
 	display: grid
 	grid-template-columns: repeat(2,1fr)
 	gap: 1em
-	background-color: #eee
-	padding: 1em
 
 .plot
 	display: flex
 	flex-direction: column
-	justify-content: space-between
-	background: #eee
 	img
 		width: 100%
 		height: auto

@@ -1,41 +1,50 @@
 """Configuration definition."""
-
-__all__ = ["Configuration"]
-
 import os
-from dataclasses import dataclass
+
+from pydantic import Field
+from pydantic_settings import BaseSettings
+from safir.logging import LogLevel, Profile
+
+__all__ = ["Configuration", "config"]
 
 
-@dataclass
-class Configuration:
+class Configuration(BaseSettings):
     """Configuration for rubintv."""
 
-    name: str = os.getenv("SAFIR_NAME", "rubintv")
-    """The application's name, which doubles as the root HTTP endpoint path.
+    name: str = Field(
+        "rubintv",
+        json_schema_extra={
+            "title": "Name of application",
+            "validation_alias": "SAFIR_NAME",
+        },
+    )
 
-    Set with the ``SAFIR_NAME`` environment variable.
-    """
+    path_prefix: str = Field(
+        "/rubintv",
+        json_schema_extra={
+            "title": "URL prefix for application",
+            "validation_alias": "SAFIR_PATH_PREFIX",
+        },
+    )
 
-    profile: str = os.getenv("SAFIR_PROFILE", "development")
-    """Application run profile: "development" or "production".
+    s3_endpoint_url: str | None = Field(os.getenv("S3_ENDPOINT_URL"))
 
-    Set with the ``SAFIR_PROFILE`` environment variable.
-    """
+    profile: Profile = Field(
+        Profile.development,
+        json_schema_extra={
+            "title": "Application logging profile",
+            "validation_alias": "SAFIR_PROFILE",
+        },
+    )
 
-    logger_name: str = os.getenv("SAFIR_LOGGER", "rubintv")
-    """The root name of the application's logger.
+    log_level: LogLevel = Field(
+        LogLevel.INFO,
+        json_schema_extra={
+            "title": "Log level of the application's logger",
+            "validation_alias": "SAFIR_LOG_LEVEL",
+        },
+    )
 
-    Set with the ``SAFIR_LOGGER`` environment variable.
-    """
 
-    log_level: str = os.getenv("SAFIR_LOG_LEVEL", "INFO")
-    """The log level of the application's logger.
-
-    Set with the ``SAFIR_LOG_LEVEL`` environment variable.
-    """
-
-    bucket_name: str = os.getenv("RUBINTV_BUCKET_NAME", "rubintv_data")
-    """The bucket name from which to retrieve data.
-
-    Set with the ``RUBINTV_BUCKET_NAME`` environment variable.
-    """
+config = Configuration()
+"""Configuration for rubintv."""

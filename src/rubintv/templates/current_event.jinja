@@ -1,0 +1,16 @@
+{% extends "single_event.jinja" %}
+
+{% block undertitle %}
+Current
+{% endblock undertitle %}
+
+{% block further %}
+ {{ super() }}
+  {% if event %}
+    <script>window.APP_DATA.initEvent = {{event|tojson}}</script>
+  {% endif %}
+{% endblock further %}
+
+{% block footer_scripts %}
+<script type=module src="{{ url_for('static', path='assets/current.js') }}"></script>
+{% endblock footer_scripts %}

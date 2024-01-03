@@ -1,0 +1,15 @@
+{% if "stills" in per_day and per_day["stills"] %}
+  {% set still = per_day["stills"] %}
+  {% set img_url = url_for('event_image',
+                      location_name=location.name,
+                      camera_name=camera.name,
+                      channel_name=still.channel_name,
+                      filename=still.filename + '.' + still.ext) %}
+  <div class="subheader">
+    <h3>{{ date }} : Image {{still.seq_num}}</h3>
+  </div>
+  <a target="_blank" href="{{ img_url }}">
+    <img class="resp" src="{{ img_url }}">
+  </a>
+  <div class="desc">{{still.filename}}.{{still.ext}}</div>
+{% endif %}
