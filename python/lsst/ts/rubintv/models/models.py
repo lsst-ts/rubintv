@@ -96,7 +96,7 @@ class Camera(BaseModel):
         return [c for c in self.channels if c.per_day]
 
 
-class Location(BaseModel, arbitrary_types_allowed=True):
+class Location(BaseModel):
     name: str
     title: str
     bucket_name: str
@@ -104,6 +104,9 @@ class Location(BaseModel, arbitrary_types_allowed=True):
     camera_groups: dict[str, list[str]]
     cameras: list[Camera] = []
     logo: str = ""
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 @dataclass
