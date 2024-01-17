@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rubintv"
-description = "ASDASD rubinTV is a Web app to display Butler-served data sets`_."
+description = "rubinTV is a Web app to display Butler-served data sets"
 license = { text = "MIT" }
 classifiers = [ "Programming Language :: Python :: 3.11" ]
 dependencies = [

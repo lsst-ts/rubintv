@@ -8,7 +8,6 @@ called.
 """
 import asyncio
 from contextlib import asynccontextmanager
-from importlib.metadata import metadata, version
 from pathlib import Path
 from typing import AsyncGenerator
 
@@ -18,6 +17,7 @@ from safir.dependencies.http_client import http_client_dependency
 from safir.logging import configure_logging, configure_uvicorn_logging
 from safir.middleware.x_forwarded import XForwardedMiddleware
 
+from . import __version__
 from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
 from .config import config
@@ -76,8 +76,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 """The main FastAPI application for rubintv."""
 app = FastAPI(
     title="rubintv",
-    description=metadata("rubintv")["Summary"],
-    version=version("rubintv"),
+    description="rubinTV is a Web app to display Butler-served data sets",
+    version=__version__,
     openapi_url=f"{config.path_prefix}/openapi.json",
     docs_url=f"{config.path_prefix}/docs",
     redoc_url=f"{config.path_prefix}/redoc",

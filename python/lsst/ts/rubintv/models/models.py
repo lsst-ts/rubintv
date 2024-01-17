@@ -8,13 +8,36 @@ from pydantic import BaseModel, field_validator
 from pydantic.dataclasses import dataclass
 from typing_extensions import NotRequired, TypedDict
 
+from .. import __version__
+from ..config import config
+
 __all__ = [
+    "Metadata",
     "Location",
     "Channel",
     "Camera",
     "Event",
     "get_current_day_obs",
 ]
+
+
+class Metadata(BaseModel):
+    """Metadata about the application."""
+
+    name: str = config.name
+    """The name of the application."""
+
+    version: str = __version__
+    """The version of the application."""
+
+    description: str = "rubinTV is a Web app to display Butler-served data sets"
+    """A description of the application."""
+
+    repository_url: str = "https://github.com/lsst-ts/rubintv'"
+    """The URL of the application's repository."""
+
+    documentation_url: str = "https://rubintv.lsst.io"
+    """The URL of the application's documentation."""
 
 
 class Channel(BaseModel):

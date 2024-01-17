@@ -9,9 +9,8 @@ or other information that should not be visible outside the Kubernetes cluster.
 """
 
 from fastapi import APIRouter
-from safir.metadata import Metadata, get_metadata
 
-from ..config import config
+from ..models.models import Metadata
 
 __all__ = ["get_index", "internal_router"]
 
@@ -36,7 +35,4 @@ async def get_index() -> Metadata:
 
     By convention, this endpoint returns only the application's metadata.
     """
-    return get_metadata(
-        package_name="rubintv",
-        application_name=config.name,
-    )
+    return Metadata()
