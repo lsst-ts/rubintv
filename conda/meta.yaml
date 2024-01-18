@@ -31,4 +31,4 @@ requirements:
     - uvicorn
     - pydantic
     - websockets
-    - asgi_lifespan
+    - asgi-lifespan
