@@ -115,7 +115,11 @@ async def attach_service(
 ) -> None:
     logger = structlog.get_logger(__name__)
     if not await is_valid_service(service_loc_cam):
-        logger.error("Bad request", service_loc=service_loc_cam, client_id=client_id)
+        logger.error(
+            "Not valid service",
+            service_loc=service_loc_cam,
+            client_id=client_id,
+        )
         return
     try:
         service, loc_cam = service_loc_cam.split(" ")
@@ -153,7 +157,7 @@ async def is_valid_client_request(data: dict) -> bool:
 
 async def is_valid_service(service: str) -> bool:
     services_str = "|".join(valid_services)
-    valid_req = re.compile(rf"^({services_str}) \w+(\/\w+)+$")
+    valid_req = re.compile(rf"^({services_str}) [\w-]+(\/\w+)+$")
     return valid_req.fullmatch(service) is not None
 
 
