@@ -7,10 +7,9 @@ from itertools import chain
 import pytest
 from bs4 import BeautifulSoup
 from httpx import AsyncClient
-
-from rubintv.models.models import Location
-from rubintv.models.models_helpers import find_first
-from rubintv.models.models_init import ModelsInitiator
+from lsst.ts.rubintv.models.models import Location
+from lsst.ts.rubintv.models.models_helpers import find_first
+from lsst.ts.rubintv.models.models_init import ModelsInitiator
 
 m = ModelsInitiator()
 
@@ -35,7 +34,7 @@ async def test_get_location(client: AsyncClient) -> None:
     """Test that location page has links to cameras"""
     location_name = "summit-usdf"
     location = find_first(m.locations, "name", location_name)
-    assert type(location) == Location
+    assert type(location) is Location
 
     groups = location.camera_groups.values()
     camera_names = list(chain(*groups))

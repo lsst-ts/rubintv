@@ -2,10 +2,9 @@ import asyncio
 
 import pytest
 from httpx import AsyncClient
-
-from rubintv.models.models import Camera, Location, get_current_day_obs
-from rubintv.models.models_helpers import find_first
-from rubintv.models.models_init import ModelsInitiator
+from lsst.ts.rubintv.models.models import Camera, Location, get_current_day_obs
+from lsst.ts.rubintv.models.models_helpers import find_first
+from lsst.ts.rubintv.models.models_init import ModelsInitiator
 
 m = ModelsInitiator()
 
@@ -72,9 +71,7 @@ async def test_get_api_location_camera_current_for_offline(
     location_name = "summit-usdf"
     camera_name = "lsstcam"
 
-    response = await client.get(
-        f"/rubintv/api/{location_name}/{camera_name}/current"
-    )
+    response = await client.get(f"/rubintv/api/{location_name}/{camera_name}/current")
     data = response.json()
     assert data == {}
 

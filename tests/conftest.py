@@ -11,11 +11,10 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from httpx import AsyncClient
+from lsst.ts.rubintv import main
+from lsst.ts.rubintv.mockdata import mock_up_data
+from lsst.ts.rubintv.models.models_init import ModelsInitiator
 from moto import mock_s3
-
-from rubintv import main
-from rubintv.mockdata import mock_up_data
-from rubintv.models.models_init import ModelsInitiator
 
 
 @pytest.fixture(scope="module")
@@ -49,7 +48,5 @@ async def app(aws_credentials: Any) -> AsyncIterator[FastAPI]:
 @pytest_asyncio.fixture
 async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
     """Return an ``httpx.AsyncClient`` configured to talk to the test app."""
-    async with AsyncClient(
-        app=app, base_url="http://127.0.0.1:8000/"
-    ) as client:
+    async with AsyncClient(app=app, base_url="http://127.0.0.1:8000/") as client:
         yield client
