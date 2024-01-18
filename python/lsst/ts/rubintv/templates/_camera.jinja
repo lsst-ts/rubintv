@@ -1,0 +1,23 @@
+{% extends "_layout.jinja" %}
+{% block pagetitle %}
+  <a href="{{
+    url_for('camera',
+    location_name=location.name,
+    camera_name=camera.name)
+  }}">
+    {{ camera.title }}
+  </a>
+  {% block inline_status %}
+  {% endblock inline_status %}
+{% endblock pagetitle %}
+
+{% block further %}
+  {% set home_url = url_for('home') %}
+  <script>
+    window.APP_DATA.baseUrl = "{{ home_url }}"
+    window.APP_DATA.camera = {{ camera|tojson }}
+    window.APP_DATA.date = "{{ date }}"
+  </script>
+  <div id="historicalbusy" data-historicalbusy="{{ historical_busy }}">
+  </div>
+{% endblock further %}

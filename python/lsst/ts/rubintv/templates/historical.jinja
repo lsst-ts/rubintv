@@ -1,0 +1,38 @@
+{% extends "camera.jinja" %}
+{% block pagesubtitle %}
+Historical Data
+{% endblock pagesubtitle %}
+{% block undertitle %}
+{{ date }}
+{% endblock undertitle %}
+{% block breadcrumb %}
+<a href="{{ url_for('home') }}">Home</a>>
+<a href="{{ url_for('location', location_name=location.name) }}">{{ location.title }}</a>>
+<a href="{{ url_for('camera', location_name=location.name, camera_name=camera.name) }}">{{ camera.title }}</a>>
+<p>Historical</p>
+{% endblock breadcrumb  %}
+
+{% block content %}
+{% if historical_busy %}
+    <p>Historical data is being processed... Please wait...</p>
+{% else %}
+
+  <section class="calendar">
+    {% include "camera_parts/calendar.jinja" %}
+  </section>
+
+  <section id="per-day" class="columns">
+    {# React PerDay root here #}
+  </section>
+
+  <section id="table">
+    {# React TableApp root here #}
+  </section>
+
+{% endif %}
+{% endblock content %}
+
+{% block further %}
+ {{ super() }}
+ <script>window.APP_DATA.ishistorical = true</script>
+{% endblock further %}

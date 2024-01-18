@@ -1,0 +1,79 @@
+{% extends "_camera.jinja" %}
+{% block pagesubtitle %}
+  Latest
+{% endblock pagesubtitle  %}
+
+{% block undertitle %}
+{% if date %}
+  <div id="header-date">{{ date }}</div>
+{% endif %}
+{% endblock undertitle %}
+
+{% block headerbuttons %}
+    <a
+      class="button historical"
+      href="{{ url_for('historical', location_name=location.name, camera_name=camera.name) }}">
+      Historical<img src="{{ url_for('static', path='images/history-line.svg') }}">
+    </a>
+{% endblock headerbuttons %}
+
+{% block breadcrumb %}
+  <a href="{{ url_for('home') }}">
+    Home
+  </a>>
+  <a href="{{ url_for('location', location_name=location.name) }}">
+    {{ location.title }}
+  </a>>
+  <p>{{ camera.title }}</p>
+{% endblock breadcrumb  %}
+
+{% block content %}
+
+  {% if historical_busy %}
+    {% include "camera_parts/historical-busy-message.jinja" %}
+  {% else %}
+    <div id="per-day" class="columns">
+      {% include "camera_parts/night-report-link.jinja" %}
+      {% include "camera_parts/per-day-channels.jinja" %}
+    </div>
+    <section>
+      <nav id="per-image-menu" class="channel-menu" role="navigation">
+        <h3>Current image channels</h3>
+          <ul class="channels flr">
+            {% for channel in camera.channels if not channel.per_day %}
+              <li class="channel service"
+                  id="{{ channel.name }}">
+                <a  class="button button-large {{ channel.name }}"
+                    style="background-color: {{ channel.colour }};"
+                    href="{{
+                      url_for('current_event',
+                      location_name=location.name,
+                      camera_name=camera.name,
+                      channel_name=channel.name) }}"
+                    target="_blank">
+                  <span>{{ channel.title }}</span>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </nav>
+    </section>
+    <section id="table">
+      {# React TableApp root here #}
+    </section>
+  {% endif %}
+
+{% endblock content %}
+
+{% block footer_scripts %}
+    <script>
+      window.APP_DATA.tableMetadata = {{ metadata|tojson }}
+      window.APP_DATA.tableChannels = {{ channelData|tojson }}
+      window.APP_DATA.perDay = {{ per_day|tojson }}
+      window.APP_DATA.eventURL = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}"
+      window.APP_DATA.hasNightReport = {{ nr_exists|tojson }}
+      window.APP_DATA.isToday = {{ isToday|tojson if isToday else "false "}}
+    </script>
+    <script src='{{ url_for("static", path="assets/camera-table.js") }}'></script>
+  {{ super() }}
+{% endblock footer_scripts  %}

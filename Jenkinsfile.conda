@@ -1,0 +1,2 @@
+@Library('JenkinsShared')_
+CondaPipeline([], "ts-rubintv", "lsst.ts.rubintv", "noarch")

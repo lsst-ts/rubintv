@@ -3,37 +3,41 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 
-const pagesWithHeartbeats = [
-  'auxtel',
-  'startracker',
-  'admin'
-].reduce((pages, page) => ({
-  ...pages, [page]: [`./src/js/pages/${page}.js`, './src/js/heartbeats.js']
-}), {})
-
-const pagesWithout = [
-  'current',
-  'allsky_historical',
-  'auxtel_historical',
-  'startracker_historical',
-  'night_report',
-  'night_report_historical'
+const pagesWithoutHistory = [
+  'admin',
+  'night_report'
 ].reduce((pages, page) => ({
   ...pages, [page]: `./src/js/pages/${page}.js`
+}), {})
+
+const pagesWithHistory = [
+  'current',
+  'camera-table',
+  'allsky'
+].reduce((pages, page) => ({
+  ...pages,
+  [page]: [`./src/js/pages/${page}.js`,
+    './src/js/modules/websocket_client.js',
+    './src/js/reload_on_historical.js',
+    './src/js/modules/calendar-controls.js'
+  ]
 }), {})
 
 module.exports = {
   mode: 'production',
   devtool: 'source-map',
+  stats: {
+    errorDetails: true
+  },
   entry: {
     style: './src/sass/style.sass',
     hostbanner: './src/js/hostbanner.js',
-    ...pagesWithHeartbeats,
-    ...pagesWithout
+    ...pagesWithoutHistory,
+    ...pagesWithHistory
   },
   output: {
     filename: '[name].js',
-    path: path.resolve(__dirname, 'src/rubintv/static/assets')
+    path: path.resolve(__dirname, 'python/lsst/ts/rubintv/static/assets')
   },
   plugins: [new MiniCssExtractPlugin({ filename: '[name].css' })],
   optimization: {
@@ -43,15 +47,27 @@ module.exports = {
       new CssMinimizerPlugin()
     ]
   },
+  resolve: {
+    extensions: ['.js', '.jsx']
+  },
   module: {
-    rules: [{
-      test: /\.(s[ac]ss|css)$/i,
-      use: [
-        MiniCssExtractPlugin.loader,
-        { loader: 'css-loader', options: { sourceMap: true } },
-        { loader: 'postcss-loader', options: { sourceMap: true } },
-        { loader: 'sass-loader', options: { sourceMap: true } }
-      ]
-    }]
+    rules: [
+      {
+        test: /\.(s[ac]ss|css)$/i,
+        use: [
+          MiniCssExtractPlugin.loader,
+          { loader: 'css-loader', options: { sourceMap: true } },
+          { loader: 'postcss-loader', options: { sourceMap: true } },
+          { loader: 'sass-loader', options: { sourceMap: true } }
+        ]
+      },
+      {
+        test: /\.(js|jsx)$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader'
+        }
+      }
+    ]
   }
 }

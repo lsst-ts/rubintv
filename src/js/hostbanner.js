@@ -1,7 +1,7 @@
 window.addEventListener('DOMContentLoaded',
   () => {
     const display = []
-    if (window.location.hostname === 'localhost') {
+    if (['localhost', '127.0.0.1'].includes(window.location.hostname)) {
       display.push('localhost')
     }
     if (window.location.pathname.includes('-dev')) {

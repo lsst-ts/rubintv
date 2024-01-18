@@ -1,0 +1,494 @@
+bucket_configurations:
+  usdf-k8s:
+    [ slac, base-usdf, tucson-usdf, summit-usdf ]
+  base:
+    [ base ]
+  tucson:
+    [ tucson ]
+  summit:
+    [ summit ]
+  gha:
+    [ slac, base-usdf, tucson-usdf, summit-usdf ]
+  local:
+    [ slac, base-usdf, tucson-usdf, summit-usdf ]
+
+locations:
+  - name: slac
+    title: SLAC
+    profile_name: rubin-rubintv-data-usdf
+    bucket_name: rubin-rubintv-data-usdf
+    logo: SLAC_Logo.svg
+    camera_groups:
+      Cameras: [ slac_lsstcam, slac_ts8 ]
+  
+  - name: base-usdf
+    title: Base USDF
+    profile_name: rubin-rubintv-data-bts
+    bucket_name: rubin-rubintv-data-bts
+    logo: Summit.jpg
+    camera_groups:
+      Cameras: [ auxtel, fake_auxtel ]
+      Telescopes: [ tma ]
+  
+  - name: tucson-usdf
+    title: Tucson USDF
+    profile_name: rubin-rubintv-data-tts
+    bucket_name: rubin-rubintv-data-tts
+    logo: cactus.svg
+    camera_groups:
+      Cameras: [ auxtel, fake_auxtel, comcam ]
+      Telescopes: [ tma ]
+  
+  - name: summit-usdf
+    title: Summit USDF
+    profile_name: rubin-rubintv-data-summit
+    bucket_name: rubin-rubintv-data-summit
+    logo: Summit.jpg
+    camera_groups:
+      Telescope Mounted: [ auxtel, comcam, lsstcam ]
+      Other Cameras: [ allsky, startracker, startracker_wide, startracker_fast ]
+      Telescopes: [ tma ]
+
+  - name: base
+    title: Base
+    profile_name: base-data-base
+    bucket_name: rubintv
+    logo: Summit.jpg
+    camera_groups:
+      Cameras: [ auxtel, fake_auxtel ]
+      Telescopes: [ tma ]
+
+  - name: tucson
+    title: Tucson
+    profile_name: tucson-data-tucson
+    bucket_name: rubintv
+    logo: cactus.svg
+    camera_groups:
+      Cameras: [ auxtel, fake_auxtel, comcam ]
+      Telescopes: [ tma ]
+
+  - name: summit
+    title: Summit
+    profile_name: summit-data-summit
+    bucket_name: rubintv
+    logo: Summit.jpg
+    camera_groups:
+      Telescope Mounted: [ auxtel, comcam, lsstcam ]
+      Other Cameras: [ allsky, startracker, startracker_wide, startracker_fast ]
+      Telescopes: [ tma ]
+
+cameras:
+  - name: tma
+    title: TMA
+    online: True
+    channels:
+      - name: mount
+        title: Mount motion profile
+        colour: "#fa9284"
+      - name: m1m3_hardpoint_profile
+        title: M1M3 HP and Slew Profile
+    copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
+    {seqNum}}"
+
+  - name: auxtel
+    title: AuxTel
+    online: True
+    night_report_prefix: auxtel_night_reports
+    copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
+    {seqNum}, \"detector\": 0}"
+    image_viewer_link: "http://ccs.lsst.org/FITSInfo/view.html?\
+    image=AT_O_{dayObs}_{seqNum}\
+    &raft=R00&color=grey&bias=Simple+Overscan+Correction\
+    &scale=Per-Segment&source=RubinTV"
+    channels:
+      -
+        name: monitor
+        title: Monitor
+        colour: "#F07F85"
+      -
+        name: imexam
+        title: Image Analysis
+        label: ImAnalysis
+        colour: "#7FF094"
+      -
+        name: specexam
+        title: Spectrum
+        colour: "#7F85F0"
+      -
+        name: mount
+        title: Mount
+        colour: "#F0C87F"
+      -
+        per_day: True
+        name: movies
+        title: Tonight's Movie
+        label: "Movie for "
+        colour: "#83daee"
+
+
+  - name: startracker
+    title: StarTracker
+    online: True
+    channels:
+      - name: raw
+        title: StarTracker
+        colour: "#58528b"
+      - name: analysis
+        title: Analysis
+        colour: "#ba528f"
+
+  - name: startracker_wide
+    title: StarTracker Wide
+    online: True
+    metadata_from: startracker
+    channels:
+      - name: raw
+        title: StarTracker Wide
+        label: ST Wide
+        colour: "#fc6465"
+      - name: analysis
+        title: Wide Analysis
+        label: ST Wide Analysis
+        colour: "#fda529"
+
+  - name: startracker_fast
+    title: StarTracker Fast
+    online: True
+    metadata_from: startracker
+    channels:
+      - name: raw
+        title: StarTrackerFast
+        prefix: raw
+        colour: "#FECC66"
+      - name: analysis
+        title: Analysis
+        prefix: analysis
+        colour: "#d5fa80"
+
+  - name: allsky
+    title: All Sky
+    online: True
+    channels:
+      - name: movies
+        title: Current Movie
+        per_day: True
+      - name: stills
+        title: Current Image
+        per_day: True
+
+  - name: comcam
+    title: ComCam
+    online: True
+    channels:
+      - name: focal_plane_mosaic
+        title: Focal Plane mosaic
+        colour: "#6fe9ba"
+      - name: noise_map
+        title: Noise Map
+        colour: "#e771a8"
+    copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
+    {seqNum}}"
+    image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
+    view.html?image=CC_O_{dayObs}_{seqNum}"
+
+  - name: lsstcam
+    title: LSSTCam
+    online: False
+
+  - name: slac_lsstcam
+    title: LSSTCam
+    online: True
+    channels:
+      - name: focal_plane_mosaic
+        title: Focal Plane mosaic
+        colour: "#6fe9ba"
+      - name: noise_map
+        title: Noise Map
+        colour: "#e771a8"
+      - name: ccob_analysis
+        title: CCOB Analysis
+        colour: "#e7ae71"
+    logo: slac_lsstcam.png
+    night_report_label: Trending Plots
+    image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
+    FITSInfo/view.html?image=MC_C_{dayObs}_{seqNum}"
+
+
+  - name: slac_ts8
+    title: TS8
+    online: True
+    channels:
+      - name: focal_plane_mosaic
+        title: Focal Plane mosaic
+        colour: "#6fe9ba"
+      - name: noise_map
+        title: Noise Map
+        colour: "#e771a8"
+    logo: ts8.png
+    image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
+    FITSInfo/view.html?image=TS_C_{dayObs}_{seqNum}"
+    night_report_label: Trending Plots
+
+
+  - name: fake_auxtel
+    title: Fake Auxtel
+    online: True
+    channels:
+      - name: monitor
+        title: Monitor
+        colour: "#F07F85"
+
+      - name: imexam
+        title: Image Analysis
+        label: ImAnalysis
+        colour: "#7FF094"
+
+      - name: specexam
+        title: Spectrum
+        colour: "#7F85F0"
+
+      - name: mount
+        title: Mount
+        colour: "#F0C87F"
+
+      - per_day: True
+        name: movie
+        title: Tonight's Movie
+        label: "Movie for "
+        colour: "#83daee"
+
+    copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
+    {seqNum}}"
+    image_viewer_link: "http://ccs.lsst.org/FITSInfo/view.html?\
+    image=AT_O_{dayObs}_{seqNum}\
+    &raft=R00&color=grey&bias=Simple+Overscan+Correction\
+    &scale=Per-Segment&source=RubinTV"
+
+
+metadata_cols:
+  fake_auxtel:
+    Exposure log entries:
+      Any exposure log entries which have been made, click to pop out the details
+    Mount motion image degradation:
+      An estimate of the degradation of the PSF, in arcseconds, due mount tracking issues
+    Exposure time:
+      The image exposure time
+    Image type:
+      The image type, e.g. bias, dark, flat etc
+    Target:
+      The name of the target in the exposure
+    Filter:
+      The filter in use for the image, or `empty` if none
+    Disperser:
+      The dispersive element in use for the image, or `empty` if none
+    Airmass:
+      The airmass of the observation
+    TAI:
+      The TAI of the observation
+    DIMM Seeing:
+      The seeing, as measured by the DIMM, if available
+  slac_lsstcam:
+    Run number:
+      The run number, as taken from the exposure record's science_program field
+    Exposure time:
+      The image exposure time
+    Dark time:
+      The image dark time
+    Image type:
+      The image type, e.g. bias, dark, flat etc
+    Test type:
+      The type of test being run, e.g. superflats
+
+  ts8:
+    Run number:
+      The run number, as taken from the exposure record's science_program field
+    Exposure time:
+      The image exposure time
+    Dark time:
+      The image dark time
+    Image type:
+      The image type, e.g. bias, dark, flat etc
+    Test type:
+      The type of test being run, e.g. superflats etc
+
+  auxtel:
+    Exposure log entries:
+      Any exposure log entries which have been made, click to pop out the details
+    Mount motion image degradation:
+      An estimate of the degradation of the PSF, in arcseconds, due mount tracking issues
+    Exposure time:
+      The image exposure time
+    Image type:
+      The image type, e.g. bias, dark, flat etc
+    Target:
+      The name of the target in the exposure
+    Filter:
+      The filter in use for the image, or `empty` if none
+    Disperser:
+      The dispersive element in use for the image, or `empty` if none
+    Airmass:
+      The airmass of the observation
+    TAI:
+      The TAI of the observation
+    DIMM Seeing:
+      The seeing, as measured by the DIMM, if available
+
+  startracker:
+    Exposure Time:
+      The image exposure time
+    MJD:
+      The MJD of the observation
+    UTC:
+      The UTC of the observation - currently misreported, it is actually TAI
+    Ra:
+      The commanded ra from the header, i.e. from the pointing component
+    Dec:
+      The commanded dec from the header, i.e. from the pointing component
+    Alt:
+      The average alt from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
+    Az:
+      The average az from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
+    nSources:
+      The total number of sources detected in the image
+    nSources filtered:
+      The total number of sources passed to the fitter
+    Calculated Ra:
+      The calculated ra from the astrometric fit
+    Calculated Dec:
+      The calculated dec from the astrometric fit
+    Delta Ra Arcsec:
+      The difference between the commanded and fitted ra, in arcseconds
+    Delta Dec Arcsec:
+      The difference between the commanded and fitted dec, in arcseconds
+    Calculated Alt:
+      The calculated alt from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
+    Calculated Az:
+      The calculated az from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
+    Delta Alt Arcsec:
+      The difference between the commanded and fitted alt, in arcseconds
+    Delta Az Arcsec:
+      The difference between the commanded and fitted az, in arcseconds
+    Delta Rot Arcsec:
+      The difference between the commanded and fitted rotator angle, in arcseconds. Note that as we don't have a rotator, this is more or less arbitrary.
+    RMS scatter arcsec:
+      The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
+    RMS scatter pixels:
+      The RMS distance between the measured position of each source and its position in the catalog, in pixels
+
+  startracker_wide:
+    Exposure Time wide:
+      The image exposure time
+    MJD:
+      The MJD of the observation
+    UTC:
+      The UTC of the observation - currently misreported, it is actually TAI
+    Ra wide:
+      The commanded ra from the header, i.e. from the pointing component
+    Dec wide:
+      The commanded dec from the header, i.e. from the pointing component
+    Alt wide:
+      The average alt from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
+    Az wide:
+      The average az from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
+    nSources wide:
+      The total number of sources detected in the image
+    nSources filtered wide:
+      The total number of sources passed to the fitter
+    Calculated Ra wide:
+      The calculated ra from the astrometric fit
+    Calculated Dec wide:
+      The calculated dec from the astrometric fit
+    Delta Ra Arcsec wide:
+      The difference between the commanded and fitted ra, in arcseconds
+    Delta Dec Arcsec wide:
+      The difference between the commanded and fitted dec, in arcseconds
+    Calculated Alt wide:
+      The calculated alt from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
+    Calculated Az wide:
+      The calculated az from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
+    Delta Alt Arcsec wide:
+      The difference between the commanded and fitted alt, in arcseconds
+    Delta Az Arcsec wide:
+      The difference between the commanded and fitted az, in arcseconds
+    Delta Rot Arcsec wide:
+      The difference between the commanded and fitted rotator angle, in arcseconds. Note that as we don't have a rotator, this is more or less arbitrary.
+    RMS scatter arcsec wide:
+      The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
+    RMS scatter pixels wide:
+      The RMS distance between the measured position of each source and its position in the catalog, in pixels
+
+  startracker_fast:
+    Exposure Time fast:
+      The image exposure time
+    MJD:
+      The MJD of the observation
+    UTC:
+      The UTC of the observation - currently misreported, it is actually TAI
+    Ra fast:
+      The commanded ra from the header, i.e. from the pointing component
+    Dec fast:
+      The commanded dec from the header, i.e. from the pointing component
+    Alt fast:
+      The average alt from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
+    Az fast:
+      The average az from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
+    nSources fast:
+      The total number of sources detected in the image
+    nSources filtered fast:
+      The total number of sources passed to the fitter
+    Calculated Ra fast:
+      The calculated ra from the astrometric fit
+    Calculated Dec fast:
+      The calculated dec from the astrometric fit
+    Delta Ra Arcsec fast:
+      The difference between the commanded and fitted ra, in arcseconds
+    Delta Dec Arcsec fast:
+      The difference between the commanded and fitted dec, in arcseconds
+    Calculated Alt fast:
+      The calculated alt from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
+    Calculated Az fast:
+      The calculated az from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
+    Delta Alt Arcsec fast:
+      The difference between the commanded and fitted alt, in arcseconds
+    Delta Az Arcsec fast:
+      The difference between the commanded and fitted az, in arcseconds
+    Delta Rot Arcsec fast:
+      The difference between the commanded and fitted rotator angle, in arcseconds. Note that as we don't have a rotator, this is more or less arbitrary.
+    RMS scatter arcsec fast:
+      The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
+    RMS scatter pixels fast:
+      The RMS distance between the measured position of each source and its position in the catalog, in pixels
+
+  comcam:
+    Exposure time:
+      The image exposure time
+    Dark time:
+      The image dark time
+    Image type:
+      The image type, e.g. bias, dark, flat etc
+    Test type:
+      The type of test being run, e.g. superflats etc
+
+  tma:
+    Event version number:
+      The code version which generated the event. Events only necessarily have the same timespans when their version numbers match!
+    Event type:
+        The type of event, i.e. was it a regular move (MOVING) or were we tracking the sky (TRACKING)?
+    End reason:
+        Why did the event end? Did we turn off, stop, go to fault, or change movement type?
+    Duration:
+        The duration of the event, in seconds.
+    Time UTC:
+        The start time of the event, as a UTC time string.
+    Elevation start:
+        The starting elevation value, in degrees.
+    Elevation move:
+        The total net elevation move, in degrees.
+    Largest elevation torque:
+        The largest elevation torque during the event, in Nm, including its sign. So, if the largest toque magnitude is a negative one, it will be a large negative value, if the largest toque seen was positive, it will be large and positive.
+    Azimuth start:
+        The starting azimuth value, in degrees.
+    Azimuth move:
+        The total net azimuth move, in degrees.
+    Largest azimuth torque:
+        The largest azimuth torque during the event, in Nm, including its sign. So, if the largest toque magnitude is a negative one, it will be a large negative value, if the largest toque seen was positive, it will be large and positive.

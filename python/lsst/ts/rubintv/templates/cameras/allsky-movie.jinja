@@ -1,0 +1,18 @@
+<div class="subheader">
+  <h3>
+    <span class="movie-date">{{ movie.obs_date }} :</span>
+    Images 1 &#8594; <span class="movie-number">
+    {% if movie.seq != 99999 %}
+      {{ movie.seq }}
+    {% else %}
+      final
+    {% endif %}
+    </span>
+  </h3>
+</div>
+<div>
+  <video width="100%" controls autoplay loop>
+    <source src="{{ movie.url }}" type="video/mp4">
+  </video>
+</div>
+<div class="desc">{{ movie.name }}</div>

@@ -1,7 +1,6 @@
 .calendar
   width: 100%
   margin-top: -2em
-  margin-bottom: 2em
   &.half-width
     width: 50%
 
@@ -9,7 +8,7 @@
   margin-bottom: 2em
 
 .year-titles
-  margin-bottom: 4em
+  margin: 2em 0 0.5em
   position: relative
   max-width: fit-content
 
@@ -27,6 +26,9 @@
 
 .years
   overflow: hidden
+  padding: 1em 0
+  border-top: #888 1px solid
+  border-bottom: #888 1px solid
 
 .year
   display: none
@@ -59,18 +61,21 @@
   display: grid
   grid-template-columns: repeat(7, 1fr)
   gap: 2px
+  & > *
+    min-width: 2.4em
+    height: 2.2em
+    box-sizing: content-box
 
 .day
   font-family: 'Red Hat Mono', monospace
   padding: 0.4em
-  width: 3em
-  height: 2.6em
   user-select: none
+  font-size: 0.8em
   &.obs
     cursor: pointer
     transition: background 0.3s
   .day_num
     display: block
   .num_evs
-    font-size: 0.6em
+    font-size: 0.5em
     display: block

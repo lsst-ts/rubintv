@@ -1,5 +1,5 @@
 # webpack build outputs
-src/rubintv/static/assets/
+**/rubintv/static/assets/
 
 
 # Byte-compiled / optimized / DLL files
@@ -148,6 +148,14 @@ jsconfig.json
 *.ipynb
 
 # npm and eslint
+.nvmrc
 */jsconfig.json
 .eslintrc.*
 node_modules/
+.pre-commit-config.yaml
+.clang-format
+.flake8
+.isort.cfg
+.mypy.ini
+.ruff.toml
+towncrier.toml

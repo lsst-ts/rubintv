@@ -1,0 +1,32 @@
+{% if per_day %}
+  <nav id="per-day-menu" class="channel-menu" role="navigation">
+    <h3>Per Day Channels</h3>
+    <ul class="channels flr">
+      {% for chan in per_day %}
+      {% set ns =namespace(camchannel={}) %}
+        {% for camchan in camera.channels %}
+          {% set ns.camchannel = camchan if camchan.name == chan %}
+        {% endfor %}
+        {% set event = per_day[chan] %}
+        <li class="channel">
+          <a  class="button button-large {{ chan }}"
+              href="{{
+                url_for('event_video',
+                location_name=location.name,
+                camera_name=camera.name,
+                channel_name=chan,
+                filename=event.filename+'.'+event.ext) }}"
+              >
+            <img src="{{
+              url_for('static', path='images/' + chan + '.svg')
+            }}">
+            {{ ns.camchannel.label if ns.camchannel.label else ns.camchannel.title }}
+            <span class="date">
+              {{ date }}
+            </span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </nav>
+{% endif %}

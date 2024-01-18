@@ -1,0 +1,21 @@
+{% if "movies" in per_day and per_day["movies"] %}
+  {% set movie = per_day["movies"] %}
+  <div class="subheader">
+    <h3>
+      <span class="movie-date">{{ movie.day_obs }} :</span>
+      Images 1 &#8594;
+      <span class="movie-number">
+        {{ movie.seq_num }}
+      </span>
+    </h3>
+  </div>
+  {% set video_url = url_for('event_video',
+                      location_name=location.name,
+                      camera_name=camera.name,
+                      channel_name=movie.channel_name,
+                      filename=movie.filename + '.' + movie.ext) %}
+  <video width="100%" controls autoplay loop>
+    <source src="{{ video_url }}" type="video/mp4">
+  </video>
+  <div class="desc">{{ movie.filename }}.{{ movie.ext }}</div>
+{% endif %}
