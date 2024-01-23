@@ -59,7 +59,9 @@ class CurrentPoller:
         self._nr_metadata = {}
         self._nr_reports = {}
 
-    async def poll_buckets_for_todays_data(self) -> None:
+    async def poll_buckets_for_todays_data(
+        self, test_mode=False, test_iterations=1
+    ) -> None:
         try:
             while True:
                 logger = structlog.get_logger(__name__)

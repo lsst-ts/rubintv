@@ -71,7 +71,7 @@ class Camera(BaseModel):
         uses `name` if not set.
     logo : str, optional
         The logo associated with the camera. Defaults to an empty string.
-    channels : list[Channel], optional
+    channels : list[Channel]
         A list of channels (either images or movies) associated with the
         camera. Defaults to an empty list.
     night_report_label : str, optional
