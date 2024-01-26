@@ -7,6 +7,7 @@ constructed when this module is loaded and is not deferred until a function is
 called.
 """
 import asyncio
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
@@ -84,6 +85,15 @@ app = FastAPI(
     debug=True,
     lifespan=lifespan,
 )
+
+# Intwine webpack assets
+# generated with npm run build
+if os.path.isdir("assets"):
+    app.mount(
+        "/rubintv/static/assets",
+        StaticFiles(directory="assets"),
+        name="static-assets",
+    )
 
 # Intwine jinja2 templating
 app.mount(
