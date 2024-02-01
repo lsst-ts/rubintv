@@ -86,6 +86,7 @@ def mock_up_data(locations: list[Location]) -> None:
             upload_fileobj(md_json, bucket_name, f"{camera_name}/{today}/metadata.json")
 =======
                 mock_channel_images(camera, bucket_name)
+                mock_camera_metadata(camera, bucket_name)
 
 
 def mock_channel_images(camera: Camera, bucket_name: str) -> None:

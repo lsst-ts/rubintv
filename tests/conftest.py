@@ -57,7 +57,7 @@ async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
 
 
 @pytest.fixture
-def mock_s3_client(aws_credentials: Any) -> boto3.client:
+def mock_s3_client(aws_credentials: Any) -> Any:
     with mock_s3():
         yield boto3.client("s3", region_name="us-east-1")
 

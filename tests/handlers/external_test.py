@@ -24,7 +24,11 @@ async def test_get_home(client: AsyncClient) -> None:
     location_names = [loc.name for loc in locations]
     # find all nav links - there should be one for each location
     # (in the same order as defined in models_data.yaml)
-    page_links = parsed.nav.find_all("a")
+    navs = parsed.nav
+    if navs is None:
+        # TODO: find the proper class of error for below
+        raise ValueError("No links found on home page")
+    page_links = navs.find_all("a")
     page_slugs = [url.get("href").split("/")[-1] for url in page_links]
     assert location_names == page_slugs
 
@@ -43,5 +47,6 @@ async def test_get_location(client: AsyncClient) -> None:
 
     parsed = BeautifulSoup(html, "html.parser")
     page_links = list(parsed.select(".cameras a"))
-    page_slugs = [url.get("href").split("/")[-1] for url in page_links]
+    page_urls = [url.get("href") for url in page_links]
+    page_slugs = [url.split("/")[-1] for url in page_urls if type(url) is str]
     assert camera_names == page_slugs

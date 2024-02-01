@@ -61,12 +61,11 @@ async def test_poll_buckets_for_today_process_and_store(
     current_poller: CurrentPoller,
 ) -> None:
     try:
-        # Run the method for a specified number of seconds, then timeout
         await asyncio.wait_for(
             current_poller.poll_buckets_for_todays_data(), timeout=0.1
         )
     except asyncio.TimeoutError:
-        # The timeout error is expected, so you can pass or handle it as needed
+        # The timeout error is expected
         pass
     print(current_poller._objects)
 
@@ -74,12 +73,10 @@ async def test_poll_buckets_for_today_process_and_store(
 @pytest.mark.asyncio
 async def test_clear_all_data(current_poller: CurrentPoller) -> None:
     try:
-        # Run the method for a specified number of seconds, then timeout
         await asyncio.wait_for(
             current_poller.poll_buckets_for_todays_data(), timeout=0.1
         )
     except asyncio.TimeoutError:
-        # The timeout error is expected, so you can pass or handle it as needed
         pass
     await current_poller.clear_all_data()
     assert current_poller._objects == {}
