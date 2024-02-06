@@ -1,4 +1,5 @@
 """Handlers for the app's api root, ``/rubintv/api/``."""
+
 import asyncio
 from datetime import date
 from typing import Any, Callable

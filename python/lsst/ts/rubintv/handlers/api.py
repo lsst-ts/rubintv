@@ -1,4 +1,5 @@
 """Handlers for the app's api root, ``/rubintv/api/``."""
+
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, Request

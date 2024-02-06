@@ -1,4 +1,5 @@
 """Configuration definition."""
+
 import os
 
 from pydantic import Field
