@@ -98,9 +98,9 @@ def proxy_video(
     if range:
         end = data["ContentLength"] - 1
         start, _ = byte_range.split("-")
-        response_headers[
-            "Content-Range"
-        ] = f"bytes {start}-{end}/{data['ContentLength']}"
+        response_headers["Content-Range"] = (
+            f"bytes {start}-{end}/{data['ContentLength']}"
+        )
 
     return StreamingResponse(
         content=video.iter_chunks(),
