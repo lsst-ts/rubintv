@@ -32,3 +32,5 @@ requirements:
     - pydantic
     - websockets
     - asgi-lifespan
+    - pydantic-settings
+    - nodejs

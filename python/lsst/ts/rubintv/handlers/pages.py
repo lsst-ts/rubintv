@@ -1,4 +1,5 @@
 """Handlers for the app's external root, ``/rubintv/``."""
+
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Request

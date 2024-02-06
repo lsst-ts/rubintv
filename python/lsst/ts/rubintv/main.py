@@ -6,6 +6,7 @@ Be aware that, following the normal pattern for FastAPI services, the app is
 constructed when this module is loaded and is not deferred until a function is
 called.
 """
+
 import asyncio
 import os
 from contextlib import asynccontextmanager
