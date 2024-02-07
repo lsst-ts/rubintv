@@ -1,11 +1,11 @@
 import json
 import logging
+import random
 from datetime import timedelta
 from itertools import chain
 from pathlib import Path
 
 import boto3
-import structlog
 from botocore.exceptions import ClientError
 from lsst.ts.rubintv.models.models import Camera, Location, get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import find_first
@@ -42,8 +42,6 @@ def mock_up_data(locations: list[Location]) -> None:
     cameras : `list` [`Camera`]
         List of cameras.
     """
-    logger = structlog.get_logger(__name__)
-    logger.info("In mock_up_data")
     for location in locations:
         bucket_name = location.bucket_name
 
@@ -61,57 +59,28 @@ def mock_up_data(locations: list[Location]) -> None:
         for camera_name in camera_names:
             camera: Camera | None
             if camera := find_first(cameras, "name", camera_name):
-<<<<<<< HEAD:python/lsst/ts/rubintv/mockdata.py
-                for index, channel in enumerate(camera.channels):
-                    print(f"Uploading for {camera_name}/{channel.name}")
-                    # upload a file for today.
-                    upload_file(
-                        Path(__file__).parent / "static/images/testcard_f.jpg",
-                        bucket_name,
-                        (
-                            f"{camera_name}/{today}/{channel.name}/{index:06}/"
-                            f"mocked_event.jpg"
-                        ),
-                    )
-                    # upload one for 100 days ago.
-                    upload_file(
-                        Path(__file__).parent / "static/images/testcard_f.jpg",
-                        bucket_name,
-                        (
-                            f"{camera_name}/{the_past}/{channel.name}/"
-                            f"{index:06}/mocked_past_event.jpg"
-                        ),
-                    )
-            # upload a dummy metadata file.
-            upload_fileobj(md_json, bucket_name, f"{camera_name}/{today}/metadata.json")
-=======
                 mock_channel_images(camera, bucket_name)
                 mock_camera_metadata(camera, bucket_name)
 
 
 def mock_channel_images(camera: Camera, bucket_name: str) -> None:
-    for channel in camera.seq_channels():
-        print(f"Uploading for {camera.name}/{channel.name}")
-        for index in range(3):
+    iterations = 3
+    for channel in camera.channels:
+        for index in range(iterations):
+            seq_num = f"{index:06}"
+
+            if channel.per_day and index == iterations - 1:
+                seq_num = random.choice((seq_num, "final"))
+
             # upload a file for today.
             upload_file(
                 Path(__file__).parent / "assets/testcard_f.jpg",
                 bucket_name,
                 (
-                    f"{camera.name}/{today}/{channel.name}/{index:06}/"
+                    f"{camera.name}/{today}/{channel.name}/{seq_num}/"
                     f"mocked_event.jpg"
                 ),
             )
-            # upload one for 100 days ago.
-            upload_file(
-                Path(__file__).parent / "assets/testcard_f.jpg",
-                bucket_name,
-                (
-                    f"{camera.name}/{the_past}/{channel.name}/"
-                    f"{index:06}/mocked_past_event.jpg"
-                ),
-            )
->>>>>>> 2a9a75b... WIP: Add unit tests for CurrentPoller:tests/mockdata.py
 
 
 def mock_camera_metadata(camera: Camera, bucket_name: str) -> None:

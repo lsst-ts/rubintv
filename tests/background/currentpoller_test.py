@@ -3,11 +3,21 @@ from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from moto import mock_s3
 
 from rubintv.background.currentpoller import CurrentPoller
 from rubintv.models.models_init import ModelsInitiator
+from tests.mockdata import mock_up_data
 
 m = ModelsInitiator()
+
+
+@pytest.fixture(scope="function")
+def setup_mock_s3_environment(mock_s3_client: Any) -> Any:
+    m = ModelsInitiator()
+    with mock_s3():
+        mock_up_data(m.locations)
+        yield
 
 
 @pytest.fixture
@@ -57,7 +67,7 @@ async def test_poll_buckets_for_todays_data(
 
 
 @pytest.mark.asyncio
-async def test_poll_buckets_for_today_process_and_store(
+async def test_poll_buckets_for_today_process_and_store_seq_events(
     current_poller: CurrentPoller,
 ) -> None:
     try:
@@ -67,7 +77,30 @@ async def test_poll_buckets_for_today_process_and_store(
     except asyncio.TimeoutError:
         # The timeout error is expected
         pass
-    print(current_poller._objects)
+
+    mocked_events = {}
+    for loc in m.locations:
+        for cam in loc.cameras:
+            if not cam.online:
+                continue
+            len_data = len(cam.channels) * 3
+            if len_data > 0:
+                mocked_events[f"{loc.name}/{cam.name}"] = len_data
+
+    # make sure the keys for the location/cameras match up
+    current_keys = sorted([k for k in current_poller._events.keys()])
+    assert current_keys == sorted(mocked_events.keys())
+
+    # and that they have the right number of events
+    for ck in current_keys:
+        assert len(current_poller._events[ck]) == mocked_events[ck]
+
+    # print(current_poller._metadata)
+    # print(current_poller._table)
+    # print(current_poller._per_day)
+    # print(current_poller._singles)
+    # print(current_poller._nr_reports)
+    # print(current_poller._nr_reports)
 
 
 @pytest.mark.asyncio

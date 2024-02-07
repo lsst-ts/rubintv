@@ -59,9 +59,7 @@ class CurrentPoller:
         self._nr_metadata = {}
         self._nr_reports = {}
 
-    async def poll_buckets_for_todays_data(
-        self, test_mode=False, test_iterations=1
-    ) -> None:
+    async def poll_buckets_for_todays_data(self) -> None:
         try:
             while True:
                 logger = structlog.get_logger(__name__)
@@ -74,7 +72,9 @@ class CurrentPoller:
                     for camera in location.cameras:
                         if not camera.online:
                             continue
+
                         prefix = f"{camera.name}/{day_obs}"
+
                         # handle blocking call in async code
                         executor = ThreadPoolExecutor(max_workers=3)
                         loop = asyncio.get_event_loop()
@@ -193,6 +193,9 @@ class CurrentPoller:
         data = await get_metadata_obj(md_key, client)
         if data and (loc_cam not in self._metadata or data != self._metadata[loc_cam]):
             self._metadata[loc_cam] = data
+            # some channels e.g. Star Tracker and Star Tracker Wide
+            # share the same metadata file. If it changes, the websocket
+            # clients listening to those cameras need to be notified too.
             to_notify = [camera]
             to_notify.extend(
                 c for c in location.cameras if c.metadata_from == camera.name
@@ -341,5 +344,19 @@ class CurrentPoller:
         return exists
 
     async def _get_loc_cam(self, location_name: str, camera: Camera) -> str:
+        """Return `f"{location_name}/{camera.name}"`
+
+        Parameters
+        ----------
+        location_name : `str`
+            Name of location.
+        camera : `Camera`
+            A Camera object.
+
+        Returns
+        -------
+        `str`
+            The joining of the two strings with a backslash in-between.
+        """
         loc_cam = f"{location_name}/{camera.name}"
         return loc_cam
