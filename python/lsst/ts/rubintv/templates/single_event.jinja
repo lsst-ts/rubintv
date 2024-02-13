@@ -36,10 +36,10 @@
                     location_name=location.name,
                     camera_name=camera.name,
                     channel_name=channel.name,
-                    filename=event.filename + '.' + event.ext) %}
+                    filename=event.filename) %}
     <a href="{{ img_url }}" class="event-link" id="eventLink">
       <img id="eventImage" src="{{ img_url }}" class="resp">
-      <p id="eventName" class="desc">{{ event.filename }}.{{ event.ext }}</p>
+      <p id="eventName" class="desc">{{ event.filename }}</p>
     </a>
   {% else %}
     <h2>There are no events for this channel</h2>
@@ -52,7 +52,7 @@
                     location_name=location.name,
                     camera_name=camera.name,
                     channel_name=channel.name,
-                    filename=event.filename + '.' + event.ext) %}
+                    filename=event.filename) %}
  <script>window.APP_DATA.imgURL = "{{ img_url }}"</script>
 {% endif %}
 {% endblock further %}

@@ -1,5 +1,5 @@
 # This file is used to specify the dependencies of the package
-# when using the Dockerfile on the root folder. 
+# when using the Dockerfile on the root folder.
 asgi_lifespan
 boto3
 fastapi

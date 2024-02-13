@@ -7,16 +7,14 @@ from pathlib import Path
 from typing import Any, AsyncIterator
 
 import boto3
-from moto import mock_s3
 import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from httpx import AsyncClient
-
 from lsst.ts.rubintv import main
-from lsst.ts.rubintv.mockdata import mock_up_data
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
+from moto import mock_s3
 
 from tests.mockdata import mock_up_data
 

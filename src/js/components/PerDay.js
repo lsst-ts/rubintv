@@ -14,7 +14,7 @@ function PerDayChannels ({ camera, date, perDay }) {
           { Object.entries(perDay).map(([channelName, event]) => {
             const channel = channels[channels.map((chan) => chan.name).indexOf(channelName)]
             const label = channel.label ? channel.label : channel.title
-            const filename = event.filename + '.' + event.ext
+            const filename = event.filename
             return (
               <li className="channel" key={channelName}>
                 <a

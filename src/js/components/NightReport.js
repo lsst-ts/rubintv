@@ -120,7 +120,7 @@ function NightReport ({ initialNightReport, initialDate, camera, locationName, b
           { groupBy(plots, plot => plot.group).map(([group, groupedPlots]) => (
             <div key={group} id={`tabgroup-${group.toLowerCase()}`} className='tab-content plots-grid'>
               {groupedPlots.map(plot => {
-                const imgUrl = `${baseUrl}plot_image/${locationName}/${camera.name}/${group}/${plot.filename}.${plot.ext}`
+                const imgUrl = `${baseUrl}plot_image/${locationName}/${camera.name}/${group}/${plot.filename}`
                 return (
                   <figure key={plot.filename} className='plot'>
                     <a href={imgUrl}>

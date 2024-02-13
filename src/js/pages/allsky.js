@@ -13,7 +13,7 @@ import { WebsocketClient } from '../modules/websocket_client.js'
     const currentMovie = document.querySelector('.current-movie')
 
     const newEvent = message.detail.data
-    const filename = newEvent.filename + '.' + newEvent.ext
+    const filename = newEvent.filename
     const seqNum = newEvent.seq_num
     const date = newEvent.day_obs
 

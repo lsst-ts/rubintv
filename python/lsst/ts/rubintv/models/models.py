@@ -173,6 +173,7 @@ class Event:
             raise ValueError(f"Key can't be parsed: {key}")
 
         camera, day_obs_str, channel, seq_num, filename, ext = parts
+        filename = filename + "." + ext
 
         try:
             self.date_str_to_date(day_obs_str)

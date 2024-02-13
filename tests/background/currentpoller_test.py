@@ -3,10 +3,12 @@ from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from lsst.ts.rubintv.background.currentpoller import CurrentPoller
+from lsst.ts.rubintv.models.models import Camera, Event, Location
+from lsst.ts.rubintv.models.models_helpers import find_first
+from lsst.ts.rubintv.models.models_init import ModelsInitiator
 from moto import mock_s3
 
-from rubintv.background.currentpoller import CurrentPoller
-from rubintv.models.models_init import ModelsInitiator
 from tests.mockdata import mock_up_data
 
 m = ModelsInitiator()
@@ -14,7 +16,6 @@ m = ModelsInitiator()
 
 @pytest.fixture(scope="function")
 def setup_mock_s3_environment(mock_s3_client: Any) -> Any:
-    m = ModelsInitiator()
     with mock_s3():
         mock_up_data(m.locations)
         yield
@@ -25,27 +26,33 @@ def current_poller(setup_mock_s3_environment: Any) -> CurrentPoller:
     return CurrentPoller(m.locations)
 
 
+@pytest.fixture
+def c_poller_no_mock_data(mock_s3_client: Any) -> CurrentPoller:
+    with mock_s3():
+        yield CurrentPoller(m.locations)
+
+
 @pytest.mark.asyncio
 async def test_poll_buckets_for_todays_data(
     current_poller: CurrentPoller,
 ) -> None:
     # Mocking external functions
     with patch(
-        "rubintv.models.models.get_current_day_obs", return_value="20210101"
+        "lsst.ts.rubintv.models.models.get_current_day_obs", return_value="20210101"
     ) as mock_day_obs, patch(
-        "rubintv.background.currentpoller.CurrentPoller.clear_all_data",
+        "lsst.ts.rubintv.background.currentpoller.CurrentPoller.clear_all_data",
         new_callable=AsyncMock,
     ), patch(
-        "rubintv.background.currentpoller.CurrentPoller.seive_out_metadata",
+        "lsst.ts.rubintv.background.currentpoller.CurrentPoller.seive_out_metadata",
         new_callable=AsyncMock,
     ) as mock_metadata, patch(
         (
-            "rubintv.background.currentpoller.CurrentPoller."
+            "lsst.ts.rubintv.background.currentpoller.CurrentPoller."
             "seive_out_night_reports"
         ),
         new_callable=AsyncMock,
     ) as mock_night_reports, patch(
-        "rubintv.background.currentpoller.CurrentPoller."
+        "lsst.ts.rubintv.background.currentpoller.CurrentPoller."
         "process_channel_objects",
         new_callable=AsyncMock,
     ) as mock_process_objects:
@@ -120,3 +127,66 @@ async def test_clear_all_data(current_poller: CurrentPoller) -> None:
     assert current_poller._singles == {}
     assert current_poller._nr_metadata == {}
     assert current_poller._nr_reports == {}
+
+
+@pytest.mark.asyncio
+async def test_process_channel_objects(
+    c_poller_no_mock_data: CurrentPoller,
+) -> None:
+    current_poller = c_poller_no_mock_data
+    location: Location = find_first(m.locations, "name", "base-usdf")
+    # fake_auxtel has both 'streaming' and per-day channels
+    camera: Camera = find_first(location.cameras, "name", "fake_auxtel")
+
+    iterations = 1
+    objects = []
+    for channel in camera.channels:
+        for index in range(iterations):
+            seq_num = f"{index:06}"
+            objects.append(
+                {
+                    "key": f"{camera.name}/2022-11-22/{channel.name}/"
+                    f"{seq_num}/test.test",
+                    "hash": "",
+                }
+            )
+
+    with (
+        patch(
+            "lsst.ts.rubintv.background.currentpoller.CurrentPoller."
+            "update_channel_events",
+            new_callable=AsyncMock,
+        ) as mock_update_channel_events,
+        patch(
+            "lsst.ts.rubintv.background.currentpoller.CurrentPoller.make_per_day_data",
+            return_value="test_output",
+            new_callable=AsyncMock,
+        ) as mock_make_per_day_data,
+        # patch(
+        #     "rubintv.handlers.websocket_notifiers.notify_of_update",
+        #     new_callable=AsyncMock,
+        # ) as mock_notify_of_update,
+    ):
+        await current_poller.process_channel_objects(
+            objects, f"{location.name}/{camera.name}", camera
+        )
+
+        expected_events = []
+        for chan in camera.channels:
+            expected_events.append(
+                Event(
+                    key=f"fake_auxtel/2022-11-22/{chan.name}/000000/test.test",
+                    hash="",
+                    camera_name="fake_auxtel",
+                    day_obs="2022-11-22",
+                    channel_name=chan.name,
+                    seq_num="000000",
+                    filename="test.test",
+                    ext="test",
+                )
+            )
+        mock_update_channel_events.assert_called_once_with(
+            expected_events, camera, "base-usdf/fake_auxtel"
+        )
+        mock_make_per_day_data.assert_called()
+        # mock_notify_of_update.assert_called()

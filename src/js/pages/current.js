@@ -16,7 +16,7 @@ import { WebsocketClient } from '../modules/websocket_client'
 
   window.addEventListener('channel', (message) => {
     const newEvent = message.detail.data
-    const filename = [newEvent.filename, newEvent.ext].join('.')
+    const filename = newEvent.filename
     _getById('date').textContent = newEvent.day_obs
     _getById('seqNum').textContent = newEvent.seq_num
     _getById('eventName').textContent = filename

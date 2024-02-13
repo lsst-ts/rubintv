@@ -101,8 +101,10 @@ class CurrentPoller:
             loc_cam not in self._objects or objects != self._objects[loc_cam]
         ):
             self._objects[loc_cam] = objects
+            print(self._objects)
             events = await objects_to_events(objects)
             self._events[loc_cam] = events
+            print(self._events)
             await self.update_channel_events(events, camera, loc_cam)
 
             pd_data = await self.make_per_day_data(camera, events)
