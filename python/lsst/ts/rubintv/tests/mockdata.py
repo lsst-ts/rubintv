@@ -85,9 +85,7 @@ def mock_channel_images(camera: Camera, bucket_name: str) -> None:
 
 def mock_camera_metadata(camera: Camera, bucket_name: str) -> None:
     # upload a dummy metadata file.
-    upload_fileobj(
-        md_json, bucket_name, f"{camera.name}/{today}/metadata.json"
-    )
+    upload_fileobj(md_json, bucket_name, f"{camera.name}/{today}/metadata.json")
 
 
 def mock_event_movies() -> None:

@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 from typing import Any, Type
 
 from dateutil.tz import gettz
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic.dataclasses import dataclass
 from typing_extensions import NotRequired, TypedDict
 
@@ -121,6 +121,8 @@ class Camera(BaseModel):
 
 
 class Location(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     name: str
     title: str
     bucket_name: str
@@ -128,9 +130,6 @@ class Location(BaseModel):
     camera_groups: dict[str, list[str]]
     cameras: list[Camera] = []
     logo: str = ""
-
-    class Config:
-        arbitrary_types_allowed = True
 
 
 @dataclass

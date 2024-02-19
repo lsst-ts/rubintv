@@ -16,7 +16,7 @@ from lsst.ts.rubintv import main
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
 from moto import mock_s3
 
-from tests.mockdata import mock_up_data
+from .mockdata import mock_up_data
 
 
 @pytest.fixture(scope="module")

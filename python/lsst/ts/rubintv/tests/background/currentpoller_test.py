@@ -7,9 +7,8 @@ from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.models.models import Camera, Event, Location
 from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
+from lsst.ts.rubintv.tests.mockdata import mock_up_data
 from moto import mock_s3
-
-from tests.mockdata import mock_up_data
 
 m = ModelsInitiator()
 
@@ -27,7 +26,7 @@ def current_poller(setup_mock_s3_environment: Any) -> CurrentPoller:
 
 
 @pytest.fixture
-def c_poller_no_mock_data(mock_s3_client: Any) -> CurrentPoller:
+def c_poller_no_mock_data(mock_s3_client: Any) -> Any:
     with mock_s3():
         yield CurrentPoller(m.locations)
 
@@ -151,6 +150,19 @@ async def test_process_channel_objects(
                 }
             )
 
+    mock_event_list = [
+        Event(
+            key="fake_auxtel/2022-11-22/test/000000/test.test",
+            hash="",
+            camera_name="fake_auxtel",
+            day_obs="2022-11-22",
+            channel_name="monitor",
+            seq_num="000000",
+            filename="test.test",
+            ext="test",
+        )
+    ]
+
     with (
         patch(
             "lsst.ts.rubintv.background.currentpoller.CurrentPoller."
@@ -159,13 +171,9 @@ async def test_process_channel_objects(
         ) as mock_update_channel_events,
         patch(
             "lsst.ts.rubintv.background.currentpoller.CurrentPoller.make_per_day_data",
-            return_value="test_output",
+            return_value=mock_event_list,
             new_callable=AsyncMock,
         ) as mock_make_per_day_data,
-        # patch(
-        #     "rubintv.handlers.websocket_notifiers.notify_of_update",
-        #     new_callable=AsyncMock,
-        # ) as mock_notify_of_update,
     ):
         await current_poller.process_channel_objects(
             objects, f"{location.name}/{camera.name}", camera
@@ -189,4 +197,3 @@ async def test_process_channel_objects(
             expected_events, camera, "base-usdf/fake_auxtel"
         )
         mock_make_per_day_data.assert_called()
-        # mock_notify_of_update.assert_called()
