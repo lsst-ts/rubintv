@@ -56,8 +56,9 @@ async def get_home(
     locations = request.app.state.models.locations
     title = build_title()
     return templates.TemplateResponse(
-        "home.jinja",
-        {"request": request, "locations": locations, "title": title},
+        request=request,
+        name="home.jinja",
+        context={"request": request, "locations": locations, "title": title},
     )
 
 
@@ -65,7 +66,9 @@ async def get_home(
 async def get_admin_page(request: Request) -> Response:
     title = build_title("Admin")
     return templates.TemplateResponse(
-        "admin.jinja", {"request": request, "title": title}
+        request=request,
+        name="admin.jinja",
+        context={"request": request, "title": title},
     )
 
 
@@ -77,8 +80,9 @@ async def get_location_page(
     location = await get_location(location_name, request)
     title = build_title(location.title)
     return templates.TemplateResponse(
-        "location.jinja",
-        {"request": request, "location": location, "title": title},
+        request=request,
+        name="location.jinja",
+        context={"request": request, "location": location, "title": title},
     )
 
 
@@ -126,8 +130,9 @@ async def get_camera_page(
     title = build_title(location.title, camera.title, "Current")
 
     return templates.TemplateResponse(
-        f"{template}.jinja",
-        {
+        request=request,
+        name=f"{template}.jinja",
+        context={
             "request": request,
             "date": day_obs,
             "location": location,
@@ -189,8 +194,9 @@ async def get_camera_for_date_page(
     title = build_title(location.title, camera.title, date_str)
 
     return templates.TemplateResponse(
-        f"{template}.jinja",
-        {
+        request=request,
+        name=f"{template}.jinja",
+        context={
             "request": request,
             "date": day_obs,
             "location": location,
@@ -249,8 +255,9 @@ async def get_historical_camera_page(
     title = build_title(location.title, camera.title, "Historical")
 
     return templates.TemplateResponse(
-        f"{template}.jinja",
-        {
+        request=request,
+        name=f"{template}.jinja",
+        context={
             "request": request,
             "date": day_obs,
             "location": location,
@@ -285,8 +292,9 @@ async def get_current_night_report_page(
     title = build_title(location.title, camera.title, "Current Night Report")
 
     return templates.TemplateResponse(
-        "night-report.jinja",
-        {
+        request=request,
+        name="night-report.jinja",
+        context={
             "request": request,
             "location": location,
             "camera": camera.model_dump(),
@@ -330,8 +338,9 @@ async def get_historical_night_report_page(
     )
 
     return templates.TemplateResponse(
-        "night-report-historical.jinja",
-        {
+        request=request,
+        name="night-report-historical.jinja",
+        context={
             "request": request,
             "location": location,
             "camera": camera.model_dump(),
@@ -368,8 +377,9 @@ async def get_specific_channel_event_page(
     title = build_title(location.title, camera.title, channel_title, event_detail)
 
     return templates.TemplateResponse(
-        "single_event.jinja",
-        {
+        request=request,
+        name="single_event.jinja",
+        context={
             "request": request,
             "location": location,
             "camera": camera.model_dump(),
@@ -402,8 +412,9 @@ async def get_current_channel_event_page(
     title = build_title(location.title, camera.title, channel_title, "Current")
 
     return templates.TemplateResponse(
-        "current_event.jinja",
-        {
+        request=request,
+        name="current_event.jinja",
+        context={
             "request": request,
             "location": location,
             "camera": camera.model_dump(),

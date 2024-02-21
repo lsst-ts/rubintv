@@ -14,9 +14,8 @@ from fastapi import FastAPI
 from httpx import AsyncClient
 from lsst.ts.rubintv import main
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
+from lsst.ts.rubintv.tests.mockdata import RubinDataMocker
 from moto import mock_s3
-
-from .mockdata import mock_up_data
 
 
 @pytest.fixture(scope="module")
@@ -40,8 +39,8 @@ async def app(aws_credentials: Any) -> AsyncIterator[FastAPI]:
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
     mock = mock_s3()
     mock.start()
-    m = ModelsInitiator()
-    mock_up_data(m.locations)
+    models = ModelsInitiator()
+    RubinDataMocker(models.locations, s3_required=True)
     async with LifespanManager(main.app):
         yield main.app
         mock.stop()

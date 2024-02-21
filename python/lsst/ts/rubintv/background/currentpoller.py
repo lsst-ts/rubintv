@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import structlog
 from lsst.ts.rubintv.background.background_helpers import get_metadata_obj
-from lsst.ts.rubintv.handlers.websocket_notifiers import notify_of_update
+from lsst.ts.rubintv.handlers.websocket_notifiers import notify_ws_clients
 from lsst.ts.rubintv.models.models import (
     Camera,
     Event,
@@ -35,7 +35,7 @@ class CurrentPoller:
     _table: dict[str, dict[int, dict[str, dict]]] = {}
 
     _per_day: dict[str, dict[str, Event]] = {}
-    _singles: dict[str, Event] = {}
+    _most_recent_events: dict[str, Event] = {}
 
     _nr_metadata: dict[str, NightReport] = {}
     _nr_reports: dict[str, set[NightReport]] = {}
@@ -55,7 +55,7 @@ class CurrentPoller:
         self._metadata = {}
         self._table = {}
         self._per_day = {}
-        self._singles = {}
+        self._most_recent_events = {}
         self._nr_metadata = {}
         self._nr_reports = {}
 
@@ -103,18 +103,18 @@ class CurrentPoller:
             self._objects[loc_cam] = objects
             events = await objects_to_events(objects)
             self._events[loc_cam] = events
-            await self.update_channel_events(events, camera, loc_cam)
+            await self.update_channel_events(events, loc_cam, camera)
 
             pd_data = await self.make_per_day_data(camera, events)
             self._per_day[loc_cam] = pd_data
-            await notify_of_update("camera", "perDay", loc_cam, pd_data)
+            await notify_ws_clients("camera", "perDay", loc_cam, pd_data)
 
             table = await self.make_channel_table(camera, events)
             self._table[loc_cam] = table
-            await notify_of_update("camera", "channelData", loc_cam, table)
+            await notify_ws_clients("camera", "channelData", loc_cam, table)
 
     async def update_channel_events(
-        self, events: list[Event], camera: Camera, loc_cam: str
+        self, events: list[Event], loc_cam: str, camera: Camera
     ) -> None:
         if not events:
             return
@@ -126,11 +126,11 @@ class CurrentPoller:
             current_event = ch_events.pop()
             chan_lookup = f"{loc_cam}/{chan.name}"
             if (
-                chan_lookup not in self._singles
-                or self._singles[chan_lookup] != current_event
+                chan_lookup not in self._most_recent_events
+                or self._most_recent_events[chan_lookup] != current_event
             ):
-                self._singles[chan_lookup] = current_event
-                await notify_of_update(
+                self._most_recent_events[chan_lookup] = current_event
+                await notify_ws_clients(
                     "channel", "event", chan_lookup, current_event.__dict__
                 )
 
@@ -202,7 +202,7 @@ class CurrentPoller:
             )
             for cam in to_notify:
                 loc_cam = await self._get_loc_cam(location.name, cam)
-                await notify_of_update("camera", "metadata", loc_cam, data)
+                await notify_ws_clients("camera", "metadata", loc_cam, data)
 
     async def seive_out_night_reports(
         self,
@@ -259,7 +259,7 @@ class CurrentPoller:
             message["plots"] = to_update
             self._nr_reports[loc_cam] = set(reports)
         if message:
-            await notify_of_update("nightreport", "nightReport", loc_cam, message)
+            await notify_ws_clients("nightreport", "nightReport", loc_cam, message)
         return
 
     async def make_per_day_data(
@@ -321,7 +321,7 @@ class CurrentPoller:
     ) -> Event | None:
         loc_cam = f"{location_name}/{camera_name}/{channel_name}"
         # explicitly return None if none
-        event = self._singles.get(loc_cam, None)
+        event = self._most_recent_events.get(loc_cam, None)
         return event
 
     async def get_current_night_report(

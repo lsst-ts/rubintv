@@ -37,7 +37,7 @@ module.exports = {
   },
   output: {
     filename: '[name].js',
-    path: path.resolve(__dirname, 'assets')
+    path: path.resolve(__dirname, 'python/lsst/ts/rubintv/static/assets')
   },
   plugins: [new MiniCssExtractPlugin({ filename: '[name].css' })],
   optimization: {

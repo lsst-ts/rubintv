@@ -8,29 +8,27 @@ called.
 """
 
 import asyncio
-import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from lsst.ts.rubintv import __version__
+from lsst.ts.rubintv.background.currentpoller import CurrentPoller
+from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
+from lsst.ts.rubintv.config import config
+from lsst.ts.rubintv.handlers.api import api_router
+from lsst.ts.rubintv.handlers.internal import internal_router
+from lsst.ts.rubintv.handlers.pages import pages_router
+from lsst.ts.rubintv.handlers.proxies import proxies_router
+from lsst.ts.rubintv.handlers.websocket import ws_router
+from lsst.ts.rubintv.handlers.websockets_clients import clients
+from lsst.ts.rubintv.models.models_init import ModelsInitiator
+from lsst.ts.rubintv.s3client import S3Client
 from safir.dependencies.http_client import http_client_dependency
 from safir.logging import configure_logging, configure_uvicorn_logging
 from safir.middleware.x_forwarded import XForwardedMiddleware
-
-from . import __version__
-from .background.currentpoller import CurrentPoller
-from .background.historicaldata import HistoricalPoller
-from .config import config
-from .handlers.api import api_router
-from .handlers.internal import internal_router
-from .handlers.pages import pages_router
-from .handlers.proxies import proxies_router
-from .handlers.websocket import ws_router
-from .handlers.websockets_clients import clients
-from .models.models_init import ModelsInitiator
-from .s3client import S3Client
 
 __all__ = ["app", "config"]
 
@@ -86,15 +84,6 @@ app = FastAPI(
     debug=True,
     lifespan=lifespan,
 )
-
-# Intwine webpack assets
-# generated with npm run build
-if os.path.isdir("assets"):
-    app.mount(
-        "/rubintv/static/assets",
-        StaticFiles(directory="assets"),
-        name="static-assets",
-    )
 
 # Intwine jinja2 templating
 app.mount(
