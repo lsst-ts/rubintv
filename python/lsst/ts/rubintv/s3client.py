@@ -39,7 +39,7 @@ class S3Client:
         return objects
 
     def _get_object(self, key: str) -> dict | None:
-        logger = structlog.get_logger(__name__)
+        logger = structlog.get_logger("rubintv")
         try:
             obj = self._client.get_object(Bucket=self._bucket_name, Key=key)
             return json.loads(obj["Body"].read())
@@ -70,7 +70,7 @@ class S3Client:
             raise HTTPException(status_code=404, detail=f"No such file for: {key}")
 
     async def get_presigned_url(self, key: str) -> str:
-        logger = structlog.get_logger(__name__)
+        logger = structlog.get_logger("rubintv")
         try:
             url = self._client.generate_presigned_url(
                 ClientMethod="get_object",

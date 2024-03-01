@@ -60,7 +60,7 @@ class HistoricalPoller:
         return not self._have_downloaded
 
     async def check_for_new_day(self) -> None:
-        logger = structlog.get_logger(__name__)
+        logger = structlog.get_logger("rubintv")
         try:
             while True:
                 if (
@@ -81,7 +81,7 @@ class HistoricalPoller:
 
     async def _refresh_location_store(self, location: Location) -> None:
         # handle blocking call in async code
-        logger = structlog.get_logger(__name__)
+        logger = structlog.get_logger("rubintv")
         executor = ThreadPoolExecutor(max_workers=3)
         loop = asyncio.get_event_loop()
         try:
@@ -101,7 +101,7 @@ class HistoricalPoller:
         objects :  `list` [`dict` [`str`, `str`]]
             A list of dicts representing bucket objects.
         """
-        logger = structlog.get_logger(__name__)
+        logger = structlog.get_logger("rubintv")
 
         objects = []
         for cam in location.cameras:
@@ -167,7 +167,7 @@ class HistoricalPoller:
     ) -> None:
         # metadata is downloaded and stored against it's loc/cam/date
         # for efficient retrieval
-        logger = structlog.get_logger(__name__)
+        logger = structlog.get_logger("rubintv")
         for md_obj in metadata_objs:
             key = md_obj.get("key")
             if not key:

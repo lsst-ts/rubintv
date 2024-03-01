@@ -20,27 +20,27 @@ locations:
     logo: SLAC_Logo.svg
     camera_groups:
       Cameras: [ slac_lsstcam, slac_ts8 ]
-  
+
   - name: base-usdf
-    title: Base USDF
+    title: Base
     profile_name: rubin-rubintv-data-bts
     bucket_name: rubin-rubintv-data-bts
-    logo: Summit.jpg
+    logo: bts_720.jpg
     camera_groups:
       Cameras: [ auxtel, fake_auxtel ]
       Telescopes: [ tma ]
-  
+
   - name: tucson-usdf
-    title: Tucson USDF
+    title: Tucson
     profile_name: rubin-rubintv-data-tts
     bucket_name: rubin-rubintv-data-tts
     logo: cactus.svg
     camera_groups:
       Cameras: [ auxtel, fake_auxtel, comcam ]
       Telescopes: [ tma ]
-  
+
   - name: summit-usdf
-    title: Summit USDF
+    title: Summit
     profile_name: rubin-rubintv-data-summit
     bucket_name: rubin-rubintv-data-summit
     logo: Summit.jpg
@@ -53,7 +53,7 @@ locations:
     title: Base
     profile_name: base-data-base
     bucket_name: rubintv
-    logo: Summit.jpg
+    logo: bts_720.jpg
     camera_groups:
       Cameras: [ auxtel, fake_auxtel ]
       Telescopes: [ tma ]

@@ -62,7 +62,7 @@ class CurrentPoller:
     async def poll_buckets_for_todays_data(self) -> None:
         try:
             while True:
-                logger = structlog.get_logger(__name__)
+                logger = structlog.get_logger("rubintv")
                 if self._current_day_obs != get_current_day_obs():
                     await self.clear_all_data()
                 day_obs = self._current_day_obs = get_current_day_obs()
@@ -141,7 +141,7 @@ class CurrentPoller:
         location: Location,
         camera: Camera,
     ) -> list[dict[str, str]]:
-        logger = structlog.get_logger(__name__)
+        logger = structlog.get_logger("rubintv")
         try:
             md_obj, objects = await self.filter_camera_metadata_object(objects)
         except ValueError:
@@ -210,7 +210,7 @@ class CurrentPoller:
         loc_cam: str,
         location: Location,
     ) -> list[dict[str, str]]:
-        logger = structlog.get_logger(__name__)
+        logger = structlog.get_logger("rubintv")
         report_objs, objects = await self.filter_night_report_objects(objects)
         if report_objs:
             try:
