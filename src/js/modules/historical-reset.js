@@ -1,4 +1,5 @@
 import { simplePost, _getById, _elWithAttrs } from './utils'
+import { WebsocketClient } from './websocket_client'
 
 export function listenForHistoricalReset () {
   const form = _getById('historicalReset')
@@ -9,6 +10,14 @@ export function listenForHistoricalReset () {
       resetForm.children[0].disabled = true
       const notice = _elWithAttrs('h3', { text: 'Historical data reloading...' })
       resetForm.after(notice)
+      const ws = new WebsocketClient()
+      ws.subscribe('historicalStatus')
+      window.addEventListener('historicalStatus', (message) => {
+        const isBusy = message.detail.data
+        if (!isBusy) {
+          window.location.reload()
+        }
+      })
     }).catch((err) => {
       console.log(`Couldn't reload historical date: ${err}`)
     })
