@@ -21,12 +21,13 @@ class RubinDataMocker:
     def __init__(self, locations: list[Location], s3_required: bool = False) -> None:
         self._locations = locations
         if s3_required:
+            self.s3_client = boto3.client("s3")
             self.create_buckets()
         self.s3_required = s3_required
         self.location_channels: dict[str, list[Channel]] = {}
-        self.channel_objs: dict[str, dict[str, list[dict[str, str]]]] = {}
+        self.channel_objs: dict[str, list[dict[str, str]]] = {}
         self.events: dict[str, list[Event]] = {}
-        self.metadata: dict[str, dict[str, dict]] = {}
+        self.metadata: dict[str, dict[str, str]] = {}
         self.mock_up_data()
 
     def create_buckets(self) -> None:
@@ -49,18 +50,18 @@ class RubinDataMocker:
             for cam_name in camera_names:
                 camera: Camera | None
                 if camera := find_first(cameras, "name", cam_name):
+                    if not camera.online:
+                        continue
+                    loc_cam = f"{loc_name}/{cam_name}"
                     self.location_channels[loc_name].append(camera.channels)
                     channel_objs = self.mock_channel_objs(location, camera)
-                    self.channel_objs[loc_name][cam_name] = channel_objs
-                    self.events[loc_name].append(self.dicts_to_events(channel_objs))
-                    self.metadata[loc_name][cam_name] = self.mock_camera_metadata(
-                        location, camera
-                    )
+                    self.channel_objs[loc_cam] = channel_objs
+                    self.events[loc_cam] = self.dicts_to_events(channel_objs)
+                    self.metadata[loc_cam] = self.mock_camera_metadata(location, camera)
 
     def mock_channel_objs(
         self, location: Location, camera: Camera
     ) -> list[dict[str, str]]:
-        # loc_channels: dict[str, list[Channel]] = {}
         channel_data: list[dict[str, str]] = []
         iterations = 3
         for channel in camera.channels:
@@ -75,13 +76,17 @@ class RubinDataMocker:
                     f"mocked_event.jpg"
                 )
 
+                hash: str | None = None
                 if self.s3_required:
-                    upload_file(
+                    if self.upload_file(
                         Path(__file__).parent / "assets/testcard_f.jpg",
                         location.bucket_name,
                         key,
-                    )
-                channel_data.append({"key": key, "hash": str(random.getrandbits(128))})
+                    ):
+                        hash = self.get_obj_hash(location.bucket_name, key)
+                if hash is None:
+                    hash = str(random.getrandbits(128))
+                channel_data.append({"key": key, "hash": hash})
         return channel_data
 
     def dicts_to_events(self, channel_dicts: list[dict[str, str]]) -> list[Event]:
@@ -102,71 +107,73 @@ class RubinDataMocker:
     ) -> dict[str, str]:
         key = f"{camera.name}/{today}/metadata.json"
         metadata = {key: md_json}
-
         if self.s3_required:
-            upload_fileobj(md_json, location.bucket_name, key)
+            self.upload_fileobj(md_json, location.bucket_name, key)
         return metadata
 
+    def mock_event_movies(self) -> None:
+        pass
 
-def mock_event_movies() -> None:
-    pass
+    def mock_night_report_metadata(self) -> None:
+        pass
 
+    def mock_night_report_plots(self) -> None:
+        pass
 
-def mock_night_report_metadata() -> None:
-    pass
+    def upload_file(self, file_name: Path | str, bucket_name: str, key: str) -> bool:
+        """Upload a file to an S3 bucket.
 
+        Parameters
+        ----------
+        file_name: `Path` | `str`
+        Name/path of file to upload.
+        bucket: `str`
+        Name of bucket to upload to.
+        key: `str`
+        Name for the file in the bucket.
 
-def mock_night_report_plots() -> None:
-    pass
+        Returns
+        -------
+        uploaded: `bool`
+        True if file was uploaded, else False.
+        """
+        try:
+            self.s3_client.upload_file(file_name, bucket_name, key)
+        except ClientError as e:
+            logging.error(e)
+            return False
+        return True
 
+    def upload_fileobj(self, json_str: str, bucket_name: str, key: str) -> bool:
+        """Upload a file-like object to an S3 bucket.
 
-def upload_file(file_name: Path | str, bucket_name: str, key: str) -> bool:
-    """Upload a file to an S3 bucket.
+        Parameters
+        ----------
+        file_obj:
+        File-like object to upload.
+        bucket: `str`
+        Name of bucket to upload to.
+        key: `str`
+        Name for the file in the bucket.
 
-    Parameters
-    ----------
-    file_name: `Path` | `str`
-      Name/path of file to upload.
-    bucket: `str`
-      Name of bucket to upload to.
-    key: `str`
-      Name for the file in the bucket.
+        Returns
+        -------
+        uploaded: `bool`
+        True if object was uploaded, else False.
+        """
+        try:
+            self.s3_client.put_object(Bucket=bucket_name, Body=json_str, Key=key)
+        except ClientError as e:
+            logging.error(e)
+            return False
+        return True
 
-    Returns
-    -------
-    uploaded: `bool`
-      True if file was uploaded, else False.
-    """
-    s3_client = boto3.client("s3")
-    try:
-        s3_client.upload_file(file_name, bucket_name, key)
-    except ClientError as e:
-        logging.error(e)
-        return False
-    return True
-
-
-def upload_fileobj(json_str: str, bucket_name: str, key: str) -> bool:
-    """Upload a file-like object to an S3 bucket.
-
-    Parameters
-    ----------
-    file_obj:
-      File-like object to upload.
-    bucket: `str`
-      Name of bucket to upload to.
-    key: `str`
-      Name for the file in the bucket.
-
-    Returns
-    -------
-    uploaded: `bool`
-      True if object was uploaded, else False.
-    """
-    s3_client = boto3.client("s3")
-    try:
-        s3_client.put_object(Bucket=bucket_name, Body=json_str, Key=key)
-    except ClientError as e:
-        logging.error(e)
-        return False
-    return True
+    def get_obj_hash(self, bucket_name: str, key: str) -> str:
+        try:
+            res = self.s3_client.get_object_attributes(
+                Bucket=bucket_name, Key=key, ObjectAttributes=["ETag"]
+            )
+        except ClientError as e:
+            logging.error(e)
+            return ""
+        return res["ETag"]

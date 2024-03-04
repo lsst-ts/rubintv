@@ -1,10 +1,10 @@
 import asyncio
-from typing import Any
+from typing import Any, Iterator
 from unittest.mock import AsyncMock, patch
 
 import pytest
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
-from lsst.ts.rubintv.models.models import Camera, Event, Location
+from lsst.ts.rubintv.models.models import Camera, Location
 from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
 from lsst.ts.rubintv.tests.mockdata import RubinDataMocker
@@ -14,26 +14,26 @@ m = ModelsInitiator()
 
 
 @pytest.fixture(scope="function")
-def setup_mock_s3_environment(mock_s3_client: Any) -> Any:
+def rubin_data_mocker(mock_s3_client: Any) -> Iterator[RubinDataMocker]:
     with mock_s3():
-        RubinDataMocker(m.locations, s3_required=True)
-        yield
+        mocker = RubinDataMocker(m.locations, s3_required=True)
+        yield mocker
 
 
 @pytest.fixture
-def current_poller(setup_mock_s3_environment: Any) -> CurrentPoller:
+def current_poller(rubin_data_mocker: RubinDataMocker) -> CurrentPoller:
     return CurrentPoller(m.locations)
 
 
 @pytest.fixture(scope="function")
-def c_poller_no_mock_data(mock_s3_client: Any) -> Any:
+def c_poller_no_mock_data(rubin_data_mocker: RubinDataMocker) -> Any:
     with mock_s3():
         yield CurrentPoller(m.locations)
 
 
 @pytest.mark.asyncio
 async def test_poll_buckets_for_todays_data(
-    current_poller: CurrentPoller,
+    current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
 ) -> None:
     await current_poller.clear_all_data()
     # Mocking external functions
@@ -60,7 +60,7 @@ async def test_poll_buckets_for_todays_data(
         try:
             # Run the method for a specified number of seconds, then timeout
             await asyncio.wait_for(
-                current_poller.poll_buckets_for_todays_data(), timeout=0.15
+                current_poller.poll_buckets_for_todays_data(), timeout=0.2
             )
         except asyncio.TimeoutError:
             pass
@@ -75,7 +75,7 @@ async def test_poll_buckets_for_todays_data(
 
 @pytest.mark.asyncio
 async def test_poll_buckets_for_today_process_and_store_seq_events(
-    current_poller: CurrentPoller,
+    current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
 ) -> None:
     await current_poller.clear_all_data()
     try:
@@ -86,22 +86,17 @@ async def test_poll_buckets_for_today_process_and_store_seq_events(
         # The timeout error is expected
         pass
 
-    mocked_events = {}
-    for loc in m.locations:
-        for cam in loc.cameras:
-            if not cam.online:
-                continue
-            len_data = len(cam.channels) * 3
-            if len_data > 0:
-                mocked_events[f"{loc.name}/{cam.name}"] = len_data
+    mocked_objs_keys = rubin_data_mocker.channel_objs.keys()
 
     # make sure the keys for the location/cameras match up
     current_keys = sorted([k for k in current_poller._events.keys()])
-    assert current_keys == sorted(mocked_events.keys())
+    assert current_keys == sorted(mocked_objs_keys)
 
     # and that they have the right number of events
     for ck in current_keys:
-        assert len(current_poller._events[ck]) == mocked_events[ck]
+        assert sorted(current_poller._events[ck]) == sorted(
+            rubin_data_mocker.events[ck]
+        )
 
 
 @pytest.mark.asyncio
@@ -126,38 +121,14 @@ async def test_clear_all_data(current_poller: CurrentPoller) -> None:
 
 @pytest.mark.asyncio
 async def test_process_channel_objects(
-    c_poller_no_mock_data: CurrentPoller,
+    c_poller_no_mock_data: CurrentPoller, rubin_data_mocker: RubinDataMocker
 ) -> None:
     current_poller = c_poller_no_mock_data
     await current_poller.clear_all_data()
 
     camera, location = await get_test_camera_and_location()
-
-    iterations = 1
-    objects = []
-    for channel in camera.channels:
-        for index in range(iterations):
-            seq_num = f"{index:06}"
-            objects.append(
-                {
-                    "key": f"{camera.name}/2022-11-22/{channel.name}/"
-                    f"{seq_num}/test.test",
-                    "hash": "",
-                }
-            )
-
-    mock_event_list = [
-        Event(
-            key="fake_auxtel/2022-11-22/test/000000/test.test",
-            hash="",
-            camera_name="fake_auxtel",
-            day_obs="2022-11-22",
-            channel_name="monitor",
-            seq_num="000000",
-            filename="test.test",
-            ext="test",
-        )
-    ]
+    loc_cam = f"{location.name}/{camera.name}"
+    objects = rubin_data_mocker.channel_objs[loc_cam]
 
     with (
         patch(
@@ -167,17 +138,15 @@ async def test_process_channel_objects(
         ) as mock_update_channel_events,
         patch(
             "lsst.ts.rubintv.background.currentpoller.CurrentPoller.make_per_day_data",
-            return_value=mock_event_list,
             new_callable=AsyncMock,
         ) as mock_make_per_day_data,
         patch(
             "lsst.ts.rubintv.background.currentpoller." "notify_ws_clients",
         ) as mock_notify_ws_clients,
     ):
-        loc_cam = f"{location.name}/{camera.name}"
         await current_poller.process_channel_objects(objects, loc_cam, camera)
 
-        expected_events = await get_test_event_list(camera)
+        expected_events = rubin_data_mocker.events[loc_cam]
 
         mock_update_channel_events.assert_called_once_with(
             expected_events, "base-usdf/fake_auxtel", camera
@@ -188,7 +157,7 @@ async def test_process_channel_objects(
 
 @pytest.mark.asyncio
 async def test_update_channel_events(
-    c_poller_no_mock_data: CurrentPoller,
+    c_poller_no_mock_data: CurrentPoller, rubin_data_mocker: RubinDataMocker
 ) -> None:
     current_poller = c_poller_no_mock_data
     with (
@@ -197,7 +166,8 @@ async def test_update_channel_events(
         ) as mock_notify_ws_clients,
     ):
         camera, location = await get_test_camera_and_location()
-        events = await get_test_event_list(camera)
+        loc_cam = f"{location.name}/{camera.name}"
+        events = rubin_data_mocker.events[loc_cam]
 
         await current_poller.clear_all_data()
         assert current_poller._most_recent_events == {}
@@ -212,21 +182,3 @@ async def get_test_camera_and_location() -> tuple[Camera, Location]:
     # fake_auxtel has both 'streaming' and per-day channels
     camera: Camera = find_first(location.cameras, "name", "fake_auxtel")
     return (camera, location)
-
-
-async def get_test_event_list(camera: Camera) -> list[Event]:
-    events = []
-    for chan in camera.channels:
-        events.append(
-            Event(
-                key=f"fake_auxtel/2022-11-22/{chan.name}/000000/test.test",
-                hash="",
-                camera_name="fake_auxtel",
-                day_obs="2022-11-22",
-                channel_name=chan.name,
-                seq_num="000000",
-                filename="test.test",
-                ext="test",
-            )
-        )
-    return events

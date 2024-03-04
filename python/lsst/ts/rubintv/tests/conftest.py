@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, AsyncIterator
+from typing import Any, AsyncIterator, Tuple
 
 import boto3
 import pytest
@@ -28,7 +28,9 @@ def aws_credentials() -> None:
 
 
 @pytest_asyncio.fixture
-async def app(aws_credentials: Any) -> AsyncIterator[FastAPI]:
+async def mocked_app(
+    aws_credentials: Any,
+) -> AsyncIterator[Tuple[FastAPI, RubinDataMocker]]:
     """Return a configured test application.
 
     Wraps the application in a lifespan manager so that startup and shutdown
@@ -40,17 +42,20 @@ async def app(aws_credentials: Any) -> AsyncIterator[FastAPI]:
     mock = mock_s3()
     mock.start()
     models = ModelsInitiator()
-    RubinDataMocker(models.locations, s3_required=True)
+    mocker = RubinDataMocker(models.locations, s3_required=True)
     async with LifespanManager(main.app):
-        yield main.app
+        yield main.app, mocker
         mock.stop()
 
 
 @pytest_asyncio.fixture
-async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
+async def mocked_client(
+    mocked_app: Tuple[FastAPI, RubinDataMocker]
+) -> AsyncIterator[Tuple[AsyncClient, RubinDataMocker]]:
+    app, mocker = mocked_app
     """Return an ``httpx.AsyncClient`` configured to talk to the test app."""
     async with AsyncClient(app=app, base_url="http://127.0.0.1:8000/") as client:
-        yield client
+        yield client, mocker
 
 
 @pytest.fixture
