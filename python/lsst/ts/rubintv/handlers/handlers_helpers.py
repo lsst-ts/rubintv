@@ -9,6 +9,7 @@ from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
 from lsst.ts.rubintv.models.models import (
     Camera,
+    Event,
     Location,
     NightReportPayload,
     get_current_day_obs,
@@ -102,3 +103,20 @@ async def try_historical_call(
             return None, True
         else:
             raise e
+
+
+async def get_prev_next_event(
+    location: Location, camera: Camera, event: Event, request: Request
+) -> dict[str, dict | None]:
+    nxt: dict | None = None
+    prv: dict | None = None
+    day_obs = event.day_obs_date()
+    if day_obs == get_current_day_obs():
+        cp: CurrentPoller = request.app.state.current_poller
+        nxt, prv = await cp.get_next_prev_event(location.name, event)
+    else:
+        hp: HistoricalPoller = request.app.state.historical
+        if await hp.is_busy():
+            raise HTTPException(423, "Historical data is being processed")
+        nxt, prv = await hp.get_next_prev_event(location, camera, event)
+    return {"next": nxt, "prev": prv}

@@ -17,6 +17,7 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
     get_camera_events_for_date,
     get_current_night_report_payload,
     get_most_recent_historical_data,
+    get_prev_next_event,
     try_historical_call,
 )
 from lsst.ts.rubintv.handlers.pages_helpers import (
@@ -368,11 +369,17 @@ async def get_specific_channel_event_page(
     channel: Channel | None = None
     channel_title = ""
     event_detail = ""
+    next_prev: dict[str, str] = {}
     if event:
         event_detail = f"{event.day_obs}/${event.seq_num}"
         channel = find_first(camera.channels, "name", event.channel_name)
     if channel:
         channel_title = channel.title
+        next_prev, historical_busy = await try_historical_call(
+            get_prev_next_event, location, camera, event, request
+        )
+        if historical_busy:
+            next_prev = {}
 
     title = build_title(location.title, camera.title, channel_title, event_detail)
 
@@ -385,6 +392,8 @@ async def get_specific_channel_event_page(
             "camera": camera.model_dump(),
             "channel": to_dict(channel),
             "event": to_dict(event),
+            "prevnext": next_prev,
+            "historical_busy": historical_busy,
             "title": title,
         },
     )

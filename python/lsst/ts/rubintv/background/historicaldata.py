@@ -4,7 +4,10 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
 import structlog
-from lsst.ts.rubintv.background.background_helpers import get_metadata_obj
+from lsst.ts.rubintv.background.background_helpers import (
+    get_metadata_obj,
+    get_next_previous_from_table,
+)
 from lsst.ts.rubintv.handlers.websocket_notifiers import notify_all_status_change
 from lsst.ts.rubintv.models.models import (
     Camera,
@@ -305,6 +308,14 @@ class HistoricalPoller:
         if not events:
             return None
         return events.pop()
+
+    async def get_next_prev_event(
+        self, location: Location, camera: Camera, event: Event
+    ) -> tuple[dict | None, ...]:
+        day_obs = event.day_obs_date()
+        table = await self.get_channel_data_for_date(location, camera, day_obs)
+        nxt_prv = await get_next_previous_from_table(table, event)
+        return nxt_prv
 
     async def get_most_recent_channel_data(
         self, location: Location, camera: Camera

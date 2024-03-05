@@ -28,8 +28,7 @@
       <span id="date">{{ event.day_obs }}</span>: Sequence
       <span id="seqNum">{{ event.seq_num }}</span>
     </h2>
-    <nav class="prev-next-nav">
-
+    <nav id="prev-next-nav">
     </nav>
   </div>
     {% set img_url = url_for('event_image',
@@ -53,6 +52,13 @@
                     camera_name=camera.name,
                     channel_name=channel.name,
                     filename=event.filename) %}
- <script>window.APP_DATA.imgURL = "{{ img_url }}"</script>
+ <script>
+  window.APP_DATA.imgURL = "{{ img_url }}"
+  window.APP_DATA.prevNext = {{ prevnext|tojson }}
+  window.APP_DATA.eventURL = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}"
+ </script>
 {% endif %}
 {% endblock further %}
+{% block footer_scripts %}
+    <script src='{{ url_for("static", path="assets/single.js") }}'></script>
+{% endblock footer_scripts %}

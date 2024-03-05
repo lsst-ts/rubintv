@@ -2,7 +2,10 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
 import structlog
-from lsst.ts.rubintv.background.background_helpers import get_metadata_obj
+from lsst.ts.rubintv.background.background_helpers import (
+    get_metadata_obj,
+    get_next_previous_from_table,
+)
 from lsst.ts.rubintv.handlers.websocket_notifiers import notify_ws_clients
 from lsst.ts.rubintv.models.models import (
     Camera,
@@ -297,10 +300,8 @@ class CurrentPoller:
         self, location_name: str, camera: Camera
     ) -> dict[int, dict[str, dict]]:
         loc_cam = await self._get_loc_cam(location_name, camera)
-        events = self._events.get(loc_cam)
-        if not events:
-            return {}
-        return await make_table_from_event_list(events, camera.seq_channels())
+        table = self._table.get(loc_cam, {})
+        return table
 
     async def get_current_per_day_data(
         self, location_name: str, camera: Camera
@@ -360,3 +361,11 @@ class CurrentPoller:
         """
         loc_cam = f"{location_name}/{camera.name}"
         return loc_cam
+
+    async def get_next_prev_event(
+        self, location_name: str, event: Event
+    ) -> tuple[dict | None, ...]:
+        loc_cam = f"{location_name}/{event.camera_name}"
+        table = self._table.get(loc_cam, None)
+        nxt_prv = await get_next_previous_from_table(table, event)
+        return nxt_prv

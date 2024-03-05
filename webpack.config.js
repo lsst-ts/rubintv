@@ -11,6 +11,7 @@ const pagesWithoutHistory = [
 }), {})
 
 const pagesWithHistory = [
+  'single',
   'current',
   'camera-table',
   'allsky'
