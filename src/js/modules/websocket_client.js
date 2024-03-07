@@ -6,7 +6,7 @@ export class WebsocketClient {
   // pageType for 'service's are either 'camera', 'channel' or 'nightreport'
   constructor () {
     this.clientID = null
-    this.ws = new ReconnectingWebSocket(this.#getURL, undefined, { maxRetries: 2 })
+    this.ws = new ReconnectingWebSocket(this.getURL('ws'), undefined, { maxRetries: 2 })
     this.ws.onmessage = this.handleMessage.bind(this)
     this.ws.onclose = this.handleClose.bind(this)
   }
@@ -32,12 +32,12 @@ export class WebsocketClient {
     return messageJson
   }
 
-  #getURL () {
+  getURL (name) {
     const protocol = window.location.protocol
     const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:'
     const hostname = window.location.host
     const appName = window.location.pathname.split('/')[1]
-    return `${wsProtocol}//${hostname}/${appName}/ws/`
+    return `${wsProtocol}//${hostname}/${appName}/${name}/`
   }
 
   #getWSEventName (wsType, pageType) {
