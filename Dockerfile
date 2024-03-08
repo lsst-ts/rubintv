@@ -1,68 +1,37 @@
-# This Dockerfile has four stages:
-#
-# base-image
-#   Updates the base Python image with security patches and common system
-#   packages. This image becomes the base of all other images.
-# dependencies-image
-#   Installs third-party dependencies (requirements/main.txt) into a virtual
-#   environment. This virtual environment is ideal for copying across build
-#   stages.
-# install-image
-#   Installs the app into the virtual environment.
-# runtime-image
-#   - Copies the virtual environment into place.
-#   - Runs a non-root user.
-#   - Sets up the entrypoint and port.
+# This Dockerfile is used to build the Rubintv on a commit basis.
+# The GH action will build the image and push it to the registry.
+# The image will be used to deploy the application on dev servers.
+# Note:
+# I was not able to use the conda recipe to build the image,
+# faced several issues which at the end I was not able to resolve
+# and decided to use the python image instead.
+# This is a temporary solution, and I will work on a better approach
+# to build the image using conda.
+# TODO: DM-43222.
 
-FROM python:3.11.1-slim-bullseye AS base-image
+FROM python:3.11.1-slim-bullseye
 
-# Update system packages
-COPY scripts/install-base-packages.sh .
-RUN ./install-base-packages.sh && rm ./install-base-packages.sh
+# Install required packages
+RUN apt-get update && \
+    apt-get install -y \
+    libsasl2-dev \
+    python-dev \
+    libldap2-dev \
+    git \
+    libssl-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-FROM base-image AS dependencies-image
+WORKDIR /usr/src/rubintv/
+COPY . .
 
-# Install system packages only needed for building dependencies.
-COPY scripts/install-dependency-packages.sh .
-RUN ./install-dependency-packages.sh
+# Install dependencies
+RUN pip install -r requirements.txt && \
+    pip install .
 
-# Create a Python virtual environment
-ENV VIRTUAL_ENV=/opt/venv
-RUN python -m venv $VIRTUAL_ENV
-# Make sure we use the virtualenv
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-# Put the latest pip and setuptools in the virtualenv
-RUN pip install --upgrade --no-cache-dir pip setuptools wheel
-
-# Install the app's Python runtime dependencies
-COPY requirements/main.txt ./requirements.txt
-RUN pip install --quiet --no-cache-dir -r requirements.txt
-
-FROM dependencies-image AS install-image
-
-# Use the virtualenv
-ENV PATH="/opt/venv/bin:$PATH"
-
-COPY . /workdir
-WORKDIR /workdir
-RUN pip install --no-cache-dir .
-
-FROM base-image AS runtime-image
-
-# Create a non-root user
-RUN useradd --create-home appuser
-
-# Copy the virtualenv
-COPY --from=install-image /opt/venv /opt/venv
-
-# Make sure we use the virtualenv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Switch to the non-root user.
-USER appuser
+# Adjust permissions for executable
+RUN chmod +x /usr/src/rubintv/start-daemon.sh
 
 # Expose the port.
-EXPOSE 8080
+EXPOSE 8000
 
-# Run the application.
-CMD ["uvicorn", "rubintv.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["/usr/src/rubintv/start-daemon.sh"]
