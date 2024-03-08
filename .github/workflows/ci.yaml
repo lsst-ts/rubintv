@@ -31,8 +31,7 @@ jobs:
     if: >
       github.event_name != 'merge_group'
       && (startsWith(github.ref, 'refs/tags/')
-          || startsWith(github.head_ref, 'tickets/')
-          || startsWith(github.ref, 'refs/heads/develop'))
+          || startsWith(github.ref, 'refs/heads/deploy'))
 
     steps:
       - uses: actions/checkout@v3
