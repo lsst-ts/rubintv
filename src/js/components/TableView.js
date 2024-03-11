@@ -31,8 +31,8 @@ DictMetadata.propTypes = {
 function MetadataCell ({ data, indicator, seqNum, columnName }) {
   const className = ['grid-cell meta', indicator].join(' ')
   let toDisplay = data
-  if (typeof data === 'number' && data > 0 && data % 1 !== 0) {
-    toDisplay = data.toFixed(3)
+  if (typeof data === 'number' && data % 1 !== 0) {
+    toDisplay = data.toFixed(2)
   } else if (data && typeof data === 'object') {
     toDisplay = <DictMetadata data={data} seqNum={seqNum} columnName={columnName} />
   }

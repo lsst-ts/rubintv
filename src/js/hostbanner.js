@@ -4,7 +4,7 @@ window.addEventListener('DOMContentLoaded',
     if (['localhost', '127.0.0.1'].includes(window.location.hostname)) {
       display.push('localhost')
     }
-    if (window.location.pathname.includes('-dev')) {
+    if (window.location.href.includes('-dev')) {
       display.push('development')
     }
     if (display.length > 0) {

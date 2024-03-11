@@ -19,14 +19,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import typing
+__all__ = ["__version__"]
 
-# For an explanation why these next lines are so complicated, see
-# https://confluence.lsstcorp.org/pages/viewpage.action?spaceKey=LTS&title=Enabling+Mypy+in+Pytest
-if typing.TYPE_CHECKING:
-    __version__ = "?"
-else:
-    try:
-        from .version import *
-    except ImportError:
-        __version__ = "?"
+from importlib.metadata import PackageNotFoundError, version
+
+__version__: str
+"""The application version string (PEP 440 / SemVer compatible)."""
+
+try:
+    __version__ = version("rubintv")
+except PackageNotFoundError:
+    # package is not installed
+    __version__ = "0.0.0"

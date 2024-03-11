@@ -6,8 +6,12 @@ export default function PrevNext ({prevNext}) {
   const eventURL = window.APP_DATA.eventURL
   const prev = prevNext.prev
   const next = prevNext.next
+  function handleKeyDown(e) {
+    console.log(`key pressed ${e.key}`)
+  }
   return (
-    <div className="prev-next-buttons">
+    <div className="prev-next-buttons"
+          onKeyDown={handleKeyDown}>
       { prev && (
         <a
           className="prev prev-next button"
