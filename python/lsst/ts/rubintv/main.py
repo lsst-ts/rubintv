@@ -68,6 +68,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 
     yield
 
+    app.state._state = {}
     historical_polling.cancel()
     today_polling.cancel()
     for c in clients.values():
@@ -75,40 +76,46 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     await http_client_dependency.aclose()
 
 
-"""The main FastAPI application for rubintv."""
-app = FastAPI(
-    title="rubintv",
-    description="rubinTV is a Web app to display Butler-served data sets",
-    version=__version__,
-    openapi_url=f"{config.path_prefix}/openapi.json",
-    docs_url=f"{config.path_prefix}/docs",
-    redoc_url=f"{config.path_prefix}/redoc",
-    debug=True,
-    lifespan=lifespan,
-)
-
-# Intwine webpack assets
-# generated with npm run build
-if os.path.isdir("assets"):
-    app.mount(
-        "/rubintv/static/assets",
-        StaticFiles(directory="assets"),
-        name="static-assets",
+def create_app() -> FastAPI:
+    """The main FastAPI application for rubintv."""
+    app = FastAPI(
+        title="rubintv",
+        description="rubinTV is a Web app to display Butler-served data sets",
+        version=__version__,
+        openapi_url=f"{config.path_prefix}/openapi.json",
+        docs_url=f"{config.path_prefix}/docs",
+        redoc_url=f"{config.path_prefix}/redoc",
+        debug=True,
+        lifespan=lifespan,
     )
 
-# Intwine jinja2 templating
-app.mount(
-    "/rubintv/static",
-    StaticFiles(directory=Path(__file__).parent / "static"),
-    name="static",
-)
+    # Intwine webpack assets
+    # generated with npm run build
+    if os.path.isdir("assets"):
+        app.mount(
+            "/rubintv/static/assets",
+            StaticFiles(directory="assets"),
+            name="static-assets",
+        )
 
-# Attach the routers.
-app.include_router(internal_router)
-app.include_router(api_router, prefix=f"{config.path_prefix}/api")
-app.include_router(ws_router, prefix=f"{config.path_prefix}/ws")
-app.include_router(proxies_router, prefix=f"{config.path_prefix}")
-app.include_router(pages_router, prefix=f"{config.path_prefix}")
+    # Intwine jinja2 templating
+    app.mount(
+        "/rubintv/static",
+        StaticFiles(directory=Path(__file__).parent / "static"),
+        name="static",
+    )
 
-# Add middleware.
-app.add_middleware(XForwardedMiddleware)
+    # Attach the routers.
+    app.include_router(internal_router)
+    app.include_router(api_router, prefix=f"{config.path_prefix}/api")
+    app.include_router(ws_router, prefix=f"{config.path_prefix}/ws")
+    app.include_router(proxies_router, prefix=f"{config.path_prefix}")
+    app.include_router(pages_router, prefix=f"{config.path_prefix}")
+
+    # Add middleware.
+    app.add_middleware(XForwardedMiddleware)
+
+    return app
+
+
+app = create_app()

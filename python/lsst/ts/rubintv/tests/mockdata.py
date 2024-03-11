@@ -26,9 +26,38 @@ class RubinDataMocker:
         self.s3_required = s3_required
         self.location_channels: dict[str, list[Channel]] = {}
         self.channel_objs: dict[str, list[dict[str, str]]] = {}
+        self.empty_channel: dict[str, str | None] = {}
         self.events: dict[str, list[Event]] = {}
         self.metadata: dict[str, dict[str, str]] = {}
         self.mock_up_data()
+
+    def cleanup(self) -> None:
+        print("Started cleaning...")
+        self.delete_buckets()
+
+        # assert that each bucket is actually empty
+        for location in self._locations:
+            assert "Contents" not in self.s3_client.list_objects(
+                Bucket=location.bucket_name
+            )
+
+        self._locations = []
+        self.s3_required = False
+        self.location_channels = {}
+        self.channel_objs = {}
+        self.empty_channel = {}
+        self.events = {}
+        self.metadata = {}
+        print("Finished cleaning...")
+
+    def delete_buckets(self) -> None:
+        if self.s3_required:
+            s3 = boto3.resource("s3", region_name="us-east-1")
+            for location in self._locations:
+                bucket_name = location.bucket_name
+                bucket = s3.Bucket(bucket_name)
+                print(f"Emptying bucket: {bucket_name}")
+                bucket.objects.all().delete()
 
     def create_buckets(self) -> None:
         for location in self._locations:
@@ -54,17 +83,27 @@ class RubinDataMocker:
                         continue
                     loc_cam = f"{loc_name}/{cam_name}"
                     self.location_channels[loc_name].append(camera.channels)
-                    channel_objs = self.mock_channel_objs(location, camera)
+                    channel_objs, empty_channel = self.mock_channel_objs(
+                        location, camera
+                    )
                     self.channel_objs[loc_cam] = channel_objs
+                    self.empty_channel[loc_cam] = empty_channel
                     self.events[loc_cam] = self.dicts_to_events(channel_objs)
                     self.metadata[loc_cam] = self.mock_camera_metadata(location, camera)
 
     def mock_channel_objs(
         self, location: Location, camera: Camera
-    ) -> list[dict[str, str]]:
+    ) -> tuple[list[dict[str, str]], None | str]:
         channel_data: list[dict[str, str]] = []
         iterations = 3
+
+        empty_channel = None
+        if camera.seq_channels():
+            empty_channel = random.choice(camera.seq_channels()).name
+
         for channel in camera.channels:
+            if empty_channel and channel.name == empty_channel:
+                continue
             for index in range(iterations):
                 seq_num = f"{index:06}"
 
@@ -87,7 +126,7 @@ class RubinDataMocker:
                 if hash is None:
                     hash = str(random.getrandbits(128))
                 channel_data.append({"key": key, "hash": hash})
-        return channel_data
+        return (channel_data, empty_channel)
 
     def dicts_to_events(self, channel_dicts: list[dict[str, str]]) -> list[Event]:
         events = [Event(**cd) for cd in channel_dicts]

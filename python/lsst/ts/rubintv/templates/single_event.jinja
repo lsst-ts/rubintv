@@ -41,7 +41,7 @@
       <p id="eventName" class="desc">{{ event.filename }}</p>
     </a>
   {% else %}
-    <h2>There are no events for this channel</h2>
+    <h2 class="error event-error">There are no events for this channel</h2>
   {% endif %}
 {% endblock content %}
 {% block further %}
@@ -52,11 +52,11 @@
                     camera_name=camera.name,
                     channel_name=channel.name,
                     filename=event.filename) %}
- <script>
-  window.APP_DATA.imgURL = "{{ img_url }}"
-  window.APP_DATA.prevNext = {{ prevnext|tojson }}
-  window.APP_DATA.eventURL = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}"
- </script>
+  <script>
+    window.APP_DATA.imgURL = "{{ img_url }}"
+    window.APP_DATA.prevNext = {{ prevnext|tojson if prevnext }}
+    window.APP_DATA.eventURL = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}"
+  </script>
 {% endif %}
 {% endblock further %}
 {% block footer_scripts %}
