@@ -1,4 +1,5 @@
 """Tests for the rubintv.handlers.external module and routes."""
+
 from __future__ import annotations
 
 from itertools import chain

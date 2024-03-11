@@ -1,21 +1,36 @@
-import React from "react";
+import React, { useEffect, useRef } from "react"
 import PropTypes from 'prop-types'
 import { eventType } from "./componentPropTypes"
 
 export default function PrevNext ({prevNext}) {
+  const left = useRef(null)
+  const right = useRef(null)
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.keyCode == 39) {
+        right.current?.click()
+      }
+      if (e.keyCode == 37) {
+        left.current?.click()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return function cleanup() {
+      document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, []);
   const eventURL = window.APP_DATA.eventURL
   const prev = prevNext.prev
   const next = prevNext.next
-  function handleKeyDown(e) {
-    console.log(`key pressed ${e.key}`)
-  }
   return (
-    <div className="prev-next-buttons"
-          onKeyDown={handleKeyDown}>
+    <div className="prev-next-buttons">
       { prev && (
         <a
           className="prev prev-next button"
           href={`${eventURL}?key=${prev.key}`}
+          ref={left}
         >
           { prev.seq_num }
         </a>
@@ -24,6 +39,7 @@ export default function PrevNext ({prevNext}) {
         <a
           className="next prev-next button"
           href={`${eventURL}?key=${next.key}`}
+          ref={right}
           >
           { next.seq_num }
         </a>

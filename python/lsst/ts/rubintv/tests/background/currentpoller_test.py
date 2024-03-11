@@ -37,25 +37,31 @@ async def test_poll_buckets_for_todays_data(
 ) -> None:
     await current_poller.clear_all_data()
     # Mocking external functions
-    with patch(
-        "lsst.ts.rubintv.models.models.get_current_day_obs", return_value="20210101"
-    ) as mock_day_obs, patch(
-        "lsst.ts.rubintv.background.currentpoller.CurrentPoller.clear_all_data",
-        new_callable=AsyncMock,
-    ), patch(
-        "lsst.ts.rubintv.background.currentpoller.CurrentPoller.seive_out_metadata",
-        new_callable=AsyncMock,
-    ) as mock_metadata, patch(
-        (
-            "lsst.ts.rubintv.background.currentpoller.CurrentPoller."
-            "seive_out_night_reports"
+    with (
+        patch(
+            "lsst.ts.rubintv.models.models.get_current_day_obs", return_value="20210101"
+        ) as mock_day_obs,
+        patch(
+            "lsst.ts.rubintv.background.currentpoller.CurrentPoller.clear_all_data",
+            new_callable=AsyncMock,
         ),
-        new_callable=AsyncMock,
-    ) as mock_night_reports, patch(
-        "lsst.ts.rubintv.background.currentpoller.CurrentPoller."
-        "process_channel_objects",
-        new_callable=AsyncMock,
-    ) as mock_process_objects:
+        patch(
+            "lsst.ts.rubintv.background.currentpoller.CurrentPoller.seive_out_metadata",
+            new_callable=AsyncMock,
+        ) as mock_metadata,
+        patch(
+            (
+                "lsst.ts.rubintv.background.currentpoller.CurrentPoller."
+                "seive_out_night_reports"
+            ),
+            new_callable=AsyncMock,
+        ) as mock_night_reports,
+        patch(
+            "lsst.ts.rubintv.background.currentpoller.CurrentPoller."
+            "process_channel_objects",
+            new_callable=AsyncMock,
+        ) as mock_process_objects,
+    ):
         # Execute test
         try:
             # Run the method for a specified number of seconds, then timeout
