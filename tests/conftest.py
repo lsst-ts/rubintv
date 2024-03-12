@@ -15,8 +15,9 @@ from fastapi import FastAPI
 from httpx import AsyncClient
 from lsst.ts.rubintv.main import create_app
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
-from lsst.ts.rubintv.tests.mockdata import RubinDataMocker
 from moto import mock_s3
+
+from .mockdata import RubinDataMocker
 
 
 @pytest.fixture(scope="module")
@@ -25,6 +26,7 @@ def aws_credentials() -> None:
     moto_credentials_file_path = (
         Path(__file__).parent.absolute() / "dummy_aws_credentials"
     )
+    print(f"Credentials file path: {moto_credentials_file_path}")
     os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(moto_credentials_file_path)
 
 

@@ -7,8 +7,9 @@ from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.models.models import Camera, Location
 from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
-from lsst.ts.rubintv.tests.mockdata import RubinDataMocker
 from moto import mock_s3
+
+from ..mockdata import RubinDataMocker
 
 m = ModelsInitiator()
 

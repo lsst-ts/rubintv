@@ -10,7 +10,8 @@ from httpx import AsyncClient
 from lsst.ts.rubintv.models.models import Location
 from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
-from lsst.ts.rubintv.tests.mockdata import RubinDataMocker
+
+from ..mockdata import RubinDataMocker
 
 m = ModelsInitiator()
 
@@ -71,8 +72,8 @@ async def test_get_location(mocked_client: tuple[AsyncClient, RubinDataMocker]) 
 #         for camera in location.cameras:
 #             loc_cam = f"{location.name}/{camera.name}"
 #             for seq_chan in camera.seq_channels():
-#                 url = (f"/rubintv/{location.name}/{camera.name}/current/
-#    {seq_chan.name}")
+#                 url = f"/rubintv/{location.name}/{camera.name}
+# /current/{seq_chan.name}"
 #                 response = await client.get(url)
 
 #                 assert response.status_code == 200

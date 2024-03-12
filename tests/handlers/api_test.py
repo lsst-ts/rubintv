@@ -5,7 +5,8 @@ from httpx import AsyncClient
 from lsst.ts.rubintv.models.models import Camera, Event, Location, get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
-from lsst.ts.rubintv.tests.mockdata import RubinDataMocker
+
+from ..mockdata import RubinDataMocker
 
 m = ModelsInitiator()
 
@@ -129,7 +130,8 @@ async def test_get_camera_current_events(
     table = data["channelData"]
     assert list(table.keys()) == sorted(table.keys(), reverse=True)
 
-    mocked: list[Event] = mocker.events.get("slac/slac_lsstcam")
+    mocked: list[Event] | None = mocker.events.get("slac/slac_lsstcam")
+    assert mocked
     mocked_table: dict[str, dict[str, dict]] = {}
     for event in mocked:
         seq_num = str(event.seq_num)
