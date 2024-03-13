@@ -26,7 +26,6 @@ COPY . .
 
 # Install dependencies
 RUN pip install -r requirements.txt && \
-    pip install . && \
     python setup.py install
 
 # Adjust permissions for executable
