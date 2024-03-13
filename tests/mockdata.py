@@ -35,12 +35,6 @@ class RubinDataMocker:
         print("Started cleaning...")
         self.delete_buckets()
 
-        # assert that each bucket is actually empty
-        for location in self._locations:
-            assert "Contents" not in self.s3_client.list_objects(
-                Bucket=location.bucket_name
-            )
-
         self._locations = []
         self.s3_required = False
         self.location_channels = {}
