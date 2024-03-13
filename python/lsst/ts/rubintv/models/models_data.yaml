@@ -19,7 +19,8 @@ locations:
     bucket_name: rubin-rubintv-data-usdf
     logo: SLAC_Logo.svg
     camera_groups:
-      Cameras: [ slac_lsstcam, slac_ts8 ]
+      Cleanroom Testing: [ slac_lsstcam, slac_ts8 ]
+      Simulated Cameras: [ comcam_sim_prep ]
 
   - name: base-usdf
     title: Base
@@ -48,7 +49,7 @@ locations:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
       Other Cameras: [ allsky, startracker, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
-      Simulated Cameras: [comcam_sim]
+      Simulated Cameras: [ comcam_sim ]
 
   - name: base
     title: Base
@@ -196,6 +197,19 @@ cameras:
 
   - name: comcam_sim
     title: ComCamSim
+    online: True
+    channels:
+      - name: focal_plane_mosaic
+        title: Focal Plane mosaic
+        colour: "#6fe9ba"
+      - name: noise_map
+        title: Noise Map
+        colour: "#e771a8"
+    copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
+    {seqNum}}"
+
+  - name: comcam_sim_prep
+    title: ComCamSimPrep
     online: True
     channels:
       - name: focal_plane_mosaic
