@@ -3,7 +3,7 @@
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from lsst.ts.rubintv.handlers.api import (
     get_current_channel_event,
     get_location,
@@ -30,6 +30,7 @@ from lsst.ts.rubintv.handlers.pages_helpers import (
 from lsst.ts.rubintv.models.models import (
     Channel,
     Event,
+    Location,
     NightReportPayload,
     get_current_day_obs,
 )
@@ -54,7 +55,12 @@ async def get_home(
 ) -> Response:
     """GET ``/rubintv/`` (the app's external root)."""
     logger.info("Request for the app home page")
-    locations = request.app.state.models.locations
+    locations: list[Location] = request.app.state.models.locations
+    if len(locations) < 2:
+        location = locations[0]
+        return RedirectResponse(
+            url=request.url_for("location", location_name=location.name)
+        )
     title = build_title()
     return templates.TemplateResponse(
         request=request,
