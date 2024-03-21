@@ -48,16 +48,15 @@ PerDayChannels.propTypes = {
   date: PropTypes.string
 }
 
-function NightReportLink ({ camera, date, nightReportExists }) {
+function NightReportLink ({ camera, date, nightReportExists, isToday }) {
   if (!nightReportExists) {
     return null
   }
-  const isHistorical = window.APP_DATA.ishistorical
   const baseUrl = window.APP_DATA.baseUrl
   const locationName = document.documentElement.dataset.locationname
   let label
   let link
-  if (!isHistorical) {
+  if (isToday) {
     link = `${baseUrl}${locationName}/${camera.name}/night_report`
     label = camera.night_report_label
   } else {
@@ -79,12 +78,15 @@ function NightReportLink ({ camera, date, nightReportExists }) {
 NightReportLink.propTypes = {
   camera: cameraType,
   date: PropTypes.string,
-  nightReportExists: PropTypes.bool
+  nightReportExists: PropTypes.bool,
+  isToday: PropTypes.bool
 }
 
-export default function PerDay ({ camera, initialDate, initialPerDay, nightReportExists }) {
+export default function PerDay ({ camera, initialDate, initialPerDay, initialNRExists, initialIsToday }) {
   const [date, setDate] = useState(initialDate)
   const [perDay, setPerDay] = useState(initialPerDay)
+  const [nightReportExists, setNightReportExists] = useState(initialNRExists)
+  const [isToday, setIsToday] = useState(initialIsToday)
 
   useEffect(() => {
     function handleCameraEvent (event) {
@@ -94,8 +96,11 @@ export default function PerDay ({ camera, initialDate, initialPerDay, nightRepor
         setDate(datestamp)
       }
 
-      if (dataType === 'per_day') {
+      if (dataType === 'per_day' && data != "nightReportExists") {
         setPerDay(data)
+      }
+      else if (dataType === 'per_day' && data == "nightReportExists") {
+        setNightReportExists(true)
       }
     }
     window.addEventListener('camera', handleCameraEvent)
@@ -109,7 +114,11 @@ export default function PerDay ({ camera, initialDate, initialPerDay, nightRepor
   return (
     <>
       <PerDayChannels camera={camera} date={date} perDay={perDay} />
-      <NightReportLink camera={camera} date={date} nightReportExists={nightReportExists} />
+      <NightReportLink
+      camera={camera}
+      date={date}
+      nightReportExists={nightReportExists}
+      isToday={isToday} />
     </>
   )
 }
@@ -118,5 +127,6 @@ PerDay.propTypes = {
   initialPerDay: PropTypes.objectOf(eventType),
   initialDate: PropTypes.string,
   /** True if a night report event exists for this date. */
-  nightReportExists: PropTypes.bool
+  nightReportExists: PropTypes.bool,
+  isToday: PropTypes.bool
 }

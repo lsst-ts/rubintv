@@ -17,6 +17,7 @@ import { WebsocketClient } from '../modules/ws-service-client'
   const perDay = window.APP_DATA.perDay
   const nightReportExists = window.APP_DATA.hasNightReport
   const date = window.APP_DATA.date || ''
+  const isToday = window.APP_DATA.isToday
   if (!window.APP_DATA.ishistorical) {
     const ws = new WebsocketClient()
     ws.subscribe('service', 'camera', locationName, camera.name)
@@ -37,7 +38,8 @@ import { WebsocketClient } from '../modules/ws-service-client'
       camera={camera}
       initialDate={date}
       initialPerDay={perDay}
-      nightReportExists={nightReportExists}
+      initialNRExists={nightReportExists}
+      initialIsToday={isToday}
     />
   )
 })()

@@ -37,11 +37,12 @@ class CurrentPoller:
     _metadata: dict[str, dict] = {}
     _table: dict[str, dict[int, dict[str, dict]]] = {}
 
-    _per_day: dict[str, dict[str, Event]] = {}
+    _per_day: dict[str, dict[str, dict]] = {}
     _most_recent_events: dict[str, Event] = {}
 
     _nr_metadata: dict[str, NightReport] = {}
     _nr_reports: dict[str, set[NightReport]] = {}
+    _nr_reports_exist: dict[str, bool] = {}
 
     def __init__(self, locations: list[Location]) -> None:
         self.completed_first_poll = False
@@ -61,6 +62,7 @@ class CurrentPoller:
         self._most_recent_events = {}
         self._nr_metadata = {}
         self._nr_reports = {}
+        self._nr_reports_exist = {}
 
     async def poll_buckets_for_todays_data(self) -> None:
         try:
@@ -216,6 +218,11 @@ class CurrentPoller:
         logger = structlog.get_logger("rubintv")
         report_objs, objects = await self.filter_night_report_objects(objects)
         if report_objs:
+            if not self._nr_reports_exist.get(loc_cam, False):
+                await notify_ws_clients(
+                    "camera", "perDay", loc_cam, "nightReportExists"
+                )
+                self._nr_reports_exist[loc_cam] = True
             try:
                 await self.process_night_report_objects(report_objs, loc_cam, location)
             except ValueError:
@@ -267,7 +274,7 @@ class CurrentPoller:
 
     async def make_per_day_data(
         self, camera: Camera, events: list[Event]
-    ) -> dict[str, Event]:
+    ) -> dict[str, dict]:
         per_day_chans = camera.pd_channels()
         if not per_day_chans:
             return {}
@@ -275,7 +282,7 @@ class CurrentPoller:
         pd_events = [e for e in events if e.channel_name in per_day_chan_names]
         if not pd_events:
             return {}
-        pd_data = {e.channel_name: e for e in pd_events}
+        pd_data = {e.channel_name: e.__dict__ for e in pd_events}
         return pd_data
 
     async def make_channel_table(
@@ -308,7 +315,7 @@ class CurrentPoller:
     ) -> dict[str, dict[str, dict]]:
         loc_cam = await self._get_loc_cam(location_name, camera)
         events = self._per_day.get(loc_cam, {})
-        return {chan: event.__dict__ for chan, event in events.items()}
+        return {chan: event for chan, event in events.items()}
 
     async def get_current_metadata(self, location_name: str, camera: Camera) -> dict:
         name = camera.name
@@ -339,11 +346,6 @@ class CurrentPoller:
                 payload["plots"] = list(plots)
         return payload
 
-    async def night_report_exists(self, location_name: str, camera_name: str) -> bool:
-        loc_cam = f"{location_name}/{camera_name}"
-        exists = loc_cam in self._nr_metadata or loc_cam in self._nr_reports
-        return exists
-
     async def _get_loc_cam(self, location_name: str, camera: Camera) -> str:
         """Return `f"{location_name}/{camera.name}"`
 
@@ -369,3 +371,7 @@ class CurrentPoller:
         table = self._table.get(loc_cam, None)
         nxt_prv = await get_next_previous_from_table(table, event)
         return nxt_prv
+
+    async def night_report_exists(self, location_name: str, camera_name: str) -> bool:
+        loc_cam = f"{location_name}/{camera_name}"
+        return self._nr_reports_exist.get(loc_cam, False)

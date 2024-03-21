@@ -89,7 +89,7 @@ class RubinDataMocker:
         self, location: Location, camera: Camera
     ) -> tuple[list[dict[str, str]], None | str]:
         channel_data: list[dict[str, str]] = []
-        iterations = 3
+        iterations = 8
 
         empty_channel = None
         if camera.seq_channels():
