@@ -270,6 +270,7 @@ class NightReport:
             if match := plot_re.match(key):
                 parts = match.groups()
                 camera, day_obs_str, group, filename, ext = parts
+                filename = filename + "." + ext
             else:
                 raise ValueError(f"Key can't be parsed: {key}")
 

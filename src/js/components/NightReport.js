@@ -104,7 +104,7 @@ function NightReport ({ initialNightReport, initialDate, camera, locationName, b
             <div id='tabtitle-text' className='tab-title disabled'>Efficiency</div>
             { groupBy(plots, plot => plot.group).map(([group, grouped]) => {
               let isDisabled = ''
-              if (group.toLowerCase === 'elana') {
+              if (group.toLowerCase() === 'elana') {
                 isDisabled = 'disabled'
               }
               return (

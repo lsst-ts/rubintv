@@ -82,11 +82,10 @@ NightReportLink.propTypes = {
   isToday: PropTypes.bool
 }
 
-export default function PerDay ({ camera, initialDate, initialPerDay, initialNRExists, initialIsToday }) {
+export default function PerDay ({ camera, initialDate, initialPerDay, initialNRExists, isToday }) {
   const [date, setDate] = useState(initialDate)
   const [perDay, setPerDay] = useState(initialPerDay)
   const [nightReportExists, setNightReportExists] = useState(initialNRExists)
-  const [isToday, setIsToday] = useState(initialIsToday)
 
   useEffect(() => {
     function handleCameraEvent (event) {
@@ -96,10 +95,10 @@ export default function PerDay ({ camera, initialDate, initialPerDay, initialNRE
         setDate(datestamp)
       }
 
-      if (dataType === 'per_day' && data != "nightReportExists") {
+      if (dataType === 'perDay' && data != "nightReportExists") {
         setPerDay(data)
       }
-      else if (dataType === 'per_day' && data == "nightReportExists") {
+      else if (dataType === 'perDay' && data == "nightReportExists") {
         setNightReportExists(true)
       }
     }

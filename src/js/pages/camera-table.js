@@ -39,7 +39,7 @@ import { WebsocketClient } from '../modules/ws-service-client'
       initialDate={date}
       initialPerDay={perDay}
       initialNRExists={nightReportExists}
-      initialIsToday={isToday}
+      isToday={isToday}
     />
   )
 })()
