@@ -11,5 +11,5 @@ services_clients: dict[str, list[uuid.UUID]] = {}
 clients_lock = asyncio.Lock()
 services_lock = asyncio.Lock()
 
-heartbeat_clients: dict[uuid.UUID, WebSocket] = {}
+heartbeat_clients: dict[WebSocket, uuid.UUID] = {}
 heartbeat_lock = asyncio.Lock()

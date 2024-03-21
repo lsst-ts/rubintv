@@ -2,10 +2,10 @@ from pathlib import Path
 
 from fastapi.templating import Jinja2Templates
 from lsst.ts.rubintv import __version__
-from lsst.ts.rubintv.models.models_helpers import get_image_viewer_link
-from lsst.ts.rubintv.models.models_init import (
+from lsst.ts.rubintv.models.models_helpers import (
     dict_from_list_of_named_objects as list_to_dict,
 )
+from lsst.ts.rubintv.models.models_helpers import get_image_viewer_link
 
 __all__ = ["get_templates"]
 

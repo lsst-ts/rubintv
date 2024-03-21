@@ -24,6 +24,7 @@ from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
 from .config import config
 from .handlers.api import api_router
+from .handlers.heartbeat_server import heartbeat_router
 from .handlers.internal import internal_router
 from .handlers.pages import pages_router
 from .handlers.proxies import proxies_router
@@ -108,6 +109,7 @@ def create_app() -> FastAPI:
     # Attach the routers.
     app.include_router(internal_router)
     app.include_router(api_router, prefix=f"{config.path_prefix}/api")
+    app.include_router(heartbeat_router, prefix=f"{config.path_prefix}/heartbeats")
     app.include_router(ws_router, prefix=f"{config.path_prefix}/ws")
     app.include_router(proxies_router, prefix=f"{config.path_prefix}")
     app.include_router(pages_router, prefix=f"{config.path_prefix}")

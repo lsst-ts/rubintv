@@ -1,4 +1,4 @@
-import { WebsocketClient } from '../modules/websocket_client.js'
+import { WebsocketClient } from '../modules/ws-service-client.js'
 
 (function () {
   const locationName = document.documentElement.dataset.locationname

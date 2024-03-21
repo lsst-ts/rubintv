@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import TableApp from '../components/TableApp'
 import PerDay from '../components/PerDay'
 import { _getById } from '../modules/utils'
-import { WebsocketClient } from '../modules/websocket_client'
+import { WebsocketClient } from '../modules/ws-service-client'
 
 (function () {
   if (_getById('historicalbusy') &&

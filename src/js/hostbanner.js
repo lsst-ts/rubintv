@@ -1,3 +1,5 @@
+import { getWebSockURL } from './modules/utils'
+
 window.addEventListener('DOMContentLoaded',
   () => {
     const display = []
@@ -15,5 +17,18 @@ window.addEventListener('DOMContentLoaded',
       displayEl.appendChild(text)
       document.body.append(displayEl)
     }
+
+    if (!!window.SharedWorker) {
+      const workerURL = location.origin + "/rubintv/static/assets/heartbeatWorker.js"
+      const heartbeatWorker = new SharedWorker(workerURL)
+
+      const heartbeatWsUrl = getWebSockURL("heartbeats")
+      heartbeatWorker.port.postMessage({heartbeatWsUrl})
+
+      heartbeatWorker.port.onmessage = function(e) {
+        console.log("message from worker:", e.data)
+      }
+    }
+
   }
 )

@@ -1,5 +1,5 @@
 import { simplePost, _getById, _elWithAttrs } from './utils'
-import { WebsocketClient } from './websocket_client'
+import { WebsocketClient } from './ws-service-client'
 
 export function listenForHistoricalReset () {
   const form = _getById('historicalReset')

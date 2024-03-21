@@ -1,7 +1,7 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { _getById } from '../modules/utils'
-import { WebsocketClient } from '../modules/websocket_client'
+import { WebsocketClient } from '../modules/ws-service-client'
 import NightReport from '../components/NightReport'
 import { addTabsListeners, listenForKeypresses } from '../night-report/tabs-ui'
 

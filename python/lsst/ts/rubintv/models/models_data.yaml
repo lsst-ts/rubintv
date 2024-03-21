@@ -10,7 +10,8 @@ bucket_configurations:
   gha:
     [ slac, base-usdf, tucson-usdf, summit-usdf ]
   local:
-    [ slac, base-usdf, tucson-usdf, summit-usdf ]
+    [ tucson-usdf ]
+    # [ slac, base-usdf, tucson-usdf, summit-usdf ]
 
 locations:
   - name: slac
@@ -21,6 +22,7 @@ locations:
     camera_groups:
       Cleanroom Testing: [ slac_lsstcam, slac_ts8 ]
       Simulated Cameras: [ comcam_sim_prep ]
+    services: [ slac_lsstcam, slac_ts8, comcam_sim_prep ]
 
   - name: base-usdf
     title: Base
@@ -30,6 +32,7 @@ locations:
     camera_groups:
       Cameras: [ auxtel, fake_auxtel ]
       Telescopes: [ tma ]
+    services: [ auxtel, tma ]
 
   - name: tucson-usdf
     title: Tucson
@@ -78,7 +81,7 @@ locations:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
       Other Cameras: [ allsky, startracker, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
-      Simulated Cameras: [comcam_sim]
+      Simulated Cameras: [ comcam_sim ]
 
 cameras:
   - name: tma
@@ -293,6 +296,47 @@ cameras:
     image=AT_O_{dayObs}_{seqNum}\
     &raft=R00&color=grey&bias=Simple+Overscan+Correction\
     &scale=Per-Segment&source=RubinTV"
+
+
+services:
+  auxtel:
+    display_name: AuxTel
+    channels: auxtel
+    services:
+      auxtel_metadata: Metadata
+      auxtel_isr_runner: ISR Runner
+
+  startracker:
+    display_name: StarTracker
+    channels: startracker
+    services:
+      startracker_metadata: Metadata
+
+  allsky:
+    display_name: All Sky
+    services:
+      allsky: All Sky
+
+  comcam:
+    display_name: ComCam
+    channels: comcam
+
+  tma:
+    channels: tma
+
+  slac_lsstcam:
+    channels: slac_lsstcam
+
+  slac_ts8:
+    channels: slac_ts8
+
+  comcam_sim_prep:
+    channels: comcam_sim_prep
+
+  background:
+    display_name: Background Services
+    services:
+      backgroundService: Background
 
 
 metadata_cols:

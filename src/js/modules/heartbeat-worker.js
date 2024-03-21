@@ -1,16 +1,41 @@
 import ReconnectingWebSocket from "reconnecting-websocket"
-import { getURL } from "./websocket_client"
 
-onconnect = function(event) {
-  const port = event.port[0]
+let rws
+const ports = []
 
-  const URL = getURL('heartbeats')
-  const ws = new ReconnectingWebSocket(URL)
+function attachWsListeners(ws) {
+  ws.onopen = () => {
+    sendToPorts("Connection open")
+  }
 
-  // ws.onopen =
+  ws.onmessage = (event) => {
+    sendToPorts(event.data)
+  }
+
+  ws.onerror = (error) => {
+    sendToPorts(error.data)
+  }
+
+  ws.onclose = () => {
+    sendToPorts("WebSocket connection closed")
+  }
+
+  function sendToPorts(message) {
+    ports.forEach(port => {
+      port.postMessage(message)
+    })
+  }
+}
+
+onconnect = function(e) {
+  const port = e.ports[0]
+  ports.push(port)
 
   port.onmessage = function(e) {
-    console.log(e.data)
-    port.postMessage('recvd message from server')
+    if (typeof e.data == 'object' && 'heartbeatWsUrl' in e.data && !rws) {
+      const url = e.data.heartbeatWsUrl
+      rws = new ReconnectingWebSocket(url, undefined, { maxRetries: 2 })
+      attachWsListeners(rws)
+    }
   }
 }

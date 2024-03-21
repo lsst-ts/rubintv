@@ -1,11 +1,13 @@
 """Models for rubintv."""
 
+import asyncio
 import re
 from datetime import date, datetime, timedelta
-from typing import Any, Type
+from typing import Any
 
+import structlog
 from dateutil.tz import gettz
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 from pydantic.dataclasses import dataclass
 from typing_extensions import NotRequired, TypedDict
 
@@ -20,6 +22,8 @@ __all__ = [
     "Event",
     "get_current_day_obs",
 ]
+
+logger = structlog.get_logger("rubintv")
 
 
 class Metadata(BaseModel):
@@ -109,9 +113,10 @@ class Camera(BaseModel):
     copy_row_template: str = ""
 
     # If metadata_from not set, use name as default
-    @field_validator("metadata_from")
-    def default_as_name(cls: Type, v: str, values: Any) -> str:
-        return v or values.get("name")
+    @model_validator(mode="after")
+    def default_as_name(self) -> Any:
+        if not self.metadata_from:
+            self.metadata_from = self.name
 
     def seq_channels(self) -> list[Channel]:
         return [c for c in self.channels if not c.per_day]
@@ -129,6 +134,7 @@ class Location(BaseModel):
     profile_name: str
     camera_groups: dict[str, list[str]]
     cameras: list[Camera] = []
+    services: list[str] = []
     logo: str = ""
 
 
@@ -302,3 +308,41 @@ def get_current_day_obs() -> date:
     offset = timedelta(hours=-12)
     dayObs = (nowUtc + offset).date()
     return dayObs
+
+
+class Heartbeat:
+    def __init__(self, service_name: str, next_expected: datetime) -> None:
+        self.service_name = service_name
+        self.state = "running"
+        self.next_expected = next_expected
+        self.task = asyncio.create_task(self.monitor_heartbeat())
+
+    async def monitor_heartbeat(self) -> None:
+        """Continuously monitors the heartbeat and updates the service
+        state."""
+        while True:
+            now = datetime.utcnow()
+            wait_seconds = (self.next_expected - now).total_seconds()
+            if wait_seconds > 0:
+                await asyncio.sleep(wait_seconds)
+            else:
+                self.state = "stopped"
+                logger.warn("Service has gone down:", service=self.service_name)
+                break  # Exit the loop if service is down
+
+    def update_heartbeat(self, next_expected: datetime) -> None:
+        """Updates the heartbeat's next expected time and resets state to
+        running."""
+        self.next_expected = next_expected
+        if self.state == "stopped":
+            self.state = "running"
+            # If the service was down, restart the monitoring task
+            self.task = asyncio.create_task(self.monitor_heartbeat())
+            logger.info("Service is back:", service=self.service_name)
+
+    def to_json(self) -> dict[str, str]:
+        return {
+            "service_name": self.service_name,
+            "state": self.state,
+            "next_expected": self.next_expected.isoformat(),  # Convert datetime to string
+        }

@@ -1,5 +1,5 @@
 import { _getById } from '../modules/utils'
-import { WebsocketClient } from '../modules/websocket_client'
+import { WebsocketClient } from '../modules/ws-service-client'
 
 (function () {
   const initEvent = window.APP_DATA.initEvent || null

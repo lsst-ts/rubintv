@@ -161,3 +161,7 @@ async def make_table_from_event_list(
                     d.update({e.seq_num: {chan.name: e.__dict__}})
     table = {k: v for k, v in sorted(d.items(), reverse=True)}
     return table
+
+
+def dict_from_list_of_named_objects(a_list: list[Any]) -> dict[str, Any]:
+    return {obj.name: obj for obj in a_list if hasattr(obj, "name")}
