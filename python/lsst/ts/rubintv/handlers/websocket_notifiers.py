@@ -1,6 +1,7 @@
 from typing import Any, Mapping
 from uuid import UUID
 
+import structlog
 from lsst.ts.rubintv.handlers.websockets_clients import (
     clients,
     clients_lock,
@@ -8,6 +9,8 @@ from lsst.ts.rubintv.handlers.websockets_clients import (
     services_lock,
 )
 from lsst.ts.rubintv.models.models import get_current_day_obs
+
+logger = structlog.get_logger("rubintv")
 
 
 async def notify_ws_clients(

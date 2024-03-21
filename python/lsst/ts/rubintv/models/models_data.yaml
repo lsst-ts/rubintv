@@ -49,7 +49,7 @@ locations:
     logo: Summit.jpg
     camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
-      Other Cameras: [ allsky, startracker, startracker_wide, startracker_fast ]
+      Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim ]
 
@@ -78,7 +78,7 @@ locations:
     logo: Summit.jpg
     camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
-      Other Cameras: [ allsky, startracker, startracker_wide, startracker_fast ]
+      Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim ]
 
@@ -132,12 +132,12 @@ cameras:
         colour: "#83daee"
 
 
-  - name: startracker
-    title: StarTracker
+  - name: startracker_narrow
+    title: StarTracker Narrow
     online: True
     channels:
       - name: raw
-        title: StarTracker
+        title: StarTracker Narrow
         colour: "#58528b"
       - name: analysis
         title: Analysis
@@ -146,7 +146,7 @@ cameras:
   - name: startracker_wide
     title: StarTracker Wide
     online: True
-    metadata_from: startracker
+    metadata_from: startracker_narrow
     channels:
       - name: raw
         title: StarTracker Wide
@@ -160,7 +160,7 @@ cameras:
   - name: startracker_fast
     title: StarTracker Fast
     online: True
-    metadata_from: startracker
+    metadata_from: startracker_narrow
     channels:
       - name: raw
         title: StarTrackerFast
@@ -305,11 +305,11 @@ services:
       auxtel_metadata: Metadata
       auxtel_isr_runner: ISR Runner
 
-  startracker:
-    display_name: StarTracker
-    channels: startracker
+  startracker_narrow:
+    display_name: StarTracker Narrow
+    channels: startracker_narrow
     services:
-      startracker_metadata: Metadata
+      startracker_narrow_metadata: Metadata
 
   allsky:
     display_name: All Sky
@@ -406,7 +406,7 @@ metadata_cols:
     DIMM Seeing:
       The seeing, as measured by the DIMM, if available
 
-  startracker:
+  startracker_narrow:
     Exposure Time:
       The image exposure time
     MJD:

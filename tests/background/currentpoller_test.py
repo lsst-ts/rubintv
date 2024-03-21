@@ -87,7 +87,7 @@ async def test_poll_buckets_for_today_process_and_store_seq_events(
     await current_poller.clear_all_data()
     try:
         await asyncio.wait_for(
-            current_poller.poll_buckets_for_todays_data(), timeout=0.1
+            current_poller.poll_buckets_for_todays_data(), timeout=0.2
         )
     except asyncio.TimeoutError:
         # The timeout error is expected

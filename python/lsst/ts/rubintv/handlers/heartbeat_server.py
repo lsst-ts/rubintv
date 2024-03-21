@@ -15,7 +15,6 @@ logger = structlog.get_logger("rubintv")
 async def send_heartbeat(socket: WebSocket) -> None:
     try:
         await socket.send_text("heartbeat!")
-        logger.info("Sent heartbeat")
     except WebSocketDisconnect:
         logger.info("Heartbeat websocket disconnected", websocket=socket)
         async with heartbeats_sock_lock:

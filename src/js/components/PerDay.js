@@ -65,7 +65,7 @@ function NightReportLink ({ camera, date, nightReportExists, isToday }) {
   }
   return (
     <div id="night_report_link">
-      <h3>{label}</h3>
+      <h3>Night Report</h3>
       <a
         className="button button-large night-report"
         href={link}>
