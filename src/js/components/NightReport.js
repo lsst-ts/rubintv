@@ -3,55 +3,69 @@ import PropTypes from 'prop-types'
 import { groupBy } from '../modules/utils'
 
 function NightReportText ({ nightReport }) {
-  const texts = nightReport.text || {}
+  const data = nightReport.text || {}
+  const efficiency = {}
+  const qaPlots = {}
+  for (const[key, val] of Object.entries(data)) {
+    if (key.startsWith('text_')) {
+      efficiency[key] = val
+    } else {
+      qaPlots[key] = val
+    }
+  }
   return (
-    <div id='tabgroup-text' className='dashboard tab-content'>
-      {Object.entries(texts).map(([textName, text]) => {
-        if (textName.startsWith('text_')) {
-          // for multiline text
-          if (texts[textName]) {
-            return (
-              <ul className='dashboard-text' key={textName}>
-                <li>
-                  {texts[textName].split('\n').map((line, lineNum) => {
-                    if (line) {
-                      return (
-                          /* char code 160 is non-breaking space- used so that
-                          formatted text lines up as expected. */
-                          <p key={lineNum}>
-                            {
-                              line.replace('  ',
-                                String.fromCharCode(160) +
-                                String.fromCharCode(160))
-                            }
-                          </p>
-                      )
-                    } else {
-                      return <br key={lineNum}/>
-                    }
-                  })}
-                  </li>
-              </ul>
-            )
-          } else {
-            return null
-          }
-        } else {
-          // not multiline text so must be a dict of key/value pairs
-          return (
-            <ul className='dashboard-quantities' key={text}>
-              {Object.entries(texts[textName])
-                .map(([quantity, measurement], lineNum) => (
-                  <li key={lineNum}>
-                    {quantity}: {measurement}
-                  </li>
-                ))
-              }
-            </ul>
-          )
+    <>
+      <div id='tabgroup-efficiency' className='dashboard tab-content'>
+        {
+          Object.entries(efficiency).map(([textName, text]) => {
+            // for multiline text
+            if (text) {
+              return (
+                <ul className='dashboard-text' key={textName}>
+                  <li>
+                    {text.split('\n').map((line, lineNum) => {
+                      if (line) {
+                        return (
+                            /* char code 160 is non-breaking space- used so that
+                            formatted text lines up as expected. */
+                            <p key={lineNum}>
+                              {
+                                line.replace('  ',
+                                  String.fromCharCode(160) +
+                                  String.fromCharCode(160))
+                              }
+                            </p>
+                        )
+                      } else {
+                        return <br key={lineNum}/>
+                      }
+                    })}
+                    </li>
+                </ul>
+              )
+            } else {
+              return null
+            }
+          })
         }
-      })}
-    </div>
+      </div>
+
+      <div id='tabgroup-qaplots' className='qa-plots tab-content'>
+        <ul>
+        {
+          Object.entries(qaPlots).map(([title, link]) => {
+            return (
+                <li>
+                  <a href={link} target='_blank'>
+                    { title }
+                  </a>
+                </li>
+            )
+          })
+        }
+        </ul>
+      </div>
+    </>
   )
 }
 NightReportText.propTypes = {
@@ -101,7 +115,13 @@ function NightReport ({ initialNightReport, initialDate, camera, locationName, b
       <div id='night-report'>
         <div className='plots-section tabs'>
           <div className='tab-titles'>
-            <div id='tabtitle-text' className='tab-title disabled'>Efficiency</div>
+
+            <div id='tabtitle-efficiency' className='tab-title disabled'>Efficiency</div>
+
+            { (Object.keys(nightReport.text).filter(n => { return !n.startsWith('text') }).length > 0) &&
+               <div id='tabtitle-qaplots' className='tab-title disabled'>QA Plots</div>
+            }
+
             { groupBy(plots, plot => plot.group).map(([group, grouped]) => {
               let isDisabled = ''
               if (group.toLowerCase() === 'elana') {

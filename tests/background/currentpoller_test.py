@@ -184,6 +184,34 @@ async def test_update_channel_events(
         mock_notify_ws_clients.assert_called()
 
 
+@pytest.mark.asyncio
+async def test_make_per_day_data(
+    c_poller_no_mock_data: CurrentPoller, rubin_data_mocker: RubinDataMocker
+) -> None:
+    current_poller = c_poller_no_mock_data
+    mocked_events = rubin_data_mocker.events
+    for location in m.locations:
+        for camera in location.cameras:
+            if not camera.online:
+                continue
+            loc_cam = f"{location.name}/{camera.name}"
+            events = mocked_events[loc_cam]
+            pd_data = await current_poller.make_per_day_data(camera, events)
+            pd_chan_names = [chan.name for chan in camera.pd_channels()]
+            if not pd_chan_names:
+                assert pd_data == {}
+            else:
+                expected = {}
+                for name in pd_chan_names:
+                    s_events = sorted(
+                        [ev for ev in events if ev.channel_name == name],
+                        key=lambda ev: ev.seq_num_force_int(),
+                    )
+                    last_event = s_events.pop()
+                    expected[name] = last_event.__dict__
+                assert pd_data == expected
+
+
 async def get_test_camera_and_location() -> tuple[Camera, Location]:
     location: Location = find_first(m.locations, "name", "base-usdf")
     # fake_auxtel has both 'streaming' and per-day channels

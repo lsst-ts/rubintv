@@ -27,13 +27,7 @@ from lsst.ts.rubintv.handlers.pages_helpers import (
     night_report_to_dict,
     to_dict,
 )
-from lsst.ts.rubintv.models.models import (
-    Channel,
-    Event,
-    Location,
-    NightReportPayload,
-    get_current_day_obs,
-)
+from lsst.ts.rubintv.models.models import Channel, Event, Location, NightReportPayload
 from lsst.ts.rubintv.models.models_helpers import date_str_to_date, find_first
 from lsst.ts.rubintv.templates_init import get_templates
 from safir.dependencies.logger import logger_dependency
@@ -149,7 +143,6 @@ async def get_camera_page(
             "metadata": metadata,
             "historical_busy": historical_busy,
             "nr_exists": nr_exists,
-            "isToday": day_obs == get_current_day_obs(),
             "title": title,
         },
     )

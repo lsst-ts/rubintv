@@ -10,7 +10,8 @@ bucket_configurations:
   gha:
     [ slac, base-usdf, tucson-usdf, summit-usdf ]
   local:
-    [ slac, base-usdf, tucson-usdf, summit-usdf ]
+    [ tucson-usdf ]
+    # [ slac, base-usdf, tucson-usdf, summit-usdf ]
 
 locations:
   - name: slac
@@ -284,7 +285,7 @@ cameras:
         colour: "#F0C87F"
 
       - per_day: True
-        name: movie
+        name: movies
         title: Tonight's Movie
         label: "Movie for "
         colour: "#83daee"

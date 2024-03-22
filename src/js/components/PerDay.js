@@ -48,7 +48,7 @@ PerDayChannels.propTypes = {
   date: PropTypes.string
 }
 
-function NightReportLink ({ camera, date, nightReportExists, isToday }) {
+function NightReportLink ({ camera, date, nightReportExists }) {
   if (!nightReportExists) {
     return null
   }
@@ -56,7 +56,7 @@ function NightReportLink ({ camera, date, nightReportExists, isToday }) {
   const locationName = document.documentElement.dataset.locationname
   let label
   let link
-  if (isToday) {
+  if (date == window.APP_DATA.date) {
     link = `${baseUrl}${locationName}/${camera.name}/night_report`
     label = camera.night_report_label
   } else {
@@ -79,10 +79,9 @@ NightReportLink.propTypes = {
   camera: cameraType,
   date: PropTypes.string,
   nightReportExists: PropTypes.bool,
-  isToday: PropTypes.bool
 }
 
-export default function PerDay ({ camera, initialDate, initialPerDay, initialNRExists, isToday }) {
+export default function PerDay ({ camera, initialDate, initialPerDay, initialNRExists }) {
   const [date, setDate] = useState(initialDate)
   const [perDay, setPerDay] = useState(initialPerDay)
   const [nightReportExists, setNightReportExists] = useState(initialNRExists)
@@ -92,7 +91,10 @@ export default function PerDay ({ camera, initialDate, initialPerDay, initialNRE
       const { datestamp, data, dataType } = event.detail
 
       if (datestamp && datestamp !== date) {
+        window.APP_DATA.date = datestamp
         setDate(datestamp)
+        setPerDay({})
+        setNightReportExists(false)
       }
 
       if (dataType === 'perDay' && data != "nightReportExists") {
@@ -116,8 +118,7 @@ export default function PerDay ({ camera, initialDate, initialPerDay, initialNRE
       <NightReportLink
       camera={camera}
       date={date}
-      nightReportExists={nightReportExists}
-      isToday={isToday} />
+      nightReportExists={nightReportExists} />
     </>
   )
 }
@@ -127,5 +128,4 @@ PerDay.propTypes = {
   initialDate: PropTypes.string,
   /** True if a night report event exists for this date. */
   nightReportExists: PropTypes.bool,
-  isToday: PropTypes.bool
 }

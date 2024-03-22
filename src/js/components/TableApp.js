@@ -47,6 +47,8 @@ export default function TableApp ({ camera, initialDate, initialChannelData, ini
       if (datestamp && datestamp !== date) {
         _getById('header-date').textContent = datestamp
         setDate(datestamp)
+        setMetadata({})
+        setChannelData({})
       }
 
       if (dataType === 'metadata') {

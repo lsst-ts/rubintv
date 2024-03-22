@@ -203,7 +203,7 @@ class Event:
         return self.date_str_to_date(self.day_obs)
 
     def seq_num_force_int(self) -> int:
-        return self.seq_num if isinstance(self.seq_num, int) else -1
+        return self.seq_num if isinstance(self.seq_num, int) else 99999
 
 
 @dataclass
