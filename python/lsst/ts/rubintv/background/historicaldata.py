@@ -142,14 +142,17 @@ class HistoricalPoller:
         await self.store_events(events, locname)
 
     async def store_events(self, events: list[Event], locname: str) -> None:
+        logger = structlog.get_logger("rubintv")
+        logger.info("starting store_events")
         for event in events:
             storage_name = await self.storage_name_for_event(event, locname)
             if storage_name not in self._events:
                 self._events[storage_name] = []
             self._events[storage_name].append(event)
 
-            if isinstance(event.seq_num, str):
-                continue
+            seq_num = event.seq_num
+            if isinstance(seq_num, str):
+                seq_num = 1
             year_str, month_str, day_str = event.day_obs.split("-")
             year, month, day = (int(year_str), int(month_str), int(day_str))
             loc_cam = f"{locname}/{event.camera_name}"
@@ -159,8 +162,9 @@ class HistoricalPoller:
                 self._calendar[loc_cam][year] = {}
             if month not in self._calendar[loc_cam][year]:
                 self._calendar[loc_cam][year][month] = {}
-            if self._calendar[loc_cam][year][month].get(day, 0) <= event.seq_num:
-                self._calendar[loc_cam][year][month][day] = event.seq_num
+            if self._calendar[loc_cam][year][month].get(day, 0) <= seq_num:
+                self._calendar[loc_cam][year][month][day] = seq_num
+        logger.info("ending store_events")
 
     async def storage_name_for_event(self, event: Event, locname: str) -> str:
         return f"{locname}/{event.camera_name}"
@@ -171,6 +175,7 @@ class HistoricalPoller:
         # metadata is downloaded and stored against it's loc/cam/date
         # for efficient retrieval
         logger = structlog.get_logger("rubintv")
+        logger.info("starting to fetch metadata")
         for md_obj in metadata_objs:
             key = md_obj.get("key")
             if not key:
@@ -181,6 +186,7 @@ class HistoricalPoller:
                 logger.info("Missing metadata for:", md_obj=md_obj)
                 continue
             self._metadata[storage_name] = md
+        logger.info("ending metatdata fetch")
 
     async def get_night_report_payload(
         self, location: Location, camera: Camera, day_obs: date
