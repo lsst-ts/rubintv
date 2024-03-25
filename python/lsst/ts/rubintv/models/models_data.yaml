@@ -91,7 +91,7 @@ cameras:
       - name: mount
         title: Mount motion profile
         colour: "#fa9284"
-      - name: m1m3_hardpoint_profile
+      - name: m1m3_hardpoint
         title: M1M3 HP and Slew Profile
         colour: "#97d2f0"
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
