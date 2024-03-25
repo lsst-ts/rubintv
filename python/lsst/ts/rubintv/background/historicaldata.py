@@ -1,6 +1,5 @@
 import asyncio
 import re
-from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
 import structlog
@@ -85,17 +84,15 @@ class HistoricalPoller:
     async def _refresh_location_store(self, location: Location) -> None:
         # handle blocking call in async code
         logger = structlog.get_logger("rubintv")
-        executor = ThreadPoolExecutor(max_workers=3)
-        loop = asyncio.get_event_loop()
+        # executor = ThreadPoolExecutor(max_workers=3)
+        # loop = asyncio.get_event_loop()
         try:
-            up_to_date_objects = await loop.run_in_executor(
-                executor, self._get_objects, location
-            )
+            up_to_date_objects = await self._get_objects(location)
             await self.filter_convert_store_objects(up_to_date_objects, location)
         except Exception as e:
             logger.error(e)
 
-    def _get_objects(self, location: Location) -> list[dict[str, str]]:
+    async def _get_objects(self, location: Location) -> list[dict[str, str]]:
         """Downloads objects from the bucket for each online camera for the
         location. Is a blocking call so is called via run_in_executor
 
@@ -116,7 +113,9 @@ class HistoricalPoller:
                     prefix=prefix,
                 )
                 try:
-                    one_load = self._clients[location.name].list_objects(prefix=prefix)
+                    one_load = await self._clients[location.name].async_list_objects(
+                        prefix=prefix
+                    )
                     objects.extend(one_load)
                     logger.info("Found:", num_objects=len(one_load))
                 except Exception as e:

@@ -20,6 +20,11 @@ class S3Client:
             self._client = session.client("s3")
         self._bucket_name = bucket_name
 
+    async def async_list_objects(self, prefix: str) -> list[dict[str, str]]:
+        loop = asyncio.get_event_loop()
+        executor = ThreadPoolExecutor(max_workers=3)
+        return await loop.run_in_executor(executor, self.list_objects, prefix)
+
     def list_objects(self, prefix: str) -> list[dict[str, str]]:
         objects = []
         response = self._client.list_objects_v2(Bucket=self._bucket_name, Prefix=prefix)
