@@ -10,7 +10,7 @@ bucket_configurations:
   gha:
     [ slac, base-usdf, tucson-usdf, summit-usdf ]
   local:
-    [ summit-usdf ]
+    [ tucson-usdf ]
     # [ slac, base-usdf, tucson-usdf, summit-usdf ]
 
 locations:

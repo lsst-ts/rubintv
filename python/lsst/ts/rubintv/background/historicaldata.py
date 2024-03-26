@@ -67,7 +67,7 @@ class HistoricalPoller:
             while True:
                 if (
                     not self._have_downloaded
-                    or self._last_reload > get_current_day_obs()
+                    or self._last_reload < get_current_day_obs()
                 ):
                     for location in self._locations:
                         await self._refresh_location_store(location)
