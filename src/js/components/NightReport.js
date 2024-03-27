@@ -116,10 +116,10 @@ function NightReport ({ initialNightReport, initialDate, camera, locationName, b
         <div className='plots-section tabs'>
           <div className='tab-titles'>
 
-            <div id='tabtitle-efficiency' className='tab-title disabled'>Efficiency</div>
+            <div id='tabtitle-efficiency' className='tab-title'>Efficiency</div>
 
             { (Object.keys(nightReport.text).filter(n => { return !n.startsWith('text') }).length > 0) &&
-               <div id='tabtitle-qaplots' className='tab-title disabled'>QA Plots</div>
+               <div id='tabtitle-qaplots' className='tab-title'>QA Plots</div>
             }
 
             { groupBy(plots, plot => plot.group).map(([group, grouped]) => {
