@@ -58,7 +58,6 @@ function TableControls ({ cameraName, allColNames, selected, setSelected, date, 
         cameraName={cameraName}
         metadata={metadata} />
       <Clock />
-      <JumpButtons />
     </>
   )
 }
@@ -83,7 +82,7 @@ function storeSelected (selected, cameraName) {
   localStorage[cameraName] = JSON.stringify(selected)
 }
 
-function JumpButtons () {
+export function JumpButtons () {
   return (
     <div className='jump-buttons'>
       <button

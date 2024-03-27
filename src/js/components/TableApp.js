@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import TableView from './TableView'
-import TableControls from './TableControls'
+import TableView, { TableHeader } from './TableView'
+import TableControls, { JumpButtons } from './TableControls'
 import { _getById, intersect, retrieveSelected } from '../modules/utils'
 import { cameraType, channelDataType, metadataType } from './componentPropTypes'
 
@@ -40,25 +40,11 @@ export default function TableApp ({ camera, initialDate, initialChannelData, ini
     .concat(selectedObjs.filter(o => !defaultColNames.includes(o.name)))
 
   useEffect(() => {
-    function handleCameraEvent (event) {
-      console.debug('TableApp event:', event)
-      const { datestamp, data, dataType } = event.detail
+    redrawHeaderWidths()
+  })
 
-      if (datestamp && datestamp !== date) {
-        _getById('header-date').textContent = datestamp
-        setDate(datestamp)
-        setMetadata({})
-        setChannelData({})
-      }
-
-      if (dataType === 'metadata') {
-        setMetadata(data)
-      } else if (dataType === 'channelData') {
-        setChannelData(data)
-      }
-    }
+  useEffect(() => {
     window.addEventListener('camera', handleCameraEvent)
-
     // Cleanup the event listener on component unmount
     return () => {
       window.removeEventListener('camera', handleCameraEvent)
@@ -68,15 +54,24 @@ export default function TableApp ({ camera, initialDate, initialChannelData, ini
   return (
     <div className="table-container">
       <div className="above-table-sticky">
-        <h3 id="the-date">Data for day: <span className="date">{date}</span></h3>
-        <TableControls
-          cameraName={camera.name}
-          allColNames={allColNames}
-          selected={selected}
-          setSelected={setSelected}
-          date={date}
-          metadata={metadata}
-        />
+        <div className="row">
+          <h3 id="the-date">Data for day: <span className="date">{date}</span></h3>
+          <TableControls
+            cameraName={camera.name}
+            allColNames={allColNames}
+            selected={selected}
+            setSelected={setSelected}
+            date={date}
+            metadata={metadata}
+          />
+        </div>
+        <div className='table-header row'>
+          <TableHeader
+            camera={camera}
+            metadataColumns={selectedMetaCols}
+          />
+        </div>
+        <JumpButtons></JumpButtons>
       </div>
         <TableView
           camera={camera}
@@ -105,4 +100,43 @@ function getAllColumnNamesFromMetadata (metadata) {
   const allCols = Object.values(metadata).map(obj => Object.keys(obj)).flat()
   // filter out the indicators (first char is '_')
   return allCols.filter(el => el[0] !== '_')
+}
+
+function handleCameraEvent (event) {
+  console.debug('TableApp event:', event)
+  const { datestamp, data, dataType } = event.detail
+
+  if (datestamp && datestamp !== date) {
+    _getById('header-date').textContent = datestamp
+    setDate(datestamp)
+    setMetadata({})
+    setChannelData({})
+  }
+
+  if (dataType === 'metadata') {
+    setMetadata(data)
+  } else if (dataType === 'channelData') {
+    setChannelData(data)
+  }
+}
+
+function getTableColumnWidths () {
+  const tRow = document.querySelector('tr')
+  const cellsArr = Array.from(tRow.querySelectorAll('td'))
+  const cellWidths = cellsArr.map((cell) => { return cell.offsetWidth })
+  return cellWidths
+}
+
+function redrawHeaderWidths () {
+  const columns = getTableColumnWidths()
+  const headers = document.querySelectorAll('.grid-title')
+  let sum = 0
+  headers.forEach((title, ix) => {
+    const width = columns[ix]+2
+    title.style.left = `${sum}px`
+    sum += width
+  })
+  const sumWidth = `${sum}px`
+  document.querySelector('.above-table-sticky').style.width = sumWidth
+  document.querySelector('.table-header').style.width = sumWidth
 }

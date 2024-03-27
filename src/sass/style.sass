@@ -222,14 +222,19 @@ section
 	padding-top: 1em
 	position: sticky
 	top: 0
-	display: flex
-	flex-direction: row
-	align-items: center
-	gap: 1em
-	height: 3.7em
 	z-index: 23
+	.row
+		display: flex
+		flex-direction: row
+		align-items: center
+		gap: 1em
+	.table-header
+		gap: 0
+		height: 9em
+		align-items: flex-end
 	h3
 		margin-bottom: 0
+
 
 .table-container
 	width: 100%
@@ -237,27 +242,23 @@ section
 .camera-table
 	font-family: 'Red Hat Mono', monospace
 	border-spacing: 2px
+	margin-top: -2px
 	border-collapse: separate
 	thead
 		position: sticky
 		top: 3.7em
 
 .grid-title
-	text-align: left
-	position: relative
-	height: 9.7em
-	top: 1.1em
+	position: absolute
 	font-size: 14px
 	cursor: pointer
-	vertical-align: bottom
-	left: -4.2em
 	&.sideways
-		max-width: 40px
 		transform: rotate(330deg)
 		transform-origin: 0 0
 		white-space: nowrap
 
 .grid-cell
+	min-width: 40px
 	font-size: 0.8em
 	padding: 0.3em
 	vertical-align: middle
@@ -309,8 +310,11 @@ section
 
 .table-controls
 	display: none
+	height: 90vh
+	overflow-y: scroll
 	grid-template-columns: 1fr 1fr
 	position: absolute
+	z-index: 101
 	gap: 0 0.4em
 	padding: 3px
 	margin: 20px -21px
@@ -351,7 +355,6 @@ section
 	display: flex
 	flex-direction: column
 	justify-content: space-between
-	top: 12.4em
 	left: -30px
 	gap: 2px
 	.jump-button
