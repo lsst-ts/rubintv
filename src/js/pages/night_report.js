@@ -16,7 +16,7 @@ import { addTabsListeners, listenForKeypresses } from '../night-report/tabs-ui'
   const nightReport = window.APP_DATA.nightReport || {}
   const date = window.APP_DATA.date || ''
   const baseUrl = window.APP_DATA.baseUrl || ''
-  if (!window.APP_DATA.ishistorical) {
+  if (!window.APP_DATA.isHistorical) {
     // eslint-disable-next-line no-unused-vars
     const ws = new WebsocketClient()
     ws.subscribe('service', 'camera', locationName, camera.name)

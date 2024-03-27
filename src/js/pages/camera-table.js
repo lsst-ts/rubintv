@@ -14,10 +14,10 @@ import { WebsocketClient } from '../modules/ws-service-client'
   const camera = window.APP_DATA.camera || {}
   const channelData = window.APP_DATA.tableChannels || {}
   const metadata = window.APP_DATA.tableMetadata || {}
-  const perDay = window.APP_DATA.perDay
-  const nightReportExists = window.APP_DATA.hasNightReport
+  const perDay = window.APP_DATA.perDay || {}
+  const nightReportLink = window.APP_DATA.nightReportLink || ''
   const date = window.APP_DATA.date || ''
-  if (!window.APP_DATA.ishistorical) {
+  if (!window.APP_DATA.isHistorical) {
     const ws = new WebsocketClient()
     ws.subscribe('service', 'camera', locationName, camera.name)
   }
@@ -37,7 +37,7 @@ import { WebsocketClient } from '../modules/ws-service-client'
       camera={camera}
       initialDate={date}
       initialPerDay={perDay}
-      initialNRExists={nightReportExists}
+      initialNRLink={nightReportLink}
     />
   )
 })()

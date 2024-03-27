@@ -98,7 +98,8 @@ async def get_camera_page(
     request: Request,
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
-    nr_exists = historical_busy = False
+    nr_link = ""
+    historical_busy = not_current = False
     day_obs: date | None = None
     metadata: dict = {}
     per_day: dict[str, Event] = {}
@@ -106,18 +107,18 @@ async def get_camera_page(
     try:
         result = await get_camera_current_data(location, camera, request)
         if result:
-            (
-                day_obs,
-                channel_data,
-                per_day,
-                metadata,
-                nr_exists,
-            ) = result
+            (day_obs, channel_data, per_day, metadata, nr_exists, not_current) = result
     except HTTPException as e:
         if e.status_code == 423:
             historical_busy = True
         else:
             raise e
+
+    if nr_exists:
+        if not_current:
+            nr_link = "historical"
+        else:
+            nr_link = "current"
 
     template = "camera"
     if not camera.online:
@@ -142,7 +143,7 @@ async def get_camera_page(
             "per_day": per_day,
             "metadata": metadata,
             "historical_busy": historical_busy,
-            "nr_exists": nr_exists,
+            "nr_link": nr_link,
             "title": title,
         },
     )
@@ -186,6 +187,10 @@ async def get_camera_for_date_page(
         else:
             raise http_error
 
+    nr_link = ""
+    if nr_exists:
+        nr_link = "historical"
+
     template = "historical"
     if camera.name == "allsky":
         template = "allsky-historical"
@@ -206,7 +211,7 @@ async def get_camera_for_date_page(
             "per_day": per_day,
             "metadata": metadata,
             "historical_busy": historical_busy,
-            "nr_exists": nr_exists,
+            "nr_link": nr_link,
             "calendar": calendar,
             "calendar_frame": calendar_factory(),
             "month_names": month_names(),
@@ -247,6 +252,10 @@ async def get_historical_camera_page(
         else:
             raise e
 
+    nr_link = ""
+    if nr_exists:
+        nr_link = "historical"
+
     template = "historical"
     if camera.name == "allsky":
         template = "allsky-historical"
@@ -267,7 +276,7 @@ async def get_historical_camera_page(
             "per_day": per_day,
             "metadata": metadata,
             "historical_busy": historical_busy,
-            "nr_exists": nr_exists,
+            "nr_link": nr_link,
             "calendar": calendar,
             "calendar_frame": calendar_factory(),
             "month_names": month_names(),

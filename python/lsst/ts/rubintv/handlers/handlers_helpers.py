@@ -21,7 +21,7 @@ logger = structlog.get_logger("rubintv")
 
 async def get_camera_current_data(
     location: Location, camera: Camera, request: Request
-) -> tuple[Any, Any, Any, Any, Any] | None:
+) -> tuple[Any, Any, Any, Any, Any, bool] | None:
     if not camera.online:
         return None
     current_poller: CurrentPoller = request.app.state.current_poller
@@ -29,6 +29,7 @@ async def get_camera_current_data(
         await asyncio.sleep(0.3)
 
     day_obs = None
+    is_historical = False
     channel_data = await current_poller.get_current_channel_table(location.name, camera)
     metadata = await current_poller.get_current_metadata(location.name, camera)
     per_day = await current_poller.get_current_per_day_data(location.name, camera)
@@ -44,9 +45,10 @@ async def get_camera_current_data(
                 metadata,
                 nr_exists,
             ) = hist_data
+            is_historical = True
     else:
         day_obs = get_current_day_obs()
-    return (day_obs, channel_data, per_day, metadata, nr_exists)
+    return (day_obs, channel_data, per_day, metadata, nr_exists, is_historical)
 
 
 async def get_most_recent_historical_data(

@@ -5,7 +5,7 @@ import { _getById } from '../modules/utils.js'
   const locationName = document.documentElement.dataset.locationname
   const camera = window.APP_DATA.camera
   const baseUrl = window.APP_DATA.baseUrl
-  if (!window.APP_DATA.ishistorical) {
+  if (!window.APP_DATA.is_historical) {
     const ws = new WebsocketClient()
     ws.subscribe('service', 'camera', locationName, camera.name)
   }

@@ -258,7 +258,7 @@ class NightReport:
              Tuple of values used by `__post_init__` to fully init the object.
         """
         key = self.key
-        metadata_re = re.compile(r"(\w+)\/([\d-]+)\/night_report\/([\w-]+_md)\.(\w+)$")
+        metadata_re = re.compile(r"(\w+)\/([\d-]+)\/night_report\/([\w-]+md)\.(\w+)$")
         if match := metadata_re.match(key):
             parts = match.groups()
             camera, day_obs_str, filename, ext = parts
