@@ -54,15 +54,14 @@ function NightReportLink ({ camera, date, nightReportExists }) {
   }
   const baseUrl = window.APP_DATA.baseUrl
   const locationName = document.documentElement.dataset.locationname
-  let label
-  let link
-  if (date == window.APP_DATA.date) {
+
+  let link = `${baseUrl}${locationName}/${camera.name}/night_report/${date}`
+  let label = `${camera.night_report_label} for ${date}`
+  if (!window.APP_DATA.ishistorical && date == window.APP_DATA.date) {
     link = `${baseUrl}${locationName}/${camera.name}/night_report`
     label = camera.night_report_label
-  } else {
-    link = `${baseUrl}${locationName}/${camera.name}/night_report/${date}`
-    label = `${camera.night_report_label} for ${date}`
   }
+
   return (
     <div id="night_report_link">
       <h3>Night Report</h3>
