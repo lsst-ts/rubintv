@@ -43,6 +43,24 @@ export default function TableApp ({ camera, initialDate, initialChannelData, ini
     redrawHeaderWidths()
   })
 
+  function handleCameraEvent (event) {
+    const { datestamp, data, dataType } = event.detail
+
+    if (datestamp && datestamp !== date) {
+      window.APP_DATA.date = datestamp
+      _getById('header-date').textContent = datestamp
+      setDate(datestamp)
+      setMetadata({})
+      setChannelData({})
+    }
+
+    if (dataType === 'metadata') {
+      setMetadata(data)
+    } else if (dataType === 'channelData') {
+      setChannelData(data)
+    }
+  }
+
   useEffect(() => {
     window.addEventListener('camera', handleCameraEvent)
     // Cleanup the event listener on component unmount
@@ -102,23 +120,6 @@ function getAllColumnNamesFromMetadata (metadata) {
   return allCols.filter(el => el[0] !== '_')
 }
 
-function handleCameraEvent (event) {
-  console.debug('TableApp event:', event)
-  const { datestamp, data, dataType } = event.detail
-
-  if (datestamp && datestamp !== date) {
-    _getById('header-date').textContent = datestamp
-    setDate(datestamp)
-    setMetadata({})
-    setChannelData({})
-  }
-
-  if (dataType === 'metadata') {
-    setMetadata(data)
-  } else if (dataType === 'channelData') {
-    setChannelData(data)
-  }
-}
 
 function getTableColumnWidths () {
   const tRow = document.querySelector('tr')
