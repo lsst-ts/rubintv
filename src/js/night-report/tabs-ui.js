@@ -33,7 +33,7 @@ export function addTabsListeners () {
 addTabsListeners()
 
 export function listenForKeypresses () {
-  const keysAndTabs = { efficiency: 'text', elana: 'elana' }
+  const keysAndTabs = { elana: 'elana' }
   let keyCodes = Object.keys(keysAndTabs)
   let typed = ''
 
@@ -52,6 +52,7 @@ export function listenForKeypresses () {
         el.classList.remove('disabled')
         addTabsListeners()
       })
+      _getById(`tabtitle-${tabToReveal}`).click()
       // remove the key from the active array
       keyCodes = keyCodes.filter(k => { return k !== typed })
       // remove the listener altogether if no more keys left

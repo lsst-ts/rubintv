@@ -15,6 +15,7 @@ from lsst.ts.rubintv.models.models import Camera, Location
 from lsst.ts.rubintv.models.models_helpers import find_first
 
 ws_router = APIRouter()
+logger = structlog.get_logger("rubintv")
 
 valid_services = ["camera", "channel", "nightreport"]
 
@@ -23,7 +24,6 @@ valid_services = ["camera", "channel", "nightreport"]
 async def data_websocket(
     websocket: WebSocket,
 ) -> None:
-    logger = structlog.get_logger(__name__)
     await websocket.accept()
 
     client_id = uuid.uuid4()
@@ -113,9 +113,12 @@ async def remove_client_from_services(client_id: uuid.UUID) -> None:
 async def attach_service(
     client_id: uuid.UUID, service_loc_cam: str, websocket: WebSocket
 ) -> None:
-    logger = structlog.get_logger(__name__)
     if not await is_valid_service(service_loc_cam):
-        logger.error("Bad request", service_loc=service_loc_cam, client_id=client_id)
+        logger.error(
+            "Not valid service",
+            service_loc=service_loc_cam,
+            client_id=client_id,
+        )
         return
     try:
         service, loc_cam = service_loc_cam.split(" ")
@@ -135,14 +138,13 @@ async def attach_service(
             return
 
     async with services_lock:
-        if service in services_clients:
+        if service_loc_cam in services_clients:
             services_clients[service_loc_cam].append(client_id)
         else:
             services_clients[service_loc_cam] = [client_id]
 
 
 async def is_valid_client_request(data: dict) -> bool:
-    logger = structlog.get_logger(__name__)
     try:
         client_id = uuid.UUID(data["clientID"])
     except (KeyError, ValueError):
@@ -153,7 +155,7 @@ async def is_valid_client_request(data: dict) -> bool:
 
 async def is_valid_service(service: str) -> bool:
     services_str = "|".join(valid_services)
-    valid_req = re.compile(rf"^({services_str}) \w+(\/\w+)+$")
+    valid_req = re.compile(rf"^({services_str}) [\w-]+(\/\w+)+$")
     return valid_req.fullmatch(service) is not None
 
 

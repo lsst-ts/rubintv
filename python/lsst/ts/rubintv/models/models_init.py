@@ -1,14 +1,14 @@
-import os
 from itertools import chain
 from pathlib import Path
 from typing import Any, Type
 
 import yaml
-from lsst.ts.rubintv.models.models import Camera, Location
+from lsst.ts.rubintv.config import where_am_i
+from lsst.ts.rubintv.models.models import Camera, Channel, Location
 from lsst.ts.rubintv.models.models_helpers import find_first
 from pydantic import BaseModel
 
-__all__ = ["ModelsInitiator", "dict_from_list_of_named_objects"]
+__all__ = ["ModelsInitiator"]
 
 
 class ModelsInitiator:
@@ -33,6 +33,7 @@ class ModelsInitiator:
         all_locations = self._populate_model(Location, data["locations"])
         locations = [loc for loc in all_locations if loc.name in i_can_see]
         self.locations = self._attach_cameras_to_locations(self.cameras, locations)
+        self.services = self._init_services(cameras, data["services"])
 
     def _attach_cameras_to_locations(
         self, cameras: list[Camera], locations: list[Location]
@@ -94,22 +95,15 @@ class ModelsInitiator:
             updated_cams.append(cam)
         return updated_cams
 
-
-def where_am_i() -> str:
-    location = os.getenv("RAPID_ANALYSIS_LOCATION", "")
-    if location == "BTS":
-        return "base"
-    if location == "TTS":
-        return "tucson"
-    if location == "SUMMIT":
-        return "summit"
-    if location == "USDF":
-        return "usdf-k8s"
-    if os.getenv("GITHUB_ACTIONS", ""):
-        return "gha"
-    else:
-        return "local"
-
-
-def dict_from_list_of_named_objects(a_list: list[Any]) -> dict[str, Any]:
-    return {obj.name: obj for obj in a_list if hasattr(obj, "name")}
+    def _init_services(
+        self, cameras: list[Camera], services: dict
+    ) -> dict[str, dict[str, str] | list[Channel]]:
+        for s in services:
+            if "channels" in services[s]:
+                # expand name of camera out into camera's channels
+                cam_name = services[s]["channels"]
+                camera: Camera = find_first(cameras, "name", cam_name)
+                if camera is not None:
+                    channels: list[Channel] = camera.channels
+                    services[s]["channels"] = channels
+        return services

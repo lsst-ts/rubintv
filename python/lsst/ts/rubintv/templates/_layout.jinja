@@ -11,6 +11,16 @@
     <link rel="icon" href="{{ url_for('static', path='images/favicon.png') }}">
     <title>{{ title }}</title>
 </head>
+
+{# back button showing stale page fix #}
+<script>
+window.onpageshow = function (event) {
+    if (event.persisted || (!!window.performance && window.performance.navigation.type === 2)) {
+        window.location.reload()
+    }
+}
+</script>
+
 {% set body_class = "" %}
 {% if camera %}
     {% set body_class = camera.name %}

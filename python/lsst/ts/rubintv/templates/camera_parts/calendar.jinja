@@ -5,7 +5,7 @@
 <div class="year-titles">
   <div class="year-button year-more"></div>
     <div class="year-title-viewbox">
-      {% for year in calendar %}
+      {% for year in calendar|reverse %}
         {% if year == year_to_display %}
           <p class="year-title current" data-year="{{ year }}">
             {{ year }}

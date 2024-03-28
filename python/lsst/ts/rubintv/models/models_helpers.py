@@ -86,7 +86,7 @@ async def objects_to_events(objects: list[dict]) -> list[Event]:
     list[Event]
         A list of Event objects created from the provided dictionaries.
     """
-    logger = structlog.get_logger(__name__)
+    logger = structlog.get_logger("rubintv")
     events = []
     for object in objects:
         try:
@@ -98,7 +98,7 @@ async def objects_to_events(objects: list[dict]) -> list[Event]:
 
 
 async def objects_to_ngt_reports(objects: list[dict]) -> list[NightReport]:
-    logger = structlog.get_logger(__name__)
+    logger = structlog.get_logger("rubintv")
     night_reports: list[NightReport] = []
     for object in objects:
         try:
@@ -161,3 +161,7 @@ async def make_table_from_event_list(
                     d.update({e.seq_num: {chan.name: e.__dict__}})
     table = {k: v for k, v in sorted(d.items(), reverse=True)}
     return table
+
+
+def dict_from_list_of_named_objects(a_list: list[Any]) -> dict[str, Any]:
+    return {obj.name: obj for obj in a_list if hasattr(obj, "name")}

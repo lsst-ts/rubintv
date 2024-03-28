@@ -6,9 +6,12 @@ import pytest
 from httpx import AsyncClient
 from lsst.ts.rubintv.config import config
 
+from ..mockdata import RubinDataMocker
+
 
 @pytest.mark.asyncio
-async def test_get_index(client: AsyncClient) -> None:
+async def test_get_index(mocked_client: tuple[AsyncClient, RubinDataMocker]) -> None:
+    client, mocker = mocked_client
     """Test ``GET /``"""
     response = await client.get("/")
     assert response.status_code == 200

@@ -155,3 +155,12 @@ export function retrieveSelected (cameraName) {
   const retrieved = localStorage.getItem(cameraName)
   return (retrieved && JSON.parse(retrieved))
 }
+
+
+export function getWebSockURL (name) {
+  const protocol = window.location.protocol
+  const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:'
+  const hostname = window.location.host
+  const appName = window.location.pathname.split('/')[1]
+  return `${wsProtocol}//${hostname}/${appName}/${name}/`
+}

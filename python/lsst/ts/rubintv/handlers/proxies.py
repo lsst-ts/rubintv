@@ -25,7 +25,12 @@ def proxy_image(
     except ValueError:
         raise HTTPException(404, "Filename not valid.")
     key = f"{camera_name}/{date_str}/{channel_name}/{seq_str}/{filename}"
-    s3_client: S3Client = request.app.state.s3_clients[location_name]
+
+    try:
+        s3_client: S3Client = request.app.state.s3_clients[location_name]
+    except KeyError:
+        raise HTTPException(404, "Location not found")
+
     data_stream = s3_client.get_raw_object(key)
     return StreamingResponse(content=data_stream.iter_chunks())
 
@@ -52,7 +57,10 @@ def proxy_plot_image(
     except ValueError:
         raise HTTPException(404, "Filename not valid.")
     key = f"{camera_name}/{date_str}/night_report/{group_name}/{filename}"
-    s3_client: S3Client = request.app.state.s3_clients[location_name]
+    try:
+        s3_client: S3Client = request.app.state.s3_clients[location_name]
+    except KeyError:
+        raise HTTPException(404, "Location not found.")
     data_stream = s3_client.get_raw_object(key)
     return StreamingResponse(content=data_stream.iter_chunks())
 
@@ -77,8 +85,14 @@ def proxy_video(
         seq_str, ext = seq_ext.split(".")
     except ValueError:
         raise HTTPException(404, "Filename not valid.")
+
     key = f"{camera_name}/{date_str}/{channel_name}/{seq_str}/{filename}"
-    s3_client: S3Client = request.app.state.s3_clients[location_name]
+
+    try:
+        s3_client: S3Client = request.app.state.s3_clients[location_name]
+    except KeyError:
+        raise HTTPException(404, "Location not found.")
+
     s3_request_headers = {}
     if range:
         byte_range = range.split("=")[1]

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { indicatorForAttr, _elWithClass, _elWithAttrs, replaceInString, _getById } from '../modules/utils'
 import { metadatumType } from './componentPropTypes'
@@ -31,8 +31,8 @@ DictMetadata.propTypes = {
 function MetadataCell ({ data, indicator, seqNum, columnName }) {
   const className = ['grid-cell meta', indicator].join(' ')
   let toDisplay = data
-  if (typeof data === 'number' && data > 0 && data % 1 !== 0) {
-    toDisplay = data.toFixed(3)
+  if (typeof data === 'number' && data % 1 !== 0) {
+    toDisplay = data.toFixed(2)
   } else if (data && typeof data === 'object') {
     toDisplay = <DictMetadata data={data} seqNum={seqNum} columnName={columnName} />
   }
@@ -176,9 +176,9 @@ function ChannelHeader ({ channel }) {
     thProps.title = channel.desc
   }
   return (
-    <th {...thProps}>
+    <div {...thProps}>
       {channel.label || channel.title || channel.name}
-    </th>
+    </div>
   )
 }
 ChannelHeader.propTypes = {
@@ -186,28 +186,25 @@ ChannelHeader.propTypes = {
 }
 
 // Header component for rendering column titles
-function TableHeader ({ camera, metadataColumns }) {
+export function TableHeader ({ camera, metadataColumns }) {
   const channelColumns = seqChannels(camera)
   const columns = channelColumns.concat(metadataColumns)
-  // const columns =
   return (
-    <thead>
-      <tr>
-        <th className="grid-title sideways">Seq. No.</th>
+      <>
+        <div className="grid-title sideways">Seq. No.</div>
         {camera.copy_row_template &&
-          <th id='ctbEmpty'></th>
+          <div className="grid-title" id='ctbEmpty'></div>
         }
         { camera.image_viewer_link && (
-          <th className='grid-title sideways'>
+          <div className='grid-title sideways'>
             CCS Image Viewer
-          </th>
+          </div>
         )}
         {columns.map(channel => (
           <ChannelHeader key={channel.name} channel={channel} />
         ))}
         {/* ... additional columns such as CCS Image Viewer if necessary ... */}
-      </tr>
-    </thead>
+      </>
   )
 }
 TableHeader.propTypes = {
@@ -218,17 +215,15 @@ TableHeader.propTypes = {
 
 export default function TableView ({ camera, channelData, metadata, metadataColumns }) {
   return (
-      <table className="camera-table">
-        <TableHeader camera={camera}
-          metadataColumns={metadataColumns} />
-        <TableBody
-          camera={camera}
-          channels={seqChannels(camera)}
-          channelData={channelData}
-          metadataColumns={metadataColumns}
-          metadata={metadata}
-          />
-      </table>
+    <table className="camera-table">
+      <TableBody
+        camera={camera}
+        channels={seqChannels(camera)}
+        channelData={channelData}
+        metadataColumns={metadataColumns}
+        metadata={metadata}
+        />
+    </table>
   )
 }
 TableView.propTypes = {

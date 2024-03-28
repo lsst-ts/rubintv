@@ -26,7 +26,7 @@ COPY . .
 
 # Install dependencies
 RUN pip install -r requirements.txt && \
-    pip install .
+    python setup.py install
 
 # Adjust permissions for executable
 RUN chmod +x /usr/src/rubintv/start-daemon.sh

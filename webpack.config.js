@@ -11,14 +11,15 @@ const pagesWithoutHistory = [
 }), {})
 
 const pagesWithHistory = [
+  'single',
   'current',
   'camera-table',
   'allsky'
 ].reduce((pages, page) => ({
   ...pages,
   [page]: [`./src/js/pages/${page}.js`,
-    './src/js/modules/websocket_client.js',
-    './src/js/reload_on_historical.js',
+    './src/js/modules/ws-service-client.js',
+    './src/js/reload-on-historical.js',
     './src/js/modules/calendar-controls.js'
   ]
 }), {})
@@ -32,6 +33,7 @@ module.exports = {
   entry: {
     style: './src/sass/style.sass',
     hostbanner: './src/js/hostbanner.js',
+    heartbeatWorker: './src/js/modules/heartbeat-worker.js',
     ...pagesWithoutHistory,
     ...pagesWithHistory
   },

@@ -19,41 +19,45 @@ locations:
     bucket_name: rubin-rubintv-data-usdf
     logo: SLAC_Logo.svg
     camera_groups:
-      Cameras: [ slac_lsstcam, slac_ts8 ]
-  
+      Cleanroom Testing: [ slac_lsstcam, slac_ts8 ]
+      Simulated Cameras: [ comcam_sim_prep ]
+    services: [ slac_lsstcam, slac_ts8, comcam_sim_prep ]
+
   - name: base-usdf
-    title: Base USDF
+    title: Base
     profile_name: rubin-rubintv-data-bts
     bucket_name: rubin-rubintv-data-bts
-    logo: Summit.jpg
+    logo: bts_720.jpg
     camera_groups:
       Cameras: [ auxtel, fake_auxtel ]
       Telescopes: [ tma ]
-  
+    services: [ auxtel, tma ]
+
   - name: tucson-usdf
-    title: Tucson USDF
+    title: Tucson
     profile_name: rubin-rubintv-data-tts
     bucket_name: rubin-rubintv-data-tts
     logo: cactus.svg
     camera_groups:
       Cameras: [ auxtel, fake_auxtel, comcam ]
       Telescopes: [ tma ]
-  
+
   - name: summit-usdf
-    title: Summit USDF
+    title: Summit
     profile_name: rubin-rubintv-data-summit
     bucket_name: rubin-rubintv-data-summit
     logo: Summit.jpg
     camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
-      Other Cameras: [ allsky, startracker, startracker_wide, startracker_fast ]
+      Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
+      Simulated Cameras: [ comcam_sim ]
 
   - name: base
     title: Base
     profile_name: base-data-base
     bucket_name: rubintv
-    logo: Summit.jpg
+    logo: bts_720.jpg
     camera_groups:
       Cameras: [ auxtel, fake_auxtel ]
       Telescopes: [ tma ]
@@ -74,8 +78,9 @@ locations:
     logo: Summit.jpg
     camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
-      Other Cameras: [ allsky, startracker, startracker_wide, startracker_fast ]
+      Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
+      Simulated Cameras: [ comcam_sim ]
 
 cameras:
   - name: tma
@@ -85,8 +90,9 @@ cameras:
       - name: mount
         title: Mount motion profile
         colour: "#fa9284"
-      - name: m1m3_hardpoint_profile
+      - name: m1m3_hardpoint
         title: M1M3 HP and Slew Profile
+        colour: "#97d2f0"
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
     {seqNum}}"
 
@@ -126,12 +132,12 @@ cameras:
         colour: "#83daee"
 
 
-  - name: startracker
-    title: StarTracker
+  - name: startracker_narrow
+    title: StarTracker Narrow
     online: True
     channels:
       - name: raw
-        title: StarTracker
+        title: StarTracker Narrow
         colour: "#58528b"
       - name: analysis
         title: Analysis
@@ -140,7 +146,7 @@ cameras:
   - name: startracker_wide
     title: StarTracker Wide
     online: True
-    metadata_from: startracker
+    metadata_from: startracker_narrow
     channels:
       - name: raw
         title: StarTracker Wide
@@ -154,7 +160,7 @@ cameras:
   - name: startracker_fast
     title: StarTracker Fast
     online: True
-    metadata_from: startracker
+    metadata_from: startracker_narrow
     channels:
       - name: raw
         title: StarTrackerFast
@@ -182,14 +188,40 @@ cameras:
     channels:
       - name: focal_plane_mosaic
         title: Focal Plane mosaic
+        colour: "#85e986"
+      - name: noise_map
+        title: Noise Map
+        colour: "#E76FD8"
+    copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
+    {seqNum}}"
+    image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
+    view.html?image=CC_O_{dayObs}_{seqNum}"
+
+  - name: comcam_sim
+    title: ComCamSim
+    online: True
+    channels:
+      - name: focal_plane_mosaic
+        title: Focal Plane mosaic
         colour: "#6fe9ba"
       - name: noise_map
         title: Noise Map
         colour: "#e771a8"
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
     {seqNum}}"
-    image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
-    view.html?image=CC_O_{dayObs}_{seqNum}"
+
+  - name: comcam_sim_prep
+    title: ComCamSimPrep
+    online: True
+    channels:
+      - name: focal_plane_mosaic
+        title: Focal Plane mosaic
+        colour: "#6fe9ba"
+      - name: noise_map
+        title: Noise Map
+        colour: "#e771a8"
+    copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
+    {seqNum}}"
 
   - name: lsstcam
     title: LSSTCam
@@ -252,7 +284,7 @@ cameras:
         colour: "#F0C87F"
 
       - per_day: True
-        name: movie
+        name: movies
         title: Tonight's Movie
         label: "Movie for "
         colour: "#83daee"
@@ -263,6 +295,47 @@ cameras:
     image=AT_O_{dayObs}_{seqNum}\
     &raft=R00&color=grey&bias=Simple+Overscan+Correction\
     &scale=Per-Segment&source=RubinTV"
+
+
+services:
+  auxtel:
+    display_name: AuxTel
+    channels: auxtel
+    services:
+      auxtel_metadata: Metadata
+      auxtel_isr_runner: ISR Runner
+
+  startracker_narrow:
+    display_name: StarTracker Narrow
+    channels: startracker_narrow
+    services:
+      startracker_narrow_metadata: Metadata
+
+  allsky:
+    display_name: All Sky
+    services:
+      allsky: All Sky
+
+  comcam:
+    display_name: ComCam
+    channels: comcam
+
+  tma:
+    channels: tma
+
+  slac_lsstcam:
+    channels: slac_lsstcam
+
+  slac_ts8:
+    channels: slac_ts8
+
+  comcam_sim_prep:
+    channels: comcam_sim_prep
+
+  background:
+    display_name: Background Services
+    services:
+      backgroundService: Background
 
 
 metadata_cols:
@@ -333,7 +406,7 @@ metadata_cols:
     DIMM Seeing:
       The seeing, as measured by the DIMM, if available
 
-  startracker:
+  startracker_narrow:
     Exposure Time:
       The image exposure time
     MJD:
@@ -468,6 +541,10 @@ metadata_cols:
       The image type, e.g. bias, dark, flat etc
     Test type:
       The type of test being run, e.g. superflats etc
+
+  comcam_sim:
+    Exposure time:
+      The image exposure time
 
   tma:
     Event version number:

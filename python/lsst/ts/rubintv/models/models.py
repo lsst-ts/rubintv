@@ -1,11 +1,13 @@
 """Models for rubintv."""
 
+import asyncio
 import re
 from datetime import date, datetime, timedelta
-from typing import Any, Type
+from typing import Any
 
+import structlog
 from dateutil.tz import gettz
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic.dataclasses import dataclass
 from typing_extensions import NotRequired, TypedDict
 
@@ -20,6 +22,8 @@ __all__ = [
     "Event",
     "get_current_day_obs",
 ]
+
+logger = structlog.get_logger("rubintv")
 
 
 class Metadata(BaseModel):
@@ -71,7 +75,7 @@ class Camera(BaseModel):
         uses `name` if not set.
     logo : str, optional
         The logo associated with the camera. Defaults to an empty string.
-    channels : list[Channel], optional
+    channels : list[Channel]
         A list of channels (either images or movies) associated with the
         camera. Defaults to an empty list.
     night_report_label : str, optional
@@ -110,8 +114,13 @@ class Camera(BaseModel):
 
     # If metadata_from not set, use name as default
     @field_validator("metadata_from")
-    def default_as_name(cls: Type, v: str, values: Any) -> str:
-        return v or values.get("name")
+    def default_metadata_from(cls: Any, v: Any, values: Any) -> Any:
+        return v or values.get("name", "")
+
+    # @model_validator(mode="after")
+    # def default_as_name(self) -> Any:
+    #     if not self.metadata_from:
+    #         self.metadata_from = self.name
 
     def seq_channels(self) -> list[Channel]:
         return [c for c in self.channels if not c.per_day]
@@ -121,16 +130,16 @@ class Camera(BaseModel):
 
 
 class Location(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     name: str
     title: str
     bucket_name: str
     profile_name: str
     camera_groups: dict[str, list[str]]
     cameras: list[Camera] = []
+    services: list[str] = []
     logo: str = ""
-
-    class Config:
-        arbitrary_types_allowed = True
 
 
 @dataclass
@@ -144,6 +153,11 @@ class Event:
     seq_num: int | str = ""
     filename: str = ""
     ext: str = ""
+
+    def __lt__(self, other: Any) -> bool:
+        if type(other) is not type(self):
+            raise TypeError
+        return self.key < other.key
 
     def __post_init__(self) -> None:
         (
@@ -173,6 +187,7 @@ class Event:
             raise ValueError(f"Key can't be parsed: {key}")
 
         camera, day_obs_str, channel, seq_num, filename, ext = parts
+        filename = filename + "." + ext
 
         try:
             self.date_str_to_date(day_obs_str)
@@ -192,7 +207,7 @@ class Event:
         return self.date_str_to_date(self.day_obs)
 
     def seq_num_force_int(self) -> int:
-        return self.seq_num if isinstance(self.seq_num, int) else -1
+        return self.seq_num if isinstance(self.seq_num, int) else 99999
 
 
 @dataclass
@@ -247,7 +262,7 @@ class NightReport:
              Tuple of values used by `__post_init__` to fully init the object.
         """
         key = self.key
-        metadata_re = re.compile(r"(\w+)\/([\d-]+)\/night_report\/([\w-]+_md)\.(\w+)$")
+        metadata_re = re.compile(r"(\w+)\/([\d-]+)\/night_report\/([\w-]+md)\.(\w+)$")
         if match := metadata_re.match(key):
             parts = match.groups()
             camera, day_obs_str, filename, ext = parts
@@ -259,6 +274,7 @@ class NightReport:
             if match := plot_re.match(key):
                 parts = match.groups()
                 camera, day_obs_str, group, filename, ext = parts
+                filename = filename + "." + ext
             else:
                 raise ValueError(f"Key can't be parsed: {key}")
 
@@ -297,3 +313,41 @@ def get_current_day_obs() -> date:
     offset = timedelta(hours=-12)
     dayObs = (nowUtc + offset).date()
     return dayObs
+
+
+class Heartbeat:
+    def __init__(self, service_name: str, next_expected: datetime) -> None:
+        self.service_name = service_name
+        self.state = "running"
+        self.next_expected = next_expected
+        self.task = asyncio.create_task(self.monitor_heartbeat())
+
+    async def monitor_heartbeat(self) -> None:
+        """Continuously monitors the heartbeat and updates the service
+        state."""
+        while True:
+            now = datetime.utcnow()
+            wait_seconds = (self.next_expected - now).total_seconds()
+            if wait_seconds > 0:
+                await asyncio.sleep(wait_seconds)
+            else:
+                self.state = "stopped"
+                logger.warn("Service has gone down:", service=self.service_name)
+                break  # Exit the loop if service is down
+
+    def update_heartbeat(self, next_expected: datetime) -> None:
+        """Updates the heartbeat's next expected time and resets state to
+        running."""
+        self.next_expected = next_expected
+        if self.state == "stopped":
+            self.state = "running"
+            # If the service was down, restart the monitoring task
+            self.task = asyncio.create_task(self.monitor_heartbeat())
+            logger.info("Service is back:", service=self.service_name)
+
+    def to_json(self) -> dict[str, str]:
+        return {
+            "service_name": self.service_name,
+            "state": self.state,
+            "next_expected": self.next_expected.isoformat(),  # Convert datetime to string
+        }

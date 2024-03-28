@@ -13,7 +13,7 @@ class Configuration(BaseSettings):
     """Configuration for rubintv."""
 
     name: str = Field(
-        "rubintv",
+        default="rubintv",
         json_schema_extra={
             "title": "Name of application",
             "validation_alias": "SAFIR_NAME",
@@ -21,17 +21,17 @@ class Configuration(BaseSettings):
     )
 
     path_prefix: str = Field(
-        "/rubintv",
+        default="/rubintv",
         json_schema_extra={
             "title": "URL prefix for application",
             "validation_alias": "SAFIR_PATH_PREFIX",
         },
     )
 
-    s3_endpoint_url: str | None = Field(os.getenv("S3_ENDPOINT_URL"))
+    s3_endpoint_url: str | None = Field(default=os.getenv("S3_ENDPOINT_URL"))
 
     profile: Profile = Field(
-        Profile.development,
+        default=Profile.development,
         json_schema_extra={
             "title": "Application logging profile",
             "validation_alias": "SAFIR_PROFILE",
@@ -39,7 +39,7 @@ class Configuration(BaseSettings):
     )
 
     log_level: LogLevel = Field(
-        LogLevel.INFO,
+        default=LogLevel.INFO,
         json_schema_extra={
             "title": "Log level of the application's logger",
             "validation_alias": "SAFIR_LOG_LEVEL",
@@ -49,3 +49,19 @@ class Configuration(BaseSettings):
 
 config = Configuration()
 """Configuration for rubintv."""
+
+
+def where_am_i() -> str:
+    location = os.getenv("RAPID_ANALYSIS_LOCATION", "")
+    if location == "BTS":
+        return "base"
+    if location == "TTS":
+        return "tucson"
+    if location == "SUMMIT":
+        return "summit"
+    if location == "USDF":
+        return "usdf-k8s"
+    if os.getenv("GITHUB_ACTIONS", ""):
+        return "gha"
+    else:
+        return "local"

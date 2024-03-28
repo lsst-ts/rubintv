@@ -20,6 +20,11 @@ class S3Client:
             self._client = session.client("s3")
         self._bucket_name = bucket_name
 
+    async def async_list_objects(self, prefix: str) -> list[dict[str, str]]:
+        loop = asyncio.get_event_loop()
+        executor = ThreadPoolExecutor(max_workers=3)
+        return await loop.run_in_executor(executor, self.list_objects, prefix)
+
     def list_objects(self, prefix: str) -> list[dict[str, str]]:
         objects = []
         response = self._client.list_objects_v2(Bucket=self._bucket_name, Prefix=prefix)
@@ -39,7 +44,7 @@ class S3Client:
         return objects
 
     def _get_object(self, key: str) -> dict | None:
-        logger = structlog.get_logger(__name__)
+        logger = structlog.get_logger("rubintv")
         try:
             obj = self._client.get_object(Bucket=self._bucket_name, Key=key)
             return json.loads(obj["Body"].read())
@@ -70,7 +75,7 @@ class S3Client:
             raise HTTPException(status_code=404, detail=f"No such file for: {key}")
 
     async def get_presigned_url(self, key: str) -> str:
-        logger = structlog.get_logger(__name__)
+        logger = structlog.get_logger("rubintv")
         try:
             url = self._client.generate_presigned_url(
                 ClientMethod="get_object",
