@@ -24,6 +24,8 @@ from lsst.ts.rubintv.models.models_helpers import (
 )
 from lsst.ts.rubintv.s3client import S3Client
 
+logger = structlog.get_logger("rubintv")
+
 
 class HistoricalPoller:
     """Provide a cache of the historical data.
@@ -65,7 +67,6 @@ class HistoricalPoller:
         return not self._have_downloaded
 
     async def check_for_new_day(self) -> None:
-        logger = structlog.get_logger("rubintv")
         try:
             while True:
                 if (
@@ -87,9 +88,6 @@ class HistoricalPoller:
 
     async def _refresh_location_store(self, location: Location) -> None:
         # handle blocking call in async code
-        logger = structlog.get_logger("rubintv")
-        # executor = ThreadPoolExecutor(max_workers=3)
-        # loop = asyncio.get_event_loop()
         try:
             up_to_date_objects = await self._get_objects(location)
             await self.filter_convert_store_objects(up_to_date_objects, location)
@@ -105,8 +103,6 @@ class HistoricalPoller:
         objects :  `list` [`dict` [`str`, `str`]]
             A list of dicts representing bucket objects.
         """
-        logger = structlog.get_logger("rubintv")
-
         objects = []
         for cam in location.cameras:
             if cam.online:
@@ -145,7 +141,6 @@ class HistoricalPoller:
         await self.store_events(events, locname)
 
     async def store_events(self, events: list[Event], locname: str) -> None:
-        logger = structlog.get_logger("rubintv")
         logger.info("starting store_events")
         for event in events:
             storage_name = await self.storage_name_for_event(event, locname)
@@ -177,7 +172,6 @@ class HistoricalPoller:
     ) -> None:
         # metadata is downloaded and stored against it's loc/cam/date
         # for efficient retrieval
-        logger = structlog.get_logger("rubintv")
         logger.info("starting to fetch metadata")
         for md_obj in metadata_objs:
             key = md_obj.get("key")

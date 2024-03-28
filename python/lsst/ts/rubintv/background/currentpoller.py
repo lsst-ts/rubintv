@@ -193,6 +193,7 @@ class CurrentPoller:
     ) -> None:
         loc_cam = await self._get_loc_cam(location.name, camera)
         md_key = md_obj["key"]
+        logger.info("Got key:", loc_cam=loc_cam, md_key=md_key)
         client = self._clients[location.name]
         data = await get_metadata_obj(md_key, client)
         if data and (loc_cam not in self._metadata or data != self._metadata[loc_cam]):
