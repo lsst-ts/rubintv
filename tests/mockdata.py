@@ -1,7 +1,7 @@
 import json
 import logging
 import random
-from datetime import timedelta
+from datetime import date, timedelta
 from itertools import chain
 from pathlib import Path
 
@@ -18,13 +18,19 @@ md_json = json.dumps(_metadata)
 
 
 class RubinDataMocker:
-    def __init__(self, locations: list[Location], s3_required: bool = False) -> None:
+    def __init__(
+        self,
+        locations: list[Location],
+        day_obs: date = today,
+        s3_required: bool = False,
+    ) -> None:
         self.last_seq = 0
         self._locations = locations
         if s3_required:
             self.s3_client = boto3.client("s3")
             self.create_buckets()
         self.s3_required = s3_required
+        self.day_obs = day_obs
         self.location_channels: dict[str, list[Channel]] = {}
         self.channel_objs: dict[str, list[dict[str, str]]] = {}
         self.empty_channel: dict[str, str] = {}
@@ -89,6 +95,7 @@ class RubinDataMocker:
     def mock_channel_objs(
         self, location: Location, camera: Camera, empty_channel: str
     ) -> tuple[list[dict[str, str]], str]:
+        day_obs = self.day_obs
         channel_data: list[dict[str, str]] = []
         iterations = 8
 
@@ -106,10 +113,9 @@ class RubinDataMocker:
                     seq_num = random.choice((seq_num, "final"))
 
                 key = (
-                    f"{camera.name}/{today}/{channel.name}/{seq_num}/"
+                    f"{camera.name}/{day_obs}/{channel.name}/{seq_num}/"
                     f"mocked_event.jpg"
                 )
-
                 hash: str | None = None
                 if self.s3_required:
                     if self.upload_file(

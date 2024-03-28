@@ -99,7 +99,7 @@ async def get_camera_page(
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
     nr_link = ""
-    historical_busy = not_current = False
+    historical_busy = not_current = nr_exists = False
     day_obs: date | None = None
     metadata: dict = {}
     per_day: dict[str, Event] = {}

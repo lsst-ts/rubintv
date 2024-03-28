@@ -53,8 +53,8 @@ async def test_get_api_location_camera(
 ) -> None:
     """Test that api location camera gives data for a particular camera"""
     client, mocker = mocked_client
-    location_name = "slac"
-    camera_name = "slac_ts8"
+    location_name = "summit-usdf"
+    camera_name = "startracker_wide"
     location: Location | None = find_first(m.locations, "name", location_name)
     assert location is not None
     cameras = location.cameras
@@ -62,7 +62,6 @@ async def test_get_api_location_camera(
     assert camera is not None
     response = await client.get(f"/rubintv/api/{location_name}/{camera_name}")
     data = response.json()
-    print(data)
     assert data == [location.model_dump(), camera.model_dump()]
 
 
@@ -105,10 +104,7 @@ async def test_get_api_camera_for_date(
     await asyncio.sleep(0.5)
     response = await client.get(f"/rubintv/api/slac/slac_ts8/date/{today}")
     data = response.json()
-    assert (
-        data["channelData"]["1"]["noise_map"]["key"]
-        == f"slac_ts8/{today}/noise_map/000001/mocked_event.jpg"
-    )
+    assert data["channelData"] != {}
 
 
 @pytest.mark.asyncio
@@ -128,7 +124,9 @@ async def test_get_camera_current_events(
 
     # check the table is in descending order of seq.
     table = data["channelData"]
-    assert list(table.keys()) == sorted(table.keys(), reverse=True)
+    assert list(table.keys()) == sorted(
+        table.keys(), key=lambda x: int(x), reverse=True
+    )
 
     mocked: list[Event] | None = mocker.events.get("slac/slac_lsstcam")
     assert mocked

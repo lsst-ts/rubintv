@@ -7,7 +7,7 @@ from typing import Any
 
 import structlog
 from dateutil.tz import gettz
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic.dataclasses import dataclass
 from typing_extensions import NotRequired, TypedDict
 
@@ -113,10 +113,14 @@ class Camera(BaseModel):
     copy_row_template: str = ""
 
     # If metadata_from not set, use name as default
-    @model_validator(mode="after")
-    def default_as_name(self) -> Any:
-        if not self.metadata_from:
-            self.metadata_from = self.name
+    @field_validator("metadata_from")
+    def default_metadata_from(cls: Any, v: Any, values: Any) -> Any:
+        return v or values.get("name", "")
+
+    # @model_validator(mode="after")
+    # def default_as_name(self) -> Any:
+    #     if not self.metadata_from:
+    #         self.metadata_from = self.name
 
     def seq_channels(self) -> list[Channel]:
         return [c for c in self.channels if not c.per_day]

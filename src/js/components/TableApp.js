@@ -136,9 +136,9 @@ function redrawHeaderWidths () {
     title.style.left = `${sum}px`
     sum += width
   })
-  const sumWidth = `${sum}px`
+  const sumWidth = `${sum + 1}px`
   // add another 1px to the sticky elements to allow for any rounding down
   // of non-integer table widths
-  document.querySelector('.above-table-sticky').style.width = sumWidth + 1
-  document.querySelector('.table-header').style.width = sumWidth + 1
+  document.querySelector('.above-table-sticky').style.width = sumWidth
+  document.querySelector('.table-header').style.width = sumWidth
 }

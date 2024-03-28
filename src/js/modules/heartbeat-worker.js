@@ -34,7 +34,7 @@ onconnect = function(e) {
   port.onmessage = function(e) {
     if (typeof e.data == 'object' && 'heartbeatWsUrl' in e.data && !rws) {
       const url = e.data.heartbeatWsUrl
-      rws = new ReconnectingWebSocket(url, undefined, { maxRetries: 2 })
+      rws = new ReconnectingWebSocket(url, undefined, { maxRetries: 3 })
       attachWsListeners(rws)
     }
   }

@@ -2,6 +2,7 @@
 
 from typing import Annotated
 
+import structlog
 from fastapi import APIRouter, HTTPException, Query, Request
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
@@ -22,6 +23,8 @@ __all__ = [
 
 api_router = APIRouter()
 """FastAPI router for all external handlers."""
+
+logger = structlog.get_logger("rubintv")
 
 
 @api_router.get("/", response_model=list[Location])
@@ -92,13 +95,14 @@ async def get_camera_current_events_api(
     location, camera = await get_location_camera(location_name, camera_name, request)
     data = await get_camera_current_data(location, camera, request)
     if data:
-        day_obs, channel_data, per_day, metadata, nr_exists = data
+        day_obs, channel_data, per_day, metadata, nr_exists, not_current = data
         return {
             "date": day_obs,
             "channelData": channel_data,
             "metadata": metadata,
             "perDay": per_day,
             "nightReportExists": nr_exists,
+            "isHistorical": not_current,
         }
     else:
         return {}

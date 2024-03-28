@@ -1,10 +1,11 @@
 import asyncio
+from datetime import timedelta
 from typing import Any, Iterator
 from unittest.mock import AsyncMock, patch
 
 import pytest
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
-from lsst.ts.rubintv.models.models import Camera, Location
+from lsst.ts.rubintv.models.models import Camera, Location, get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
 from moto import mock_s3
@@ -36,24 +37,24 @@ def c_poller_no_mock_data(rubin_data_mocker: RubinDataMocker) -> Any:
 async def test_poll_buckets_for_todays_data(
     current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
 ) -> None:
-    await current_poller.clear_all_data()
     # Mocking external functions
     with (
         patch(
-            "lsst.ts.rubintv.models.models.get_current_day_obs", return_value="20210101"
+            "lsst.ts.rubintv.models.models.get_current_day_obs",
+            return_value="2024-03-28",
         ) as mock_day_obs,
         patch(
             "lsst.ts.rubintv.background.currentpoller.CurrentPoller.clear_all_data",
             new_callable=AsyncMock,
         ),
         patch(
-            "lsst.ts.rubintv.background.currentpoller.CurrentPoller.seive_out_metadata",
+            "lsst.ts.rubintv.background.currentpoller.CurrentPoller.sieve_out_metadata",
             new_callable=AsyncMock,
         ) as mock_metadata,
         patch(
             (
                 "lsst.ts.rubintv.background.currentpoller.CurrentPoller."
-                "seive_out_night_reports"
+                "sieve_out_night_reports"
             ),
             new_callable=AsyncMock,
         ) as mock_night_reports,
@@ -72,7 +73,6 @@ async def test_poll_buckets_for_todays_data(
         except asyncio.TimeoutError:
             pass
 
-        # Assertions
         assert mock_day_obs
         mock_metadata.assert_called()
         mock_night_reports.assert_called()
@@ -84,10 +84,9 @@ async def test_poll_buckets_for_todays_data(
 async def test_poll_buckets_for_today_process_and_store_seq_events(
     current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
 ) -> None:
-    await current_poller.clear_all_data()
     try:
         await asyncio.wait_for(
-            current_poller.poll_buckets_for_todays_data(), timeout=0.2
+            current_poller.poll_buckets_for_todays_data(), timeout=0.3
         )
     except asyncio.TimeoutError:
         # The timeout error is expected
@@ -108,13 +107,15 @@ async def test_poll_buckets_for_today_process_and_store_seq_events(
 
 @pytest.mark.asyncio
 async def test_clear_all_data(current_poller: CurrentPoller) -> None:
-    await current_poller.clear_all_data()
     try:
         await asyncio.wait_for(
-            current_poller.poll_buckets_for_todays_data(), timeout=0.1
+            current_poller.poll_buckets_for_todays_data(), timeout=0.2
         )
     except asyncio.TimeoutError:
         pass
+    assert current_poller.completed_first_poll is True
+    assert current_poller._objects != {}
+
     await current_poller.clear_all_data()
     assert current_poller._objects == {}
     assert current_poller._events == {}
@@ -210,6 +211,47 @@ async def test_make_per_day_data(
                     last_event = s_events.pop()
                     expected[name] = last_event.__dict__
                 assert pd_data == expected
+
+
+@pytest.mark.asyncio
+async def test_day_rollover(
+    current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
+) -> None:
+    day_obs = get_current_day_obs()
+    with (
+        patch(
+            "lsst.ts.rubintv.background.currentpoller.get_current_day_obs",
+            return_value=day_obs.isoformat(),
+        ) as mock_day_obs,
+    ):
+        try:
+            await asyncio.wait_for(
+                current_poller.poll_buckets_for_todays_data(), timeout=0.3
+            )
+        except asyncio.TimeoutError:
+            pass
+
+        assert mock_day_obs
+        assert current_poller.completed_first_poll is True
+
+    day_obs = day_obs + timedelta(days=1)
+    rubin_data_mocker.day_obs = day_obs
+    rubin_data_mocker.mock_up_data()
+
+    with (
+        patch(
+            "lsst.ts.rubintv.background.currentpoller.get_current_day_obs",
+            return_value=day_obs.isoformat(),
+        ) as mock_day_obs,
+    ):
+        try:
+            await asyncio.wait_for(
+                current_poller.poll_buckets_for_todays_data(), timeout=0.3
+            )
+        except asyncio.TimeoutError:
+            pass
+
+        assert mock_day_obs
 
 
 async def get_test_camera_and_location() -> tuple[Camera, Location]:

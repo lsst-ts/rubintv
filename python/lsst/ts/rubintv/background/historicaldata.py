@@ -32,18 +32,15 @@ class HistoricalPoller:
     over.
     """
 
-    _clients: dict[str, S3Client] = {}
-
-    _metadata: dict[str, dict] = {}
-    _events: dict[str, list[Event]] = {}
-    _nr_metadata: dict[str, list[NightReport]] = {}
-
-    _calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
-
     # polling period in seconds
     CHECK_NEW_DAY_PERIOD = 5
 
     def __init__(self, locations: list[Location]) -> None:
+        self._clients: dict[str, S3Client] = {}
+        self._metadata: dict[str, dict] = {}
+        self._events: dict[str, list[Event]] = {}
+        self._nr_metadata: dict[str, list[NightReport]] = {}
+        self._calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
         self._locations = locations
         self._clients = {
             location.name: S3Client(location.profile_name, location.bucket_name)
@@ -54,6 +51,12 @@ class HistoricalPoller:
         self._last_reload = get_current_day_obs()
 
         self.cam_year_rgx = re.compile(r"(\w+)\/([\d]{4})-[\d]{2}-[\d]{2}")
+
+    async def clear_all_data(self) -> None:
+        self._metadata = {}
+        self._events = {}
+        self._nr_metadata = {}
+        self._calendar = {}
 
     async def trigger_reload_everything(self) -> None:
         self._have_downloaded = False
@@ -69,6 +72,7 @@ class HistoricalPoller:
                     not self._have_downloaded
                     or self._last_reload < get_current_day_obs()
                 ):
+                    await self.clear_all_data()
                     for location in self._locations:
                         await self._refresh_location_store(location)
 
