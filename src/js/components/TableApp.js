@@ -130,16 +130,18 @@ function getTableColumnWidths () {
 
 function redrawHeaderWidths () {
   const columns = getTableColumnWidths()
-  const headers = document.querySelectorAll('.grid-title')
+  const headers = Array.from(document.querySelectorAll('.grid-title'))
   let sum = 0
   headers.forEach((title, ix) => {
     const width = columns[ix]+2
     title.style.left = `${sum}px`
     sum += width
   })
-  const sumWidth = `${sum + 1}px`
-  // add another 1px to the sticky elements to allow for any rounding down
-  // of non-integer table widths
-  document.querySelector('.above-table-sticky').style.width = sumWidth
-  document.querySelector('.table-header').style.width = sumWidth
+  if (sum > 0) {
+    const sumWidth = `${sum + 1}px`
+    // add another 1px to the sticky elements to allow for any rounding down
+    // of non-integer table widths
+    document.querySelector('.above-table-sticky').style.width = sumWidth
+    document.querySelector('.table-header').style.width = sumWidth
+  }
 }
