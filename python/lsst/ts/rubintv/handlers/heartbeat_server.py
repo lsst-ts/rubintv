@@ -2,6 +2,7 @@ import asyncio
 
 import structlog
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from websockets import ConnectionClosed
 
 heartbeat_sockets: list[WebSocket] = []
 heartbeats_sock_lock = asyncio.Lock()
@@ -15,7 +16,7 @@ logger = structlog.get_logger("rubintv")
 async def send_heartbeat(socket: WebSocket) -> None:
     try:
         await socket.send_text("heartbeat!")
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, ConnectionClosed):
         logger.info("Heartbeat websocket disconnected", websocket=socket)
         async with heartbeats_sock_lock:
             if socket in heartbeat_sockets:

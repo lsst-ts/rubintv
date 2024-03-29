@@ -7,7 +7,7 @@ export class WebsocketClient {
   // pageType for 'service's are either 'camera', 'channel' or 'nightreport'
   constructor () {
     this.clientID = null
-    this.ws = new ReconnectingWebSocket(getWebSockURL('ws'), undefined, { maxRetries: 2 })
+    this.ws = new ReconnectingWebSocket(getWebSockURL('ws'))
     this.ws.onmessage = this.handleMessage.bind(this)
     this.ws.onclose = this.handleClose.bind(this)
   }
@@ -44,7 +44,7 @@ export class WebsocketClient {
   }
 
   handleClose (e) {
-    console.debug(e)
+    console.log('Lost services websocket connection. Retrying')
   }
 
   handleMessage (messageEvent) {

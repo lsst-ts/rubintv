@@ -2,13 +2,17 @@ from typing import Any, Mapping
 from uuid import UUID
 
 import structlog
+from fastapi import WebSocket
+from lsst.ts.rubintv.handlers.websocket import remove_client_from_services
 from lsst.ts.rubintv.handlers.websockets_clients import (
     clients,
     clients_lock,
     services_clients,
     services_lock,
+    websocket_to_client,
 )
 from lsst.ts.rubintv.models.models import get_current_day_obs
+from websockets import ConnectionClosed
 
 logger = structlog.get_logger("rubintv")
 
@@ -27,12 +31,13 @@ async def notify_clients(
     async with clients_lock:
         for client_id in clients_list:
             websocket = clients[client_id]
-            await websocket.send_json(
+            await _send_json(
+                websocket,
                 {
                     "dataType": data_type,
                     "payload": payload,
                     "datestamp": get_current_day_obs().isoformat(),
-                }
+                },
             )
 
 
@@ -55,9 +60,23 @@ async def notify_all_status_change(historical_busy: bool) -> None:
         async with clients_lock:
             for client_id in to_notify:
                 websocket = clients[client_id]
-                await websocket.send_json(
+                await _send_json(
+                    websocket,
                     {
                         "dataType": "historicalStatus",
                         "payload": historical_busy,
-                    }
+                    },
                 )
+
+
+async def _send_json(websocket: WebSocket, a_dict: dict) -> None:
+    try:
+        await websocket.send_json(a_dict)
+    except ConnectionClosed:
+        logger.info("Websocket disconnected uncleanly:", websocket=websocket)
+        async with services_lock:
+            if websocket in websocket_to_client:
+                client_id = websocket_to_client[websocket]
+                del clients[client_id]
+                del websocket_to_client[websocket]
+                await remove_client_from_services(client_id)
