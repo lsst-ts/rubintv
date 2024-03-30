@@ -2,7 +2,7 @@ from typing import Any, Mapping
 from uuid import UUID
 
 import structlog
-from fastapi import WebSocket
+from fastapi import WebSocket, WebSocketDisconnect
 from lsst.ts.rubintv.handlers.websocket import remove_client_from_services
 from lsst.ts.rubintv.handlers.websockets_clients import (
     clients,
@@ -72,7 +72,7 @@ async def notify_all_status_change(historical_busy: bool) -> None:
 async def _send_json(websocket: WebSocket, a_dict: dict) -> None:
     try:
         await websocket.send_json(a_dict)
-    except ConnectionClosed:
+    except (ConnectionClosed, WebSocketDisconnect):
         logger.info("Websocket disconnected uncleanly:", websocket=websocket)
         async with services_lock:
             if websocket in websocket_to_client:
