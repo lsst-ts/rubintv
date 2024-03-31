@@ -408,45 +408,45 @@ metadata_cols:
       The seeing, as measured by the DIMM, if available
 
   startracker_narrow:
-    Exposure Time:
+    Exposure Time narrow:
       The image exposure time
-    MJD:
+    MJD narrow:
       The MJD of the observation
-    UTC:
+    UTC narrow:
       The UTC of the observation - currently misreported, it is actually TAI
-    Ra:
+    Ra narrow:
       The commanded ra from the header, i.e. from the pointing component
-    Dec:
+    Dec narrow:
       The commanded dec from the header, i.e. from the pointing component
-    Alt:
+    Alt narrow:
       The average alt from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
-    Az:
+    Az narrow:
       The average az from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
-    nSources:
+    nSources narrow:
       The total number of sources detected in the image
-    nSources filtered:
+    nSources filtered narrow:
       The total number of sources passed to the fitter
-    Calculated Ra:
+    Calculated Ra narrow:
       The calculated ra from the astrometric fit
-    Calculated Dec:
+    Calculated Dec narrow:
       The calculated dec from the astrometric fit
-    Delta Ra Arcsec:
+    Delta Ra Arcsec narrow:
       The difference between the commanded and fitted ra, in arcseconds
-    Delta Dec Arcsec:
+    Delta Dec Arcsec narrow:
       The difference between the commanded and fitted dec, in arcseconds
-    Calculated Alt:
+    Calculated Alt narrow:
       The calculated alt from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
-    Calculated Az:
+    Calculated Az narrow:
       The calculated az from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
-    Delta Alt Arcsec:
+    Delta Alt Arcsec narrow:
       The difference between the commanded and fitted alt, in arcseconds
-    Delta Az Arcsec:
+    Delta Az Arcsec narrow:
       The difference between the commanded and fitted az, in arcseconds
-    Delta Rot Arcsec:
+    Delta Rot Arcsec narrow:
       The difference between the commanded and fitted rotator angle, in arcseconds. Note that as we don't have a rotator, this is more or less arbitrary.
-    RMS scatter arcsec:
+    RMS scatter arcsec narrow:
       The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
-    RMS scatter pixels:
+    RMS scatter pixels narrow:
       The RMS distance between the measured position of each source and its position in the catalog, in pixels
 
   startracker_wide:
