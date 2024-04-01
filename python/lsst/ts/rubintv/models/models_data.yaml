@@ -22,6 +22,7 @@ locations:
     camera_groups:
       Cleanroom Testing: [ slac_lsstcam, slac_ts8 ]
       Simulated Cameras: [ comcam_sim_prep ]
+      Nightly Validation: [ comcam_sim ]
     services: [ slac_lsstcam, slac_ts8, comcam_sim_prep ]
 
   - name: base-usdf
