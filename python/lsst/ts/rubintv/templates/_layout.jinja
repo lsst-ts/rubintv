@@ -29,7 +29,10 @@ window.onpageshow = function (event) {
     {% set body_class = body_class ~ " event" %}
 {% endif %}
 <body class="{{ body_class }}">
-    <script>window.APP_DATA = {}</script>
+    <script>
+        window.APP_DATA = {}
+        window.APP_DATA.siteLocation = {{ site_location|tojson }}
+    </script>
     <header>
         <div class="header-wrap">
             <div class="header-page-titles">
@@ -52,6 +55,7 @@ window.onpageshow = function (event) {
                 {% block headerbuttons %}
                 {% endblock headerbuttons %}
             </div>
+            <div class="header-banner" id="header-banner"></div>
             <div class="header-messages">
                 {% block messages %}
                     <a class="in-memoriam" href="https://community.lsst.org/t/remembering-simon-krughoff/7344">

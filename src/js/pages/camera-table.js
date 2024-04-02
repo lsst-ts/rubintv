@@ -2,6 +2,7 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import TableApp from '../components/TableApp'
 import PerDay from '../components/PerDay'
+import Banner from '../components/Banner'
 import { _getById } from '../modules/utils'
 import { WebsocketClient } from '../modules/ws-service-client'
 
@@ -10,6 +11,7 @@ import { WebsocketClient } from '../modules/ws-service-client'
    _getById('historicalbusy').dataset.historicalbusy === 'True') {
     return
   }
+  const siteLocation = window.APP_DATA.siteLocation
   const locationName = document.documentElement.dataset.locationname
   const camera = window.APP_DATA.camera || {}
   const channelData = window.APP_DATA.tableChannels || {}
@@ -22,6 +24,15 @@ import { WebsocketClient } from '../modules/ws-service-client'
     ws.subscribe('service', 'camera', locationName, camera.name)
   }
 
+  const bannerRoot = createRoot(_getById('header-banner'))
+  bannerRoot.render(
+    <Banner
+      siteLocation={siteLocation}
+      locationName={locationName}
+      camera={camera}
+    />
+  )
+
   const tableRoot = createRoot(_getById('table'))
   tableRoot.render(
     <TableApp
@@ -31,6 +42,7 @@ import { WebsocketClient } from '../modules/ws-service-client'
       initialMetadata={metadata}
     />
   )
+
   const perDayRoot = createRoot(_getById('per-day'))
   perDayRoot.render(
     <PerDay

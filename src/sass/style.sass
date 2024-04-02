@@ -47,6 +47,7 @@ header
 		display: inline-block
 
 .header-wrap
+	gap: 1em
 	display: flex
 	align-items: stretch
 	& > div
@@ -55,17 +56,28 @@ header
 
 .header-messages
 	justify-content: center
-	margin-right: 3em
 
-.header-page-titles
+.header-page-titles, .header-banner
 	margin-top: 12.5px
 
 .header-page-buttons
-	flex-grow: 1
 	flex-direction: row !important
 	justify-content: flex-start
 	align-items: flex-end
-	margin-left: 2em
+
+.header-banner
+	flex-grow: 1
+	align-items: center
+	font-size: 16px
+
+.banner-text
+	padding: 0.4em
+	border-radius: 20px
+	background: rgba(0,0,0,0.3)
+	&.summit
+		background: rgba(87, 196, 48, 0.3)
+	&.slac
+		background: rgba(196, 48, 173, 0.3)
 
 .header-site-titles
 	align-items: center
