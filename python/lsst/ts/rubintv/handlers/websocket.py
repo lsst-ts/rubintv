@@ -130,7 +130,9 @@ async def attach_service(
     location, camera_name, *extra = loc_cam.split("/")
     locations = websocket.app.state.models.locations
     if not (camera := await is_valid_location_camera(location, camera_name, locations)):
-        logger.error("No such camera", service=service, client_id=client_id)
+        logger.error(
+            "No such camera:", service=service, client_id=client_id, camera=loc_cam
+        )
         return
     if extra:
         channel = extra[0]
