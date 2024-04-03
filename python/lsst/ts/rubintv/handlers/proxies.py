@@ -1,8 +1,10 @@
+import structlog
 from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from lsst.ts.rubintv.s3client import S3Client
 
 proxies_router = APIRouter()
+logger = structlog.get_logger("rubintv")
 
 
 @proxies_router.get(
@@ -95,29 +97,22 @@ def proxy_video(
 
     s3_request_headers = {}
     if range:
+        logger.info("Headers:", range=range)
         byte_range = range.split("=")[1]
         s3_request_headers["Range"] = f"bytes={byte_range}"
 
     data = s3_client.get_movie(key, s3_request_headers)
-    video = data["Body"]
+    if "Body" in data and "ResponseMetadata" in data:
+        video = data["Body"]
+        headers = data["ResponseMetadata"]["HTTPHeaders"]
+        headers["content-type"] = "video/mp4"
+    else:
+        raise HTTPException(404, "No data found.")
 
-    # Modify the response headers to signal that we accept byte range requests
-    response_headers = {
-        "Accept-Ranges": "bytes",
-        "Content-Length": str(data["ContentLength"]),
-        "Content-Type": "video/mp4",
-    }
-
-    # If a range was provided, set the appropriate headers
-    if range:
-        end = data["ContentLength"] - 1
-        start, _ = byte_range.split("-")
-        response_headers["Content-Range"] = (
-            f"bytes {start}-{end}/{data['ContentLength']}"
-        )
+    logger.info("Movie headers returned:", headers=headers)
 
     return StreamingResponse(
         content=video.iter_chunks(),
-        headers=response_headers,
+        headers=headers,
         status_code=206 if range else 200,
     )

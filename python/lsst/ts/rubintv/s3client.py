@@ -4,18 +4,23 @@ from concurrent.futures import ThreadPoolExecutor
 
 import boto3
 import structlog
+from botocore.config import Config as BotoConfig
 from botocore.exceptions import ClientError
 from botocore.response import StreamingBody
 from fastapi.exceptions import HTTPException
-from lsst.ts.rubintv.config import config
+from lsst.ts.rubintv.config import config as app_config
+
+config = BotoConfig(retries={"max_attempts": 10, "mode": "standard"})
 
 
 class S3Client:
     def __init__(self, profile_name: str, bucket_name: str) -> None:
-        endpoint_url = config.s3_endpoint_url
+        endpoint_url = app_config.s3_endpoint_url
         session = boto3.Session(region_name="us-east-1", profile_name=profile_name)
         if endpoint_url is not None and not endpoint_url == "testing":
-            self._client = session.client("s3", endpoint_url=endpoint_url)
+            self._client = session.client(
+                "s3", endpoint_url=endpoint_url, config=config
+            )
         else:
             self._client = session.client("s3")
         self._bucket_name = bucket_name

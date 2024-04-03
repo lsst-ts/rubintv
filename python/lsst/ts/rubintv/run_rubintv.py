@@ -15,8 +15,8 @@ def run_rubintv() -> None:
         host="0.0.0.0",
         port=8080,
         log_level="info",
-        ws_ping_interval=600,
-        ws_ping_timeout=60,
+        ws_ping_interval=60,
+        ws_ping_timeout=120,
     )
 
 
