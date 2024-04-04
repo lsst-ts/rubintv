@@ -19,6 +19,7 @@ import { WebsocketClient } from '../modules/ws-service-client'
   const perDay = window.APP_DATA.perDay || {}
   const nightReportLink = window.APP_DATA.nightReportLink || ''
   const date = window.APP_DATA.date || ''
+  
   if (!window.APP_DATA.isHistorical) {
     const ws = new WebsocketClient()
     ws.subscribe('service', 'camera', locationName, camera.name)

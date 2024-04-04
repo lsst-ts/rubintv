@@ -74,9 +74,8 @@ async def _send_json(websocket: WebSocket, a_dict: dict) -> None:
         await websocket.send_json(a_dict)
     except (ConnectionClosed, WebSocketDisconnect):
         logger.info("Websocket disconnected uncleanly:", websocket=websocket)
-        async with services_lock:
-            if websocket in websocket_to_client:
-                client_id = websocket_to_client[websocket]
-                del clients[client_id]
-                del websocket_to_client[websocket]
-                await remove_client_from_services(client_id)
+        if websocket in websocket_to_client:
+            client_id = websocket_to_client[websocket]
+            del clients[client_id]
+            del websocket_to_client[websocket]
+            await remove_client_from_services(client_id)

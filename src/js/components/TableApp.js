@@ -123,6 +123,9 @@ function getAllColumnNamesFromMetadata (metadata) {
 
 function getTableColumnWidths () {
   const tRow = document.querySelector('tr')
+  if (!tRow) {
+    return []
+  }
   const cellsArr = Array.from(tRow.querySelectorAll('td'))
   const cellWidths = cellsArr.map((cell) => { return cell.offsetWidth })
   return cellWidths
@@ -131,6 +134,9 @@ function getTableColumnWidths () {
 function redrawHeaderWidths () {
   const columns = getTableColumnWidths()
   const headers = Array.from(document.querySelectorAll('.grid-title'))
+  if (columns.length !== headers.length) {
+    return
+  }
   let sum = 0
   headers.forEach((title, ix) => {
     const width = columns[ix]+2

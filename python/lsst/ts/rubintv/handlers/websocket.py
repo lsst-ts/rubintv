@@ -32,6 +32,7 @@ async def data_websocket(
     async with clients_lock:
         clients[client_id] = websocket
         websocket_to_client[websocket] = client_id
+        logger.info("Num clients:", num_clients=len(clients))
 
     try:
         while True:
@@ -89,6 +90,7 @@ async def data_websocket(
                 logger.info("Unattaching:", client_id=client_id)
                 del clients[client_id]
                 del websocket_to_client[websocket]
+                logger.info("Num clients:", num_clients=len(clients))
                 await remove_client_from_services(client_id)
 
 
