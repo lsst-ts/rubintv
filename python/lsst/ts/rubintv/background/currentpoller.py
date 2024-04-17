@@ -62,8 +62,8 @@ class CurrentPoller:
         self._nr_reports_exist = {}
 
     async def poll_buckets_for_todays_data(self) -> None:
-        try:
-            while True:
+        while True:
+            try:
                 if self._current_day_obs != get_current_day_obs():
                     logger.info(
                         "Day rolled over from:",
@@ -93,8 +93,10 @@ class CurrentPoller:
                         await self.process_channel_objects(objects, loc_cam, camera)
                 self.completed_first_poll = True
                 await asyncio.sleep(1)
-        except Exception as e:
-            logger.error("Error", error=e, traceback=get_exception_traceback_str(e))
+            except Exception as e:
+                logger.error(
+                    "Error:", error=e, traceback=get_exception_traceback_str(e)
+                )
 
     async def process_channel_objects(
         self, objects: list[dict[str, str]], loc_cam: str, camera: Camera
