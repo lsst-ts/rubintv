@@ -20,7 +20,6 @@ from lsst.ts.rubintv.models.models_helpers import (
     objects_to_ngt_reports,
 )
 from lsst.ts.rubintv.s3client import S3Client
-from lsst.ts.rubintv.utils import get_exception_traceback_str
 
 logger = structlog.get_logger("rubintv")
 
@@ -31,6 +30,7 @@ class CurrentPoller:
     """
 
     def __init__(self, locations: list[Location]) -> None:
+        logger.error("CurrentPoller error test... Hello World!")
         self._clients: dict[str, S3Client] = {}
         self._objects: dict[str, list] = {}
         self._events: dict[str, list[Event]] = {}
@@ -93,10 +93,9 @@ class CurrentPoller:
                         await self.process_channel_objects(objects, loc_cam, camera)
                 self.completed_first_poll = True
                 await asyncio.sleep(1)
-            except Exception as e:
-                logger.error(
-                    "Error:", error=e, traceback=get_exception_traceback_str(e)
-                )
+                logger.info("CurrentPoller running...")
+            except Exception:
+                logger.exception("Caught exception during poll for data")
 
     async def process_channel_objects(
         self, objects: list[dict[str, str]], loc_cam: str, camera: Camera

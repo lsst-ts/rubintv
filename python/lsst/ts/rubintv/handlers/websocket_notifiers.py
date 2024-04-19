@@ -1,18 +1,16 @@
+import asyncio
 from typing import Any, Mapping
 from uuid import UUID
 
 import structlog
-from fastapi import WebSocket, WebSocketDisconnect
-from lsst.ts.rubintv.handlers.websocket import remove_client_from_services
+from fastapi import WebSocket
 from lsst.ts.rubintv.handlers.websockets_clients import (
     clients,
     clients_lock,
     services_clients,
     services_lock,
-    websocket_to_client,
 )
 from lsst.ts.rubintv.models.models import get_current_day_obs
-from websockets import ConnectionClosed
 
 logger = structlog.get_logger("rubintv")
 
@@ -28,17 +26,35 @@ async def notify_ws_clients(
 async def notify_clients(
     clients_list: list[UUID], data_type: str, payload: Mapping
 ) -> None:
+    tasks = []
     async with clients_lock:
+        logger.info("Sending updates to:", num_clients=len(clients_list))
         for client_id in clients_list:
-            websocket = clients[client_id]
-            await _send_json(
-                websocket,
-                {
-                    "dataType": data_type,
-                    "payload": payload,
-                    "datestamp": get_current_day_obs().isoformat(),
-                },
-            )
+            if client_id in clients:
+                websocket = clients[client_id]
+                task = asyncio.create_task(
+                    send_notification(websocket, data_type, payload)
+                )
+                tasks.append(task)
+    # `return_exceptions=True` prevents one failed task from affecting others
+    await asyncio.gather(*tasks, return_exceptions=True)
+    logger.info("Finished sending updates")
+
+
+async def send_notification(
+    websocket: WebSocket, data_type: str, payload: Mapping
+) -> None:
+    try:
+        await websocket.send_json(
+            {
+                "dataType": data_type,
+                "payload": payload,
+                "datestamp": get_current_day_obs().isoformat(),
+            }
+        )
+    except Exception as e:
+        logger.error(f"Failed to send notification to {websocket}: {str(e)}")
+        # Handle disconnection or other errors here
 
 
 async def get_clients_to_notify(service_cam_id: str) -> list[UUID]:
@@ -52,30 +68,24 @@ async def get_clients_to_notify(service_cam_id: str) -> list[UUID]:
 
 async def notify_all_status_change(historical_busy: bool) -> None:
     key = "historicalStatus"
+    tasks = []
     async with services_lock:
         if key not in services_clients:
             return
-        to_notify = services_clients[key]
-    if to_notify:
-        async with clients_lock:
-            for client_id in to_notify:
-                websocket = clients[client_id]
-                await _send_json(
-                    websocket,
-                    {
-                        "dataType": "historicalStatus",
-                        "payload": historical_busy,
-                    },
-                )
+        client_ids = services_clients[key]
 
+    # Gather websockets for the clients
+    async with clients_lock:
+        websockets = [
+            clients[client_id] for client_id in client_ids if client_id in clients
+        ]
 
-async def _send_json(websocket: WebSocket, a_dict: dict) -> None:
-    try:
-        await websocket.send_json(a_dict)
-    except (ConnectionClosed, WebSocketDisconnect):
-        logger.info("Websocket disconnected uncleanly:", websocket=websocket)
-        if websocket in websocket_to_client:
-            client_id = websocket_to_client[websocket]
-            del clients[client_id]
-            del websocket_to_client[websocket]
-            await remove_client_from_services(client_id)
+    # Prepare tasks for each websocket
+    for websocket in websockets:
+        task = send_notification(
+            websocket, "historicalStatus", {"historicalStatus": historical_busy}
+        )
+        tasks.append(task)
+
+    # Use asyncio.gather to handle all tasks concurrently
+    await asyncio.gather(*tasks, return_exceptions=True)

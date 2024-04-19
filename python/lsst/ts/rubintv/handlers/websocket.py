@@ -24,19 +24,19 @@ valid_services = ["camera", "channel", "nightreport"]
 async def data_websocket(
     websocket: WebSocket,
 ) -> None:
-    await websocket.accept()
-
-    client_id = uuid.uuid4()
-    await websocket.send_text(str(client_id))
-
-    async with clients_lock:
-        clients[client_id] = websocket
-        websocket_to_client[websocket] = client_id
-        logger.info("Num clients:", num_clients=len(clients))
-
     try:
+        await websocket.accept()
+        client_id = uuid.uuid4()
+        await websocket.send_text(str(client_id))
+
+        async with clients_lock:
+            clients[client_id] = websocket
+            websocket_to_client[websocket] = client_id
+            logger.info("Num clients:", num_clients=len(clients))
+
         while True:
             raw: str = await websocket.receive_text()
+            logger.info("websocket server recvd:", raw=raw)
             try:
                 data: dict = json.loads(raw)
             except json.JSONDecodeError as e:
@@ -92,9 +92,12 @@ async def data_websocket(
                 del websocket_to_client[websocket]
                 logger.info("Num clients:", num_clients=len(clients))
                 await remove_client_from_services(client_id)
+    except Exception:
+        logger.exception("Caught surprise exception")
 
 
 async def remove_client_from_services(client_id: uuid.UUID) -> None:
+    logger.info("Removing client from services list...", client_id=client_id)
     async with services_lock:
         # First remove the client_id from all services
         for _, client_ids in services_clients.items():
@@ -111,6 +114,7 @@ async def remove_client_from_services(client_id: uuid.UUID) -> None:
         # Finally, delete those services
         for service in services_to_remove:
             del services_clients[service]
+    logger.info("Removed client.")
 
 
 async def attach_service(
@@ -152,7 +156,7 @@ async def attach_service(
 async def is_valid_client_request(data: dict) -> bool:
     try:
         client_id = uuid.UUID(data["clientID"])
-    except (KeyError, ValueError):
+    except (KeyError, ValueError, TypeError):
         logger.warn("Received json without client_id")
         return False
     return client_id in clients.keys()
