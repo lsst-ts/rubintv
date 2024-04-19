@@ -18,6 +18,12 @@ RUN apt-get update && \
     python-dev \
     libldap2-dev \
     git \
+    inetutils-ping \
+    vim \
+    nano \
+    curl \
+    procps \
+    findutils \
     libssl-dev && \
     rm -rf /var/lib/apt/lists/*
 
