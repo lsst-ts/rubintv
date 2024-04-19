@@ -11,6 +11,8 @@
 
 FROM python:3.11.1-slim-bullseye
 
+USER root
+
 # Install required packages
 RUN apt-get update && \
     apt-get install -y \
