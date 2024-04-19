@@ -8,3 +8,6 @@ httpx
 moto~=4.0
 safir
 pytest_asyncio
+locust
+locust_plugins
+websocket-client
