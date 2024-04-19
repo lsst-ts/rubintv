@@ -124,17 +124,6 @@ export function replaceInString (link, dayObs, seqNum) {
   return formattedLink
 }
 
-function clearLocalStorageOnNewVersion () {
-  const thisVersion = document.documentElement.dataset.version
-  if (!thisVersion) return
-  const storedVersion = window.localStorage.getItem('rubintv_version')
-  if (thisVersion !== storedVersion) {
-    localStorage.clear()
-    localStorage.setItem('rubintv_version', thisVersion)
-  }
-}
-clearLocalStorageOnNewVersion()
-
 // A helper function to mimic Jinja2's groupby
 export function groupBy (array, keyFunction) {
   const obj = {}
