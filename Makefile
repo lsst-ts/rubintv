@@ -1,4 +1,5 @@
 .PHONY: update-deps
+
 update-deps:
 	pip install --upgrade pip-tools pip setuptools
 	pip-compile --upgrade --resolver=backtracking --build-isolation --generate-hashes --output-file requirements/main.txt requirements/main.in
