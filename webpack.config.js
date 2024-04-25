@@ -3,11 +3,12 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 
+
 const pagesWithoutHistory = [
   'admin',
   'night_report'
 ].reduce((pages, page) => ({
-  ...pages, [page]: `./src/js/pages/${page}.js`
+  ...pages, [page]: [`./src/js/pages/${page}.js`]
 }), {})
 
 const pagesWithHistory = [
@@ -32,8 +33,7 @@ module.exports = {
   },
   entry: {
     style: './src/sass/style.sass',
-    hostbanner: './src/js/hostbanner.js',
-    heartbeatWorker: './src/js/modules/heartbeat-worker.js',
+    hostBanner: './src/js/hostbanner.js',
     ...pagesWithoutHistory,
     ...pagesWithHistory
   },

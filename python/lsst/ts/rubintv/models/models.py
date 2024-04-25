@@ -53,7 +53,15 @@ class Channel(BaseModel):
     colour: str = ""
 
 
-class Camera(BaseModel):
+class HasButton(BaseModel):
+    name: str
+    title: str
+    logo: str = ""
+    text_colour: str = "#000"
+    text_shadow: str = ""
+
+
+class Camera(HasButton):
     """Represents a camera entity, capable of handling different channels like
     images or movies.
 
@@ -100,12 +108,8 @@ class Camera(BaseModel):
         Returns a list of per-day channels, i.e., channels that have a per-day
         configuration.
     """
-
-    name: str
-    title: str
     online: bool
     metadata_from: str = ""
-    logo: str = ""
     channels: list[Channel] = []
     night_report_label: str = "Night Report"
     metadata_cols: dict[str, str] | None = None
@@ -123,17 +127,14 @@ class Camera(BaseModel):
         return [c for c in self.channels if c.per_day]
 
 
-class Location(BaseModel):
+class Location(HasButton):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    name: str
-    title: str
     bucket_name: str
     profile_name: str
     camera_groups: dict[str, list[str]]
     cameras: list[Camera] = []
     services: list[str] = []
-    logo: str = ""
 
 
 @dataclass
