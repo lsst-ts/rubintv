@@ -31,6 +31,7 @@ locations:
     bucket_name: rubin-rubintv-data-bts
     logo: bts_720.jpg
     text_colour: "#fff"
+    text_shadow: True
     camera_groups:
       Cameras: [ auxtel, fake_auxtel ]
       Telescopes: [ tma ]
@@ -51,6 +52,7 @@ locations:
     bucket_name: rubin-rubintv-data-summit
     logo: Summit.jpg
     text_colour: "#fff"
+    text_shadow: True
     camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
       Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
@@ -63,6 +65,7 @@ locations:
     bucket_name: rubintv
     logo: bts_720.jpg
     text_colour: "#fff"
+    text_shadow: True
     camera_groups:
       Cameras: [ auxtel, fake_auxtel ]
       Telescopes: [ tma ]
@@ -78,9 +81,12 @@ locations:
 
   - name: summit
     title: Summit
+    logo: Summit.jpg
+    text_colour: "#fff"
+    text_shadow: True
     profile_name: summit-data-summit
     bucket_name: rubintv
-    logo: Summit.jpg
+
     camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
       Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
@@ -91,6 +97,7 @@ cameras:
   - name: tma
     title: TMA
     online: True
+    logo: TMA.jpg
     channels:
       - name: mount
         title: Mount motion profile
@@ -104,6 +111,7 @@ cameras:
   - name: auxtel
     title: AuxTel
     online: True
+    logo: AuxTel.jpg
     night_report_prefix: auxtel_night_reports
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
     {seqNum}, \"detector\": 0}"
@@ -178,6 +186,8 @@ cameras:
 
   - name: allsky
     title: All Sky
+    logo: AllSky.jpg
+    text_colour: "#fff"
     online: True
     channels:
       - name: movies
@@ -190,6 +200,7 @@ cameras:
   - name: comcam
     title: ComCam
     online: True
+    logo: ComCam.jpg
     channels:
       - name: focal_plane_mosaic
         title: Focal Plane mosaic
@@ -205,6 +216,7 @@ cameras:
   - name: comcam_sim
     title: ComCamSim
     online: True
+    logo: ComCamSim.jpg
     channels:
       - name: focal_plane_mosaic
         title: Post-ISR mosaic
@@ -219,7 +231,6 @@ cameras:
     title: ComCamSimAOS
     online: True
     logo: AOS_Homer.png
-    text_shadow: "none"
     channels:
       - name: fp_donut_gallery
         title: Focal Plane Donut Gallery
@@ -247,10 +258,15 @@ cameras:
   - name: lsstcam
     title: LSSTCam
     online: False
+    logo: LSSTSummit.jpg
+    text_colour: "#fff"
 
   - name: slac_lsstcam
     title: LSSTCam
+    icon: Slac LSSTCam.jpg
+    text_colour: "#fff"
     online: True
+    logo: LSSTSlac.jpg
     channels:
       - name: focal_plane_mosaic
         title: Focal Plane mosaic
@@ -261,7 +277,6 @@ cameras:
       - name: ccob_analysis
         title: CCOB Analysis
         colour: "#e7ae71"
-    logo: slac_lsstcam.png
     night_report_label: Trending Plots
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
     FITSInfo/view.html?image=MC_C_{dayObs}_{seqNum}"
@@ -270,6 +285,7 @@ cameras:
   - name: slac_ts8
     title: TS8
     online: True
+    logo: TS8.jpg
     channels:
       - name: focal_plane_mosaic
         title: Focal Plane mosaic
@@ -277,7 +293,6 @@ cameras:
       - name: noise_map
         title: Noise Map
         colour: "#e771a8"
-    logo: ts8.png
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
     FITSInfo/view.html?image=TS_C_{dayObs}_{seqNum}"
     night_report_label: Trending Plots

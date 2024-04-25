@@ -1,11 +1,14 @@
 {% if button.logo %}
+    {% set t_shadow = "" %}
+    {% if button.text_shadow %}
+        {% set t_shadow = "t-shadow" %}
+    {% endif %}
     <a
-    class="button button-large button-logo"
+    class="button button-large button-logo {{ t_shadow }}"
     href="{{ button_url }}"
     style="
         background-image: url({{ url_for('static', path='images/logos/' + button.logo) }});
         color: {{ button.text_colour }};
-        text-shadow: {{ button.text_shadow }};
     ">
     {{ button.title }}
     </a>

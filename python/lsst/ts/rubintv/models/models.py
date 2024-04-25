@@ -58,7 +58,7 @@ class HasButton(BaseModel):
     title: str
     logo: str = ""
     text_colour: str = "#000"
-    text_shadow: str = ""
+    text_shadow: bool = False
 
 
 class Camera(HasButton):
