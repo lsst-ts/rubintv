@@ -30,7 +30,6 @@ class CurrentPoller:
     """
 
     def __init__(self, locations: list[Location]) -> None:
-        logger.error("CurrentPoller error test... Hello World!")
         self._clients: dict[str, S3Client] = {}
         self._objects: dict[str, list] = {}
         self._events: dict[str, list[Event]] = {}
