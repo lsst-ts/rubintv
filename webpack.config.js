@@ -5,13 +5,13 @@ const TerserPlugin = require('terser-webpack-plugin')
 
 
 const pagesWithoutHistory = [
-  'admin',
-  'night_report'
+  'admin'
 ].reduce((pages, page) => ({
   ...pages, [page]: [`./src/js/pages/${page}.js`]
 }), {})
 
 const pagesWithHistory = [
+  'night_report',
   'single',
   'current',
   'camera-table',

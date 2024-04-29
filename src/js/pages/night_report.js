@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client'
 import { _getById } from '../modules/utils'
 import { WebsocketClient } from '../modules/ws-service-client'
 import NightReport from '../components/NightReport'
-import { addTabsListeners, listenForKeypresses } from '../night-report/tabs-ui'
 
 (function () {
   if (_getById('historicalbusy') &&
@@ -21,7 +20,7 @@ import { addTabsListeners, listenForKeypresses } from '../night-report/tabs-ui'
     const ws = new WebsocketClient()
     ws.subscribe('service', 'camera', locationName, camera.name)
   }
-  const tableRoot = createRoot(document.getElementById('night-report'))
+  const tableRoot = createRoot(_getById('night-report'))
   tableRoot.render(
     <NightReport
       initialNightReport={nightReport}
@@ -31,9 +30,4 @@ import { addTabsListeners, listenForKeypresses } from '../night-report/tabs-ui'
       baseUrl={baseUrl}
     />
   )
-
-  window.addEventListener('DOMContentLoaded', () => {
-    addTabsListeners()
-    listenForKeypresses()
-  })
 })()
