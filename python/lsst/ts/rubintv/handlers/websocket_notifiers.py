@@ -41,9 +41,7 @@ async def notify_clients(
     logger.info("Finished sending updates")
 
 
-async def send_notification(
-    websocket: WebSocket, data_type: str, payload: Mapping
-) -> None:
+async def send_notification(websocket: WebSocket, data_type: str, payload: Any) -> None:
     try:
         await websocket.send_json(
             {
@@ -82,9 +80,7 @@ async def notify_all_status_change(historical_busy: bool) -> None:
 
     # Prepare tasks for each websocket
     for websocket in websockets:
-        task = send_notification(
-            websocket, "historicalStatus", {"historicalStatus": historical_busy}
-        )
+        task = send_notification(websocket, "historicalStatus", historical_busy)
         tasks.append(task)
 
     # Use asyncio.gather to handle all tasks concurrently

@@ -55,6 +55,7 @@ class HistoricalPoller:
         self.cam_year_rgx = re.compile(r"(\w+)\/([\d]{4})-[\d]{2}-[\d]{2}")
 
     async def clear_all_data(self) -> None:
+        self._have_downloaded = False
         self._metadata = {}
         self._events = {}
         self._nr_metadata = {}
