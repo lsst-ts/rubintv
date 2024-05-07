@@ -2,6 +2,7 @@ const path = require('path')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
+const { DuplicatesPlugin } = require("inspectpack/plugin");
 
 
 const pagesWithoutHistory = [
@@ -33,7 +34,7 @@ module.exports = {
   },
   entry: {
     style: './src/sass/style.sass',
-    hostBanner: './src/js/hostbanner.js',
+    hostbanner: './src/js/hostbanner.js',
     ...pagesWithoutHistory,
     ...pagesWithHistory
   },
@@ -41,7 +42,15 @@ module.exports = {
     filename: '[name].js',
     path: path.resolve(__dirname, 'assets')
   },
-  plugins: [new MiniCssExtractPlugin({ filename: '[name].css' })],
+  plugins: [
+    new MiniCssExtractPlugin({ filename: '[name].css' }),
+    new DuplicatesPlugin({
+      // Emit compilation warning or error? (Default: `false`)
+      emitErrors: false,
+      // Display full duplicates information? (Default: `false`)
+      verbose: false
+    })
+  ],
   optimization: {
     minimizer: [
       '...',

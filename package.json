@@ -28,6 +28,7 @@
     "eslint-plugin-promise": "^6.0.0",
     "eslint-plugin-react": "^7.33.2",
     "html-webpack-plugin": "^5.5.3",
+    "inspectpack": "^4.7.1",
     "mini-css-extract-plugin": "^2.7.5",
     "postcss-loader": "^7.1.0",
     "sass": "^1.59.3",
