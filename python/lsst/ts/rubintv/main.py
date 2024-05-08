@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 from safir.dependencies.http_client import http_client_dependency
 from safir.logging import configure_logging, configure_uvicorn_logging
@@ -89,6 +89,14 @@ def create_app() -> FastAPI:
         debug=True,
         lifespan=lifespan,
     )
+
+    @app.middleware("http")
+    async def add_cache_control_header(
+        request: Request, call_next: Response
+    ) -> Response:
+        response = await call_next(request)
+        response.headers["Cache-Control"] = "public, max-age=3600, must-revalidate"
+        return response
 
     # Intwine webpack assets
     # generated with npm run build
