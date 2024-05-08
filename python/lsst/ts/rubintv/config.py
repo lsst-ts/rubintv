@@ -3,7 +3,7 @@
 import os
 
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from safir.logging import LogLevel, Profile
 
 __all__ = ["Configuration", "config"]
@@ -45,6 +45,8 @@ class Configuration(BaseSettings):
             "validation_alias": "SAFIR_LOG_LEVEL",
         },
     )
+
+    model_config = SettingsConfigDict(env_prefix="SAFIR_", case_sensitive=False)
 
 
 config = Configuration()
