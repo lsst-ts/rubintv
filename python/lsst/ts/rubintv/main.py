@@ -102,14 +102,14 @@ def create_app() -> FastAPI:
     # generated with npm run build
     if os.path.isdir("assets"):
         app.mount(
-            "/rubintv/static/assets",
+            f"{config.path_prefix}/static/assets",
             StaticFiles(directory="assets"),
             name="static-assets",
         )
 
     # Intwine jinja2 templating
     app.mount(
-        "/rubintv/static",
+        f"{config.path_prefix}/static",
         StaticFiles(directory=Path(__file__).parent / "static"),
         name="static",
     )

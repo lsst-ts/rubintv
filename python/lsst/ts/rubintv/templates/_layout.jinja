@@ -32,6 +32,7 @@ window.onpageshow = function (event) {
     <script>
         window.APP_DATA = {}
         window.APP_DATA.siteLocation = {{ site_location|tojson }}
+        window.APP_DATA.pathPrefix = {{ path_prefix|tojson }}
     </script>
     <header>
         <div class="header-wrap">

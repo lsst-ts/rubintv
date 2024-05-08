@@ -2,7 +2,7 @@ from pathlib import Path
 
 from fastapi.templating import Jinja2Templates
 from lsst.ts.rubintv import __version__
-from lsst.ts.rubintv.config import where_am_i
+from lsst.ts.rubintv.config import config, where_am_i
 from lsst.ts.rubintv.models.models_helpers import (
     dict_from_list_of_named_objects as list_to_dict,
 )
@@ -30,7 +30,11 @@ def get_templates() -> Jinja2Templates:
     templates.env.globals["viewer_link"] = get_image_viewer_link
 
     # Inject version as template global.
-    templates.env.globals.update(version=__version__, site_location=where_am_i())
+    templates.env.globals.update(
+        version=__version__,
+        site_location=where_am_i(),
+        path_prefix=config.path_prefix,
+    )
 
     return templates
 
