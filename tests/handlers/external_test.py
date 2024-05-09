@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from itertools import chain
 
 import pytest
@@ -58,32 +59,35 @@ async def test_get_location(mocked_client: tuple[AsyncClient, RubinDataMocker]) 
 # below is valid test when run in isolation but not after either of the two
 # tests above. Commenting out to keep the test for future use.
 
-# @pytest.mark.asyncio
-# async def test_current_channels(
-#     mocked_client: tuple[AsyncClient, RubinDataMocker]
-# ) -> None:
-#     """Test that location page has links to cameras"""
-#     client, mocker = mocked_client
-#     print("in test_current_channels")
-#     print(mocker.empty_channel)
-#     # allow historicaldata time to sort info
-#     await sleep(0.2)
-#     for location in m.locations:
-#         for camera in location.cameras:
-#             loc_cam = f"{location.name}/{camera.name}"
-#             for seq_chan in camera.seq_channels():
-#                 url = f"/rubintv/{location.name}/{camera.name}
-# /current/{seq_chan.name}"
-#                 response = await client.get(url)
 
-#                 assert response.status_code == 200
+@pytest.mark.asyncio
+async def test_current_channels(
+    mocked_client: tuple[AsyncClient, RubinDataMocker]
+) -> None:
+    """Test that location page has links to cameras"""
+    client, mocker = mocked_client
+    print("in test_current_channels")
+    print(mocker.empty_channel)
+    # allow historicaldata time to sort info
+    await asyncio.sleep(0.2)
+    for location in m.locations:
+        for camera in location.cameras:
+            loc_cam = f"{location.name}/{camera.name}"
+            for seq_chan in camera.seq_channels():
+                url = (
+                    f"/rubintv/{location.name}/{camera.name}"
+                    f"/current/{seq_chan.name}"
+                )
+                response = await client.get(url)
 
-#                 html = await response.aread()
-#                 parsed = BeautifulSoup(html, "html.parser")
+                assert response.status_code == 200
 
-#                 if mocker.empty_channel[loc_cam] == seq_chan.name:
-#                     assert parsed.select(".event-error")
-#                     assert not parsed.select(".event-info")
-#                 else:
-#                     assert parsed.select(".event-info")
-#                     assert not parsed.select(".event-error")
+                html = await response.aread()
+                parsed = BeautifulSoup(html, "html.parser")
+
+                if mocker.empty_channel[loc_cam] == seq_chan.name:
+                    assert parsed.select(".event-error")
+                    assert not parsed.select(".event-info")
+                else:
+                    assert parsed.select(".event-info")
+                    assert not parsed.select(".event-error")

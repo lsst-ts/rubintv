@@ -10,8 +10,8 @@ bucket_configurations:
   gha:
     [ slac, base-usdf, tucson-usdf, summit-usdf ]
   local:
-    # [ summit-usdf ]
-    [ slac, base-usdf, tucson-usdf, summit-usdf ]
+    [ tucson-usdf ]
+    # [ slac, base-usdf, tucson-usdf, summit-usdf ]
 
 locations:
   - name: slac
@@ -230,7 +230,7 @@ cameras:
   - name: comcam_sim_aos
     title: ComCamSimAOS
     online: True
-    logo: AOS_Homer.png
+    logo: AOS_Homer.jpg
     channels:
       - name: fp_donut_gallery
         title: Focal Plane Donut Gallery

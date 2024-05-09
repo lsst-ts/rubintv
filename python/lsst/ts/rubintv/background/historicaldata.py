@@ -3,10 +3,7 @@ import re
 from datetime import date
 
 import structlog
-from lsst.ts.rubintv.background.background_helpers import (
-    get_metadata_obj,
-    get_next_previous_from_table,
-)
+from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.handlers.websocket_notifiers import notify_all_status_change
 from lsst.ts.rubintv.models.models import (
     Camera,
@@ -97,7 +94,7 @@ class HistoricalPoller:
 
     async def _get_objects(self, location: Location) -> list[dict[str, str]]:
         """Downloads objects from the bucket for each online camera for the
-        location. Is a blocking call so is called via run_in_executor
+        location.
 
         Returns
         -------
@@ -179,7 +176,8 @@ class HistoricalPoller:
             if not key:
                 continue
             storage_name = locname + "/" + key.split("/metadata")[0]
-            md = await get_metadata_obj(key, self._clients[locname])
+            client = self._clients[locname]
+            md = await client.async_get_object(key)
             if not md:
                 logger.info("Missing metadata for:", md_obj=md_obj)
                 continue
@@ -212,7 +210,7 @@ class HistoricalPoller:
             text_report = text_reports[0]
             key = text_report.key
             client = self._clients[location.name]
-            text_obj = await get_metadata_obj(key, client)
+            text_obj = await client.get_metadata_obj(key)
             report["text"] = text_obj
             nr_objs.remove(text_report)
         if nr_objs:

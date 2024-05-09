@@ -1,10 +1,7 @@
 import asyncio
 
 import structlog
-from lsst.ts.rubintv.background.background_helpers import (
-    get_metadata_obj,
-    get_next_previous_from_table,
-)
+from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.handlers.websocket_notifiers import notify_ws_clients
 from lsst.ts.rubintv.models.models import (
     Camera,
@@ -197,7 +194,7 @@ class CurrentPoller:
         loc_cam = await self._get_loc_cam(location.name, camera)
         md_key = md_obj["key"]
         client = self._clients[location.name]
-        data = await get_metadata_obj(md_key, client)
+        data = await client.async_get_object(md_key)
         if data and (loc_cam not in self._metadata or data != self._metadata[loc_cam]):
             self._metadata[loc_cam] = data
             logger.info("Current - metadata file processed for:", loc_cam=loc_cam)
@@ -257,7 +254,7 @@ class CurrentPoller:
             ):
                 key = text_report.key
                 client = self._clients[location.name]
-                text_obj = await get_metadata_obj(key, client)
+                text_obj = await client.async_get_object(key)
                 if text_obj:
                     message["text"] = text_obj
             self._nr_metadata[loc_cam] = text_report
@@ -341,7 +338,7 @@ class CurrentPoller:
         payload: NightReportPayload = {}
         if text_nr := self._nr_metadata.get(loc_cam):
             client = self._clients[location_name]
-            text_dict = await get_metadata_obj(text_nr.key, client)
+            text_dict = await client.async_get_object(text_nr.key)
             payload["text"] = text_dict
         if loc_cam in self._nr_reports:
             if plots := self._nr_reports[loc_cam]:

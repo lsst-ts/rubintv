@@ -11,6 +11,7 @@ from fastapi.exceptions import HTTPException
 from lsst.ts.rubintv.config import config as app_config
 
 config = BotoConfig(retries={"max_attempts": 10, "mode": "standard"})
+logger = structlog.get_logger("rubintv")
 
 
 class S3Client:
@@ -48,17 +49,16 @@ class S3Client:
             )
         return objects
 
-    def _get_object(self, key: str) -> dict | None:
-        logger = structlog.get_logger("rubintv")
+    def _get_object(self, key: str) -> dict:
         try:
             obj = self._client.get_object(Bucket=self._bucket_name, Key=key)
             return json.loads(obj["Body"].read())
         except ClientError as e:
             if e.response["Error"]["Code"] == "NoSuchKey":
                 logger.info("Object for key: {key} not found.", key=key)
-            return None
+            return {}
 
-    async def async_get_object(self, key: str) -> dict | None:
+    async def async_get_object(self, key: str) -> dict:
         loop = asyncio.get_event_loop()
         executor = ThreadPoolExecutor(max_workers=3)
         return await loop.run_in_executor(executor, self._get_object, key)
@@ -78,16 +78,3 @@ class S3Client:
             return data
         except ClientError:
             raise HTTPException(status_code=404, detail=f"No such file for: {key}")
-
-    async def get_presigned_url(self, key: str) -> str:
-        logger = structlog.get_logger("rubintv")
-        try:
-            url = self._client.generate_presigned_url(
-                ClientMethod="get_object",
-                Params={"Bucket": self._bucket_name, "Key": key},
-                ExpiresIn=300,
-            )
-        except ClientError:
-            logger.error(f"Couldn't generate URL for key: {key}")
-            return ""
-        return url

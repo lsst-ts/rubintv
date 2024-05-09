@@ -70,6 +70,9 @@ export function indicatorForAttr (attributes, attrToCheck) {
 }
 
 export function sanitiseString (str) {
+  // Substitutes spaces and hyphens are exchanged for underscores.
+  // Any non-word characters (any but a-z, A-Z, _) are removed.
+  // Capital letters are made small.
   let sanitised = str.replace('/[\s-]/', '_')
   sanitised = sanitised.replace('[\W]','')
   return sanitised.toLowerCase()

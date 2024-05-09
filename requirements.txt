@@ -5,6 +5,7 @@ asgi_lifespan
 boto3
 fastapi
 httpx
+beautifulsoup4
 moto~=4.0
 safir
 pytest_asyncio

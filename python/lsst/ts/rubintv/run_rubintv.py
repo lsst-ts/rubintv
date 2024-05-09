@@ -1,6 +1,9 @@
 import uvicorn
 from lsst.ts.rubintv.main import app
 
+# TODO: Change-out this method for starting app in production:
+# See DM-43635
+
 
 def run_rubintv() -> None:
     uvicorn.run(

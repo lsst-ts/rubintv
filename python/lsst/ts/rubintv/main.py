@@ -69,7 +69,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 
     yield
 
-    app.state._state = {}
     historical_polling.cancel()
     today_polling.cancel()
     for c in clients.values():

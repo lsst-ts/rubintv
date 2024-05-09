@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Type
 
 import yaml
-from lsst.ts.rubintv.config import where_am_i
+from lsst.ts.rubintv.config import config
 from lsst.ts.rubintv.models.models import Camera, Channel, Location
 from lsst.ts.rubintv.models.models_helpers import find_first
 from pydantic import BaseModel
@@ -17,7 +17,7 @@ class ModelsInitiator:
         Instance variables
     -    ------------------
     -    self.locations : `List` [`Location`]
-    -        The locations or sites where the cameras ar based.
+    -        The locations or sites where the cameras are based.
     -    self.cameras : `List` [`Camera`]
     -        The cameras.
     """
@@ -28,7 +28,7 @@ class ModelsInitiator:
             data = yaml.safe_load(file)
         cameras = self._populate_model(Camera, data["cameras"])
         self.cameras = self._attach_metadata_cols(cameras, data)
-        current_location = where_am_i()
+        current_location = config.site_location
         i_can_see = data["bucket_configurations"][current_location]
         all_locations = self._populate_model(Location, data["locations"])
         locations = [loc for loc in all_locations if loc.name in i_can_see]

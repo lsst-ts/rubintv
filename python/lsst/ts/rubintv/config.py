@@ -9,6 +9,22 @@ from safir.logging import LogLevel, Profile
 __all__ = ["Configuration", "config"]
 
 
+def where_am_i() -> str:
+    location = os.getenv("RAPID_ANALYSIS_LOCATION", "")
+    if location == "BTS":
+        return "base"
+    if location == "TTS":
+        return "tucson"
+    if location == "SUMMIT":
+        return "summit"
+    if location == "USDF":
+        return "usdf-k8s"
+    if os.getenv("GITHUB_ACTIONS", ""):
+        return "gha"
+    else:
+        return "local"
+
+
 class Configuration(BaseSettings):
     """Configuration for rubintv."""
 
@@ -27,6 +43,8 @@ class Configuration(BaseSettings):
             "validation_alias": "SAFIR_PATH_PREFIX",
         },
     )
+
+    site_location: str = Field(default=where_am_i())
 
     s3_endpoint_url: str | None = Field(default=os.getenv("S3_ENDPOINT_URL"))
 
@@ -51,19 +69,3 @@ class Configuration(BaseSettings):
 
 config = Configuration()
 """Configuration for rubintv."""
-
-
-def where_am_i() -> str:
-    location = os.getenv("RAPID_ANALYSIS_LOCATION", "")
-    if location == "BTS":
-        return "base"
-    if location == "TTS":
-        return "tucson"
-    if location == "SUMMIT":
-        return "summit"
-    if location == "USDF":
-        return "usdf-k8s"
-    if os.getenv("GITHUB_ACTIONS", ""):
-        return "gha"
-    else:
-        return "local"
