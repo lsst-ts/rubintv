@@ -108,6 +108,7 @@ class Camera(HasButton):
         Returns a list of per-day channels, i.e., channels that have a per-day
         configuration.
     """
+
     online: bool
     metadata_from: str = ""
     channels: list[Channel] = []
