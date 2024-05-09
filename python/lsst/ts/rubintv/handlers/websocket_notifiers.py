@@ -52,7 +52,6 @@ async def send_notification(websocket: WebSocket, data_type: str, payload: Any) 
         )
     except Exception as e:
         logger.error(f"Failed to send notification to {websocket}: {str(e)}")
-        # Handle disconnection or other errors here
 
 
 async def get_clients_to_notify(service_cam_id: str) -> list[UUID]:

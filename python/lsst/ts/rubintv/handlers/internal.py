@@ -46,7 +46,7 @@ async def get_index() -> Metadata:
 
 
 """
-Structure of message json:
+Structure of internal message json:
 {
     serviceName:    str (f"{camera_name}-{channel_name}")
     timeSent:       int,

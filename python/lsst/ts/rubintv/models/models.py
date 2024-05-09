@@ -2,11 +2,11 @@
 
 import asyncio
 import re
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
+from enum import Enum
 from typing import Any
 
 import structlog
-from dateutil.tz import gettz
 from pydantic import BaseModel, ConfigDict, validator
 from pydantic.dataclasses import dataclass
 from typing_extensions import NotRequired, TypedDict
@@ -54,6 +54,25 @@ class Channel(BaseModel):
 
 
 class HasButton(BaseModel):
+    """Base class for classes that are displayed on-screen with buttons.
+    Provides a name, title, logo image, text colour and whether the text
+    should have a drop-shadow.
+
+    Attributes
+    ----------
+    name : str
+        The name of the entity.
+    title : str
+        The title associated with the entity.
+    logo : str
+        The logo associated with the entity. Defaults to an empty string,
+        which is no logo.
+    text_colour : str
+        The hex value of a CSS colour.
+    text_shadow : bool
+        True for a shadow, false otherwise.
+    """
+
     name: str
     title: str
     logo: str = ""
@@ -72,17 +91,11 @@ class Camera(HasButton):
 
     Attributes
     ----------
-    name : str
-        The name of the camera.
-    title : str
-        The title associated with the camera.
     online : bool
         Indicates whether the camera is online.
     metadata_from : str, optional
         The source of metadata for the camera. Defaults to an empty string and
         uses `name` if not set.
-    logo : str, optional
-        The logo associated with the camera. Defaults to an empty string.
     channels : list[Channel]
         A list of channels (either images or movies) associated with the
         camera. Defaults to an empty list.
@@ -304,17 +317,20 @@ def get_current_day_obs() -> date:
     dayObs : `date`
         The current observation day.
     """
-    utc = gettz("UTC")
-    nowUtc = datetime.now().astimezone(utc)
+    nowUtc = datetime.now(timezone.utc)
     offset = timedelta(hours=-12)
     dayObs = (nowUtc + offset).date()
     return dayObs
 
 
 class Heartbeat:
+    class Status(Enum):
+        STOPPED = 0
+        ACTIVE = 1
+
     def __init__(self, service_name: str, next_expected: datetime) -> None:
         self.service_name = service_name
-        self.state = "running"
+        self.state = Heartbeat.Status.ACTIVE
         self.next_expected = next_expected
         self.task = asyncio.create_task(self.monitor_heartbeat())
 
@@ -322,12 +338,12 @@ class Heartbeat:
         """Continuously monitors the heartbeat and updates the service
         state."""
         while True:
-            now = datetime.utcnow()
-            wait_seconds = (self.next_expected - now).total_seconds()
+            nowUtc = datetime.now(timezone.utc)
+            wait_seconds = (self.next_expected - nowUtc).total_seconds()
             if wait_seconds > 0:
                 await asyncio.sleep(wait_seconds)
             else:
-                self.state = "stopped"
+                self.state = Heartbeat.Status.STOPPED
                 logger.warn("Service has gone down:", service=self.service_name)
                 break  # Exit the loop if service is down
 
@@ -335,15 +351,15 @@ class Heartbeat:
         """Updates the heartbeat's next expected time and resets state to
         running."""
         self.next_expected = next_expected
-        if self.state == "stopped":
-            self.state = "running"
+        if self.state == Heartbeat.Status.STOPPED:
+            self.state = Heartbeat.Status.ACTIVE
             # If the service was down, restart the monitoring task
             self.task = asyncio.create_task(self.monitor_heartbeat())
             logger.info("Service is back:", service=self.service_name)
 
-    def to_json(self) -> dict[str, str]:
+    def to_json(self) -> dict[str, str | bool]:
         return {
-            "service_name": self.service_name,
-            "state": self.state,
-            "next_expected": self.next_expected.isoformat(),  # Convert datetime to string
+            "serviceName": self.service_name,
+            "isActive": bool(self.state.value),
+            "nextExpected": self.next_expected.isoformat(),  # Convert datetime to string
         }

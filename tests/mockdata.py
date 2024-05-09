@@ -24,6 +24,20 @@ class RubinDataMocker:
         day_obs: date = today,
         s3_required: bool = False,
     ) -> None:
+        """
+        Initialize the RubinDataMocker instance.
+
+        Parameters
+        ----------
+        locations : list[Location]
+            A list of Location objects representing various observation
+            locations.
+        day_obs : date, optional
+            The observation day, defaults to today.
+        s3_required : bool, optional
+            Boolean flag to indicate if S3 operations are required, defaults
+            to False.
+        """
         self.last_seq = 0
         self._locations = locations
         if s3_required:
@@ -70,6 +84,14 @@ class RubinDataMocker:
             bucket.create()
 
     def mock_up_data(self) -> None:
+        """
+        Populate mock data for cameras and channels based on the current day's
+        observation.
+
+        Returns
+        -------
+        None
+        """
         for location in self._locations:
             loc_name = location.name
             self.events[loc_name] = []
@@ -95,6 +117,26 @@ class RubinDataMocker:
     def mock_channel_objs(
         self, location: Location, camera: Camera, empty_channel: str
     ) -> tuple[list[dict[str, str]], str]:
+        """
+        Generate mock channel objects and an empty channel string for a given
+        camera and location.
+
+        Parameters
+        ----------
+        location : Location
+            The location object representing the observation location.
+        camera : Camera
+            The camera object for which the channel objects are being mocked.
+        empty_channel : str
+            The name of the channel to leave empty.
+
+        Returns
+        -------
+        tuple[list[dict[str, str]], str]
+            A tuple containing a list of mock channel dictionaries and an
+            updated empty channel string.
+        """
+
         day_obs = self.day_obs
         channel_data: list[dict[str, str]] = []
         iterations = 8
@@ -131,10 +173,36 @@ class RubinDataMocker:
         return (channel_data, empty_channel)
 
     def dicts_to_events(self, channel_dicts: list[dict[str, str]]) -> list[Event]:
+        """
+        Convert a list of dictionaries to a list of Event objects.
+
+        Parameters
+        ----------
+        channel_dicts : list[dict[str, str]]
+            List of dictionaries representing channel data.
+
+        Returns
+        -------
+        list[Event]
+            A list of Event objects created from the channel dictionaries.
+        """
         events = [Event(**cd) for cd in channel_dicts]
         return events
 
     async def get_mocked_seq_events(self, location: Location) -> list[Event]:
+        """
+        Asynchronously retrieve sequence events for a given location.
+
+        Parameters
+        ----------
+        location : Location
+            The location for which to retrieve the sequence events.
+
+        Returns
+        -------
+        list[Event]
+            A list of Event objects representing sequence events.
+        """
         events = self.events.get(location.name)
         if events is None:
             return []
@@ -146,11 +214,28 @@ class RubinDataMocker:
     def mock_camera_metadata(
         self, location: Location, camera: Camera
     ) -> dict[str, str]:
+        """
+        Mock metadata for a given camera at a specified location.
+
+        Parameters
+        ----------
+        location : Location
+            The location for which the metadata is being mocked.
+        camera : Camera
+            The camera for which the metadata is being mocked.
+
+        Returns
+        -------
+        dict[str, str]
+            A dictionary containing mocked metadata.
+        """
         key = f"{camera.name}/{today}/metadata.json"
         metadata = {key: md_json}
         if self.s3_required:
             self.upload_fileobj(md_json, location.bucket_name, key)
         return metadata
+
+    # TODO: Write the below functions to add to the mocked state
 
     def mock_event_movies(self) -> None:
         pass
@@ -167,16 +252,16 @@ class RubinDataMocker:
         Parameters
         ----------
         file_name: `Path` | `str`
-        Name/path of file to upload.
+            Name/path of file to upload.
         bucket: `str`
-        Name of bucket to upload to.
+            Name of bucket to upload to.
         key: `str`
-        Name for the file in the bucket.
+            Name for the file in the bucket.
 
         Returns
         -------
         uploaded: `bool`
-        True if file was uploaded, else False.
+            True if file was uploaded, else False.
         """
         try:
             self.s3_client.upload_file(file_name, bucket_name, key)
@@ -191,16 +276,16 @@ class RubinDataMocker:
         Parameters
         ----------
         file_obj:
-        File-like object to upload.
+            File-like object to upload.
         bucket: `str`
-        Name of bucket to upload to.
+            Name of bucket to upload to.
         key: `str`
-        Name for the file in the bucket.
+            Name for the file in the bucket.
 
         Returns
         -------
         uploaded: `bool`
-        True if object was uploaded, else False.
+            True if object was uploaded, else False.
         """
         try:
             self.s3_client.put_object(Bucket=bucket_name, Body=json_str, Key=key)
@@ -210,6 +295,22 @@ class RubinDataMocker:
         return True
 
     def get_obj_hash(self, bucket_name: str, key: str) -> str:
+        """
+        Retrieve the hash (ETag) of an object stored in an S3 bucket.
+
+        Parameters
+        ----------
+        bucket_name : str
+            Name of the S3 bucket.
+        key : str
+            S3 key of the object.
+
+        Returns
+        -------
+        str
+            The hash (ETag) of the object if retrievable, empty string
+            otherwise.
+        """
         try:
             res = self.s3_client.get_object_attributes(
                 Bucket=bucket_name, Key=key, ObjectAttributes=["ETag"]

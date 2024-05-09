@@ -38,6 +38,8 @@ async def send_heartbeat(websocket: WebSocket) -> None:
     websocket : WebSocket
         The given websocket.
     """
+    # TODO : Attach to heartbeat info coming in from analysis.
+    # see DM-44282
     try:
         await websocket.send_text("heartbeat!")
     except (WebSocketDisconnect, ConnectionClosed):
