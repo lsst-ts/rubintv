@@ -33,7 +33,9 @@ def get_templates() -> Jinja2Templates:
 
     # Inject version as template global.
     templates.env.globals.update(
-        version=__version__, site_location=config.site_location
+        version=__version__,
+        site_location=config.site_location,
+        path_prefix=config.path_prefix,
     )
 
     return templates
