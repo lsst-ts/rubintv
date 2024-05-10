@@ -25,6 +25,7 @@ from .background.historicaldata import HistoricalPoller
 from .config import config
 from .handlers.api import api_router
 from .handlers.heartbeat_server import heartbeat_router
+from .handlers.ddv.websocket_handler import ddv_ws_router
 from .handlers.internal import internal_router
 from .handlers.pages import pages_router
 from .handlers.proxies import proxies_router
@@ -97,6 +98,7 @@ def create_app() -> FastAPI:
         response.headers["Cache-Control"] = "public, max-age=3600, must-revalidate"
         return response
 
+<<<<<<< HEAD
     # Intwine webpack assets
     # generated with npm run build
     if os.path.isdir("assets"):
@@ -112,6 +114,19 @@ def create_app() -> FastAPI:
         StaticFiles(directory=Path(__file__).parent / "static"),
         name="static",
     )
+=======
+# Mount Derived Data Visualization Flutter app
+if os.path.isdir("ddv"):
+    app.mount("/rubintv/ddv/app", StaticFiles(directory="ddv"), name="ddv-flutter")
+
+# Attach the routers.
+app.include_router(internal_router)
+app.include_router(ddv_ws_router, prefix=f"{config.path_prefix}/ddv")
+app.include_router(api_router, prefix=f"{config.path_prefix}/api")
+app.include_router(ws_router, prefix=f"{config.path_prefix}/ws")
+app.include_router(proxies_router, prefix=f"{config.path_prefix}")
+app.include_router(pages_router, prefix=f"{config.path_prefix}")
+>>>>>>> 0b6851d (Add DDV websocket handling)
 
     # Mount Derived Data Visualization Flutter app
     if os.path.isdir("ddv"):
