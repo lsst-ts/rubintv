@@ -113,18 +113,22 @@ def create_app() -> FastAPI:
         name="static",
     )
 
+    # Mount Derived Data Visualization Flutter app
+    if os.path.isdir("ddv"):
+        app.mount("/rubintv/ddv", StaticFiles(directory="ddv"), name="ddv-flutter")
+
     # Attach the routers.
-    app.include_router(internal_router)
-    app.include_router(api_router, prefix=f"{config.path_prefix}/api")
-    app.include_router(heartbeat_router, prefix=f"{config.path_prefix}/heartbeats")
-    app.include_router(ws_router, prefix=f"{config.path_prefix}/ws")
-    app.include_router(proxies_router, prefix=f"{config.path_prefix}")
-    app.include_router(pages_router, prefix=f"{config.path_prefix}")
+        app.include_router(internal_router)
+        app.include_router(api_router, prefix=f"{config.path_prefix}/api")
+        app.include_router(heartbeat_router, prefix=f"{config.path_prefix}/heartbeats")
+        app.include_router(ws_router, prefix=f"{config.path_prefix}/ws")
+        app.include_router(proxies_router, prefix=f"{config.path_prefix}")
+        app.include_router(pages_router, prefix=f"{config.path_prefix}")
 
-    # Add middleware.
-    app.add_middleware(XForwardedMiddleware)
+        # Add middleware.
+        app.add_middleware(XForwardedMiddleware)
 
-    return app
+        return app
 
 
 app = create_app()
