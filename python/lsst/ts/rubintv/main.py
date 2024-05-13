@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 from safir.dependencies.http_client import http_client_dependency
 from safir.logging import configure_logging, configure_uvicorn_logging
@@ -24,6 +24,7 @@ from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
 from .config import config
 from .handlers.api import api_router
+from .handlers.heartbeat_server import heartbeat_router
 from .handlers.internal import internal_router
 from .handlers.pages import pages_router
 from .handlers.proxies import proxies_router
@@ -75,40 +76,55 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     await http_client_dependency.aclose()
 
 
-"""The main FastAPI application for rubintv."""
-app = FastAPI(
-    title="rubintv",
-    description="rubinTV is a Web app to display Butler-served data sets",
-    version=__version__,
-    openapi_url=f"{config.path_prefix}/openapi.json",
-    docs_url=f"{config.path_prefix}/docs",
-    redoc_url=f"{config.path_prefix}/redoc",
-    debug=True,
-    lifespan=lifespan,
-)
-
-# Intwine webpack assets
-# generated with npm run build
-if os.path.isdir("assets"):
-    app.mount(
-        "/rubintv/static/assets",
-        StaticFiles(directory="assets"),
-        name="static-assets",
+def create_app() -> FastAPI:
+    """The main FastAPI application for rubintv."""
+    app = FastAPI(
+        title="rubintv",
+        description="rubinTV is a Web app to display Butler-served data sets",
+        version=__version__,
+        openapi_url=f"{config.path_prefix}/openapi.json",
+        docs_url=f"{config.path_prefix}/docs",
+        redoc_url=f"{config.path_prefix}/redoc",
+        debug=True,
+        lifespan=lifespan,
     )
 
-# Intwine jinja2 templating
-app.mount(
-    "/rubintv/static",
-    StaticFiles(directory=Path(__file__).parent / "static"),
-    name="static",
-)
+    @app.middleware("http")
+    async def add_cache_control_header(
+        request: Request, call_next: Response
+    ) -> Response:
+        response = await call_next(request)
+        response.headers["Cache-Control"] = "public, max-age=3600, must-revalidate"
+        return response
 
-# Attach the routers.
-app.include_router(internal_router)
-app.include_router(api_router, prefix=f"{config.path_prefix}/api")
-app.include_router(ws_router, prefix=f"{config.path_prefix}/ws")
-app.include_router(proxies_router, prefix=f"{config.path_prefix}")
-app.include_router(pages_router, prefix=f"{config.path_prefix}")
+    # Intwine webpack assets
+    # generated with npm run build
+    if os.path.isdir("assets"):
+        app.mount(
+            f"{config.path_prefix}/static/assets",
+            StaticFiles(directory="assets"),
+            name="static-assets",
+        )
 
-# Add middleware.
-app.add_middleware(XForwardedMiddleware)
+    # Intwine jinja2 templating
+    app.mount(
+        f"{config.path_prefix}/static",
+        StaticFiles(directory=Path(__file__).parent / "static"),
+        name="static",
+    )
+
+    # Attach the routers.
+    app.include_router(internal_router)
+    app.include_router(api_router, prefix=f"{config.path_prefix}/api")
+    app.include_router(heartbeat_router, prefix=f"{config.path_prefix}/heartbeats")
+    app.include_router(ws_router, prefix=f"{config.path_prefix}/ws")
+    app.include_router(proxies_router, prefix=f"{config.path_prefix}")
+    app.include_router(pages_router, prefix=f"{config.path_prefix}")
+
+    # Add middleware.
+    app.add_middleware(XForwardedMiddleware)
+
+    return app
+
+
+app = create_app()

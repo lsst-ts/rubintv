@@ -18,22 +18,9 @@
         {% for cam_name in cam_names %}
           <li>
             {% set cameras = request.app.state.models.cameras|list_to_dict %}
-            {% set camera = cameras[cam_name] %}
-            {% if camera.logo %}
-              <a
-                class="button button-large button-logo"
-                href="{{ url_for('camera', location_name=loc_name, camera_name=cam_name) }}"
-                style="background-image: url({{ url_for('static', path='images/logos/' + camera.logo) }})">
-                {{ camera.title }}
-              </a>
-            {% else %}
-              <a
-                class="button button-large"
-                href="{{ url_for('camera', location_name=loc_name, camera_name=cam_name) }}"
-              >
-                {{ camera.title }}
-              </a>
-            {% endif %}
+            {% set button = cameras[cam_name] %}
+            {% set button_url = url_for('camera', location_name=loc_name, camera_name=cam_name) %}
+            {% include "logo-button.jinja" %}
           </li>
         {% endfor %}
       </ul>

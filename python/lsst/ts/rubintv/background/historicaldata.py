@@ -1,10 +1,9 @@
 import asyncio
 import re
-from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
 import structlog
-from lsst.ts.rubintv.background.background_helpers import get_metadata_obj
+from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.handlers.websocket_notifiers import notify_all_status_change
 from lsst.ts.rubintv.models.models import (
     Camera,
@@ -22,6 +21,8 @@ from lsst.ts.rubintv.models.models_helpers import (
 )
 from lsst.ts.rubintv.s3client import S3Client
 
+logger = structlog.get_logger("rubintv")
+
 
 class HistoricalPoller:
     """Provide a cache of the historical data.
@@ -30,18 +31,15 @@ class HistoricalPoller:
     over.
     """
 
-    _clients: dict[str, S3Client] = {}
-
-    _metadata: dict[str, dict] = {}
-    _events: dict[str, list[Event]] = {}
-    _nr_metadata: dict[str, list[NightReport]] = {}
-
-    _calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
-
     # polling period in seconds
     CHECK_NEW_DAY_PERIOD = 5
 
     def __init__(self, locations: list[Location]) -> None:
+        self._clients: dict[str, S3Client] = {}
+        self._metadata: dict[str, dict] = {}
+        self._events: dict[str, list[Event]] = {}
+        self._nr_metadata: dict[str, list[NightReport]] = {}
+        self._calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
         self._locations = locations
         self._clients = {
             location.name: S3Client(location.profile_name, location.bucket_name)
@@ -53,6 +51,13 @@ class HistoricalPoller:
 
         self.cam_year_rgx = re.compile(r"(\w+)\/([\d]{4})-[\d]{2}-[\d]{2}")
 
+    async def clear_all_data(self) -> None:
+        self._have_downloaded = False
+        self._metadata = {}
+        self._events = {}
+        self._nr_metadata = {}
+        self._calendar = {}
+
     async def trigger_reload_everything(self) -> None:
         self._have_downloaded = False
 
@@ -60,13 +65,13 @@ class HistoricalPoller:
         return not self._have_downloaded
 
     async def check_for_new_day(self) -> None:
-        logger = structlog.get_logger(__name__)
         try:
             while True:
                 if (
                     not self._have_downloaded
-                    or self._last_reload > get_current_day_obs()
+                    or self._last_reload < get_current_day_obs()
                 ):
+                    await self.clear_all_data()
                     for location in self._locations:
                         await self._refresh_location_store(location)
 
@@ -81,28 +86,21 @@ class HistoricalPoller:
 
     async def _refresh_location_store(self, location: Location) -> None:
         # handle blocking call in async code
-        logger = structlog.get_logger(__name__)
-        executor = ThreadPoolExecutor(max_workers=3)
-        loop = asyncio.get_event_loop()
         try:
-            up_to_date_objects = await loop.run_in_executor(
-                executor, self._get_objects, location
-            )
+            up_to_date_objects = await self._get_objects(location)
             await self.filter_convert_store_objects(up_to_date_objects, location)
         except Exception as e:
             logger.error(e)
 
-    def _get_objects(self, location: Location) -> list[dict[str, str]]:
+    async def _get_objects(self, location: Location) -> list[dict[str, str]]:
         """Downloads objects from the bucket for each online camera for the
-        location. Is a blocking call so is called via run_in_executor
+        location.
 
         Returns
         -------
         objects :  `list` [`dict` [`str`, `str`]]
             A list of dicts representing bucket objects.
         """
-        logger = structlog.get_logger(__name__)
-
         objects = []
         for cam in location.cameras:
             if cam.online:
@@ -113,7 +111,9 @@ class HistoricalPoller:
                     prefix=prefix,
                 )
                 try:
-                    one_load = self._clients[location.name].list_objects(prefix=prefix)
+                    one_load = await self._clients[location.name].async_list_objects(
+                        prefix=prefix
+                    )
                     objects.extend(one_load)
                     logger.info("Found:", num_objects=len(one_load))
                 except Exception as e:
@@ -139,14 +139,16 @@ class HistoricalPoller:
         await self.store_events(events, locname)
 
     async def store_events(self, events: list[Event], locname: str) -> None:
+        logger.info("starting store_events")
         for event in events:
             storage_name = await self.storage_name_for_event(event, locname)
             if storage_name not in self._events:
                 self._events[storage_name] = []
             self._events[storage_name].append(event)
 
-            if isinstance(event.seq_num, str):
-                continue
+            seq_num = event.seq_num
+            if isinstance(seq_num, str):
+                seq_num = 1
             year_str, month_str, day_str = event.day_obs.split("-")
             year, month, day = (int(year_str), int(month_str), int(day_str))
             loc_cam = f"{locname}/{event.camera_name}"
@@ -156,8 +158,9 @@ class HistoricalPoller:
                 self._calendar[loc_cam][year] = {}
             if month not in self._calendar[loc_cam][year]:
                 self._calendar[loc_cam][year][month] = {}
-            if self._calendar[loc_cam][year][month].get(day, 0) <= event.seq_num:
-                self._calendar[loc_cam][year][month][day] = event.seq_num
+            if self._calendar[loc_cam][year][month].get(day, 0) <= seq_num:
+                self._calendar[loc_cam][year][month][day] = seq_num
+        logger.info("ending store_events")
 
     async def storage_name_for_event(self, event: Event, locname: str) -> str:
         return f"{locname}/{event.camera_name}"
@@ -167,17 +170,19 @@ class HistoricalPoller:
     ) -> None:
         # metadata is downloaded and stored against it's loc/cam/date
         # for efficient retrieval
-        logger = structlog.get_logger(__name__)
+        logger.info("starting to fetch metadata")
         for md_obj in metadata_objs:
             key = md_obj.get("key")
             if not key:
                 continue
             storage_name = locname + "/" + key.split("/metadata")[0]
-            md = await get_metadata_obj(key, self._clients[locname])
+            client = self._clients[locname]
+            md = await client.async_get_object(key)
             if not md:
                 logger.info("Missing metadata for:", md_obj=md_obj)
                 continue
             self._metadata[storage_name] = md
+        logger.info("ending metatdata fetch")
 
     async def get_night_report_payload(
         self, location: Location, camera: Camera, day_obs: date
@@ -205,7 +210,7 @@ class HistoricalPoller:
             text_report = text_reports[0]
             key = text_report.key
             client = self._clients[location.name]
-            text_obj = await get_metadata_obj(key, client)
+            text_obj = await client.get_metadata_obj(key)
             report["text"] = text_obj
             nr_objs.remove(text_report)
         if nr_objs:
@@ -269,7 +274,7 @@ class HistoricalPoller:
     async def get_metadata_for_date(
         self, location: Location, camera: Camera, day_obs: date
     ) -> dict[str, dict]:
-        loc_cam_date = f"{location.name}/{camera.name}/{day_obs}"
+        loc_cam_date = f"{location.name}/{camera.metadata_from}/{day_obs}"
         return self._metadata.get(loc_cam_date, {})
 
     async def get_most_recent_day(
@@ -305,6 +310,14 @@ class HistoricalPoller:
         if not events:
             return None
         return events.pop()
+
+    async def get_next_prev_event(
+        self, location: Location, camera: Camera, event: Event
+    ) -> tuple[dict | None, ...]:
+        day_obs = event.day_obs_date()
+        table = await self.get_channel_data_for_date(location, camera, day_obs)
+        nxt_prv = await get_next_previous_from_table(table, event)
+        return nxt_prv
 
     async def get_most_recent_channel_data(
         self, location: Location, camera: Camera

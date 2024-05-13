@@ -58,7 +58,6 @@ function TableControls ({ cameraName, allColNames, selected, setSelected, date, 
         cameraName={cameraName}
         metadata={metadata} />
       <Clock />
-      <JumpButtons />
     </>
   )
 }
@@ -83,20 +82,21 @@ function storeSelected (selected, cameraName) {
   localStorage[cameraName] = JSON.stringify(selected)
 }
 
-function JumpButtons () {
+export function JumpButtons () {
+  const { pathPrefix } = window.APP_DATA;
   return (
     <div className='jump-buttons'>
       <button
         onClick={() => _getById('table').scrollIntoView()}
         className='jump-button to-top'
         title='to top'>
-        <img src='/rubintv/static/images/jump-arrow.svg'/>
+        <img src={pathPrefix + '/static/images/jump-arrow.svg'}/>
       </button>
       <button
         onClick={() => _getById('table').scrollIntoView(false)}
         className='jump-button to-bottom'
         title='to bottom'>
-        <img src='/rubintv/static/images/jump-arrow.svg'/>
+        <img src={pathPrefix + '/static/images/jump-arrow.svg'}/>
       </button>
     </div>
   )

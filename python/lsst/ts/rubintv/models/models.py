@@ -1,11 +1,13 @@
 """Models for rubintv."""
 
+import asyncio
 import re
-from datetime import date, datetime, timedelta
-from typing import Any, Type
+from datetime import date, datetime, timedelta, timezone
+from enum import Enum
+from typing import Any
 
-from dateutil.tz import gettz
-from pydantic import BaseModel, field_validator
+import structlog
+from pydantic import BaseModel, ConfigDict, validator
 from pydantic.dataclasses import dataclass
 from typing_extensions import NotRequired, TypedDict
 
@@ -20,6 +22,8 @@ __all__ = [
     "Event",
     "get_current_day_obs",
 ]
+
+logger = structlog.get_logger("rubintv")
 
 
 class Metadata(BaseModel):
@@ -49,7 +53,34 @@ class Channel(BaseModel):
     colour: str = ""
 
 
-class Camera(BaseModel):
+class HasButton(BaseModel):
+    """Base class for classes that are displayed on-screen with buttons.
+    Provides a name, title, logo image, text colour and whether the text
+    should have a drop-shadow.
+
+    Attributes
+    ----------
+    name : str
+        The name of the entity.
+    title : str
+        The title associated with the entity.
+    logo : str
+        The logo associated with the entity. Defaults to an empty string,
+        which is no logo.
+    text_colour : str
+        The hex value of a CSS colour.
+    text_shadow : bool
+        True for a shadow, false otherwise.
+    """
+
+    name: str
+    title: str
+    logo: str = ""
+    text_colour: str = "#000"
+    text_shadow: bool = False
+
+
+class Camera(HasButton):
     """Represents a camera entity, capable of handling different channels like
     images or movies.
 
@@ -60,18 +91,12 @@ class Camera(BaseModel):
 
     Attributes
     ----------
-    name : str
-        The name of the camera.
-    title : str
-        The title associated with the camera.
     online : bool
         Indicates whether the camera is online.
     metadata_from : str, optional
         The source of metadata for the camera. Defaults to an empty string and
         uses `name` if not set.
-    logo : str, optional
-        The logo associated with the camera. Defaults to an empty string.
-    channels : list[Channel], optional
+    channels : list[Channel]
         A list of channels (either images or movies) associated with the
         camera. Defaults to an empty list.
     night_report_label : str, optional
@@ -97,21 +122,17 @@ class Camera(BaseModel):
         configuration.
     """
 
-    name: str
-    title: str
     online: bool
     metadata_from: str = ""
-    logo: str = ""
     channels: list[Channel] = []
     night_report_label: str = "Night Report"
     metadata_cols: dict[str, str] | None = None
     image_viewer_link: str = ""
     copy_row_template: str = ""
 
-    # If metadata_from not set, use name as default
-    @field_validator("metadata_from")
-    def default_as_name(cls: Type, v: str, values: Any) -> str:
-        return v or values.get("name")
+    @validator("metadata_from", pre=True, always=True)
+    def default_metadata_from(cls: Any, v: Any, values: Any) -> Any:
+        return v or values.get("name", "")
 
     def seq_channels(self) -> list[Channel]:
         return [c for c in self.channels if not c.per_day]
@@ -120,17 +141,14 @@ class Camera(BaseModel):
         return [c for c in self.channels if c.per_day]
 
 
-class Location(BaseModel):
-    name: str
-    title: str
+class Location(HasButton):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     bucket_name: str
     profile_name: str
     camera_groups: dict[str, list[str]]
     cameras: list[Camera] = []
-    logo: str = ""
-
-    class Config:
-        arbitrary_types_allowed = True
+    services: list[str] = []
 
 
 @dataclass
@@ -144,6 +162,11 @@ class Event:
     seq_num: int | str = ""
     filename: str = ""
     ext: str = ""
+
+    def __lt__(self, other: Any) -> bool:
+        if type(other) is not type(self):
+            raise TypeError
+        return self.key < other.key
 
     def __post_init__(self) -> None:
         (
@@ -173,6 +196,7 @@ class Event:
             raise ValueError(f"Key can't be parsed: {key}")
 
         camera, day_obs_str, channel, seq_num, filename, ext = parts
+        filename = filename + "." + ext
 
         try:
             self.date_str_to_date(day_obs_str)
@@ -192,7 +216,7 @@ class Event:
         return self.date_str_to_date(self.day_obs)
 
     def seq_num_force_int(self) -> int:
-        return self.seq_num if isinstance(self.seq_num, int) else -1
+        return self.seq_num if isinstance(self.seq_num, int) else 99999
 
 
 @dataclass
@@ -247,7 +271,7 @@ class NightReport:
              Tuple of values used by `__post_init__` to fully init the object.
         """
         key = self.key
-        metadata_re = re.compile(r"(\w+)\/([\d-]+)\/night_report\/([\w-]+_md)\.(\w+)$")
+        metadata_re = re.compile(r"(\w+)\/([\d-]+)\/night_report\/([\w-]+md)\.(\w+)$")
         if match := metadata_re.match(key):
             parts = match.groups()
             camera, day_obs_str, filename, ext = parts
@@ -259,6 +283,7 @@ class NightReport:
             if match := plot_re.match(key):
                 parts = match.groups()
                 camera, day_obs_str, group, filename, ext = parts
+                filename = filename + "." + ext
             else:
                 raise ValueError(f"Key can't be parsed: {key}")
 
@@ -292,8 +317,49 @@ def get_current_day_obs() -> date:
     dayObs : `date`
         The current observation day.
     """
-    utc = gettz("UTC")
-    nowUtc = datetime.now().astimezone(utc)
+    nowUtc = datetime.now(timezone.utc)
     offset = timedelta(hours=-12)
     dayObs = (nowUtc + offset).date()
     return dayObs
+
+
+class Heartbeat:
+    class Status(Enum):
+        STOPPED = 0
+        ACTIVE = 1
+
+    def __init__(self, service_name: str, next_expected: datetime) -> None:
+        self.service_name = service_name
+        self.state = Heartbeat.Status.ACTIVE
+        self.next_expected = next_expected
+        self.task = asyncio.create_task(self.monitor_heartbeat())
+
+    async def monitor_heartbeat(self) -> None:
+        """Continuously monitors the heartbeat and updates the service
+        state."""
+        while True:
+            nowUtc = datetime.now(timezone.utc)
+            wait_seconds = (self.next_expected - nowUtc).total_seconds()
+            if wait_seconds > 0:
+                await asyncio.sleep(wait_seconds)
+            else:
+                self.state = Heartbeat.Status.STOPPED
+                logger.warn("Service has gone down:", service=self.service_name)
+                break  # Exit the loop if service is down
+
+    def update_heartbeat(self, next_expected: datetime) -> None:
+        """Updates the heartbeat's next expected time and resets state to
+        running."""
+        self.next_expected = next_expected
+        if self.state == Heartbeat.Status.STOPPED:
+            self.state = Heartbeat.Status.ACTIVE
+            # If the service was down, restart the monitoring task
+            self.task = asyncio.create_task(self.monitor_heartbeat())
+            logger.info("Service is back:", service=self.service_name)
+
+    def to_json(self) -> dict[str, str | bool]:
+        return {
+            "serviceName": self.service_name,
+            "isActive": bool(self.state.value),
+            "nextExpected": self.next_expected.isoformat(),  # Convert datetime to string
+        }

@@ -1,8 +1,10 @@
+import structlog
 from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from lsst.ts.rubintv.s3client import S3Client
 
 proxies_router = APIRouter()
+logger = structlog.get_logger("rubintv")
 
 
 @proxies_router.get(
@@ -25,7 +27,12 @@ def proxy_image(
     except ValueError:
         raise HTTPException(404, "Filename not valid.")
     key = f"{camera_name}/{date_str}/{channel_name}/{seq_str}/{filename}"
-    s3_client: S3Client = request.app.state.s3_clients[location_name]
+
+    try:
+        s3_client: S3Client = request.app.state.s3_clients[location_name]
+    except KeyError:
+        raise HTTPException(404, "Location not found")
+
     data_stream = s3_client.get_raw_object(key)
     return StreamingResponse(content=data_stream.iter_chunks())
 
@@ -52,7 +59,10 @@ def proxy_plot_image(
     except ValueError:
         raise HTTPException(404, "Filename not valid.")
     key = f"{camera_name}/{date_str}/night_report/{group_name}/{filename}"
-    s3_client: S3Client = request.app.state.s3_clients[location_name]
+    try:
+        s3_client: S3Client = request.app.state.s3_clients[location_name]
+    except KeyError:
+        raise HTTPException(404, "Location not found.")
     data_stream = s3_client.get_raw_object(key)
     return StreamingResponse(content=data_stream.iter_chunks())
 
@@ -77,33 +87,32 @@ def proxy_video(
         seq_str, ext = seq_ext.split(".")
     except ValueError:
         raise HTTPException(404, "Filename not valid.")
+
     key = f"{camera_name}/{date_str}/{channel_name}/{seq_str}/{filename}"
-    s3_client: S3Client = request.app.state.s3_clients[location_name]
+
+    try:
+        s3_client: S3Client = request.app.state.s3_clients[location_name]
+    except KeyError:
+        raise HTTPException(404, "Location not found.")
+
     s3_request_headers = {}
     if range:
+        logger.info("Headers:", range=range)
         byte_range = range.split("=")[1]
         s3_request_headers["Range"] = f"bytes={byte_range}"
 
     data = s3_client.get_movie(key, s3_request_headers)
-    video = data["Body"]
+    if "Body" in data and "ResponseMetadata" in data:
+        video = data["Body"]
+        headers = data["ResponseMetadata"]["HTTPHeaders"]
+        headers["content-type"] = "video/mp4"
+    else:
+        raise HTTPException(404, "No data found.")
 
-    # Modify the response headers to signal that we accept byte range requests
-    response_headers = {
-        "Accept-Ranges": "bytes",
-        "Content-Length": str(data["ContentLength"]),
-        "Content-Type": "video/mp4",
-    }
-
-    # If a range was provided, set the appropriate headers
-    if range:
-        end = data["ContentLength"] - 1
-        start, _ = byte_range.split("-")
-        response_headers["Content-Range"] = (
-            f"bytes {start}-{end}/{data['ContentLength']}"
-        )
+    logger.info("Movie headers returned:", headers=headers)
 
     return StreamingResponse(
         content=video.iter_chunks(),
-        headers=response_headers,
+        headers=headers,
         status_code=206 if range else 200,
     )

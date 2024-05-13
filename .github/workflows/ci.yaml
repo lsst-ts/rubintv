@@ -12,7 +12,6 @@ on:
       - "dependabot/**"
       - "gh-readonly-queue/**"
       - "renovate/**"
-      - "tickets/**"
       - "u/**"
     tags:
       - "*"
@@ -31,14 +30,15 @@ jobs:
     if: >
       github.event_name != 'merge_group'
       && (startsWith(github.ref, 'refs/tags/')
-          || startsWith(github.ref, 'refs/heads/deploy'))
+          || startsWith(github.ref, 'refs/heads/deploy')
+          || startsWith(github.ref, 'refs/heads/tickets/'))
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           cache: 'npm'
 
@@ -49,14 +49,14 @@ jobs:
 
       - name: Define the Docker tag
         id: vars
-        run: echo ::set-output name=tag::$(scripts/docker-tag.sh)
+        run: echo "tag=$(scripts/docker-tag.sh)" >> $GITHUB_OUTPUT
 
       - name: Print the tag
         id: print
         run: echo ${{ steps.vars.outputs.tag }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
@@ -66,7 +66,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true

@@ -11,6 +11,8 @@
 
 FROM python:3.11.1-slim-bullseye
 
+USER root
+
 # Install required packages
 RUN apt-get update && \
     apt-get install -y \
@@ -18,6 +20,12 @@ RUN apt-get update && \
     python-dev \
     libldap2-dev \
     git \
+    inetutils-ping \
+    vim \
+    nano \
+    curl \
+    procps \
+    findutils \
     libssl-dev && \
     rm -rf /var/lib/apt/lists/*
 
@@ -26,7 +34,7 @@ COPY . .
 
 # Install dependencies
 RUN pip install -r requirements.txt && \
-    pip install .
+    python setup.py install
 
 # Adjust permissions for executable
 RUN chmod +x /usr/src/rubintv/start-daemon.sh

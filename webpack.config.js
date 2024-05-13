@@ -2,23 +2,26 @@ const path = require('path')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
+const { DuplicatesPlugin } = require("inspectpack/plugin");
+
 
 const pagesWithoutHistory = [
-  'admin',
-  'night_report'
+  'admin'
 ].reduce((pages, page) => ({
-  ...pages, [page]: `./src/js/pages/${page}.js`
+  ...pages, [page]: [`./src/js/pages/${page}.js`]
 }), {})
 
 const pagesWithHistory = [
+  'night_report',
+  'single',
   'current',
   'camera-table',
   'allsky'
 ].reduce((pages, page) => ({
   ...pages,
   [page]: [`./src/js/pages/${page}.js`,
-    './src/js/modules/websocket_client.js',
-    './src/js/reload_on_historical.js',
+    './src/js/modules/ws-service-client.js',
+    './src/js/reload-on-historical.js',
     './src/js/modules/calendar-controls.js'
   ]
 }), {})
@@ -39,7 +42,15 @@ module.exports = {
     filename: '[name].js',
     path: path.resolve(__dirname, 'assets')
   },
-  plugins: [new MiniCssExtractPlugin({ filename: '[name].css' })],
+  plugins: [
+    new MiniCssExtractPlugin({ filename: '[name].css' }),
+    new DuplicatesPlugin({
+      // Emit compilation warning or error? (Default: `false`)
+      emitErrors: false,
+      // Display full duplicates information? (Default: `false`)
+      verbose: false
+    })
+  ],
   optimization: {
     minimizer: [
       '...',

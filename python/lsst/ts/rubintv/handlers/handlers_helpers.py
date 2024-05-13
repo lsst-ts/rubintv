@@ -4,20 +4,24 @@ import asyncio
 from datetime import date
 from typing import Any, Callable
 
+import structlog
 from fastapi import HTTPException, Request
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
 from lsst.ts.rubintv.models.models import (
     Camera,
+    Event,
     Location,
     NightReportPayload,
     get_current_day_obs,
 )
 
+logger = structlog.get_logger("rubintv")
+
 
 async def get_camera_current_data(
     location: Location, camera: Camera, request: Request
-) -> tuple[Any, Any, Any, Any, Any] | None:
+) -> tuple[Any, Any, Any, Any, Any, bool] | None:
     if not camera.online:
         return None
     current_poller: CurrentPoller = request.app.state.current_poller
@@ -25,6 +29,7 @@ async def get_camera_current_data(
         await asyncio.sleep(0.3)
 
     day_obs = None
+    is_historical = False
     channel_data = await current_poller.get_current_channel_table(location.name, camera)
     metadata = await current_poller.get_current_metadata(location.name, camera)
     per_day = await current_poller.get_current_per_day_data(location.name, camera)
@@ -40,9 +45,10 @@ async def get_camera_current_data(
                 metadata,
                 nr_exists,
             ) = hist_data
+            is_historical = True
     else:
         day_obs = get_current_day_obs()
-    return (day_obs, channel_data, per_day, metadata, nr_exists)
+    return (day_obs, channel_data, per_day, metadata, nr_exists, is_historical)
 
 
 async def get_most_recent_historical_data(
@@ -102,3 +108,20 @@ async def try_historical_call(
             return None, True
         else:
             raise e
+
+
+async def get_prev_next_event(
+    location: Location, camera: Camera, event: Event, request: Request
+) -> dict[str, dict | None]:
+    nxt: dict | None = None
+    prv: dict | None = None
+    day_obs = event.day_obs_date()
+    if day_obs == get_current_day_obs():
+        cp: CurrentPoller = request.app.state.current_poller
+        nxt, prv = await cp.get_next_prev_event(location.name, event)
+    else:
+        hp: HistoricalPoller = request.app.state.historical
+        if await hp.is_busy():
+            raise HTTPException(423, "Historical data is being processed")
+        nxt, prv = await hp.get_next_prev_event(location, camera, event)
+    return {"next": nxt, "prev": prv}

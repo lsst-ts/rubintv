@@ -1,4 +1,5 @@
 {% extends "_camera.jinja" %}
+
 {% block pagesubtitle %}
   Latest
 {% endblock pagesubtitle  %}
@@ -33,8 +34,7 @@
     {% include "camera_parts/historical-busy-message.jinja" %}
   {% else %}
     <div id="per-day" class="columns">
-      {% include "camera_parts/night-report-link.jinja" %}
-      {% include "camera_parts/per-day-channels.jinja" %}
+    {# React PerDay root here #}
     </div>
     <section>
       <nav id="per-image-menu" class="channel-menu" role="navigation">
@@ -71,8 +71,7 @@
       window.APP_DATA.tableChannels = {{ channelData|tojson }}
       window.APP_DATA.perDay = {{ per_day|tojson }}
       window.APP_DATA.eventURL = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}"
-      window.APP_DATA.hasNightReport = {{ nr_exists|tojson }}
-      window.APP_DATA.isToday = {{ isToday|tojson if isToday else "false "}}
+      window.APP_DATA.nightReportLink = {{ nr_link|tojson }}
     </script>
     <script src='{{ url_for("static", path="assets/camera-table.js") }}'></script>
   {{ super() }}

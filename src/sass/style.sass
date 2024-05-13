@@ -47,6 +47,7 @@ header
 		display: inline-block
 
 .header-wrap
+	gap: 1em
 	display: flex
 	align-items: stretch
 	& > div
@@ -55,17 +56,28 @@ header
 
 .header-messages
 	justify-content: center
-	margin-right: 3em
 
-.header-page-titles
+.header-page-titles, .header-banner
 	margin-top: 12.5px
 
 .header-page-buttons
-	flex-grow: 1
 	flex-direction: row !important
 	justify-content: flex-start
 	align-items: flex-end
-	margin-left: 2em
+
+.header-banner
+	flex-grow: 1
+	align-items: center
+	font-size: 16px
+
+.banner-text
+	padding: 0.4em
+	border-radius: 20px
+	background: rgba(0,0,0,0.3)
+	&.summit
+		background: rgba(87, 196, 48, 0.3)
+	&.slac
+		background: rgba(196, 48, 173, 0.3)
 
 .header-site-titles
 	align-items: center
@@ -193,6 +205,21 @@ section
 	p
 		margin-top: 0.8em
 
+#prev-next-nav
+	margin-left: 1em
+
+.prev-next-buttons
+	display: flex
+	flex-direction: row
+	gap: 0.5em
+	.button
+		flex-direction: row
+		gap: 0.25em
+	.prev:before
+		content: "←"
+	.next:after
+		content: "→"
+
 .metadata-status
 	display: flex
 	align-items: center
@@ -204,17 +231,25 @@ section
 	width: max-content
 
 .above-table-sticky
+	min-width: 100%
 	padding-top: 1em
 	position: sticky
-	top: 0
-	display: flex
-	flex-direction: row
-	align-items: center
-	gap: 1em
-	height: 3.7em
+	// fix for Chrome
+	top: -1px
 	z-index: 23
+	.row
+		display: flex
+		flex-direction: row
+		align-items: center
+		gap: 1em
+	.table-header
+		min-width: 100%
+		gap: 0
+		height: 9em
+		align-items: flex-end
 	h3
 		margin-bottom: 0
+
 
 .table-container
 	width: 100%
@@ -222,41 +257,29 @@ section
 .camera-table
 	font-family: 'Red Hat Mono', monospace
 	border-spacing: 2px
+	margin-top: -2px
 	border-collapse: separate
 	thead
 		position: sticky
 		top: 3.7em
 
 .grid-title
-	text-align: left
-	position: relative
-	height: 9.7em
-	top: 1.1em
+	position: absolute
 	font-size: 14px
 	cursor: pointer
-	vertical-align: bottom
-	left: -4.2em
 	&.sideways
-		max-width: 40px
 		transform: rotate(330deg)
 		transform-origin: 0 0
 		white-space: nowrap
 
 .grid-cell
+	min-width: 40px
 	font-size: 0.8em
 	padding: 0.3em
 	vertical-align: middle
 	height: 42px
 	box-sizing: border-box
 
-
-.meta-group
-	height: 20px
-	position: relative
-	top: -3em
-	img
-		width: 100%
-		height: 100%
 
 .copy-to-cb
 	display: flex
@@ -270,6 +293,7 @@ section
 	padding: 0.5em
 	border-radius: 6px
 	animation: fadeout 0.8s linear 0.5s
+	z-index: 303
 
 @keyframes fadeout
 	0%
@@ -294,8 +318,11 @@ section
 
 .table-controls
 	display: none
+	max-height: 90vh
+	overflow-y: scroll
 	grid-template-columns: 1fr 1fr
 	position: absolute
+	z-index: 101
 	gap: 0 0.4em
 	padding: 3px
 	margin: 20px -21px
@@ -336,7 +363,6 @@ section
 	display: flex
 	flex-direction: column
 	justify-content: space-between
-	top: 12.4em
 	left: -30px
 	gap: 2px
 	.jump-button
@@ -411,6 +437,7 @@ section
 
 	.dashboard-text
 		width: 100%
+		color: #000
 
 .tab-titles
 	display: flex
@@ -435,7 +462,7 @@ section
 		background: #fff
 		border-color: #666
 
-.tab-content:not(.showing)
+.tab-content:not(.selected)
 	display: none
 
 .plots-grid
