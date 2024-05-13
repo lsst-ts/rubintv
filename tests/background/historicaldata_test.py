@@ -3,8 +3,8 @@ from typing import Any, Iterator
 import pytest
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
-from moto import mock_s3
 
+from ..conftest import mock_s3_service
 from ..mockdata import RubinDataMocker
 
 m = ModelsInitiator()
@@ -12,7 +12,7 @@ m = ModelsInitiator()
 
 @pytest.fixture(scope="function")
 def rubin_data_mocker(mock_s3_client: Any) -> Iterator[RubinDataMocker]:
-    with mock_s3():
+    with mock_s3_service():
         mocker = RubinDataMocker(m.locations, s3_required=True)
         yield mocker
 
@@ -24,7 +24,7 @@ def historical(rubin_data_mocker: RubinDataMocker) -> HistoricalPoller:
 
 @pytest.fixture(scope="function")
 def c_poller_no_mock_data(rubin_data_mocker: RubinDataMocker) -> Any:
-    with mock_s3():
+    with mock_s3_service():
         yield HistoricalPoller(m.locations)
 
 

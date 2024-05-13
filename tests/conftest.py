@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, AsyncIterator, Iterator, Tuple
+from typing import Any, AsyncIterator, Tuple
 
 import boto3
 import pytest
@@ -15,7 +15,7 @@ from fastapi import FastAPI
 from httpx import AsyncClient
 from lsst.ts.rubintv.main import create_app
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
-from moto import mock_s3
+from moto import mock_aws
 
 from .mockdata import RubinDataMocker
 
@@ -34,27 +34,13 @@ def aws_credentials() -> None:
 async def mocked_app(
     aws_credentials: Any,
 ) -> AsyncIterator[Tuple[FastAPI, RubinDataMocker]]:
-    """Return a configured test application.
-
-    Wraps the application in a lifespan manager so that startup and shutdown
-    events are sent during test execution.
-    """
-    aws_test_creds = {
-        "AWS_SECURITY_TOKEN": "testing",
-        "AWS_SESSION_TOKEN": "testing",
-        "AWS_DEFAULT_REGION": "us-east-1",
-    }
-    with set_env_vars(aws_test_creds):
-        mock = mock_s3()
-        mock.start()
+    with mock_s3_service():
         models = ModelsInitiator()
         mocker = RubinDataMocker(models.locations, s3_required=True)
         app = create_app()
         async with LifespanManager(app):
-            print(f"App id for this test: {id(app)}")
             yield app, mocker
         mocker.cleanup()
-        mock.stop()
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -69,19 +55,15 @@ async def mocked_client(
 
 @pytest.fixture(scope="function")
 def mock_s3_client(aws_credentials: Any) -> Any:
-    with mock_s3():
+    with mock_s3_service():
         yield boto3.client("s3", region_name="us-east-1")
 
 
 @contextmanager
-def set_env_vars(temp_vars: dict[str, str]) -> Iterator:
-    old_values = {key: os.environ.get(key) for key in temp_vars}
+def mock_s3_service() -> Any:
+    mock = mock_aws()
+    mock.start()
     try:
-        os.environ.update(temp_vars)
         yield
     finally:
-        for key, value in old_values.items():
-            if value is None:
-                del os.environ[key]  # Remove the variable if it wasn't set before
-            else:
-                os.environ[key] = value  # Restore the original value
+        mock.stop()
