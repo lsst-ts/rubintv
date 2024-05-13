@@ -11,6 +11,17 @@
     <link rel="icon" href="{{ url_for('static', path='images/favicon.png') }}">
     <title>{{ title }}</title>
 </head>
+
+<script>
+// function to reload the page if the back button has been used and the page has updated
+// since, so not to show stale data.
+window.onpageshow = function (event) {
+    if (event.persisted || (!!window.performance && window.performance.navigation.type === 2)) {
+        window.location.reload()
+    }
+}
+</script>
+
 {% set body_class = "" %}
 {% if camera %}
     {% set body_class = camera.name %}
@@ -19,7 +30,11 @@
     {% set body_class = body_class ~ " event" %}
 {% endif %}
 <body class="{{ body_class }}">
-    <script>window.APP_DATA = {}</script>
+    <script>
+        window.APP_DATA = {}
+        window.APP_DATA.siteLocation = {{ site_location|tojson }}
+        window.APP_DATA.pathPrefix = {{ path_prefix|tojson }}
+    </script>
     <header>
         <div class="header-wrap">
             <div class="header-page-titles">
@@ -42,6 +57,7 @@
                 {% block headerbuttons %}
                 {% endblock headerbuttons %}
             </div>
+            <div class="header-banner" id="header-banner"></div>
             <div class="header-messages">
                 {% block messages %}
                     <a class="in-memoriam" href="https://community.lsst.org/t/remembering-simon-krughoff/7344">
@@ -56,7 +72,7 @@
             </div>
             <div class="header-site-titles">
                 <a class="logo" href="{{ url_for('home') }}" title="home">
-                    <img src="{{ url_for('static', path='images/logos/Rubin_Logo.png') }}">
+                    <img src="{{ url_for('static', path='images/logos/Rubin_Logo.jpg') }}">
                 </a>
                 <h1 class="site-title">RubinTV Image Display Service</h1>
             </div>

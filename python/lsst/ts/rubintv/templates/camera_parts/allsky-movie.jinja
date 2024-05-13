@@ -13,9 +13,9 @@
                       location_name=location.name,
                       camera_name=camera.name,
                       channel_name=movie.channel_name,
-                      filename=movie.filename + '.' + movie.ext) %}
+                      filename=movie.filename) %}
   <video width="100%" controls autoplay loop>
     <source src="{{ video_url }}" type="video/mp4">
   </video>
-  <div class="desc">{{ movie.filename }}.{{ movie.ext }}</div>
+  <div class="desc">{{ movie.filename }}</div>
 {% endif %}

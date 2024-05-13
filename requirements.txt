@@ -1,9 +1,14 @@
 # This file is used to specify the dependencies of the package
-# when using the Dockerfile on the root folder. 
+# when using the Dockerfile on the root folder.
+setuptools_scm
 asgi_lifespan
 boto3
 fastapi
 httpx
+beautifulsoup4
 moto~=4.0
 safir
 pytest_asyncio
+locust
+locust_plugins
+websocket-client

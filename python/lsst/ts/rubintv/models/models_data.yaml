@@ -19,41 +19,52 @@ locations:
     bucket_name: rubin-rubintv-data-usdf
     logo: SLAC_Logo.svg
     camera_groups:
-      Cameras: [ slac_lsstcam, slac_ts8 ]
-  
+      Cleanroom Testing: [ slac_lsstcam, slac_ts8 ]
+      Simulated Cameras: [ comcam_sim_prep ]
+      Nightly Validation: [ comcam_sim ]
+    services: [ slac_lsstcam, slac_ts8, comcam_sim_prep ]
+
   - name: base-usdf
-    title: Base USDF
+    title: Base
     profile_name: rubin-rubintv-data-bts
     bucket_name: rubin-rubintv-data-bts
-    logo: Summit.jpg
+    logo: bts_720.jpg
+    text_colour: "#fff"
+    text_shadow: True
     camera_groups:
       Cameras: [ auxtel, fake_auxtel ]
       Telescopes: [ tma ]
-  
+    services: [ auxtel, tma ]
+
   - name: tucson-usdf
-    title: Tucson USDF
+    title: Tucson
     profile_name: rubin-rubintv-data-tts
     bucket_name: rubin-rubintv-data-tts
     logo: cactus.svg
     camera_groups:
       Cameras: [ auxtel, fake_auxtel, comcam ]
       Telescopes: [ tma ]
-  
+
   - name: summit-usdf
-    title: Summit USDF
+    title: Summit
     profile_name: rubin-rubintv-data-summit
     bucket_name: rubin-rubintv-data-summit
     logo: Summit.jpg
+    text_colour: "#fff"
+    text_shadow: True
     camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
-      Other Cameras: [ allsky, startracker, startracker_wide, startracker_fast ]
+      Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
+      Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
 
   - name: base
     title: Base
     profile_name: base-data-base
     bucket_name: rubintv
-    logo: Summit.jpg
+    logo: bts_720.jpg
+    text_colour: "#fff"
+    text_shadow: True
     camera_groups:
       Cameras: [ auxtel, fake_auxtel ]
       Telescopes: [ tma ]
@@ -69,30 +80,37 @@ locations:
 
   - name: summit
     title: Summit
+    logo: Summit.jpg
+    text_colour: "#fff"
+    text_shadow: True
     profile_name: summit-data-summit
     bucket_name: rubintv
-    logo: Summit.jpg
+
     camera_groups:
       Telescope Mounted: [ auxtel, comcam, lsstcam ]
-      Other Cameras: [ allsky, startracker, startracker_wide, startracker_fast ]
+      Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
+      Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
 
 cameras:
   - name: tma
     title: TMA
     online: True
+    logo: TMA.jpg
     channels:
       - name: mount
         title: Mount motion profile
         colour: "#fa9284"
-      - name: m1m3_hardpoint_profile
+      - name: m1m3_hardpoint
         title: M1M3 HP and Slew Profile
+        colour: "#97d2f0"
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
     {seqNum}}"
 
   - name: auxtel
     title: AuxTel
     online: True
+    logo: AuxTel.jpg
     night_report_prefix: auxtel_night_reports
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
     {seqNum}, \"detector\": 0}"
@@ -126,12 +144,12 @@ cameras:
         colour: "#83daee"
 
 
-  - name: startracker
-    title: StarTracker
+  - name: startracker_narrow
+    title: StarTracker Narrow
     online: True
     channels:
       - name: raw
-        title: StarTracker
+        title: StarTracker Narrow
         colour: "#58528b"
       - name: analysis
         title: Analysis
@@ -140,7 +158,7 @@ cameras:
   - name: startracker_wide
     title: StarTracker Wide
     online: True
-    metadata_from: startracker
+    metadata_from: startracker_narrow
     channels:
       - name: raw
         title: StarTracker Wide
@@ -154,7 +172,7 @@ cameras:
   - name: startracker_fast
     title: StarTracker Fast
     online: True
-    metadata_from: startracker
+    metadata_from: startracker_narrow
     channels:
       - name: raw
         title: StarTrackerFast
@@ -167,6 +185,8 @@ cameras:
 
   - name: allsky
     title: All Sky
+    logo: AllSky.jpg
+    text_colour: "#fff"
     online: True
     channels:
       - name: movies
@@ -179,6 +199,51 @@ cameras:
   - name: comcam
     title: ComCam
     online: True
+    logo: ComCam.jpg
+    channels:
+      - name: focal_plane_mosaic
+        title: Focal Plane mosaic
+        colour: "#85e986"
+      - name: noise_map
+        title: Noise Map
+        colour: "#E76FD8"
+    copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
+    {seqNum}}"
+    image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
+    view.html?image=CC_O_{dayObs}_{seqNum}"
+
+  - name: comcam_sim
+    title: ComCamSim
+    online: True
+    logo: ComCamSim.jpg
+    channels:
+      - name: focal_plane_mosaic
+        title: Post-ISR mosaic
+        colour: "#6fe9ba"
+      - name: calexp_mosaic
+        title: Calexp mosaic
+        colour: "#e771a8"
+    copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
+    {seqNum}}"
+
+  - name: comcam_sim_aos
+    title: ComCamSimAOS
+    online: True
+    logo: AOS_Homer.jpg
+    channels:
+      - name: fp_donut_gallery
+        title: Focal Plane Donut Gallery
+        colour: "#d4e6b5"
+      - name: zk_residual_pyramid
+        title: Zernike Residual Pyramid
+        colour: "#e2d686"
+      - name: zk_measurement_pyramid
+        title: Zernike Measurement Pyramid
+        colour: "#877b66"
+
+  - name: comcam_sim_prep
+    title: ComCamSimPrep
+    online: True
     channels:
       - name: focal_plane_mosaic
         title: Focal Plane mosaic
@@ -188,16 +253,19 @@ cameras:
         colour: "#e771a8"
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
     {seqNum}}"
-    image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
-    view.html?image=CC_O_{dayObs}_{seqNum}"
 
   - name: lsstcam
     title: LSSTCam
     online: False
+    logo: LSSTSummit.jpg
+    text_colour: "#fff"
 
   - name: slac_lsstcam
     title: LSSTCam
+    icon: Slac LSSTCam.jpg
+    text_colour: "#fff"
     online: True
+    logo: LSSTSlac.jpg
     channels:
       - name: focal_plane_mosaic
         title: Focal Plane mosaic
@@ -208,7 +276,6 @@ cameras:
       - name: ccob_analysis
         title: CCOB Analysis
         colour: "#e7ae71"
-    logo: slac_lsstcam.png
     night_report_label: Trending Plots
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
     FITSInfo/view.html?image=MC_C_{dayObs}_{seqNum}"
@@ -217,6 +284,7 @@ cameras:
   - name: slac_ts8
     title: TS8
     online: True
+    logo: TS8.jpg
     channels:
       - name: focal_plane_mosaic
         title: Focal Plane mosaic
@@ -224,7 +292,6 @@ cameras:
       - name: noise_map
         title: Noise Map
         colour: "#e771a8"
-    logo: ts8.png
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
     FITSInfo/view.html?image=TS_C_{dayObs}_{seqNum}"
     night_report_label: Trending Plots
@@ -252,7 +319,7 @@ cameras:
         colour: "#F0C87F"
 
       - per_day: True
-        name: movie
+        name: movies
         title: Tonight's Movie
         label: "Movie for "
         colour: "#83daee"
@@ -263,6 +330,47 @@ cameras:
     image=AT_O_{dayObs}_{seqNum}\
     &raft=R00&color=grey&bias=Simple+Overscan+Correction\
     &scale=Per-Segment&source=RubinTV"
+
+
+services:
+  auxtel:
+    display_name: AuxTel
+    channels: auxtel
+    services:
+      auxtel_metadata: Metadata
+      auxtel_isr_runner: ISR Runner
+
+  startracker_narrow:
+    display_name: StarTracker Narrow
+    channels: startracker_narrow
+    services:
+      startracker_narrow_metadata: Metadata
+
+  allsky:
+    display_name: All Sky
+    services:
+      allsky: All Sky
+
+  comcam:
+    display_name: ComCam
+    channels: comcam
+
+  tma:
+    channels: tma
+
+  slac_lsstcam:
+    channels: slac_lsstcam
+
+  slac_ts8:
+    channels: slac_ts8
+
+  comcam_sim_prep:
+    channels: comcam_sim_prep
+
+  background:
+    display_name: Background Services
+    services:
+      backgroundService: Background
 
 
 metadata_cols:
@@ -333,46 +441,46 @@ metadata_cols:
     DIMM Seeing:
       The seeing, as measured by the DIMM, if available
 
-  startracker:
-    Exposure Time:
+  startracker_narrow:
+    Exposure Time narrow:
       The image exposure time
-    MJD:
+    MJD narrow:
       The MJD of the observation
-    UTC:
+    UTC narrow:
       The UTC of the observation - currently misreported, it is actually TAI
-    Ra:
+    Ra narrow:
       The commanded ra from the header, i.e. from the pointing component
-    Dec:
+    Dec narrow:
       The commanded dec from the header, i.e. from the pointing component
-    Alt:
+    Alt narrow:
       The average alt from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
-    Az:
+    Az narrow:
       The average az from the header, i.e. from the pointing component, calculated as the simple average of the start and end positions.
-    nSources:
+    nSources narrow:
       The total number of sources detected in the image
-    nSources filtered:
+    nSources filtered narrow:
       The total number of sources passed to the fitter
-    Calculated Ra:
+    Calculated Ra narrow:
       The calculated ra from the astrometric fit
-    Calculated Dec:
+    Calculated Dec narrow:
       The calculated dec from the astrometric fit
-    Delta Ra Arcsec:
+    Delta Ra Arcsec narrow:
       The difference between the commanded and fitted ra, in arcseconds
-    Delta Dec Arcsec:
+    Delta Dec Arcsec narrow:
       The difference between the commanded and fitted dec, in arcseconds
-    Calculated Alt:
+    Calculated Alt narrow:
       The calculated alt from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
-    Calculated Az:
+    Calculated Az narrow:
       The calculated az from the astrometric fit. The alt and az are calculated from the fitted ra and dec using astropy, and currently applying nominal refraction correction, i.e. with default values for the pressure, temperature and relative humidity.
-    Delta Alt Arcsec:
+    Delta Alt Arcsec narrow:
       The difference between the commanded and fitted alt, in arcseconds
-    Delta Az Arcsec:
+    Delta Az Arcsec narrow:
       The difference between the commanded and fitted az, in arcseconds
-    Delta Rot Arcsec:
+    Delta Rot Arcsec narrow:
       The difference between the commanded and fitted rotator angle, in arcseconds. Note that as we don't have a rotator, this is more or less arbitrary.
-    RMS scatter arcsec:
+    RMS scatter arcsec narrow:
       The RMS distance between the measured position of each source and its position in the catalog, in arcseconds
-    RMS scatter pixels:
+    RMS scatter pixels narrow:
       The RMS distance between the measured position of each source and its position in the catalog, in pixels
 
   startracker_wide:
@@ -468,6 +576,14 @@ metadata_cols:
       The image type, e.g. bias, dark, flat etc
     Test type:
       The type of test being run, e.g. superflats etc
+
+  comcam_sim_aos:
+    Exposure time:
+      The image exposure time
+
+  comcam_sim:
+    Exposure time:
+      The image exposure time
 
   tma:
     Event version number:

@@ -27,6 +27,8 @@ if typing.TYPE_CHECKING:
     __version__ = "?"
 else:
     try:
-        from .version import *
-    except ImportError:
+        import pkg_resources
+
+        __version__ = pkg_resources.get_distribution("rubintv").version
+    except:
         __version__ = "?"

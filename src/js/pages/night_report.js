@@ -1,9 +1,8 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { _getById } from '../modules/utils'
-import { WebsocketClient } from '../modules/websocket_client'
+import { WebsocketClient } from '../modules/ws-service-client'
 import NightReport from '../components/NightReport'
-import { addTabsListeners, listenForKeypresses } from '../night-report/tabs-ui'
 
 (function () {
   if (_getById('historicalbusy') &&
@@ -16,12 +15,12 @@ import { addTabsListeners, listenForKeypresses } from '../night-report/tabs-ui'
   const nightReport = window.APP_DATA.nightReport || {}
   const date = window.APP_DATA.date || ''
   const baseUrl = window.APP_DATA.baseUrl || ''
-  if (!window.APP_DATA.ishistorical) {
+  if (!window.APP_DATA.isHistorical) {
     // eslint-disable-next-line no-unused-vars
     const ws = new WebsocketClient()
     ws.subscribe('service', 'camera', locationName, camera.name)
   }
-  const tableRoot = createRoot(document.getElementById('night-report'))
+  const tableRoot = createRoot(_getById('night-report'))
   tableRoot.render(
     <NightReport
       initialNightReport={nightReport}
@@ -31,9 +30,4 @@ import { addTabsListeners, listenForKeypresses } from '../night-report/tabs-ui'
       baseUrl={baseUrl}
     />
   )
-
-  window.addEventListener('DOMContentLoaded', () => {
-    addTabsListeners()
-    listenForKeypresses()
-  })
 })()
