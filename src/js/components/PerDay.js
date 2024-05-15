@@ -96,10 +96,10 @@ export default function PerDay ({ camera, initialDate, initialPerDay, initialNRL
         setNightReportLink("")
       }
 
-      if (dataType === 'perDay' && data != "nightReportExists") {
+      if (dataType === 'perDay' && !data.nightReportExists) {
         setPerDay(data)
       }
-      else if (dataType === 'perDay' && data == "nightReportExists") {
+      else if (dataType === 'perDay' && data.nightReportExists) {
         setNightReportLink("current")
       }
     }

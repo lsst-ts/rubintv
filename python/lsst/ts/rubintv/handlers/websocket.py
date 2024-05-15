@@ -4,7 +4,8 @@ import uuid
 
 import structlog
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from lsst.ts.rubintv.handlers.websocket_notifiers import notify_ws_of_latest
+from lsst.ts.rubintv.background.currentpoller import CurrentPoller
+from lsst.ts.rubintv.handlers.websocket_notifiers import send_notification
 from lsst.ts.rubintv.handlers.websockets_clients import (
     clients,
     clients_lock,
@@ -153,9 +154,7 @@ async def attach_service(
             logger.error("No such channel", service=service, client_id=client_id)
             return
 
-    await notify_ws_of_latest(
-        websocket, service_loc_cam, location, camera, channel_name, service
-    )
+    await notify_new_client(websocket, location, camera, channel_name, service)
 
     async with services_lock:
         if service_loc_cam in services_clients:
@@ -197,3 +196,18 @@ async def is_valid_channel(camera: Camera, channel_name: str) -> bool:
     return camera.channels is not None and channel_name in [
         chan.name for chan in camera.channels
     ]
+
+
+async def notify_new_client(
+    websocket: WebSocket,
+    location: Location,
+    camera: Camera,
+    channel_name: str,
+    service: str,
+) -> None:
+
+    current_poller: CurrentPoller = websocket.app.state.current_poller
+    async for service_type, data in current_poller.get_latest_data(
+        location, camera, channel_name, service
+    ):
+        await send_notification(websocket, service_type, data)

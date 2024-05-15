@@ -1,4 +1,5 @@
 import asyncio
+from typing import AsyncGenerator
 
 import structlog
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
@@ -225,7 +226,10 @@ class CurrentPoller:
         if report_objs:
             if not self._nr_reports_exist.get(loc_cam, False):
                 await notify_ws_clients(
-                    "camera", Service.CAMERA_PER_DAY, loc_cam, "nightReportExists"
+                    "camera",
+                    Service.CAMERA_PER_DAY,
+                    loc_cam,
+                    {"nightReportExists": True},
                 )
                 self._nr_reports_exist[loc_cam] = True
             try:
@@ -382,3 +386,36 @@ class CurrentPoller:
     async def night_report_exists(self, location_name: str, camera_name: str) -> bool:
         loc_cam = f"{location_name}/{camera_name}"
         return self._nr_reports_exist.get(loc_cam, False)
+
+    async def get_latest_data(
+        self,
+        location: Location,
+        camera: Camera,
+        channel_name: str,
+        service: str,
+    ) -> AsyncGenerator:
+        match service:
+            case "camera":
+                channel_data = self.get_current_channel_table(location.name, camera)
+                yield Service.CAMERA_TABLE, channel_data
+
+                metadata = self.get_current_metadata(location.name, camera)
+                yield Service.CAMERA_METADATA, metadata
+
+                per_day = self.get_current_per_day_data(location.name, camera)
+                yield Service.CAMERA_PER_DAY, per_day
+
+                nr_exists = await self.night_report_exists(location.name, camera.name)
+                yield Service.CAMERA_PER_DAY, {"nightReportExists": nr_exists}
+
+            case "channel":
+                event = await self.get_current_channel_event(
+                    location.name, camera.name, channel_name
+                )
+                yield Service.CHANNEL_EVENT, event.__dict__
+
+            case "nightreport":
+                night_report = await self.get_current_night_report(
+                    location.name, camera.name
+                )
+                yield Service.NIGHT_REPORT, night_report

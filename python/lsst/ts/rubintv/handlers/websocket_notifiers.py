@@ -4,18 +4,12 @@ from uuid import UUID
 
 import structlog
 from fastapi import WebSocket
-from lsst.ts.rubintv.background.currentpoller import CurrentPoller
-from lsst.ts.rubintv.handlers.handlers_helpers import (
-    get_camera_current_data,
-    get_current_night_report_payload,
-)
 from lsst.ts.rubintv.handlers.websockets_clients import (
     clients,
     clients_lock,
     services_clients,
     services_lock,
 )
-from lsst.ts.rubintv.models.models import Camera, Location
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as Service
 from lsst.ts.rubintv.models.models import get_current_day_obs
 
@@ -46,42 +40,6 @@ async def notify_clients(
     # `return_exceptions=True` prevents one failed task from affecting others
     await asyncio.gather(*tasks, return_exceptions=True)
     logger.info("Finished sending updates")
-
-
-async def notify_ws_of_latest(
-    websocket: WebSocket,
-    service_loc_cam: str,
-    location: Location,
-    camera: Camera,
-    channel_name: str,
-    service: str,
-) -> None:
-    match service:
-        case "camera":
-            data = await get_camera_current_data(
-                location, camera, websocket, use_historical=False
-            )
-            if data is None:
-                return
-            day_obs, channel_data, per_day, metadata, nr_exists, is_historical = data
-            await send_notification(websocket, Service.CAMERA_TABLE, channel_data)
-            await send_notification(websocket, Service.CAMERA_METADATA, metadata)
-            await send_notification(websocket, Service.CAMERA_PER_DAY, per_day)
-            if nr_exists:
-                await send_notification(
-                    websocket, Service.CAMERA_PER_DAY, "nightReportExists"
-                )
-        case "channel":
-            current_poller: CurrentPoller = websocket.app.state.current_poller
-            event = await current_poller.get_current_channel_event(
-                location.name, camera.name, channel_name
-            )
-            await send_notification(websocket, Service.CHANNEL_EVENT, event.__dict__)
-        case "nightreport":
-            day_obs, night_report = await get_current_night_report_payload(
-                location, camera, websocket
-            )
-            await send_notification(websocket, Service.NIGHT_REPORT, night_report)
 
 
 async def send_notification(
