@@ -2,6 +2,7 @@ import asyncio
 
 import structlog
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
+from lsst.ts.rubintv.handlers.handlers_helpers import ServiceMessageTypes as Service
 from lsst.ts.rubintv.handlers.websocket_notifiers import notify_ws_clients
 from lsst.ts.rubintv.models.models import (
     Camera,
@@ -106,7 +107,7 @@ class CurrentPoller:
 
             pd_data = await self.make_per_day_data(camera, events)
             self._per_day[loc_cam] = pd_data
-            await notify_ws_clients("camera", "perDay", loc_cam, pd_data)
+            await notify_ws_clients("camera", Service.CAMERA_PER_DAY, loc_cam, pd_data)
 
             table = await self.make_channel_table(camera, events)
             self._table[loc_cam] = table
@@ -116,7 +117,7 @@ class CurrentPoller:
                 num_seqs=len(table),
                 max_seq=max(table) if table else -1,
             )
-            await notify_ws_clients("camera", "channelData", loc_cam, table)
+            await notify_ws_clients("camera", Service.CAMERA_TABLE, loc_cam, table)
 
     async def update_channel_events(
         self, events: list[Event], loc_cam: str, camera: Camera
@@ -136,7 +137,10 @@ class CurrentPoller:
             ):
                 self._most_recent_events[chan_lookup] = current_event
                 await notify_ws_clients(
-                    "channel", "event", chan_lookup, current_event.__dict__
+                    "channel",
+                    Service.CHANNEL_EVENT,
+                    chan_lookup,
+                    current_event.__dict__,
                 )
 
     async def sieve_out_metadata(
@@ -207,7 +211,9 @@ class CurrentPoller:
             )
             for cam in to_notify:
                 loc_cam = await self._get_loc_cam(location.name, cam)
-                await notify_ws_clients("camera", "metadata", loc_cam, data)
+                await notify_ws_clients(
+                    "camera", Service.CAMERA_METADATA, loc_cam, data
+                )
 
     async def sieve_out_night_reports(
         self,
@@ -219,7 +225,7 @@ class CurrentPoller:
         if report_objs:
             if not self._nr_reports_exist.get(loc_cam, False):
                 await notify_ws_clients(
-                    "camera", "perDay", loc_cam, "nightReportExists"
+                    "camera", Service.CAMERA_PER_DAY, loc_cam, "nightReportExists"
                 )
                 self._nr_reports_exist[loc_cam] = True
             try:
@@ -241,7 +247,7 @@ class CurrentPoller:
         loc_cam: str,
         location: Location,
     ) -> None:
-        message: NightReportPayload = {}
+        night_report: NightReportPayload = {}
         reports = await objects_to_ngt_reports(report_objs)
         text_reports = [r for r in reports if r.group == "metadata"]
         if len(text_reports) > 1:
@@ -256,7 +262,7 @@ class CurrentPoller:
                 client = self._clients[location.name]
                 text_obj = await client.async_get_object(key)
                 if text_obj:
-                    message["text"] = text_obj
+                    night_report["text"] = text_obj
             self._nr_metadata[loc_cam] = text_report
             reports.remove(text_report)
 
@@ -265,10 +271,12 @@ class CurrentPoller:
             stored = self._nr_reports[loc_cam]
         to_update = list(set(reports) - stored)
         if to_update:
-            message["plots"] = to_update
+            night_report["plots"] = to_update
             self._nr_reports[loc_cam] = set(reports)
-        if message:
-            await notify_ws_clients("nightreport", "nightReport", loc_cam, message)
+        if night_report:
+            await notify_ws_clients(
+                "nightreport", Service.NIGHT_REPORT, loc_cam, night_report
+            )
         return
 
     async def make_per_day_data(

@@ -2,6 +2,7 @@
 
 import asyncio
 from datetime import date
+from enum import Enum
 from typing import Any, Callable
 
 import structlog
@@ -15,16 +16,20 @@ from lsst.ts.rubintv.models.models import (
     NightReportPayload,
     get_current_day_obs,
 )
+from starlette.requests import HTTPConnection
 
 logger = structlog.get_logger("rubintv")
 
 
 async def get_camera_current_data(
-    location: Location, camera: Camera, request: Request
-) -> tuple[Any, Any, Any, Any, Any, bool] | None:
+    location: Location,
+    camera: Camera,
+    connection: HTTPConnection,
+    use_historical: bool = True,
+) -> tuple[None | date, dict, dict, dict, bool, bool] | None:
     if not camera.online:
         return None
-    current_poller: CurrentPoller = request.app.state.current_poller
+    current_poller: CurrentPoller = connection.app.state.current_poller
     while not current_poller.completed_first_poll:
         await asyncio.sleep(0.3)
 
@@ -35,8 +40,8 @@ async def get_camera_current_data(
     per_day = await current_poller.get_current_per_day_data(location.name, camera)
     nr_exists = await current_poller.night_report_exists(location.name, camera.name)
 
-    if not (per_day or metadata or channel_data):
-        hist_data = await get_most_recent_historical_data(location, camera, request)
+    if not (per_day or metadata or channel_data) and use_historical:
+        hist_data = await get_most_recent_historical_data(location, camera, connection)
         if hist_data:
             (
                 day_obs,
@@ -87,10 +92,10 @@ async def get_camera_calendar(
 
 
 async def get_current_night_report_payload(
-    location: Location, camera: Camera, request: Request
+    location: Location, camera: Camera, connection: HTTPConnection
 ) -> tuple[date, NightReportPayload]:
     day_obs = get_current_day_obs()
-    current_poller: CurrentPoller = request.app.state.current_poller
+    current_poller: CurrentPoller = connection.app.state.current_poller
     night_report = await current_poller.get_current_night_report(
         location.name, camera.name
     )
@@ -125,3 +130,11 @@ async def get_prev_next_event(
             raise HTTPException(423, "Historical data is being processed")
         nxt, prv = await hp.get_next_prev_event(location, camera, event)
     return {"next": nxt, "prev": prv}
+
+
+class ServiceMessageTypes(Enum):
+    CHANNEL_EVENT: str = "event"
+    CAMERA_TABLE: str = "channelData"
+    CAMERA_METADATA: str = "metadata"
+    CAMERA_PER_DAY: str = "perDay"
+    NIGHT_REPORT: str = "nightReport"

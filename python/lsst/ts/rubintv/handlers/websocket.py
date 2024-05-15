@@ -4,6 +4,7 @@ import uuid
 
 import structlog
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from lsst.ts.rubintv.handlers.websocket_notifiers import notify_ws_of_latest
 from lsst.ts.rubintv.handlers.websockets_clients import (
     clients,
     clients_lock,
@@ -133,18 +134,28 @@ async def attach_service(
         logger.error("Bad request", service=service, client_id=client_id)
         return
 
-    location, camera_name, *extra = loc_cam.split("/")
+    channel_name = ""
+    location_name, camera_name, *extra = loc_cam.split("/")
     locations = websocket.app.state.models.locations
-    if not (camera := await is_valid_location_camera(location, camera_name, locations)):
+    if not (
+        camera := await is_valid_location_camera(location_name, camera_name, locations)
+    ):
         logger.error(
             "No such camera:", service=service, client_id=client_id, camera=loc_cam
         )
         return
+
+    location = await find_first(locations, "name", location_name)
+
     if extra:
-        channel = extra[0]
-        if not await is_valid_channel(camera, channel):
+        channel_name = extra[0]
+        if not await is_valid_channel(camera, channel_name):
             logger.error("No such channel", service=service, client_id=client_id)
             return
+
+    await notify_ws_of_latest(
+        websocket, service_loc_cam, location, camera, channel_name, service
+    )
 
     async with services_lock:
         if service_loc_cam in services_clients:
