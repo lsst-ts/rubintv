@@ -24,6 +24,7 @@ from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
 from .config import config
 from .handlers.api import api_router
+from .handlers.ddv_websocket_handler import ddv_ws_router
 from .handlers.heartbeat_server import heartbeat_router
 from .handlers.internal import internal_router
 from .handlers.pages import pages_router
@@ -113,8 +114,13 @@ def create_app() -> FastAPI:
         name="static",
     )
 
+    # Mount Derived Data Visualization Flutter app
+    if os.path.isdir("ddv"):
+        app.mount("/rubintv/ddv/app", StaticFiles(directory="ddv"), name="ddv-flutter")
+
     # Attach the routers.
     app.include_router(internal_router)
+    app.include_router(ddv_ws_router, prefix=f"{config.path_prefix}/ddv")
     app.include_router(api_router, prefix=f"{config.path_prefix}/api")
     app.include_router(heartbeat_router, prefix=f"{config.path_prefix}/heartbeats")
     app.include_router(ws_router, prefix=f"{config.path_prefix}/ws")
