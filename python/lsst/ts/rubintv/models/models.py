@@ -352,3 +352,11 @@ class Heartbeat:
             "isActive": bool(self.state.value),
             "nextExpected": self.next_expected.isoformat(),  # Convert datetime to string
         }
+
+
+class ServiceMessageTypes(Enum):
+    CHANNEL_EVENT: str = "event"
+    CAMERA_TABLE: str = "channelData"
+    CAMERA_METADATA: str = "metadata"
+    CAMERA_PER_DAY: str = "perDay"
+    NIGHT_REPORT: str = "nightReport"

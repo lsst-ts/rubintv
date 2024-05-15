@@ -2,7 +2,6 @@
 
 import asyncio
 from datetime import date
-from enum import Enum
 from typing import Any, Callable
 
 import structlog
@@ -130,11 +129,3 @@ async def get_prev_next_event(
             raise HTTPException(423, "Historical data is being processed")
         nxt, prv = await hp.get_next_prev_event(location, camera, event)
     return {"next": nxt, "prev": prv}
-
-
-class ServiceMessageTypes(Enum):
-    CHANNEL_EVENT: str = "event"
-    CAMERA_TABLE: str = "channelData"
-    CAMERA_METADATA: str = "metadata"
-    CAMERA_PER_DAY: str = "perDay"
-    NIGHT_REPORT: str = "nightReport"

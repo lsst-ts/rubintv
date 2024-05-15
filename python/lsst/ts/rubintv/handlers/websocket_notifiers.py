@@ -5,7 +5,6 @@ from uuid import UUID
 import structlog
 from fastapi import WebSocket
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
-from lsst.ts.rubintv.handlers.handlers_helpers import ServiceMessageTypes as Service
 from lsst.ts.rubintv.handlers.handlers_helpers import (
     get_camera_current_data,
     get_current_night_report_payload,
@@ -16,7 +15,9 @@ from lsst.ts.rubintv.handlers.websockets_clients import (
     services_clients,
     services_lock,
 )
-from lsst.ts.rubintv.models.models import Camera, Location, get_current_day_obs
+from lsst.ts.rubintv.models.models import Camera, Location
+from lsst.ts.rubintv.models.models import ServiceMessageTypes as Service
+from lsst.ts.rubintv.models.models import get_current_day_obs
 
 logger = structlog.get_logger("rubintv")
 

@@ -2,7 +2,6 @@ import asyncio
 
 import structlog
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
-from lsst.ts.rubintv.handlers.handlers_helpers import ServiceMessageTypes as Service
 from lsst.ts.rubintv.handlers.websocket_notifiers import notify_ws_clients
 from lsst.ts.rubintv.models.models import (
     Camera,
@@ -10,8 +9,9 @@ from lsst.ts.rubintv.models.models import (
     Location,
     NightReport,
     NightReportPayload,
-    get_current_day_obs,
 )
+from lsst.ts.rubintv.models.models import ServiceMessageTypes as Service
+from lsst.ts.rubintv.models.models import get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import (
     make_table_from_event_list,
     objects_to_events,
