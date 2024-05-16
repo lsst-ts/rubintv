@@ -8,7 +8,5 @@ httpx
 moto
 safir
 pytest_asyncio
-locust
-locust_plugins
 websocket-client
 beautifulsoup4
