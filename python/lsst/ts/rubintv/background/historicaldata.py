@@ -210,7 +210,7 @@ class HistoricalPoller:
             text_report = text_reports[0]
             key = text_report.key
             client = self._clients[location.name]
-            text_obj = await client.get_metadata_obj(key)
+            text_obj = await client.async_get_object(key)
             report["text"] = text_obj
             nr_objs.remove(text_report)
         if nr_objs:
