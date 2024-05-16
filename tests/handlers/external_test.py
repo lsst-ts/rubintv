@@ -69,7 +69,7 @@ async def test_current_channels(
     print("in test_current_channels")
     print(mocker.empty_channel)
     # allow historicaldata time to sort info
-    await asyncio.sleep(0.2)
+    await asyncio.sleep(1)
     for location in m.locations:
         for camera in location.cameras:
             loc_cam = f"{location.name}/{camera.name}"
