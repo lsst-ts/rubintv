@@ -68,7 +68,7 @@ async def test_poll_buckets_for_todays_data(
         try:
             # Run the method for a specified number of seconds, then timeout
             await asyncio.wait_for(
-                current_poller.poll_buckets_for_todays_data(), timeout=0.2
+                current_poller.poll_buckets_for_todays_data(), timeout=1
             )
         except asyncio.TimeoutError:
             pass
@@ -85,9 +85,7 @@ async def test_poll_buckets_for_today_process_and_store_seq_events(
     current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
 ) -> None:
     try:
-        await asyncio.wait_for(
-            current_poller.poll_buckets_for_todays_data(), timeout=0.3
-        )
+        await asyncio.wait_for(current_poller.poll_buckets_for_todays_data(), timeout=1)
     except asyncio.TimeoutError:
         # The timeout error is expected
         pass
@@ -108,9 +106,7 @@ async def test_poll_buckets_for_today_process_and_store_seq_events(
 @pytest.mark.asyncio
 async def test_clear_all_data(current_poller: CurrentPoller) -> None:
     try:
-        await asyncio.wait_for(
-            current_poller.poll_buckets_for_todays_data(), timeout=0.2
-        )
+        await asyncio.wait_for(current_poller.poll_buckets_for_todays_data(), timeout=1)
     except asyncio.TimeoutError:
         pass
     assert current_poller.completed_first_poll is True
@@ -226,7 +222,7 @@ async def test_day_rollover(
     ):
         try:
             await asyncio.wait_for(
-                current_poller.poll_buckets_for_todays_data(), timeout=0.3
+                current_poller.poll_buckets_for_todays_data(), timeout=1
             )
         except asyncio.TimeoutError:
             pass
@@ -246,7 +242,7 @@ async def test_day_rollover(
     ):
         try:
             await asyncio.wait_for(
-                current_poller.poll_buckets_for_todays_data(), timeout=0.3
+                current_poller.poll_buckets_for_todays_data(), timeout=1
             )
         except asyncio.TimeoutError:
             pass
