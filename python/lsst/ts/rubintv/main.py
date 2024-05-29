@@ -11,7 +11,7 @@ import asyncio
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
@@ -24,12 +24,12 @@ from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
 from .config import config
 from .handlers.api import api_router
-from .handlers.ddv_websocket_handler import ddv_ws_router
-from .handlers.heartbeat_server import heartbeat_router
+from .handlers.ddv_websocket_handler import ddv_client_ws_router, internal_ws_router
+from .handlers.heartbeat_server import heartbeat_ws_router
 from .handlers.internal import internal_router
 from .handlers.pages import pages_router
 from .handlers.proxies import proxies_router
-from .handlers.websocket import ws_router
+from .handlers.websocket import data_ws_router
 from .handlers.websockets_clients import clients
 from .models.models_init import ModelsInitiator
 from .s3client import S3Client
@@ -91,11 +91,10 @@ def create_app() -> FastAPI:
     )
 
     @app.middleware("http")
-    async def add_cache_control_header(
-        request: Request, call_next: Response
-    ) -> Response:
+    async def add_cache_control_header(request: Request, call_next: Any) -> Any:
         response = await call_next(request)
-        response.headers["Cache-Control"] = "public, max-age=3600, must-revalidate"
+        if isinstance(response, Response):
+            response.headers["Cache-Control"] = "public, max-age=3600, must-revalidate"
         return response
 
     # Intwine webpack assets
@@ -120,10 +119,13 @@ def create_app() -> FastAPI:
 
     # Attach the routers.
     app.include_router(internal_router)
-    app.include_router(ddv_ws_router, prefix=f"{config.path_prefix}/ddv")
+    app.include_router(internal_ws_router, prefix="/ws")
+    app.include_router(data_ws_router, prefix=f"{config.path_prefix}/ws/data")
+    app.include_router(
+        heartbeat_ws_router, prefix=f"{config.path_prefix}/ws/heartbeats"
+    )
+    app.include_router(ddv_client_ws_router, prefix=f"{config.path_prefix}/ws/ddv")
     app.include_router(api_router, prefix=f"{config.path_prefix}/api")
-    app.include_router(heartbeat_router, prefix=f"{config.path_prefix}/heartbeats")
-    app.include_router(ws_router, prefix=f"{config.path_prefix}/ws")
     app.include_router(proxies_router, prefix=f"{config.path_prefix}")
     app.include_router(pages_router, prefix=f"{config.path_prefix}")
 

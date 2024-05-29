@@ -5,7 +5,9 @@ from enum import Enum
 import structlog
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-ddv_ws_router = APIRouter()
+internal_ws_router = APIRouter()
+ddv_client_ws_router = APIRouter()
+
 logger = structlog.get_logger(__name__)
 
 
@@ -116,7 +118,7 @@ class ConnectionManager:
         self.workers: dict[str, WorkerPod] = {}
         self.queue: list[QueueItem] = []
 
-    async def connect(self, websocket: WebSocket, client_type: str) -> str:
+    async def connect(self, websocket: WebSocket, connection_type: str) -> str:
         """
         Connects a new client or worker and returns their unique identifier.
 
@@ -125,7 +127,8 @@ class ConnectionManager:
         websocket : `WebSocket`
             The WebSocket connection to register.
         client_type : `str`
-            Type of the client ("client" or "worker").
+            Type of the client (``"client"`` or ``"worker"``). Only
+            ``"worker"`` is positively matched against.
 
         Returns
         -------
@@ -133,7 +136,7 @@ class ConnectionManager:
             The unique identifier for the connected entity.
         """
         client_id = str(uuid.uuid4())
-        if client_type == "worker":
+        if connection_type == "worker":
             self.workers[client_id] = WorkerPod(client_id, websocket)
             logger.info("DDV: New worker connected", worker_id=client_id)
         else:
@@ -234,19 +237,34 @@ class ConnectionManager:
             await self.check_queue(worker)
 
 
-@ddv_ws_router.websocket("/ws/{client_type}")
-async def websocket_endpoint(websocket: WebSocket, client_type: str) -> None:
+@ddv_client_ws_router.websocket("/ddv")
+async def ddv_client_ws_endpoint(websocket: WebSocket) -> None:
     """
-    Endpoint for handling WebSocket connections.
+    Endpoint for handling DDV client connections.
 
     Parameters
     ----------
     websocket : `WebSocket`
         The WebSocket connection for this endpoint.
-    client_type : `str`
-        Indicates whether the connection is from a "client" or a "worker".
     """
-    client_id = await manager.connect(websocket, client_type)
+    await handle_connection(websocket, "client")
+
+
+@internal_ws_router.websocket("/worker")
+async def worker_ws_endpoint(websocket: WebSocket) -> None:
+    """
+    Endpoint for handling worker pod WebSocket connections.
+
+    Parameters
+    ----------
+    websocket : `WebSocket`
+        The WebSocket connection for this endpoint.
+    """
+    await handle_connection(websocket, "worker")
+
+
+async def handle_connection(websocket: WebSocket, connection_type: str) -> None:
+    client_id = await manager.connect(websocket, connection_type)
     try:
         while True:
             data = await websocket.receive_text()

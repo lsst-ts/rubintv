@@ -21,7 +21,7 @@ window.addEventListener('DOMContentLoaded',
     if (!!window.SharedWorker) {
       const heartbeatWorker = new SharedWorker(new URL('./modules/heartbeat-worker', import.meta.url))
 
-      const heartbeatWsUrl = getWebSockURL("heartbeats")
+      const heartbeatWsUrl = getWebSockURL("ws/heartbeats")
       heartbeatWorker.port.postMessage({heartbeatWsUrl})
 
       heartbeatWorker.port.onmessage = function(e) {
