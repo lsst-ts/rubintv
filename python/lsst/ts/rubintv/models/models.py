@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any
 
 import structlog
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
 from typing_extensions import NotRequired, TypedDict
 
@@ -129,7 +129,8 @@ class Camera(HasButton):
 
 
 class Location(HasButton):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    class Config:
+        arbitrary_types_allowed = True
 
     bucket_name: str
     profile_name: str

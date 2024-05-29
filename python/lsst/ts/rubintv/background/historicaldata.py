@@ -1,6 +1,7 @@
 import asyncio
 import re
 from datetime import date
+from typing import Any
 
 import structlog
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
@@ -36,7 +37,7 @@ class HistoricalPoller:
 
     def __init__(self, locations: list[Location]) -> None:
         self._clients: dict[str, S3Client] = {}
-        self._metadata: dict[str, dict] = {}
+        self._metadata: dict[str, dict[str, str]] = {}
         self._events: dict[str, list[Event]] = {}
         self._nr_metadata: dict[str, list[NightReport]] = {}
         self._calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
@@ -111,9 +112,8 @@ class HistoricalPoller:
                     prefix=prefix,
                 )
                 try:
-                    one_load = await self._clients[location.name].async_list_objects(
-                        prefix=prefix
-                    )
+                    client: S3Client = self._clients[location.name]
+                    one_load = await client.async_list_objects(prefix=prefix)
                     objects.extend(one_load)
                     logger.info("Found:", num_objects=len(one_load))
                 except Exception as e:
@@ -273,7 +273,7 @@ class HistoricalPoller:
 
     async def get_metadata_for_date(
         self, location: Location, camera: Camera, day_obs: date
-    ) -> dict[str, dict]:
+    ) -> dict[str, Any]:
         cam_name = camera.name
         if camera.metadata_from:
             cam_name = camera.metadata_from

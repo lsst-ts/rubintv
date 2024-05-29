@@ -367,7 +367,7 @@ class CurrentPoller:
         self, location_name: str, event: Event
     ) -> tuple[dict | None, ...]:
         loc_cam = f"{location_name}/{event.camera_name}"
-        table = self._table.get(loc_cam, None)
+        table = self._table.get(loc_cam, {})
         nxt_prv = await get_next_previous_from_table(table, event)
         return nxt_prv
 

@@ -1,6 +1,7 @@
 import asyncio
 import json
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 import boto3
 import structlog
@@ -51,28 +52,34 @@ class S3Client:
             )
         return objects
 
-    def _get_object(self, key: str) -> dict:
+    def _get_object(self, key: str) -> dict[str, Any]:
         try:
             obj = self._client.get_object(Bucket=self._bucket_name, Key=key)
-            return json.loads(obj["Body"].read())
+            data = json.loads(obj["Body"].read())
+            assert isinstance(data, dict)
+            for k in data.keys():
+                assert isinstance(k, str)
+            return data
         except ClientError as e:
             if e.response["Error"]["Code"] == "NoSuchKey":
                 logger.info("Object for key: {key} not found.", key=key)
             return {}
 
-    async def async_get_object(self, key: str) -> dict:
+    async def async_get_object(self, key: str) -> dict[str, Any]:
         loop = asyncio.get_event_loop()
         executor = ThreadPoolExecutor(max_workers=3)
         return await loop.run_in_executor(executor, self._get_object, key)
 
     def get_raw_object(self, key: str) -> StreamingBody:
         try:
-            data = self._client.get_object(Bucket=self._bucket_name, Key=key)
-            return data["Body"]
+            obj = self._client.get_object(Bucket=self._bucket_name, Key=key)
+            data = obj["Body"]
+            assert isinstance(data, StreamingBody)
+            return data
         except ClientError:
             raise HTTPException(status_code=404, detail=f"No such file for: {key}")
 
-    def get_movie(self, key: str, headers: dict | None = None) -> dict:
+    def get_movie(self, key: str, headers: dict[str, str] | None = None) -> Any:
         try:
             data = self._client.get_object(
                 Bucket=self._bucket_name, Key=key, **(headers or {})

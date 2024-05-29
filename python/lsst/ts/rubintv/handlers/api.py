@@ -14,13 +14,6 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
 from lsst.ts.rubintv.models.models import Camera, Event, Location, NightReportPayload
 from lsst.ts.rubintv.models.models_helpers import date_str_to_date, find_first
 
-__all__ = [
-    "api_router",
-    "get_location",
-    "get_location_camera",
-    "get_camera_current_events_api",
-]
-
 api_router = APIRouter()
 """FastAPI router for all external handlers."""
 
@@ -181,7 +174,7 @@ async def get_specific_channel_event(
     if not camera.online or not key:
         return None
 
-    event = Event(key)
+    event = Event(key=key)
     if event.ext not in ["png", "jpg", "jpeg", "mp4"]:
         return None
     return event
