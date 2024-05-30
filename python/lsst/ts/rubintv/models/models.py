@@ -7,21 +7,12 @@ from enum import Enum
 from typing import Any
 
 import structlog
-from pydantic import BaseModel, ConfigDict, validator
+from pydantic import BaseModel, ConfigDict
 from pydantic.dataclasses import dataclass
 from typing_extensions import NotRequired, TypedDict
 
 from .. import __version__
 from ..config import config
-
-__all__ = [
-    "Metadata",
-    "Location",
-    "Channel",
-    "Camera",
-    "Event",
-    "get_current_day_obs",
-]
 
 logger = structlog.get_logger("rubintv")
 
@@ -129,10 +120,6 @@ class Camera(HasButton):
     metadata_cols: dict[str, str] | None = None
     image_viewer_link: str = ""
     copy_row_template: str = ""
-
-    @validator("metadata_from", pre=True, always=True)
-    def default_metadata_from(cls: Any, v: Any, values: Any) -> Any:
-        return v or values.get("name", "")
 
     def seq_channels(self) -> list[Channel]:
         return [c for c in self.channels if not c.per_day]

@@ -274,7 +274,10 @@ class HistoricalPoller:
     async def get_metadata_for_date(
         self, location: Location, camera: Camera, day_obs: date
     ) -> dict[str, dict]:
-        loc_cam_date = f"{location.name}/{camera.metadata_from}/{day_obs}"
+        cam_name = camera.name
+        if camera.metadata_from:
+            cam_name = camera.metadata_from
+        loc_cam_date = f"{location.name}/{cam_name}/{day_obs}"
         return self._metadata.get(loc_cam_date, {})
 
     async def get_most_recent_day(
