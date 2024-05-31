@@ -78,11 +78,11 @@ window.onpageshow = function (event) {
             </div>
         </div>
     </header>
+    <div class="breadcrumb">
+        {% block breadcrumb %}
+        {% endblock breadcrumb %}
+    </div>
     <main>
-        <div class="breadcrumb">
-            {% block breadcrumb %}
-            {% endblock breadcrumb %}
-        </div>
         {% block content %}
         {% endblock content %}
         {% block further %}

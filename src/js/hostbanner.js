@@ -1,4 +1,4 @@
-import { getWebSockURL } from './modules/utils'
+import { _getById, getWebSockURL } from './modules/utils'
 
 window.addEventListener('DOMContentLoaded',
   () => {
@@ -15,7 +15,7 @@ window.addEventListener('DOMContentLoaded',
       display.forEach((c) => displayEl.classList.add(c))
       const text = document.createTextNode(display.join(' '))
       displayEl.appendChild(text)
-      document.body.append(displayEl)
+      _getById('header-banner').append(displayEl)
     }
 
     if (!!window.SharedWorker) {
