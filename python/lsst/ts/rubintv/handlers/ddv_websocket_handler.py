@@ -8,7 +8,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 internal_ws_router = APIRouter()
 ddv_client_ws_router = APIRouter()
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger("rubintv")
 
 
 class WorkerPodStatus(Enum):
