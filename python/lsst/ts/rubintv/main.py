@@ -118,13 +118,20 @@ def create_app() -> FastAPI:
         app.mount("/rubintv/ddv/app", StaticFiles(directory="ddv"), name="ddv-flutter")
 
     # Attach the routers.
+
+    # Internal routing:
     app.include_router(internal_router)
     app.include_router(internal_ws_router, prefix="/ws")
-    app.include_router(data_ws_router, prefix=f"{config.path_prefix}/ws/data")
+
+    # External websocket routing:
+    external_ws_router_prefix = f"{config.path_prefix}/ws"
+    app.include_router(data_ws_router, prefix=f"{external_ws_router_prefix}/data")
     app.include_router(
-        heartbeat_ws_router, prefix=f"{config.path_prefix}/ws/heartbeats"
+        heartbeat_ws_router, prefix=f"{external_ws_router_prefix}/heartbeats"
     )
-    app.include_router(ddv_client_ws_router, prefix=f"{config.path_prefix}/ws/ddv")
+    app.include_router(ddv_client_ws_router, prefix=f"{external_ws_router_prefix}/ddv")
+
+    # External HTTP routing:
     app.include_router(api_router, prefix=f"{config.path_prefix}/api")
     app.include_router(proxies_router, prefix=f"{config.path_prefix}")
     app.include_router(pages_router, prefix=f"{config.path_prefix}")

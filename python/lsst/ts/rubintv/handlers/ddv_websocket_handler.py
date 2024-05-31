@@ -126,7 +126,7 @@ class ConnectionManager:
         ----------
         websocket : `WebSocket`
             The WebSocket connection to register.
-        client_type : `str`
+        connection_type : `str`
             Type of the client (``"client"`` or ``"worker"``). Only
             ``"worker"`` is positively matched against.
 
