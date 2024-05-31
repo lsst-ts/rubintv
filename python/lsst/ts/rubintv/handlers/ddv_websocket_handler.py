@@ -77,6 +77,7 @@ class WorkerPod(Client):
         """
         if self.connected_client is not None and message != "Client disconnected":
             try:
+                logger.info("DDV: Worker sent", message=message)
                 await self.connected_client.websocket.send_text(message)
             except WebSocketDisconnect:
                 logger.info(
