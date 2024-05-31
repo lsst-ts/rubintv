@@ -266,9 +266,11 @@ async def worker_ws_endpoint(websocket: WebSocket) -> None:
 async def handle_connection(websocket: WebSocket, connection_type: str) -> None:
     try:
         await websocket.accept()
+        logger.info("DDV: Websocket connection accepted")
         client_id = await manager.connect(websocket, connection_type)
         while True:
             data = await websocket.receive_text()
+            logger.info("DDV: Received data", data=data)
             await manager.handle_client_message(client_id, data)
     except WebSocketDisconnect:
         manager.disconnect(client_id)
