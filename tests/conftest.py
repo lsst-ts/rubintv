@@ -12,7 +12,7 @@ import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from lsst.ts.rubintv.main import create_app
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
 from moto import mock_aws
@@ -49,7 +49,9 @@ async def mocked_client(
 ) -> AsyncIterator[Tuple[AsyncClient, RubinDataMocker]]:
     app, mocker = mocked_app
     """Return an ``httpx.AsyncClient`` configured to talk to the test app."""
-    async with AsyncClient(app=app, base_url="http://127.0.0.1:8000/") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://127.0.0.1:8000/"
+    ) as client:
         yield client, mocker
 
 
