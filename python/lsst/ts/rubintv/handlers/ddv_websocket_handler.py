@@ -237,7 +237,7 @@ class ConnectionManager:
             await self.check_queue(worker)
 
 
-@ddv_client_ws_router.websocket("/ddv")
+@ddv_client_ws_router.websocket("/client")
 async def ddv_client_ws_endpoint(websocket: WebSocket) -> None:
     """
     Endpoint for handling DDV client connections.
@@ -264,8 +264,9 @@ async def worker_ws_endpoint(websocket: WebSocket) -> None:
 
 
 async def handle_connection(websocket: WebSocket, connection_type: str) -> None:
-    client_id = await manager.connect(websocket, connection_type)
     try:
+        await websocket.accept()
+        client_id = await manager.connect(websocket, connection_type)
         while True:
             data = await websocket.receive_text()
             await manager.handle_client_message(client_id, data)
