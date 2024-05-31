@@ -13,6 +13,8 @@ from lsst.ts.rubintv.config import config as app_config
 config = BotoConfig(retries={"max_attempts": 10, "mode": "standard"})
 logger = structlog.get_logger("rubintv")
 
+__all__ = ["S3Client"]
+
 
 class S3Client:
     def __init__(self, profile_name: str, bucket_name: str) -> None:

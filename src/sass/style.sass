@@ -4,6 +4,7 @@
 @import "calendar"
 @import "clock"
 
+
 .flr
 	display: flex
 	flex-direction: row
@@ -115,13 +116,16 @@ header
 .breadcrumb
 	display: flex
 	flex-direction: row
-	justify-content: flex-end
+	justify-content: flex-start
 	gap: 4px
+	padding: 0.6em 30px
+	background-color: #4f4f4f
 	a
+		text-decoration: underline
 		color: #fff
 
 main
-		padding: 1em 30px 25px
+	padding: 2em 30px 25px
 
 .full-overlay
 	position: fixed
@@ -511,7 +515,6 @@ section
 			margin-top: 0
 			margin-bottom: auto
 
-
 .site-host-display
 	position: fixed
 	z-index: 24
@@ -526,3 +529,4 @@ section
 	pointer-events: none
 	&.development
 		background-color: burlywood
+		

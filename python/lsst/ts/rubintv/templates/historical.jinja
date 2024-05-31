@@ -5,6 +5,10 @@ Historical Data
 {% block undertitle %}
 {{ date }}
 {% endblock undertitle %}
+
+{% block headerbuttons %}
+{% endblock headerbuttons %}
+
 {% block breadcrumb %}
 <a href="{{ url_for('home') }}">Home</a>>
 <a href="{{ url_for('location', location_name=location.name) }}">{{ location.title }}</a>>
