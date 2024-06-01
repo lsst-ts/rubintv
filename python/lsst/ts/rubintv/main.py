@@ -115,7 +115,11 @@ def create_app() -> FastAPI:
 
     # Mount Derived Data Visualization Flutter app
     if os.path.isdir("ddv"):
-        app.mount("/rubintv/ddv/app", StaticFiles(directory="ddv"), name="ddv-flutter")
+        app.mount(
+            f"{config.path_prefix}/ddv",
+            StaticFiles(directory="ddv/build/web"),
+            name="ddv-flutter",
+        )
 
     # Attach the routers.
 

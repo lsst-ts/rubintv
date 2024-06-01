@@ -29,6 +29,19 @@ apt-get -y upgrade
 # Example of installing a new package, without unnecessary packages:
 apt-get -y install --no-install-recommends git
 
+apt-get -y install  \
+    libsasl2-dev \
+    python-dev \
+    libldap2-dev \
+    inetutils-ping \
+    vim \
+    nano \
+    curl \
+    procps \
+    findutils \
+    libssl-dev 
+
+
 # Delete cached files we don't need anymore:
 apt-get clean
 rm -rf /var/lib/apt/lists/*
