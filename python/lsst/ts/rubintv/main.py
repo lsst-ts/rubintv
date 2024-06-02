@@ -24,6 +24,7 @@ from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
 from .config import config
 from .handlers.api import api_router
+from .handlers.ddv_routes_handler import ddv_router
 from .handlers.ddv_websocket_handler import ddv_client_ws_router, internal_ws_router
 from .handlers.heartbeat_server import heartbeat_ws_router
 from .handlers.internal import internal_router
@@ -113,27 +114,37 @@ def create_app() -> FastAPI:
         name="static",
     )
 
+    external_ws_router_prefix = f"{config.path_prefix}/ws"
+
     # Mount Derived Data Visualization Flutter app
+    # built in GitHub Actions CI workflow.
     if os.path.isdir("ddv"):
+        ddv_path = "ddv/build/web"
         app.mount(
             f"{config.path_prefix}/ddv",
-            StaticFiles(directory="ddv/build/web"),
+            StaticFiles(directory=ddv_path),
             name="ddv-flutter",
         )
+        app.state.ddv_path = ddv_path
+        # Attach DDV Flutter client websocket (external):
+        app.include_router(
+            ddv_client_ws_router, prefix=f"{external_ws_router_prefix}/ddv"
+        )
+        # Provide router that
+        app.include_router(ddv_router, prefix=f"{config.path_prefix}/ddv")
 
     # Attach the routers.
 
     # Internal routing:
     app.include_router(internal_router)
+    # Below includes DDV worker pod websocket (internal):
     app.include_router(internal_ws_router, prefix="/ws")
 
     # External websocket routing:
-    external_ws_router_prefix = f"{config.path_prefix}/ws"
     app.include_router(data_ws_router, prefix=f"{external_ws_router_prefix}/data")
     app.include_router(
         heartbeat_ws_router, prefix=f"{external_ws_router_prefix}/heartbeats"
     )
-    app.include_router(ddv_client_ws_router, prefix=f"{external_ws_router_prefix}/ddv")
 
     # External HTTP routing:
     app.include_router(api_router, prefix=f"{config.path_prefix}/api")
