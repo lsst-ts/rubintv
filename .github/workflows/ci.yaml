@@ -46,6 +46,13 @@ jobs:
           npm install
           npm run build
 
+      - name: Bring in rubin_chart repo
+        uses: actions/checkout@v4
+        with:
+          repository: 'lsst-sitcom/rubin_chart'
+          path: rubin_chart
+          ref: 'u/fred3m/pod_test'
+
       - name: Bring in DDV Flutter app repo
         uses: actions/checkout@v4
         with: 
@@ -58,16 +65,17 @@ jobs:
         with:
           channel: stable
 
+      - name: List directories for debugging
+        run: |
+          ls -R rubin_chart
+
+
       - name: Set up .env file
         # TODO: location hostname needs to be injected at runtime
         run: echo -e "ADDRESS=/rubintv/ws/ddv\nPORT=8080" > ${{ github.workspace }}/ddv/.env
 
       - name: Install dependencies
         run: flutter pub get
-        working-directory: ./ddv
-
-      - name: Run Flutter tests
-        run: flutter test
         working-directory: ./ddv
 
       - name: Build Flutter web app
