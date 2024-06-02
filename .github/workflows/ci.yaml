@@ -71,7 +71,7 @@ jobs:
         working-directory: ./ddv
 
       - name: Build Flutter web app
-        run: flutter build web
+        run: flutter build web --base-href /rubintv/ddv/
         working-directory: ./ddv
 
 
