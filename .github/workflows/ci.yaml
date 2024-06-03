@@ -66,7 +66,7 @@ jobs:
           channel: stable
 
       - name: Set up .env file
-        run: echo -e "ADDRESS=/rubintv/ws/ddv\nPORT=8080" > ${{ github.workspace }}/ddv/.env
+        run: echo -e "ADDRESS=rubintv/ws/ddv" > ${{ github.workspace }}/ddv/.env
 
       - name: Install dependencies
         run: flutter pub get
