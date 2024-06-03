@@ -51,7 +51,7 @@ jobs:
         with:
           repository: 'lsst-sitcom/rubin_chart'
           path: rubin_chart
-          ref: 'u/fred3m/pod_test'
+          ref: 'deploy-slac'
 
       - name: Bring in DDV Flutter app repo
         uses: actions/checkout@v4
@@ -65,21 +65,18 @@ jobs:
         with:
           channel: stable
 
-      - name: List directories for debugging
-        run: |
-          ls -R rubin_chart
-
-
       - name: Set up .env file
-        # TODO: location hostname needs to be injected at runtime
         run: echo -e "ADDRESS=/rubintv/ws/ddv\nPORT=8080" > ${{ github.workspace }}/ddv/.env
 
       - name: Install dependencies
         run: flutter pub get
         working-directory: ./ddv
 
+      - name: Print flutter/dart version
+        run: flutter --version
+
       - name: Build Flutter web app
-        run: flutter build web --base-href /rubintv/ddv/
+        run: flutter build web --base-href /rubintv/ddv/ --release
         working-directory: ./ddv
 
 
