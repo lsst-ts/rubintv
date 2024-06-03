@@ -151,6 +151,7 @@ class Event:
     ext: str = ""
 
     def __lt__(self, other: Any) -> bool:
+        """Used by max()"""
         if type(other) is not type(self):
             raise TypeError
         return self.key < other.key

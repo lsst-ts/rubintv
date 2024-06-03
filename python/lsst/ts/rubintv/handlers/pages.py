@@ -420,14 +420,12 @@ async def get_current_channel_event_page(
     event = await get_current_channel_event(
         location_name, camera_name, channel_name, request
     )
-    channel: Channel | None = None
-    channel_title = ""
-    if event:
-        channel = find_first(camera.channels, "name", event.channel_name)
-    if channel:
-        channel_title = channel.title
 
-    title = build_title(location.title, camera.title, channel_title, "Current")
+    channel: Channel = find_first(camera.channels, "name", channel_name)
+    if channel is None or channel not in camera.channels:
+        raise HTTPException(status_code=404, detail="Channel not found.")
+
+    title = build_title(location.title, camera.title, channel.title, "Current")
 
     return templates.TemplateResponse(
         request=request,
