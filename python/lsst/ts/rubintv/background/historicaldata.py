@@ -306,15 +306,14 @@ class HistoricalPoller:
         self, location: Location, camera: Camera, channel: Channel
     ) -> Event | None:
         loc_cam = f"{location.name}/{camera.name}"
-        events = (
+        events = [
             event
             for event in self._events.get(loc_cam, [])
             if event.channel_name == channel.name
-        )
-        try:
-            return next(events)
-        except StopIteration:
+        ]
+        if not events:
             return None
+        return max(events)
 
     async def get_next_prev_event(
         self, location: Location, camera: Camera, event: Event

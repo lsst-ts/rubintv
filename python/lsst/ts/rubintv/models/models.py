@@ -150,6 +150,11 @@ class Event:
     filename: str = ""
     ext: str = ""
 
+    def __eq__(self, other: Any) -> bool:
+        if type(other) is not type(self):
+            raise TypeError
+        return self.key == other.key
+
     def __lt__(self, other: Any) -> bool:
         if type(other) is not type(self):
             raise TypeError
