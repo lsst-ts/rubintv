@@ -116,21 +116,20 @@ def create_app() -> FastAPI:
 
     external_ws_router_prefix = f"{config.path_prefix}/ws"
 
-    # Mount Derived Data Visualization Flutter app
-    # built in GitHub Actions CI workflow.
-    if os.path.isdir("ddv"):
-        ddv_path = "ddv/build/web"
+    # Mount Derived Data Visualization Flutter app.
+    ddv_app_root = "ddv/build/web"
+    if os.path.isdir(ddv_app_root):
         app.mount(
             f"{config.path_prefix}/ddv",
-            StaticFiles(directory=ddv_path),
+            StaticFiles(directory=ddv_app_root, html=True),
             name="ddv-flutter",
         )
-        app.state.ddv_path = ddv_path
+        app.state.ddv_path = ddv_app_root
         # Attach DDV Flutter client websocket (external):
         app.include_router(
             ddv_client_ws_router, prefix=f"{external_ws_router_prefix}/ddv"
         )
-        # Provide router that
+        # Provide router that hooks up ddv/index.html
         app.include_router(ddv_router, prefix=f"{config.path_prefix}/ddv")
 
     # Attach the routers.
