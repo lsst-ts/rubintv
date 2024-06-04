@@ -102,7 +102,7 @@ class ModelsInitiator:
             if "channels" in services[s]:
                 # expand name of camera out into camera's channels
                 cam_name = services[s]["channels"]
-                camera: Camera = find_first(cameras, "name", cam_name)
+                camera: Camera | None = find_first(cameras, "name", cam_name)
                 if camera is not None:
                     channels: list[Channel] = camera.channels
                     services[s]["channels"] = channels

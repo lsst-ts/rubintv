@@ -14,13 +14,13 @@ from lsst.ts.rubintv.handlers.websockets_clients import (
 from lsst.ts.rubintv.models.models import Camera, Location
 from lsst.ts.rubintv.models.models_helpers import find_first
 
-ws_router = APIRouter()
+data_ws_router = APIRouter()
 logger = structlog.get_logger("rubintv")
 
 valid_services = ["camera", "channel", "nightreport"]
 
 
-@ws_router.websocket("/")
+@data_ws_router.websocket("/")
 async def data_websocket(
     websocket: WebSocket,
 ) -> None:
