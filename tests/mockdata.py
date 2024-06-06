@@ -49,6 +49,7 @@ class RubinDataMocker:
         self.day_obs = day_obs
         self.location_channels: dict[str, list[Channel]] = {}
         self.seq_objs: dict[str, list[dict[str, str]]] = {}
+        self.empty_channel: dict[str, str] = {}
         self.events: dict[str, list[Event]] = {}
         self.metadata: dict[str, dict[str, str]] = {}
         self.mock_up_data()
@@ -134,18 +135,25 @@ class RubinDataMocker:
             updated empty channel string.
         """
 
-        # TODO: Work out what's happening with perDay/seq event generation
-        # keep adding to the add_data() functions
-        # employ add_data() functions in wewbsocket notifier tests
+        # TODO: keep adding to the add_data() functions
+        # employ add_data() functions in websocket notifier tests
 
-        day_obs = self.day_obs
         channel_data: list[dict[str, str]] = []
         loc_cam = f"{location.name}/{camera.name}"
         iterations = 8
 
+        empty_channel = ""
+        seq_chans = [chan.name for chan in camera.seq_channels()]
+        if seq_chans:
+            empty_channel = random.choice(seq_chans)
+
         for channel in camera.channels:
             loc_cam_chan = f"{loc_cam}/{channel.name}"
             start = self.last_seq.get(loc_cam_chan, self.FIRST_SEQ)
+
+            if empty_channel == channel.name:
+                self.empty_channel[loc_cam] = empty_channel
+                continue
 
             for index in range(start, start + iterations):
                 seq_num = f"{index:06}"
@@ -153,26 +161,37 @@ class RubinDataMocker:
                 if channel.per_day and index == start + iterations - 1:
                     seq_num = random.choice((seq_num, "final"))
 
-                key = (
-                    f"{camera.name}/{day_obs}/{channel.name}/{seq_num}/"
-                    f"mocked_event.jpg"
+                event_obj = self.generate_event(
+                    location.bucket_name, camera.name, channel.name, seq_num
                 )
-                hash: str | None = None
-                if self.s3_required:
-                    if self.upload_file(
-                        Path(__file__).parent / "assets/testcard_f.jpg",
-                        location.bucket_name,
-                        key,
-                    ):
-                        hash = self.get_obj_hash(location.bucket_name, key)
-                if hash is None:
-                    hash = str(random.getrandbits(128))
-                channel_data.append({"key": key, "hash": hash})
+
+                channel_data.append(event_obj)
             self.last_seq[loc_cam_chan] = index
 
         # store the objects for testing against
-        self.seq_objs[loc_cam].extend(channel_data)
-        self.events[loc_cam].extend(self.dicts_to_events(channel_data))
+        if loc_cam in self.seq_objs:
+            self.seq_objs[loc_cam].extend(channel_data)
+            self.events[loc_cam].extend(self.dicts_to_events(channel_data))
+        else:
+            self.seq_objs[loc_cam] = channel_data
+            self.events[loc_cam] = self.dicts_to_events(channel_data)
+
+    def generate_event(
+        self, bucket_name: str, camera_name: str, channel_name: str, seq_num: str
+    ) -> dict[str, str]:
+        day_obs = self.day_obs
+        key = f"{camera_name}/{day_obs}/{channel_name}/{seq_num}/mocked_event.jpg"
+        hash: str | None = None
+        if self.s3_required:
+            if self.upload_file(
+                Path(__file__).parent / "assets/testcard_f.jpg",
+                bucket_name,
+                key,
+            ):
+                hash = self.get_obj_hash(bucket_name, key)
+        if hash is None:
+            hash = str(random.getrandbits(128))
+        return {"key": key, "hash": hash}
 
     def dicts_to_events(self, channel_dicts: list[dict[str, str]]) -> list[Event]:
         """
