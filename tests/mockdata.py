@@ -93,6 +93,10 @@ class RubinDataMocker:
         -------
         None
         """
+
+        # TODO: keep adding to the add_data() functions
+        # see DM-44838 https://rubinobs.atlassian.net/browse/DM-44838
+
         for location in self._locations:
             loc_name = location.name
             self.events[loc_name] = []
@@ -134,9 +138,6 @@ class RubinDataMocker:
             A tuple containing a list of mock channel dictionaries and an
             updated empty channel string.
         """
-
-        # TODO: keep adding to the add_data() functions
-        # employ add_data() functions in websocket notifier tests
 
         channel_data: list[dict[str, str]] = []
         loc_cam = f"{location.name}/{camera.name}"
