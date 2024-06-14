@@ -12,7 +12,7 @@ from lsst.ts.rubintv.models.models import (
     Camera,
     Event,
     Location,
-    NightReportPayload,
+    NightReport,
     get_current_day_obs,
 )
 from starlette.requests import HTTPConnection
@@ -56,24 +56,24 @@ async def get_camera_current_data(
 
 
 async def get_most_recent_historical_data(
-    location: Location, camera: Camera, request: Request
+    location: Location, camera: Camera, connection: HTTPConnection
 ) -> tuple[Any, Any, Any, Any, Any] | None:
-    historical: HistoricalPoller = request.app.state.historical
+    historical: HistoricalPoller = connection.app.state.historical
     if await historical.is_busy():
         raise HTTPException(423, "Historical data is being processed")
     day_obs = await historical.get_most_recent_day(location, camera)
     if not day_obs:
         return None
-    data = await get_camera_events_for_date(location, camera, day_obs, request)
+    data = await get_camera_events_for_date(location, camera, day_obs, connection)
     if not data:
         return None
     return (day_obs, *data)
 
 
 async def get_camera_events_for_date(
-    location: Location, camera: Camera, day_obs: date, request: Request
+    location: Location, camera: Camera, day_obs: date, connection: HTTPConnection
 ) -> tuple[Any, Any, Any, Any] | None:
-    historical: HistoricalPoller = request.app.state.historical
+    historical: HistoricalPoller = connection.app.state.historical
     if await historical.is_busy():
         raise HTTPException(423, "Historical data is being processed")
     channel_data = await historical.get_channel_data_for_date(location, camera, day_obs)
@@ -92,7 +92,7 @@ async def get_camera_calendar(
 
 async def get_current_night_report_payload(
     location: Location, camera: Camera, connection: HTTPConnection
-) -> tuple[date, NightReportPayload]:
+) -> tuple[date, NightReport]:
     day_obs = get_current_day_obs()
     current_poller: CurrentPoller = connection.app.state.current_poller
     night_report = await current_poller.get_current_night_report(

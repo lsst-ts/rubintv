@@ -2,7 +2,16 @@ from datetime import date
 from typing import Any, Iterable
 
 import structlog
-from lsst.ts.rubintv.models.models import Camera, Channel, Event, NightReport
+from lsst.ts.rubintv.models.models import Camera, Channel, Event, NightReportData
+
+__all__ = [
+    "find_first",
+    "find_all",
+    "string_int_to_date",
+    "date_str_to_date",
+    "objects_to_events",
+    "objects_to_ngt_report_data",
+]
 
 
 def find_first(a_list: list[Any], key: str, to_match: str) -> Any | None:
@@ -88,12 +97,12 @@ async def objects_to_events(objects: list[dict]) -> list[Event]:
     return events
 
 
-async def objects_to_ngt_reports(objects: list[dict]) -> list[NightReport]:
+async def objects_to_ngt_report_data(objects: list[dict]) -> list[NightReportData]:
     logger = structlog.get_logger("rubintv")
-    night_reports: list[NightReport] = []
+    night_reports: list[NightReportData] = []
     for object in objects:
         try:
-            event = NightReport(**object)
+            event = NightReportData(**object)
             night_reports.append(event)
         except ValueError as e:
             logger.info(e)

@@ -14,6 +14,7 @@ from lsst.ts.rubintv.handlers.websockets_clients import (
     websocket_to_client,
 )
 from lsst.ts.rubintv.models.models import Camera, Location
+from lsst.ts.rubintv.models.models import ServiceMessageTypes as Service
 from lsst.ts.rubintv.models.models_helpers import find_first
 
 data_ws_router = APIRouter()
@@ -76,7 +77,7 @@ async def data_websocket(
                     historical_busy = await websocket.app.state.historical.is_busy()
                     await websocket.send_json(
                         {
-                            "dataType": "historicalStatus",
+                            "dataType": Service.HISTORICAL_STATUS.value,
                             "payload": historical_busy,
                         }
                     )
@@ -146,7 +147,7 @@ async def attach_service(
         )
         return
 
-    location = await find_first(locations, "name", location_name)
+    location = find_first(locations, "name", location_name)
 
     if extra:
         channel_name = extra[0]

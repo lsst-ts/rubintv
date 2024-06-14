@@ -43,12 +43,12 @@ async def notify_clients(
 
 
 async def send_notification(
-    websocket: WebSocket, data_type: Service, payload: Any
+    websocket: WebSocket, service: Service, payload: Any
 ) -> None:
     try:
         await websocket.send_json(
             {
-                "dataType": data_type.value,
+                "dataType": service.value,
                 "payload": payload,
                 "datestamp": get_current_day_obs().isoformat(),
             }
@@ -67,7 +67,8 @@ async def get_clients_to_notify(service_cam_id: str) -> list[UUID]:
 
 
 async def notify_all_status_change(historical_busy: bool) -> None:
-    key = "historicalStatus"
+    service = Service.HISTORICAL_STATUS
+    key = service.value
     tasks = []
     async with services_lock:
         if key not in services_clients:
@@ -82,7 +83,7 @@ async def notify_all_status_change(historical_busy: bool) -> None:
 
     # Prepare tasks for each websocket
     for websocket in websockets:
-        task = send_notification(websocket, "historicalStatus", historical_busy)
+        task = send_notification(websocket, service, historical_busy)
         tasks.append(task)
 
     # Use asyncio.gather to handle all tasks concurrently

@@ -9,7 +9,6 @@ from typing import Any
 import structlog
 from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
-from typing_extensions import NotRequired, TypedDict
 
 from .. import __version__
 from ..config import config
@@ -209,7 +208,7 @@ class Event:
 
 
 @dataclass
-class NightReport:
+class NightReportData:
     """Wrapper for a night report blob.
 
         -   Night Reports can be located in a given bucket using the prefix:
@@ -291,9 +290,9 @@ class NightReport:
         return int(f"0x{self.hash}", 0)
 
 
-class NightReportPayload(TypedDict):
-    text: NotRequired[dict]
-    plots: NotRequired[list[NightReport]]
+class NightReport(BaseModel):
+    text: dict[str, Any] | None = {}
+    plots: list[NightReportData] | None = []
 
 
 def get_current_day_obs() -> date:
@@ -360,3 +359,4 @@ class ServiceMessageTypes(Enum):
     CAMERA_METADATA: str = "metadata"
     CAMERA_PER_DAY: str = "perDay"
     NIGHT_REPORT: str = "nightReport"
+    HISTORICAL_STATUS: str = "historicalStatus"

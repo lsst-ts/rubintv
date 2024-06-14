@@ -24,10 +24,9 @@ from lsst.ts.rubintv.handlers.pages_helpers import (
     build_title,
     calendar_factory,
     month_names,
-    night_report_to_dict,
     to_dict,
 )
-from lsst.ts.rubintv.models.models import Channel, Event, Location, NightReportPayload
+from lsst.ts.rubintv.models.models import Channel, Event, Location, NightReport
 from lsst.ts.rubintv.models.models_helpers import date_str_to_date, find_first
 from lsst.ts.rubintv.templates_init import get_templates
 from safir.dependencies.logger import logger_dependency
@@ -291,7 +290,9 @@ async def get_historical_camera_page(
     name="night_report",
 )
 async def get_current_night_report_page(
-    location_name: str, camera_name: str, request: Request
+    location_name: str,
+    camera_name: str,
+    request: Request,
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
     day_obs: date | None = None
@@ -309,7 +310,7 @@ async def get_current_night_report_page(
             "location": location,
             "camera": camera.model_dump(),
             "date": day_obs,
-            "night_report": await night_report_to_dict(night_report),
+            "night_report": night_report.model_dump(),
             "title": title,
         },
     )
@@ -332,7 +333,7 @@ async def get_historical_night_report_page(
     except ValueError:
         raise HTTPException(status_code=404, detail="Invalid date.")
 
-    night_report: NightReportPayload
+    night_report: NightReport | None
     night_report, historical_busy = await try_historical_call(
         get_night_report_for_date,
         location_name,
@@ -340,6 +341,9 @@ async def get_historical_night_report_page(
         date_str,
         request,
     )
+
+    if night_report is not None:
+        night_report = night_report.model_dump()
 
     title = build_title(
         location.title,
@@ -355,7 +359,7 @@ async def get_historical_night_report_page(
             "location": location,
             "camera": camera.model_dump(),
             "date": day_obs,
-            "night_report": await night_report_to_dict(night_report),
+            "night_report": night_report,
             "historical_busy": historical_busy,
             "title": title,
         },
