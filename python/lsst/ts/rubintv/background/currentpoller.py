@@ -245,7 +245,7 @@ class CurrentPoller:
         loc_cam: str,
         location: Location,
     ) -> None:
-        night_report: NightReport = {}
+        night_report: NightReport = NightReport
         reports = await objects_to_ngt_report_data(report_objs)
         text_reports = [r for r in reports if r.group == "metadata"]
         if len(text_reports) > 1:
@@ -260,7 +260,7 @@ class CurrentPoller:
                 client = self._clients[location.name]
                 text_obj = await client.async_get_object(key)
                 if text_obj:
-                    night_report["text"] = text_obj
+                    night_report.text = text_obj
             self._nr_metadata[loc_cam] = text_report
             reports.remove(text_report)
 
@@ -269,7 +269,7 @@ class CurrentPoller:
             stored = self._nr_reports[loc_cam]
         to_update = list(set(reports) - stored)
         if to_update:
-            night_report["plots"] = to_update
+            night_report.plots = to_update
             self._nr_reports[loc_cam] = set(reports)
         if night_report:
             await notify_ws_clients(
@@ -339,22 +339,17 @@ class CurrentPoller:
 
     async def get_current_night_report(
         self, location_name: str, camera_name: str
-    ) -> NightReport | None:
+    ) -> NightReport:
         loc_cam = f"{location_name}/{camera_name}"
-        report_exists = False
-        payload: NightReport = NightReport
+        night_report = NightReport()
         if text_nr := self._nr_metadata.get(loc_cam):
             client = self._clients[location_name]
             text_dict = await client.async_get_object(text_nr.key)
-            payload.text = text_dict
-            report_exists = True
+            night_report.text = text_dict
         if loc_cam in self._nr_reports:
             if plots := self._nr_reports[loc_cam]:
-                payload.plots = list(plots)
-                report_exists = True
-        if report_exists:
-            return payload
-        return None
+                night_report.plots = list(plots)
+        return night_report
 
     async def _get_loc_cam(self, location_name: str, camera: Camera) -> str:
         """Return `f"{location_name}/{camera.name}"`
@@ -408,10 +403,9 @@ class CurrentPoller:
                 ):
                     yield Service.CAMERA_PER_DAY, per_day
 
-                if nr_exists := await self.night_report_exists(
-                    location.name, camera.name
-                ):
-                    yield Service.CAMERA_PER_DAY, {"nightReportExists": nr_exists}
+                nr_exists = await self.night_report_exists(location.name, camera.name)
+                if nr_exists:
+                    yield Service.CAMERA_PER_DAY, {"nightReportLink": "current"}
 
             case "channel":
                 if event := await self.get_current_channel_event(
@@ -420,7 +414,8 @@ class CurrentPoller:
                     yield Service.CHANNEL_EVENT, event.__dict__
 
             case "nightreport":
-                if night_report := await self.get_current_night_report(
+                night_report = await self.get_current_night_report(
                     location.name, camera.name
-                ):
+                )
+                if night_report != NightReport():
                     yield Service.NIGHT_REPORT, night_report

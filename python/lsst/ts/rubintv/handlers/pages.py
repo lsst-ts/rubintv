@@ -333,7 +333,7 @@ async def get_historical_night_report_page(
     except ValueError:
         raise HTTPException(status_code=404, detail="Invalid date.")
 
-    night_report: NightReport | None
+    night_report: NightReport
     night_report, historical_busy = await try_historical_call(
         get_night_report_for_date,
         location_name,
@@ -341,9 +341,6 @@ async def get_historical_night_report_page(
         date_str,
         request,
     )
-
-    if night_report is not None:
-        night_report = night_report.model_dump()
 
     title = build_title(
         location.title,
@@ -359,7 +356,7 @@ async def get_historical_night_report_page(
             "location": location,
             "camera": camera.model_dump(),
             "date": day_obs,
-            "night_report": night_report,
+            "night_report": night_report.model_dump(),
             "historical_busy": historical_busy,
             "title": title,
         },
