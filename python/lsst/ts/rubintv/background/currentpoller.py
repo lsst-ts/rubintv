@@ -4,19 +4,13 @@ from typing import AsyncGenerator
 import structlog
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.handlers.websocket_notifiers import notify_ws_clients
-from lsst.ts.rubintv.models.models import (
-    Camera,
-    Event,
-    Location,
-    NightReport,
-    NightReportPayload,
-)
+from lsst.ts.rubintv.models.models import Camera, Event, Location, NightReport
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as Service
 from lsst.ts.rubintv.models.models import get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import (
     make_table_from_event_list,
     objects_to_events,
-    objects_to_ngt_reports,
+    objects_to_ngt_report_data,
 )
 from lsst.ts.rubintv.s3client import S3Client
 
@@ -251,8 +245,8 @@ class CurrentPoller:
         loc_cam: str,
         location: Location,
     ) -> None:
-        night_report: NightReportPayload = {}
-        reports = await objects_to_ngt_reports(report_objs)
+        night_report: NightReport = {}
+        reports = await objects_to_ngt_report_data(report_objs)
         text_reports = [r for r in reports if r.group == "metadata"]
         if len(text_reports) > 1:
             raise ValueError
@@ -345,17 +339,22 @@ class CurrentPoller:
 
     async def get_current_night_report(
         self, location_name: str, camera_name: str
-    ) -> NightReportPayload:
+    ) -> NightReport | None:
         loc_cam = f"{location_name}/{camera_name}"
-        payload: NightReportPayload = {}
+        report_exists = False
+        payload: NightReport = NightReport
         if text_nr := self._nr_metadata.get(loc_cam):
             client = self._clients[location_name]
             text_dict = await client.async_get_object(text_nr.key)
-            payload["text"] = text_dict
+            payload.text = text_dict
+            report_exists = True
         if loc_cam in self._nr_reports:
             if plots := self._nr_reports[loc_cam]:
-                payload["plots"] = list(plots)
-        return payload
+                payload.plots = list(plots)
+                report_exists = True
+        if report_exists:
+            return payload
+        return None
 
     async def _get_loc_cam(self, location_name: str, camera: Camera) -> str:
         """Return `f"{location_name}/{camera.name}"`
@@ -396,26 +395,32 @@ class CurrentPoller:
     ) -> AsyncGenerator:
         match service:
             case "camera":
-                channel_data = self.get_current_channel_table(location.name, camera)
-                yield Service.CAMERA_TABLE, channel_data
+                if channel_data := await self.get_current_channel_table(
+                    location.name, camera
+                ):
+                    yield Service.CAMERA_TABLE, channel_data
 
-                metadata = self.get_current_metadata(location.name, camera)
-                yield Service.CAMERA_METADATA, metadata
+                if metadata := await self.get_current_metadata(location.name, camera):
+                    yield Service.CAMERA_METADATA, metadata
 
-                per_day = self.get_current_per_day_data(location.name, camera)
-                yield Service.CAMERA_PER_DAY, per_day
+                if per_day := await self.get_current_per_day_data(
+                    location.name, camera
+                ):
+                    yield Service.CAMERA_PER_DAY, per_day
 
-                nr_exists = await self.night_report_exists(location.name, camera.name)
-                yield Service.CAMERA_PER_DAY, {"nightReportExists": nr_exists}
+                if nr_exists := await self.night_report_exists(
+                    location.name, camera.name
+                ):
+                    yield Service.CAMERA_PER_DAY, {"nightReportExists": nr_exists}
 
             case "channel":
-                event = await self.get_current_channel_event(
+                if event := await self.get_current_channel_event(
                     location.name, camera.name, channel_name
-                )
-                yield Service.CHANNEL_EVENT, event.__dict__
+                ):
+                    yield Service.CHANNEL_EVENT, event.__dict__
 
             case "nightreport":
-                night_report = await self.get_current_night_report(
+                if night_report := await self.get_current_night_report(
                     location.name, camera.name
-                )
-                yield Service.NIGHT_REPORT, night_report
+                ):
+                    yield Service.NIGHT_REPORT, night_report
