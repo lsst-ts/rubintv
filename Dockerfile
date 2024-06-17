@@ -31,8 +31,23 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Setup work directory
+# Add a user with UID and GID 1000
+RUN groupadd -g 1000 rubintv && \
+useradd -r -u 1000 -g rubintv -m rubintv
+
+# Setup work directory and adjust permissions
 WORKDIR /usr/src/rubintv
+RUN chown -R rubintv:rubintv /usr/src/rubintv
+
+# Switch to the new user
+USER rubintv
+
+# Setup Flutter
+RUN git clone https://github.com/flutter/flutter.git /home/rubintv/flutter
+ENV PATH="/home/rubintv/flutter/bin:/home/rubintv/flutter/bin/cache/dart-sdk/bin:${PATH}"
+RUN flutter doctor && \
+    flutter channel master && \
+    flutter upgrade
 
 # Create a virtual environment
 RUN python -m venv venv
@@ -41,18 +56,11 @@ RUN python -m venv venv
 ENV PATH="/usr/src/rubintv/venv/bin:$PATH"
 
 # Copy the rest of the application
-COPY . .
+COPY --chown=rubintv:rubintv . .
 
 # Install Python dependencies
 RUN pip install -r requirements.txt && \
     python setup.py install
-
-# Setup Flutter
-RUN git clone https://github.com/flutter/flutter.git /usr/local/flutter
-ENV PATH="/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PATH}"
-RUN flutter doctor && \
-    flutter channel master && \
-    flutter upgrade
 
 # Adjust permissions for executable
 RUN chmod +x start-daemon.sh
