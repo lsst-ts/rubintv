@@ -13,9 +13,7 @@ FROM python:3.11.1-slim-bullseye
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-USER root
-
-# Install required packages
+# Install system dependencies
 RUN apt-get update && \
     apt-get install -y \
     libsasl2-dev \
@@ -27,43 +25,41 @@ RUN apt-get update && \
     procps \
     findutils \
     libssl-dev \
-    # below installs are for Flutter 
-    git curl unzip xz-utils zip libglu1-mesa && \
+    git curl unzip xz-utils zip libglu1-mesa \
+    libgl1-mesa-glx && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /usr/src/rubintv/
-COPY . .
+# Setup work directory
+WORKDIR /usr/src/rubintv
 
-# Install dependencies
+# Install Python dependencies
+COPY requirements.txt setup.py ./
 RUN pip install -r requirements.txt && \
     python setup.py install
 
-# download Flutter SDK from Flutter Github repo
+# Setup Flutter
 RUN git clone https://github.com/flutter/flutter.git /usr/local/flutter
-
-# Set flutter environment path
 ENV PATH="/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PATH}"
+RUN flutter doctor && \
+    flutter channel master && \
+    flutter upgrade
 
-# Run flutter doctor
-RUN flutter doctor
-
-# Enable flutter web
-RUN flutter channel master
-RUN flutter upgrade
-
-# Download rubin_chart
+# Clone necessary repositories
 RUN git clone --single-branch --branch deploy_slac https://github.com/lsst-sitcom/rubin_chart
+RUN git clone --single-branch --branch deploy_slac https://github.com/lsst-ts/rubin_visualization /usr/local/rubintv/ddv
 
-# Download rubin_visualization
-RUN git clone --single-branch --branch deploy_slac https://github.com/lsst-ts/rubin_visualization \
-    /usr/local/rubintv/ddv
+# Copy the rest of the application
+COPY . .
 
-RUN 
+# Build flutter app
+RUN chmod +x scripts/build-flutter-app.sh && \
+    scripts/build-flutter-app.sh && \
+    rm scripts/build-flutter-app.sh
+
 # Adjust permissions for executable
-RUN chmod +x /usr/src/rubintv/start-daemon.sh
+RUN chmod +x start-daemon.sh
 
-# Expose the port.
+# Expose the port and define the CMD
 EXPOSE 8000
-
-CMD ["/usr/src/rubintv/start-daemon.sh"]
+CMD ["./start-daemon.sh"]
