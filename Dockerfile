@@ -26,6 +26,7 @@ RUN apt-get update && \
     findutils \
     libssl-dev \
     git curl unzip xz-utils zip libglu1-mesa \
+    python3-venv \
     libgl1-mesa-glx && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -33,8 +34,16 @@ RUN apt-get update && \
 # Setup work directory
 WORKDIR /usr/src/rubintv
 
+# Create a virtual environment
+RUN python -m venv venv
+
+# Activate virtual environment
+ENV PATH="/usr/src/rubintv/venv/bin:$PATH"
+
+# Copy the rest of the application
+COPY . .
+
 # Install Python dependencies
-COPY requirements.txt setup.py ./
 RUN pip install -r requirements.txt && \
     python setup.py install
 
@@ -49,8 +58,6 @@ RUN flutter doctor && \
 RUN git clone --single-branch --branch deploy_slac https://github.com/lsst-sitcom/rubin_chart
 RUN git clone --single-branch --branch deploy_slac https://github.com/lsst-ts/rubin_visualization /usr/local/rubintv/ddv
 
-# Copy the rest of the application
-COPY . .
 
 # Build flutter app
 RUN chmod +x scripts/build-flutter-app.sh && \
