@@ -54,16 +54,6 @@ RUN flutter doctor && \
     flutter channel master && \
     flutter upgrade
 
-# Clone necessary repositories
-RUN git clone --single-branch --branch deploy_slac https://github.com/lsst-sitcom/rubin_chart
-RUN git clone --single-branch --branch deploy_slac https://github.com/lsst-ts/rubin_visualization /usr/local/rubintv/ddv
-
-
-# Build flutter app
-RUN chmod +x scripts/build-flutter-app.sh && \
-    scripts/build-flutter-app.sh && \
-    rm scripts/build-flutter-app.sh
-
 # Adjust permissions for executable
 RUN chmod +x start-daemon.sh
 
