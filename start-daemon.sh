@@ -1,3 +1,3 @@
 #!/bin/bash
-sh ./build-flutter-app
+sh ./scripts/build-flutter-app.sh
 run_rubintv
