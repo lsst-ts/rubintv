@@ -16,5 +16,5 @@ DDV_BASE_HREF=/rubintv/ddv/
 CLIENT_WS_ADDRESS=rubintv/ws/ddv
 
 cd ddv
-echo -e "ADDRESS=$CLIENT_WS_ADDRESS" > .env
+echo "ADDRESS=$CLIENT_WS_ADDRESS" > .env
 flutter build web --base-href $DDV_BASE_HREF --profile --source-maps
