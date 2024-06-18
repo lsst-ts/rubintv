@@ -271,6 +271,7 @@ class CurrentPoller:
         if to_update:
             night_report.plots = to_update
             self._nr_reports[loc_cam] = set(reports)
+        # Check for equality with empty NightReport (from pydantic.BaseModel)
         if night_report != NightReport():
             await notify_ws_clients(
                 "nightreport", Service.NIGHT_REPORT, loc_cam, night_report.model_dump()
@@ -403,8 +404,7 @@ class CurrentPoller:
                 ):
                     yield Service.CAMERA_PER_DAY, per_day
 
-                nr_exists = await self.night_report_exists(location.name, camera.name)
-                if nr_exists:
+                if await self.night_report_exists(location.name, camera.name):
                     yield Service.CAMERA_PER_DAY, {"nightReportLink": "current"}
 
             case "channel":
@@ -417,5 +417,7 @@ class CurrentPoller:
                 night_report = await self.get_current_night_report(
                     location.name, camera.name
                 )
+                # Check for equality with empty NightReport (from
+                # pydantic.BaseModel)
                 if night_report != NightReport():
                     yield Service.NIGHT_REPORT, night_report.model_dump()
