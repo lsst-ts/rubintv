@@ -12,13 +12,13 @@ from lsst.ts.rubintv.models.models import (
     Event,
     Location,
     NightReport,
-    NightReportPayload,
+    NightReportData,
     get_current_day_obs,
 )
 from lsst.ts.rubintv.models.models_helpers import (
     make_table_from_event_list,
     objects_to_events,
-    objects_to_ngt_reports,
+    objects_to_ngt_report_data,
 )
 from lsst.ts.rubintv.s3client import S3Client
 
@@ -39,7 +39,7 @@ class HistoricalPoller:
         self._clients: dict[str, S3Client] = {}
         self._metadata: dict[str, dict[str, str]] = {}
         self._events: dict[str, list[Event]] = {}
-        self._nr_metadata: dict[str, list[NightReport]] = {}
+        self._nr_metadata: dict[str, list[NightReportData]] = {}
         self._calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
         self._locations = locations
         self._clients = {
@@ -134,7 +134,7 @@ class HistoricalPoller:
 
         await self.download_and_store_metadata(locname, metadata_objs)
 
-        self._nr_metadata[locname] = await objects_to_ngt_reports(n_report_objs)
+        self._nr_metadata[locname] = await objects_to_ngt_report_data(n_report_objs)
         events = await objects_to_events(event_objs)
         await self.store_events(events, locname)
 
@@ -186,10 +186,8 @@ class HistoricalPoller:
 
     async def get_night_report_payload(
         self, location: Location, camera: Camera, day_obs: date
-    ) -> NightReportPayload:
-        """Returns a dict containing a list of Night Reports for
-        the camera and date and a text metadata dict. Both values are
-        optional (see `NightReportPayload`).
+    ) -> NightReport:
+        """Returns a NightReport for the camera and date.
 
         Parameters
         ----------
@@ -200,26 +198,27 @@ class HistoricalPoller:
 
         Returns
         -------
-        report : NightReportPayload:
-            A dict containing a list of Night Report objects and text metadata.
+        report : `NightReport`
+            A NightReport containing a list of Night Report Data and text
+            metadata.
         """
-        nr_objs = await self._get_night_report(location, camera, day_obs)
-        text_reports = [r for r in nr_objs if r.group == "metadata"]
-        report: NightReportPayload = {}
+        nr_data = await self._get_night_report_data(location, camera, day_obs)
+        text_reports = [r for r in nr_data if r.group == "metadata"]
+        report: NightReport = NightReport()
         if text_reports:
             text_report = text_reports[0]
             key = text_report.key
             client = self._clients[location.name]
             text_obj = await client.async_get_object(key)
-            report["text"] = text_obj
-            nr_objs.remove(text_report)
-        if nr_objs:
-            report["plots"] = nr_objs
+            report.text = text_obj
+            nr_data.remove(text_report)
+        if nr_data:
+            report.plots = nr_data
         return report
 
-    async def _get_night_report(
+    async def _get_night_report_data(
         self, location: Location, camera: Camera, day_obs: date
-    ) -> list[NightReport]:
+    ) -> list[NightReportData]:
         date_str = day_obs.isoformat()
         report = []
         if location.name in self._nr_metadata:
@@ -233,8 +232,8 @@ class HistoricalPoller:
     async def night_report_exists_for(
         self, location: Location, camera: Camera, day_obs: date
     ) -> bool:
-        nr_objs = await self._get_night_report(location, camera, day_obs)
-        if nr_objs:
+        nr_data = await self._get_night_report_data(location, camera, day_obs)
+        if nr_data:
             return True
         else:
             return False

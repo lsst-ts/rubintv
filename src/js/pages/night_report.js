@@ -18,7 +18,7 @@ import NightReport from '../components/NightReport'
   if (!window.APP_DATA.isHistorical) {
     // eslint-disable-next-line no-unused-vars
     const ws = new WebsocketClient()
-    ws.subscribe('service', 'camera', locationName, camera.name)
+    ws.subscribe('service', 'nightreport', locationName, camera.name)
   }
   const tableRoot = createRoot(_getById('night-report'))
   tableRoot.render(

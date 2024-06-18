@@ -11,7 +11,7 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
     get_camera_events_for_date,
     get_current_night_report_payload,
 )
-from lsst.ts.rubintv.models.models import Camera, Event, Location, NightReportPayload
+from lsst.ts.rubintv.models.models import Camera, Event, Location, NightReport
 from lsst.ts.rubintv.models.models_helpers import date_str_to_date, find_first
 
 api_router = APIRouter()
@@ -194,11 +194,11 @@ async def get_current_night_report_api(
 
 @api_router.get(
     "/{location_name}/{camera_name}/night_report/{date_str}",
-    response_model=NightReportPayload,
+    response_model=NightReport,
 )
 async def get_night_report_for_date(
     location_name: str, camera_name: str, date_str: str, request: Request
-) -> NightReportPayload:
+) -> NightReport:
     location, camera = await get_location_camera(location_name, camera_name, request)
     try:
         day_obs = date_str_to_date(date_str)

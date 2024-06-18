@@ -18,6 +18,8 @@ md_json = json.dumps(_metadata)
 
 
 class RubinDataMocker:
+    FIRST_SEQ = 0
+
     def __init__(
         self,
         locations: list[Location],
@@ -38,7 +40,7 @@ class RubinDataMocker:
             Boolean flag to indicate if S3 operations are required, defaults
             to False.
         """
-        self.last_seq = 0
+        self.last_seq: dict[str, int] = {}
         self._locations = locations
         if s3_required:
             self.s3_client = boto3.client("s3")
@@ -46,7 +48,7 @@ class RubinDataMocker:
         self.s3_required = s3_required
         self.day_obs = day_obs
         self.location_channels: dict[str, list[Channel]] = {}
-        self.channel_objs: dict[str, list[dict[str, str]]] = {}
+        self.seq_objs: dict[str, list[dict[str, str]]] = {}
         self.empty_channel: dict[str, str] = {}
         self.events: dict[str, list[Event]] = {}
         self.metadata: dict[str, dict[str, str]] = {}
@@ -55,12 +57,11 @@ class RubinDataMocker:
     def cleanup(self) -> None:
         print("Started cleaning...")
         self.delete_buckets()
-        self.last_seq = 0
+        self.last_seq = {}
         self._locations = []
         self.s3_required = False
         self.location_channels = {}
-        self.channel_objs = {}
-        self.empty_channel = {}
+        self.seq_objs = {}
         self.events = {}
         self.metadata = {}
         print("Finished cleaning...")
@@ -92,6 +93,10 @@ class RubinDataMocker:
         -------
         None
         """
+
+        # TODO: keep adding to the add_data() functions
+        # see DM-44838 https://rubinobs.atlassian.net/browse/DM-44838
+
         for location in self._locations:
             loc_name = location.name
             self.events[loc_name] = []
@@ -105,18 +110,15 @@ class RubinDataMocker:
                     if not camera.online:
                         continue
                     loc_cam = f"{loc_name}/{cam_name}"
-                    self.location_channels[loc_name].append(camera.channels)
-                    channel_objs, empty_channel = self.mock_channel_objs(
-                        location, camera, self.empty_channel.get(loc_cam, "")
-                    )
-                    self.channel_objs[loc_cam] = channel_objs
-                    self.empty_channel[loc_cam] = empty_channel
-                    self.events[loc_cam] = self.dicts_to_events(channel_objs)
-                    self.metadata[loc_cam] = self.mock_camera_metadata(location, camera)
 
-    def mock_channel_objs(
-        self, location: Location, camera: Camera, empty_channel: str
-    ) -> tuple[list[dict[str, str]], str]:
+                    self.location_channels[loc_name].append(camera.channels)
+
+                    self.add_seq_objs(location, camera)
+
+                    metadata = self.add_camera_metadata(location, camera)
+                    self.metadata[loc_cam] = metadata
+
+    def add_seq_objs(self, location: Location, camera: Camera) -> None:
         """
         Generate mock channel objects and an empty channel string for a given
         camera and location.
@@ -137,40 +139,60 @@ class RubinDataMocker:
             updated empty channel string.
         """
 
-        day_obs = self.day_obs
         channel_data: list[dict[str, str]] = []
+        loc_cam = f"{location.name}/{camera.name}"
         iterations = 8
 
-        if camera.seq_channels() and not empty_channel:
-            empty_channel = random.choice(camera.seq_channels()).name
+        empty_channel = ""
+        seq_chans = [chan.name for chan in camera.seq_channels()]
+        if seq_chans:
+            empty_channel = random.choice(seq_chans)
 
         for channel in camera.channels:
-            if empty_channel and channel.name == empty_channel:
+            loc_cam_chan = f"{loc_cam}/{channel.name}"
+            start = self.last_seq.get(loc_cam_chan, self.FIRST_SEQ)
+
+            if empty_channel == channel.name:
+                self.empty_channel[loc_cam] = empty_channel
                 continue
-            start = self.last_seq
+
             for index in range(start, start + iterations):
                 seq_num = f"{index:06}"
 
                 if channel.per_day and index == start + iterations - 1:
                     seq_num = random.choice((seq_num, "final"))
 
-                key = (
-                    f"{camera.name}/{day_obs}/{channel.name}/{seq_num}/"
-                    f"mocked_event.jpg"
+                event_obj = self.generate_event(
+                    location.bucket_name, camera.name, channel.name, seq_num
                 )
-                hash: str | None = None
-                if self.s3_required:
-                    if self.upload_file(
-                        Path(__file__).parent / "assets/testcard_f.jpg",
-                        location.bucket_name,
-                        key,
-                    ):
-                        hash = self.get_obj_hash(location.bucket_name, key)
-                if hash is None:
-                    hash = str(random.getrandbits(128))
-                channel_data.append({"key": key, "hash": hash})
-            self.last_seq = index
-        return (channel_data, empty_channel)
+
+                channel_data.append(event_obj)
+            self.last_seq[loc_cam_chan] = index
+
+        # store the objects for testing against
+        if loc_cam in self.seq_objs:
+            self.seq_objs[loc_cam].extend(channel_data)
+            self.events[loc_cam].extend(self.dicts_to_events(channel_data))
+        else:
+            self.seq_objs[loc_cam] = channel_data
+            self.events[loc_cam] = self.dicts_to_events(channel_data)
+
+    def generate_event(
+        self, bucket_name: str, camera_name: str, channel_name: str, seq_num: str
+    ) -> dict[str, str]:
+        day_obs = self.day_obs
+        key = f"{camera_name}/{day_obs}/{channel_name}/{seq_num}/mocked_event.jpg"
+        hash: str | None = None
+        if self.s3_required:
+            if self.upload_file(
+                Path(__file__).parent / "assets/testcard_f.jpg",
+                bucket_name,
+                key,
+            ):
+                hash = self.get_obj_hash(bucket_name, key)
+        if hash is None:
+            hash = str(random.getrandbits(128))
+        return {"key": key, "hash": hash}
 
     def dicts_to_events(self, channel_dicts: list[dict[str, str]]) -> list[Event]:
         """
@@ -211,9 +233,7 @@ class RubinDataMocker:
         seq_chan_events = [e for e in events if e.channel_name in seq_chan_names]
         return seq_chan_events
 
-    def mock_camera_metadata(
-        self, location: Location, camera: Camera
-    ) -> dict[str, str]:
+    def add_camera_metadata(self, location: Location, camera: Camera) -> dict[str, str]:
         """
         Mock metadata for a given camera at a specified location.
 
@@ -237,7 +257,7 @@ class RubinDataMocker:
 
     # TODO: Write the below functions to add to the mocked state
 
-    def mock_event_movies(self) -> None:
+    def mock_per_day_event(self) -> None:
         pass
 
     def mock_night_report_metadata(self) -> None:

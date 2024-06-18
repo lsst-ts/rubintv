@@ -12,19 +12,23 @@ from lsst.ts.rubintv.models.models import (
     Camera,
     Event,
     Location,
-    NightReportPayload,
+    NightReport,
     get_current_day_obs,
 )
+from starlette.requests import HTTPConnection
 
 logger = structlog.get_logger("rubintv")
 
 
 async def get_camera_current_data(
-    location: Location, camera: Camera, request: Request
-) -> tuple[Any, Any, Any, Any, Any, bool] | None:
+    location: Location,
+    camera: Camera,
+    connection: HTTPConnection,
+    use_historical: bool = True,
+) -> tuple[None | date, dict, dict, dict, bool, bool] | None:
     if not camera.online:
         return None
-    current_poller: CurrentPoller = request.app.state.current_poller
+    current_poller: CurrentPoller = connection.app.state.current_poller
     while not current_poller.completed_first_poll:
         await asyncio.sleep(0.3)
 
@@ -35,8 +39,8 @@ async def get_camera_current_data(
     per_day = await current_poller.get_current_per_day_data(location.name, camera)
     nr_exists = await current_poller.night_report_exists(location.name, camera.name)
 
-    if not (per_day or metadata or channel_data):
-        hist_data = await get_most_recent_historical_data(location, camera, request)
+    if not (per_day or metadata or channel_data) and use_historical:
+        hist_data = await get_most_recent_historical_data(location, camera, connection)
         if hist_data:
             (
                 day_obs,
@@ -52,24 +56,24 @@ async def get_camera_current_data(
 
 
 async def get_most_recent_historical_data(
-    location: Location, camera: Camera, request: Request
+    location: Location, camera: Camera, connection: HTTPConnection
 ) -> tuple[Any, Any, Any, Any, Any] | None:
-    historical: HistoricalPoller = request.app.state.historical
+    historical: HistoricalPoller = connection.app.state.historical
     if await historical.is_busy():
         raise HTTPException(423, "Historical data is being processed")
     day_obs = await historical.get_most_recent_day(location, camera)
     if not day_obs:
         return None
-    data = await get_camera_events_for_date(location, camera, day_obs, request)
+    data = await get_camera_events_for_date(location, camera, day_obs, connection)
     if not data:
         return None
     return (day_obs, *data)
 
 
 async def get_camera_events_for_date(
-    location: Location, camera: Camera, day_obs: date, request: Request
+    location: Location, camera: Camera, day_obs: date, connection: HTTPConnection
 ) -> tuple[Any, Any, Any, Any] | None:
-    historical: HistoricalPoller = request.app.state.historical
+    historical: HistoricalPoller = connection.app.state.historical
     if await historical.is_busy():
         raise HTTPException(423, "Historical data is being processed")
     channel_data = await historical.get_channel_data_for_date(location, camera, day_obs)
@@ -87,10 +91,10 @@ async def get_camera_calendar(
 
 
 async def get_current_night_report_payload(
-    location: Location, camera: Camera, request: Request
-) -> tuple[date, NightReportPayload]:
+    location: Location, camera: Camera, connection: HTTPConnection
+) -> tuple[date, NightReport]:
     day_obs = get_current_day_obs()
-    current_poller: CurrentPoller = request.app.state.current_poller
+    current_poller: CurrentPoller = connection.app.state.current_poller
     night_report = await current_poller.get_current_night_report(
         location.name, camera.name
     )

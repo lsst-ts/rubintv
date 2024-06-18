@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { groupBy, sanitiseString } from '../modules/utils'
 
+// TODO: check that newly uploaded plots are updated in the display
+// see DM-44596 https://rubinobs.atlassian.net/browse/DM-44596
+
 function NightReportText ({ nightReport, selected }) {
   const data = nightReport.text || {}
   const efficiency = {}

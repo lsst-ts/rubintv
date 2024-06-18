@@ -56,10 +56,6 @@ async def test_get_location(mocked_client: tuple[AsyncClient, RubinDataMocker]) 
     assert camera_names == page_slugs
 
 
-# below is valid test when run in isolation but not after either of the two
-# tests above. Commenting out to keep the test for future use.
-
-
 @pytest.mark.asyncio
 async def test_current_channels(
     mocked_client: tuple[AsyncClient, RubinDataMocker]

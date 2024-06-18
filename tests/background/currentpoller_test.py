@@ -90,7 +90,7 @@ async def test_poll_buckets_for_today_process_and_store_seq_events(
         # The timeout error is expected
         pass
 
-    mocked_objs_keys = rubin_data_mocker.channel_objs.keys()
+    mocked_objs_keys = rubin_data_mocker.seq_objs.keys()
 
     # make sure the keys for the location/cameras match up
     current_keys = sorted([k for k in current_poller._events.keys()])
@@ -132,7 +132,7 @@ async def test_process_channel_objects(
 
     camera, location = await get_test_camera_and_location()
     loc_cam = f"{location.name}/{camera.name}"
-    objects = rubin_data_mocker.channel_objs[loc_cam]
+    objects = rubin_data_mocker.seq_objs[loc_cam]
 
     with (
         patch(

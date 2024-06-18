@@ -4,6 +4,8 @@ import uuid
 
 import structlog
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from lsst.ts.rubintv.background.currentpoller import CurrentPoller
+from lsst.ts.rubintv.handlers.websocket_notifiers import send_notification
 from lsst.ts.rubintv.handlers.websockets_clients import (
     clients,
     clients_lock,
@@ -12,6 +14,7 @@ from lsst.ts.rubintv.handlers.websockets_clients import (
     websocket_to_client,
 )
 from lsst.ts.rubintv.models.models import Camera, Location
+from lsst.ts.rubintv.models.models import ServiceMessageTypes as Service
 from lsst.ts.rubintv.models.models_helpers import find_first
 
 data_ws_router = APIRouter()
@@ -74,7 +77,7 @@ async def data_websocket(
                     historical_busy = await websocket.app.state.historical.is_busy()
                     await websocket.send_json(
                         {
-                            "dataType": "historicalStatus",
+                            "dataType": Service.HISTORICAL_STATUS.value,
                             "payload": historical_busy,
                         }
                     )
@@ -133,18 +136,26 @@ async def attach_service(
         logger.error("Bad request", service=service, client_id=client_id)
         return
 
-    location, camera_name, *extra = loc_cam.split("/")
+    channel_name = ""
+    location_name, camera_name, *extra = loc_cam.split("/")
     locations = websocket.app.state.models.locations
-    if not (camera := await is_valid_location_camera(location, camera_name, locations)):
+    if not (
+        camera := await is_valid_location_camera(location_name, camera_name, locations)
+    ):
         logger.error(
             "No such camera:", service=service, client_id=client_id, camera=loc_cam
         )
         return
+
+    location = find_first(locations, "name", location_name)
+
     if extra:
-        channel = extra[0]
-        if not await is_valid_channel(camera, channel):
+        channel_name = extra[0]
+        if not await is_valid_channel(camera, channel_name):
             logger.error("No such channel", service=service, client_id=client_id)
             return
+
+    await notify_new_client(websocket, location, camera, channel_name, service)
 
     async with services_lock:
         if service_loc_cam in services_clients:
@@ -186,3 +197,18 @@ async def is_valid_channel(camera: Camera, channel_name: str) -> bool:
     return camera.channels is not None and channel_name in [
         chan.name for chan in camera.channels
     ]
+
+
+async def notify_new_client(
+    websocket: WebSocket,
+    location: Location,
+    camera: Camera,
+    channel_name: str,
+    service: str,
+) -> None:
+
+    current_poller: CurrentPoller = websocket.app.state.current_poller
+    async for service_type, data in current_poller.get_latest_data(
+        location, camera, channel_name, service
+    ):
+        await send_notification(websocket, service_type, data)
