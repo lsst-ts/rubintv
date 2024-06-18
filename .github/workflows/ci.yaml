@@ -52,46 +52,6 @@ jobs:
           npm install
           npm run build
 
-      - name: Bring in rubin_chart repo
-        uses: actions/checkout@v4
-        with:
-          repository: 'lsst-sitcom/rubin_chart'
-          path: rubin_chart
-          ref: ${{ env.DDV_BRANCH }}
-
-      - name: Bring in DDV Flutter app repo
-        uses: actions/checkout@v4
-        with: 
-          repository: 'lsst-ts/rubintv_visualization'
-          path: ddv
-          ref: ${{ env.DDV_BRANCH }}
-
-      - name: Set up Flutter environment
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-
-      - name: Set up .env file
-        # TODO: Make ADDRESS configurable at runtime.
-        # the first part could be 'rubintv' or 'rubintv-dev'
-        # see DM-44660 https://rubinobs.atlassian.net/browse/DM-44660
-        run: echo -e "ADDRESS=rubintv/ws/ddv" > ${{ github.workspace }}/ddv/.env
-
-      - name: Install dependencies
-        run: flutter pub get
-        working-directory: ./ddv
-
-      - name: Print flutter/dart version
-        run: flutter --version
-
-      - name: Build Flutter web app
-        # TODO: Make --base-href configurable at runtime.
-        # the first part could be 'rubintv' or 'rubintv-dev'
-        # see DM-44660 https://rubinobs.atlassian.net/browse/DM-44660
-        run: flutter build web --base-href /rubintv/ddv/ --profile --source-maps
-        working-directory: ./ddv
-
-
       - name: Define the Docker tag
         id: vars
         run: echo "tag=$(scripts/docker-tag.sh)" >> $GITHUB_OUTPUT
