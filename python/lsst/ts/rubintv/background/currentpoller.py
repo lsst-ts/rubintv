@@ -245,7 +245,7 @@ class CurrentPoller:
         loc_cam: str,
         location: Location,
     ) -> None:
-        night_report: NightReport = NightReport
+        night_report: NightReport = NightReport()
         reports = await objects_to_ngt_report_data(report_objs)
         text_reports = [r for r in reports if r.group == "metadata"]
         if len(text_reports) > 1:
@@ -271,9 +271,9 @@ class CurrentPoller:
         if to_update:
             night_report.plots = to_update
             self._nr_reports[loc_cam] = set(reports)
-        if night_report:
+        if night_report != NightReport():
             await notify_ws_clients(
-                "nightreport", Service.NIGHT_REPORT, loc_cam, night_report
+                "nightreport", Service.NIGHT_REPORT, loc_cam, night_report.model_dump()
             )
         return
 
@@ -418,4 +418,4 @@ class CurrentPoller:
                     location.name, camera.name
                 )
                 if night_report != NightReport():
-                    yield Service.NIGHT_REPORT, night_report
+                    yield Service.NIGHT_REPORT, night_report.model_dump()
