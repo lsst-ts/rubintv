@@ -120,7 +120,7 @@ async def test_clear_all_data(current_poller: CurrentPoller) -> None:
     assert current_poller._per_day == {}
     assert current_poller._most_recent_events == {}
     assert current_poller._nr_metadata == {}
-    assert current_poller._nr_plots == {}
+    assert current_poller._night_reports == {}
 
 
 @pytest.mark.asyncio
