@@ -227,7 +227,7 @@ class CurrentPoller:
         loc_cam = await self._get_loc_cam(location.name, camera)
         report_objs, objects = await self.filter_night_report_objects(objects)
         if report_objs:
-            if not await self.night_report_exists(location.name, camera.name):
+            if not self.night_report_exists(location.name, camera.name):
                 await notify_ws_clients(
                     "camera",
                     Service.CAMERA_PER_DAY,
@@ -373,7 +373,7 @@ class CurrentPoller:
         nxt_prv = await get_next_previous_from_table(table, event)
         return nxt_prv
 
-    async def night_report_exists(self, location_name: str, camera_name: str) -> bool:
+    def night_report_exists(self, location_name: str, camera_name: str) -> bool:
         loc_cam = f"{location_name}/{camera_name}"
         # returns True if there is a night report, False otherwise
         return self._night_reports.get(loc_cam, False) is not False
@@ -400,7 +400,7 @@ class CurrentPoller:
                 ):
                     yield Service.CAMERA_PER_DAY, per_day
 
-                if await self.night_report_exists(location.name, camera.name):
+                if self.night_report_exists(location.name, camera.name):
                     yield Service.CAMERA_PER_DAY, {"nightReportLink": "current"}
 
             case "channel":
