@@ -243,6 +243,9 @@ cameras:
       - name: zk_measurement_pyramid
         title: Zernike Measurement Pyramid
         colour: "#877b66"
+      - name: focus_sweep
+        title: Focus Sweep
+        colour: "#967289"
 
   - name: comcam_sim_prep
     title: ComCamSimPrep
