@@ -1,4 +1,3 @@
-import asyncio
 from datetime import timedelta
 from typing import Any, Iterator
 from unittest.mock import AsyncMock, patch
@@ -24,13 +23,13 @@ def rubin_data_mocker(mock_s3_client: Any) -> Iterator[RubinDataMocker]:
 
 @pytest.fixture
 def current_poller(rubin_data_mocker: RubinDataMocker) -> CurrentPoller:
-    return CurrentPoller(m.locations)
+    return CurrentPoller(m.locations, test_mode=True)
 
 
 @pytest.fixture(scope="function")
 def c_poller_no_mock_data(rubin_data_mocker: RubinDataMocker) -> Any:
     with mock_s3_service():
-        yield CurrentPoller(m.locations)
+        yield CurrentPoller(m.locations, test_mode=True)
 
 
 @pytest.mark.asyncio
@@ -65,13 +64,7 @@ async def test_poll_buckets_for_todays_data(
         ) as mock_process_objects,
     ):
         # Execute test
-        try:
-            # Run the method for a specified number of seconds, then timeout
-            await asyncio.wait_for(
-                current_poller.poll_buckets_for_todays_data(), timeout=1
-            )
-        except asyncio.TimeoutError:
-            pass
+        await current_poller.poll_buckets_for_todays_data()
 
         assert mock_day_obs
         mock_metadata.assert_called()
@@ -84,11 +77,7 @@ async def test_poll_buckets_for_todays_data(
 async def test_poll_buckets_for_today_process_and_store_seq_events(
     current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
 ) -> None:
-    try:
-        await asyncio.wait_for(current_poller.poll_buckets_for_todays_data(), timeout=1)
-    except asyncio.TimeoutError:
-        # The timeout error is expected
-        pass
+    await current_poller.poll_buckets_for_todays_data()
 
     mocked_objs_keys = rubin_data_mocker.seq_objs.keys()
 
@@ -105,10 +94,8 @@ async def test_poll_buckets_for_today_process_and_store_seq_events(
 
 @pytest.mark.asyncio
 async def test_clear_all_data(current_poller: CurrentPoller) -> None:
-    try:
-        await asyncio.wait_for(current_poller.poll_buckets_for_todays_data(), timeout=1)
-    except asyncio.TimeoutError:
-        pass
+    await current_poller.poll_buckets_for_todays_data()
+
     assert current_poller.completed_first_poll is True
     assert current_poller._objects != {}
 
@@ -220,12 +207,7 @@ async def test_day_rollover(
             return_value=day_obs.isoformat(),
         ) as mock_day_obs,
     ):
-        try:
-            await asyncio.wait_for(
-                current_poller.poll_buckets_for_todays_data(), timeout=1
-            )
-        except asyncio.TimeoutError:
-            pass
+        await current_poller.poll_buckets_for_todays_data()
 
         assert mock_day_obs
         assert current_poller.completed_first_poll is True
@@ -233,19 +215,13 @@ async def test_day_rollover(
     day_obs = day_obs + timedelta(days=1)
     rubin_data_mocker.day_obs = day_obs
     rubin_data_mocker.mock_up_data()
-
     with (
         patch(
             "lsst.ts.rubintv.background.currentpoller.get_current_day_obs",
             return_value=day_obs.isoformat(),
         ) as mock_day_obs,
     ):
-        try:
-            await asyncio.wait_for(
-                current_poller.poll_buckets_for_todays_data(), timeout=1
-            )
-        except asyncio.TimeoutError:
-            pass
+        await current_poller.poll_buckets_for_todays_data()
 
         assert mock_day_obs
 

@@ -37,7 +37,7 @@ async def get_camera_current_data(
     channel_data = await current_poller.get_current_channel_table(location.name, camera)
     metadata = await current_poller.get_current_metadata(location.name, camera)
     per_day = await current_poller.get_current_per_day_data(location.name, camera)
-    nr_exists = await current_poller.night_report_exists(location.name, camera.name)
+    nr_exists = current_poller.night_report_exists(location.name, camera.name)
 
     if not (per_day or metadata or channel_data) and use_historical:
         hist_data = await get_most_recent_historical_data(location, camera, connection)

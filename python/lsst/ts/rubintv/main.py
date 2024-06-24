@@ -81,7 +81,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 def create_app() -> FastAPI:
     """The main FastAPI application for rubintv."""
     app = FastAPI(
-        title="rubintv",
+        title=config.name,
         description="rubinTV is a Web app to display Butler-served data sets",
         version=__version__,
         openapi_url=f"{config.path_prefix}/openapi.json",
