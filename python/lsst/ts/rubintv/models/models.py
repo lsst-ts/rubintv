@@ -209,7 +209,7 @@ class Event:
 
 @dataclass
 class NightReportData:
-    """Wrapper for a night report blob.
+    """Wrapper for a night report file metadata object.
 
         -   Night Reports can be located in a given bucket using the prefix:
             ``f"/{camera_name}/{date_str}/night_report/"``.

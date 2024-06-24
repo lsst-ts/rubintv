@@ -39,7 +39,6 @@ async def notify_clients(
                 tasks.append(task)
     # `return_exceptions=True` prevents one failed task from affecting others
     await asyncio.gather(*tasks, return_exceptions=True)
-    logger.info("Finished sending updates")
 
 
 async def send_notification(

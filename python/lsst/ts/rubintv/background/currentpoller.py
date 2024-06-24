@@ -4,7 +4,13 @@ from typing import AsyncGenerator
 import structlog
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.handlers.websocket_notifiers import notify_ws_clients
-from lsst.ts.rubintv.models.models import Camera, Event, Location, NightReport
+from lsst.ts.rubintv.models.models import (
+    Camera,
+    Event,
+    Location,
+    NightReport,
+    NightReportData,
+)
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as Service
 from lsst.ts.rubintv.models.models import get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import (
@@ -22,7 +28,7 @@ class CurrentPoller:
     notifies the websocket server of changes.
     """
 
-    def __init__(self, locations: list[Location]) -> None:
+    def __init__(self, locations: list[Location], test_mode: bool = False) -> None:
         self._clients: dict[str, S3Client] = {}
         self._objects: dict[str, list] = {}
         self._events: dict[str, list[Event]] = {}
@@ -30,9 +36,10 @@ class CurrentPoller:
         self._table: dict[str, dict[int, dict[str, dict]]] = {}
         self._per_day: dict[str, dict[str, dict]] = {}
         self._most_recent_events: dict[str, Event] = {}
-        self._nr_metadata: dict[str, NightReport] = {}
-        self._nr_reports: dict[str, set[NightReport]] = {}
-        self._nr_reports_exist: dict[str, bool] = {}
+        self._nr_metadata: dict[str, NightReportData] = {}
+        self._night_reports: dict[str, NightReport] = {}
+        self.test_mode = test_mode
+        self._test_iterations = 1
 
         self.completed_first_poll = False
         self.locations = locations
@@ -50,10 +57,9 @@ class CurrentPoller:
         self._per_day = {}
         self._most_recent_events = {}
         self._nr_metadata = {}
-        self._nr_reports = {}
-        self._nr_reports_exist = {}
+        self._night_reports = {}
 
-    async def poll_buckets_for_todays_data(self) -> None:
+    async def poll_buckets_for_todays_data(self, test_day: str = "") -> None:
         while True:
             try:
                 if self._current_day_obs != get_current_day_obs():
@@ -72,6 +78,8 @@ class CurrentPoller:
                             continue
 
                         prefix = f"{camera.name}/{day_obs}"
+                        if test_day:
+                            prefix = f"{camera.name}/{test_day}"
 
                         objects = await client.async_list_objects(prefix)
                         loc_cam = await self._get_loc_cam(location.name, camera)
@@ -80,10 +88,13 @@ class CurrentPoller:
                             objects, prefix, location, camera
                         )
                         objects = await self.sieve_out_night_reports(
-                            objects, loc_cam, location
+                            objects, location, camera
                         )
                         await self.process_channel_objects(objects, loc_cam, camera)
                 self.completed_first_poll = True
+                self._test_iterations -= 1
+                if self._test_iterations <= 0:
+                    break
                 await asyncio.sleep(1)
                 logger.info("CurrentPoller running...")
             except Exception:
@@ -211,25 +222,19 @@ class CurrentPoller:
                 )
 
     async def sieve_out_night_reports(
-        self,
-        objects: list[dict[str, str]],
-        loc_cam: str,
-        location: Location,
+        self, objects: list[dict[str, str]], location: Location, camera: Camera
     ) -> list[dict[str, str]]:
+        loc_cam = await self._get_loc_cam(location.name, camera)
         report_objs, objects = await self.filter_night_report_objects(objects)
         if report_objs:
-            if not self._nr_reports_exist.get(loc_cam, False):
+            if not self.night_report_exists(location.name, camera.name):
                 await notify_ws_clients(
                     "camera",
                     Service.CAMERA_PER_DAY,
                     loc_cam,
                     {"nightReportExists": True},
                 )
-                self._nr_reports_exist[loc_cam] = True
-            try:
-                await self.process_night_report_objects(report_objs, loc_cam, location)
-            except ValueError:
-                logger.error("More than one night report metadata file for {loc_cam}")
+                await self.process_night_report_objects(report_objs, location, camera)
         return objects
 
     async def filter_night_report_objects(
@@ -240,42 +245,39 @@ class CurrentPoller:
         return (report_objs, filtered)
 
     async def process_night_report_objects(
-        self,
-        report_objs: list[dict[str, str]],
-        loc_cam: str,
-        location: Location,
+        self, report_objs: list[dict[str, str]], location: Location, camera: Camera
     ) -> None:
-        night_report: NightReport = NightReport()
-        reports = await objects_to_ngt_report_data(report_objs)
-        text_reports = [r for r in reports if r.group == "metadata"]
-        if len(text_reports) > 1:
-            raise ValueError
-        if text_reports:
-            text_report = text_reports[0]
+        loc_cam = await self._get_loc_cam(location.name, camera)
+        prev_nr = await self.get_current_night_report(location.name, camera.name)
+        night_report = NightReport()
+
+        reports_data = await objects_to_ngt_report_data(report_objs)
+        metadata_files = [r for r in reports_data if r.group == "metadata"]
+        if len(metadata_files) > 1:
+            logger.error("More than one night report metadata file for {loc_cam}")
+        if metadata_files:
+            metadata_file = metadata_files[0]
             if (
                 loc_cam not in self._nr_metadata
-                or self._nr_metadata[loc_cam] != text_report
+                or self._nr_metadata[loc_cam] != metadata_file
             ):
-                key = text_report.key
                 client = self._clients[location.name]
-                text_obj = await client.async_get_object(key)
-                if text_obj:
-                    night_report.text = text_obj
-            self._nr_metadata[loc_cam] = text_report
-            reports.remove(text_report)
+                text = await client.async_get_object(metadata_file.key)
+                night_report.text = text
+                self._nr_metadata[loc_cam] = metadata_file
+            else:
+                night_report.text = prev_nr.text
 
-        stored = set()
-        if loc_cam in self._nr_reports:
-            stored = self._nr_reports[loc_cam]
-        to_update = list(set(reports) - stored)
-        if to_update:
-            night_report.plots = to_update
-            self._nr_reports[loc_cam] = set(reports)
-        # Check for equality with empty NightReport (from pydantic.BaseModel)
-        if night_report != NightReport():
+            for mf in metadata_files:
+                reports_data.remove(mf)
+
+        night_report.plots = reports_data
+
+        if prev_nr.text != night_report.text or prev_nr.plots != night_report.plots:
             await notify_ws_clients(
                 "nightreport", Service.NIGHT_REPORT, loc_cam, night_report.model_dump()
             )
+            self._night_reports[loc_cam] = night_report
         return
 
     async def make_per_day_data(
@@ -342,14 +344,7 @@ class CurrentPoller:
         self, location_name: str, camera_name: str
     ) -> NightReport:
         loc_cam = f"{location_name}/{camera_name}"
-        night_report = NightReport()
-        if text_nr := self._nr_metadata.get(loc_cam):
-            client = self._clients[location_name]
-            text_dict = await client.async_get_object(text_nr.key)
-            night_report.text = text_dict
-        if loc_cam in self._nr_reports:
-            if plots := self._nr_reports[loc_cam]:
-                night_report.plots = list(plots)
+        night_report = self._night_reports.get(loc_cam, NightReport())
         return night_report
 
     async def _get_loc_cam(self, location_name: str, camera: Camera) -> str:
@@ -378,9 +373,10 @@ class CurrentPoller:
         nxt_prv = await get_next_previous_from_table(table, event)
         return nxt_prv
 
-    async def night_report_exists(self, location_name: str, camera_name: str) -> bool:
+    def night_report_exists(self, location_name: str, camera_name: str) -> bool:
         loc_cam = f"{location_name}/{camera_name}"
-        return self._nr_reports_exist.get(loc_cam, False)
+        # returns True if there is a night report, False otherwise
+        return self._night_reports.get(loc_cam, False) is not False
 
     async def get_latest_data(
         self,
@@ -404,7 +400,7 @@ class CurrentPoller:
                 ):
                     yield Service.CAMERA_PER_DAY, per_day
 
-                if await self.night_report_exists(location.name, camera.name):
+                if self.night_report_exists(location.name, camera.name):
                     yield Service.CAMERA_PER_DAY, {"nightReportLink": "current"}
 
             case "channel":
