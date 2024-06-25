@@ -64,9 +64,9 @@ class CurrentPoller:
             try:
                 if self._current_day_obs != get_current_day_obs():
                     logger.info(
-                        "Day rolled over from:",
-                        current=self._current_day_obs,
-                        to=get_current_day_obs(),
+                        "Day rolled over",
+                        date_from=self._current_day_obs,
+                        date_to=get_current_day_obs(),
                     )
                     await self.clear_all_data()
                 day_obs = self._current_day_obs = get_current_day_obs()
