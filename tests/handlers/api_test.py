@@ -101,7 +101,7 @@ async def test_get_api_camera_for_date(
     client, mocker = mocked_client
     today = get_current_day_obs()
     # wait for historical data to become unlocked
-    await asyncio.sleep(1)
+    await asyncio.sleep(5)
     response = await client.get(f"/rubintv/api/slac/slac_ts8/date/{today}")
     data = response.json()
     assert data["channelData"] != {}

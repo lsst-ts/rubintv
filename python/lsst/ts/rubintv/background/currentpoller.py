@@ -64,9 +64,9 @@ class CurrentPoller:
             try:
                 if self._current_day_obs != get_current_day_obs():
                     logger.info(
-                        "Day rolled over from:",
-                        current=self._current_day_obs,
-                        to=get_current_day_obs(),
+                        "Day rolled over",
+                        date_from=self._current_day_obs,
+                        date_to=get_current_day_obs(),
                     )
                     await self.clear_all_data()
                 day_obs = self._current_day_obs = get_current_day_obs()
@@ -92,9 +92,11 @@ class CurrentPoller:
                         )
                         await self.process_channel_objects(objects, loc_cam, camera)
                 self.completed_first_poll = True
-                self._test_iterations -= 1
-                if self._test_iterations <= 0:
-                    break
+
+                if self.test_mode:
+                    self._test_iterations -= 1
+                    if self._test_iterations <= 0:
+                        break
                 await asyncio.sleep(1)
                 logger.info("CurrentPoller running...")
             except Exception:
