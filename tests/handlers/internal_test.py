@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from fastapi import FastAPI
 from httpx import AsyncClient
 from lsst.ts.rubintv.config import config
 
@@ -10,8 +11,10 @@ from ..mockdata import RubinDataMocker
 
 
 @pytest.mark.asyncio
-async def test_get_index(mocked_client: tuple[AsyncClient, RubinDataMocker]) -> None:
-    client, mocker = mocked_client
+async def test_get_index(
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+) -> None:
+    client, app, mocker = mocked_client
     """Test ``GET /``"""
     response = await client.get("/")
     assert response.status_code == 200
