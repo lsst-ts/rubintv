@@ -54,27 +54,6 @@ class RubinDataMocker:
         self.metadata: dict[str, dict[str, str]] = {}
         self.mock_up_data()
 
-    def cleanup(self) -> None:
-        print("Started cleaning...")
-        self.delete_buckets()
-        self.last_seq = {}
-        self._locations = []
-        self.s3_required = False
-        self.location_channels = {}
-        self.seq_objs = {}
-        self.events = {}
-        self.metadata = {}
-        print("Finished cleaning...")
-
-    def delete_buckets(self) -> None:
-        if self.s3_required:
-            s3 = boto3.resource("s3", region_name="us-east-1")
-            for location in self._locations:
-                bucket_name = location.bucket_name
-                bucket = s3.Bucket(bucket_name)
-                print(f"Emptying bucket: {bucket_name}")
-                bucket.objects.all().delete()
-
     def create_buckets(self) -> None:
         for location in self._locations:
             bucket_name = location.bucket_name
