@@ -7,7 +7,9 @@ from itertools import chain
 
 import pytest
 from bs4 import BeautifulSoup
+from fastapi import FastAPI
 from httpx import AsyncClient
+from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.models.models import Location
 from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
@@ -18,9 +20,11 @@ m = ModelsInitiator()
 
 
 @pytest.mark.asyncio
-async def test_get_home(mocked_client: tuple[AsyncClient, RubinDataMocker]) -> None:
+async def test_get_home(
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+) -> None:
     """Test that home page has links to every location"""
-    client, mocker = mocked_client
+    client, app, mocker = mocked_client
     response = await client.get("/rubintv/")
     html = await response.aread()
     parsed = BeautifulSoup(html, "html.parser")
@@ -36,9 +40,11 @@ async def test_get_home(mocked_client: tuple[AsyncClient, RubinDataMocker]) -> N
 
 
 @pytest.mark.asyncio
-async def test_get_location(mocked_client: tuple[AsyncClient, RubinDataMocker]) -> None:
+async def test_get_location(
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+) -> None:
     """Test that location page has links to cameras"""
-    client, mocker = mocked_client
+    client, app, mocker = mocked_client
     location_name = "summit-usdf"
     location = find_first(m.locations, "name", location_name)
     assert type(location) is Location
@@ -58,14 +64,15 @@ async def test_get_location(mocked_client: tuple[AsyncClient, RubinDataMocker]) 
 
 @pytest.mark.asyncio
 async def test_current_channels(
-    mocked_client: tuple[AsyncClient, RubinDataMocker]
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
 ) -> None:
-    """Test that location page has links to cameras"""
-    client, mocker = mocked_client
-    print("in test_current_channels")
-    print(mocker.empty_channel)
-    # allow historicaldata time to sort info
-    await asyncio.sleep(1)
+    client, app, mocker = mocked_client
+
+    cp: CurrentPoller = app.state.current_poller
+    cp.test_mode = True
+    while cp.completed_first_poll is not True:
+        await asyncio.sleep(0.1)
+
     for location in m.locations:
         for camera in location.cameras:
             loc_cam = f"{location.name}/{camera.name}"
@@ -75,12 +82,9 @@ async def test_current_channels(
                     f"/current/{seq_chan.name}"
                 )
                 response = await client.get(url)
-
                 assert response.status_code == 200
-
                 html = await response.aread()
                 parsed = BeautifulSoup(html, "html.parser")
-
                 if mocker.empty_channel[loc_cam] == seq_chan.name:
                     assert parsed.select(".event-error")
                     assert not parsed.select(".event-info")

@@ -26,12 +26,6 @@ def current_poller(rubin_data_mocker: RubinDataMocker) -> CurrentPoller:
     return CurrentPoller(m.locations, test_mode=True)
 
 
-@pytest.fixture(scope="function")
-def c_poller_no_mock_data(rubin_data_mocker: RubinDataMocker) -> Any:
-    with mock_s3_service():
-        yield CurrentPoller(m.locations, test_mode=True)
-
-
 @pytest.mark.asyncio
 async def test_poll_buckets_for_todays_data(
     current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
@@ -112,9 +106,8 @@ async def test_clear_all_data(current_poller: CurrentPoller) -> None:
 
 @pytest.mark.asyncio
 async def test_process_channel_objects(
-    c_poller_no_mock_data: CurrentPoller, rubin_data_mocker: RubinDataMocker
+    current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
 ) -> None:
-    current_poller = c_poller_no_mock_data
     await current_poller.clear_all_data()
 
     camera, location = await get_test_camera_and_location()
@@ -148,9 +141,8 @@ async def test_process_channel_objects(
 
 @pytest.mark.asyncio
 async def test_update_channel_events(
-    c_poller_no_mock_data: CurrentPoller, rubin_data_mocker: RubinDataMocker
+    current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
 ) -> None:
-    current_poller = c_poller_no_mock_data
     with (
         patch(
             "lsst.ts.rubintv.background.currentpoller." "notify_ws_clients",
@@ -170,9 +162,8 @@ async def test_update_channel_events(
 
 @pytest.mark.asyncio
 async def test_make_per_day_data(
-    c_poller_no_mock_data: CurrentPoller, rubin_data_mocker: RubinDataMocker
+    current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
 ) -> None:
-    current_poller = c_poller_no_mock_data
     mocked_events = rubin_data_mocker.events
     for location in m.locations:
         for camera in location.cameras:

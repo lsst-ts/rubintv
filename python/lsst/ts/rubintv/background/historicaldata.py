@@ -35,7 +35,7 @@ class HistoricalPoller:
     # polling period in seconds
     CHECK_NEW_DAY_PERIOD = 5
 
-    def __init__(self, locations: list[Location]) -> None:
+    def __init__(self, locations: list[Location], test_mode: bool = False) -> None:
         self._clients: dict[str, S3Client] = {}
         self._metadata: dict[str, dict[str, str]] = {}
         self._events: dict[str, list[Event]] = {}
@@ -51,6 +51,8 @@ class HistoricalPoller:
         self._last_reload = get_current_day_obs()
 
         self.cam_year_rgx = re.compile(r"(\w+)\/([\d]{4})-[\d]{2}-[\d]{2}")
+
+        self.test_mode = test_mode
 
     async def clear_all_data(self) -> None:
         self._have_downloaded = False
@@ -81,6 +83,8 @@ class HistoricalPoller:
                     logger.info("Completed historical")
                     await notify_all_status_change(historical_busy=False)
                 else:
+                    if self.test_mode:
+                        break
                     await asyncio.sleep(self.CHECK_NEW_DAY_PERIOD)
         except Exception as e:
             logger.error(e)
