@@ -16,10 +16,6 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-# from safir.dependencies.http_client import http_client_dependency
-# from safir.logging import configure_logging, configure_uvicorn_logging
-from safir.middleware.x_forwarded import XForwardedMiddleware
-
 from . import __version__
 from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
@@ -33,18 +29,11 @@ from .handlers.pages import pages_router
 from .handlers.proxies import proxies_router
 from .handlers.websocket import data_ws_router
 from .handlers.websockets_clients import clients
+from .middleware.x_forwarded import XForwardedMiddleware
 from .models.models_init import ModelsInitiator
 from .s3client import S3Client
 
 __all__ = ["app", "config"]
-
-
-# configure_logging(
-#     profile=config.profile,
-#     log_level=config.log_level,
-#     name=config.name,
-# )
-# configure_uvicorn_logging(config.log_level)
 
 
 @asynccontextmanager
@@ -76,7 +65,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     today_polling.cancel()
     for c in clients.values():
         await c.close()
-    # await http_client_dependency.aclose()
 
 
 def create_app() -> FastAPI:
