@@ -4,7 +4,8 @@ import os
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from safir.logging import LogLevel, Profile
+
+# from safir.logging import LogLevel, Profile
 
 __all__ = ["Configuration", "config"]
 
@@ -44,17 +45,17 @@ class Configuration(BaseSettings):
 
     s3_endpoint_url: str = Field(default="testing", alias="S3_ENDPOINT_URL")
 
-    profile: Profile = Field(
-        default=Profile.development,
-        validation_alias="SAFIR_PROFILE",
-        json_schema_extra={"title": "Application logging profile"},
-    )
+    # profile: Profile = Field(
+    #     default=Profile.development,
+    #     validation_alias="SAFIR_PROFILE",
+    #     json_schema_extra={"title": "Application logging profile"},
+    # )
 
-    log_level: LogLevel = Field(
-        default=LogLevel.INFO,
-        validation_alias="SAFIR_LOG_LEVEL",
-        json_schema_extra={"title": "Log level of the application's logger"},
-    )
+    # log_level: LogLevel = Field(
+    #     default=LogLevel.INFO,
+    #     validation_alias="SAFIR_LOG_LEVEL",
+    #     json_schema_extra={"title": "Log level of the application's logger"},
+    # )
 
     model_config = SettingsConfigDict(env_prefix="SAFIR_", case_sensitive=False)
 
