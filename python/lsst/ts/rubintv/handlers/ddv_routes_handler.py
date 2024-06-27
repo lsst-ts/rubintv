@@ -1,11 +1,11 @@
 import os
 
-import structlog
 from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse
+from lsst.ts.rubintv.config import rubintv_logger
 
 ddv_router = APIRouter()
-logger = structlog.get_logger("rubintv")
+logger = rubintv_logger()
 
 
 @ddv_router.get("{full_path:path}")

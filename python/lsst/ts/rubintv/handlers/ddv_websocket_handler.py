@@ -2,13 +2,13 @@ import uuid
 from dataclasses import dataclass
 from enum import Enum
 
-import structlog
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from lsst.ts.rubintv.config import rubintv_logger
 
 internal_ws_router = APIRouter()
 ddv_client_ws_router = APIRouter()
 
-logger = structlog.get_logger("rubintv")
+logger = rubintv_logger()
 
 
 class WorkerPodStatus(Enum):

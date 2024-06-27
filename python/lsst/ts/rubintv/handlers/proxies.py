@@ -1,10 +1,10 @@
-import structlog
 from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.s3client import S3Client
 
 proxies_router = APIRouter()
-logger = structlog.get_logger("rubintv")
+logger = rubintv_logger()
 
 
 @proxies_router.get(

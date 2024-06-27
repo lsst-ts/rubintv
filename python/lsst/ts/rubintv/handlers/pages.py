@@ -158,7 +158,6 @@ async def get_camera_for_date_page(
     camera_name: str,
     date_str: str,
     request: Request,
-    # logger: BoundLogger = Depends(logger_dependency),
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online:
@@ -228,7 +227,6 @@ async def get_historical_camera_page(
     location_name: str,
     camera_name: str,
     request: Request,
-    # logger: BoundLogger = Depends(logger_dependency),
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online:

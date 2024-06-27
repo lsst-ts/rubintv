@@ -2,10 +2,10 @@
 
 from typing import Annotated
 
-import structlog
 from fastapi import APIRouter, HTTPException, Query, Request
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
+from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.handlers_helpers import (
     get_camera_current_data,
     get_camera_events_for_date,
@@ -17,7 +17,7 @@ from lsst.ts.rubintv.models.models_helpers import date_str_to_date, find_first
 api_router = APIRouter()
 """FastAPI router for all external handlers."""
 
-logger = structlog.get_logger("rubintv")
+logger = rubintv_logger()
 
 
 @api_router.get("/", response_model=list[Location])
