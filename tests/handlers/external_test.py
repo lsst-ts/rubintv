@@ -63,7 +63,6 @@ async def test_get_location(
 
 
 @pytest.mark.asyncio
-# @patch("lsst.ts.rubintv.main.HistoricalPoller")
 async def test_current_channels(
     mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
 ) -> None:
