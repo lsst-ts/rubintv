@@ -30,14 +30,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Extract Python version from pyproject.toml
-      id: python-version
-      run: echo "::set-output name=version::$(cat pyproject.toml | grep python | grep -oP '\d+\.\d+\.\d+')"
-
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: ${{ steps.python-version.outputs.version }}
+        python-version: 3.11
 
     - name: Install dependencies
       run: |
