@@ -12,7 +12,7 @@ __all__ = ["XForwardedMiddleware"]
 
 # Once we have safir available on the T&S base develop image again,
 # we should roll this back to use it from safir.middleware.x_forwarded
-# See DM-45095 https://rubinobs.atlassian.net/browse/DM-45095
+# See DM-45095 (https://rubinobs.atlassian.net/browse/DM-45095)
 
 
 class XForwardedMiddleware:
