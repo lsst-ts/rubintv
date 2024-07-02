@@ -4,10 +4,10 @@ import asyncio
 from datetime import date
 from typing import Any, Callable
 
-import structlog
 from fastapi import HTTPException, Request
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
+from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.models.models import (
     Camera,
     Event,
@@ -17,7 +17,7 @@ from lsst.ts.rubintv.models.models import (
 )
 from starlette.requests import HTTPConnection
 
-logger = structlog.get_logger("rubintv")
+logger = rubintv_logger()
 
 
 async def get_camera_current_data(

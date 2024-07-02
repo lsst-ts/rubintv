@@ -11,14 +11,14 @@ or other information that should not be visible outside the Kubernetes cluster.
 from datetime import datetime
 from json import JSONDecodeError
 
-import structlog
 from fastapi import APIRouter, BackgroundTasks, WebSocket, WebSocketDisconnect
+from lsst.ts.rubintv.config import rubintv_logger
 
 from ..models.models import Heartbeat, Metadata
 
 __all__ = ["get_index", "internal_router"]
 
-logger = structlog.get_logger("rubintv")
+logger = rubintv_logger()
 internal_router = APIRouter()
 """FastAPI router for all internal handlers."""
 

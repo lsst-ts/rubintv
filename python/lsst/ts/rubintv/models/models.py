@@ -6,14 +6,14 @@ from datetime import date, datetime, timedelta, timezone
 from enum import Enum
 from typing import Any
 
-import structlog
 from pydantic import BaseModel, ConfigDict
 from pydantic.dataclasses import dataclass
+from lsst.ts.rubintv.config import rubintv_logger
 
 from .. import __version__
 from ..config import config
 
-logger = structlog.get_logger("rubintv")
+logger = rubintv_logger()
 
 
 class Metadata(BaseModel):

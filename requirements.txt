@@ -6,7 +6,6 @@ boto3
 fastapi
 httpx
 moto
-safir
 pytest_asyncio
 websocket-client
 beautifulsoup4

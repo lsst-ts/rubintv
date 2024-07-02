@@ -1,7 +1,7 @@
 import asyncio
 
-import structlog
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from lsst.ts.rubintv.config import rubintv_logger
 from websockets import ConnectionClosed
 
 HEARTBEAT_INTERVAL = 5
@@ -12,7 +12,7 @@ heartbeats_sock_lock = asyncio.Lock()
 broadcast_task = None  # Reference to the broadcast task
 
 heartbeat_ws_router = APIRouter()
-logger = structlog.get_logger("rubintv")
+logger = rubintv_logger()
 
 
 async def remove_websocket(websocket: WebSocket) -> None:

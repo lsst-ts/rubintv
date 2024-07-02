@@ -2,9 +2,9 @@ import json
 import re
 import uuid
 
-import structlog
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
+from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.websocket_notifiers import send_notification
 from lsst.ts.rubintv.handlers.websockets_clients import (
     clients,
@@ -18,7 +18,7 @@ from lsst.ts.rubintv.models.models import ServiceMessageTypes as Service
 from lsst.ts.rubintv.models.models_helpers import find_first
 
 data_ws_router = APIRouter()
-logger = structlog.get_logger("rubintv")
+logger = rubintv_logger()
 
 valid_services = ["camera", "channel", "nightreport"]
 

@@ -4,15 +4,15 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import boto3
-import structlog
 from botocore.config import Config as BotoConfig
 from botocore.exceptions import ClientError
 from botocore.response import StreamingBody
 from fastapi.exceptions import HTTPException
 from lsst.ts.rubintv.config import config as app_config
+from lsst.ts.rubintv.config import rubintv_logger
 
 config = BotoConfig(retries={"max_attempts": 10, "mode": "standard"})
-logger = structlog.get_logger("rubintv")
+logger = rubintv_logger()
 
 __all__ = ["S3Client"]
 

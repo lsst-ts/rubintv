@@ -1,7 +1,7 @@
-import structlog
+from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.models.models import Event
 
-logger = structlog.get_logger("rubintv")
+logger = rubintv_logger()
 
 
 async def get_next_previous_from_table(

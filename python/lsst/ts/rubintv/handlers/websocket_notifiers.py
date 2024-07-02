@@ -2,8 +2,8 @@ import asyncio
 from typing import Any, Mapping
 from uuid import UUID
 
-import structlog
 from fastapi import WebSocket
+from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.websockets_clients import (
     clients,
     clients_lock,
@@ -13,7 +13,7 @@ from lsst.ts.rubintv.handlers.websockets_clients import (
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as Service
 from lsst.ts.rubintv.models.models import get_current_day_obs
 
-logger = structlog.get_logger("rubintv")
+logger = rubintv_logger()
 
 
 async def notify_ws_clients(

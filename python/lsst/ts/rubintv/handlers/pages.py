@@ -2,8 +2,9 @@
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.api import (
     get_current_channel_event,
     get_location,
@@ -29,8 +30,6 @@ from lsst.ts.rubintv.handlers.pages_helpers import (
 from lsst.ts.rubintv.models.models import Channel, Event, Location, NightReport
 from lsst.ts.rubintv.models.models_helpers import date_str_to_date, find_first
 from lsst.ts.rubintv.templates_init import get_templates
-from safir.dependencies.logger import logger_dependency
-from structlog.stdlib import BoundLogger
 
 __all__ = ["get_home", "pages_router", "templates"]
 
@@ -40,11 +39,12 @@ pages_router = APIRouter()
 templates = get_templates()
 """Jinja2 for templating."""
 
+logger = rubintv_logger()
+
 
 @pages_router.get("/", response_class=HTMLResponse, name="home")
 async def get_home(
     request: Request,
-    logger: BoundLogger = Depends(logger_dependency),
 ) -> Response:
     """GET ``/rubintv/`` (the app's external root)."""
     logger.info("Request for the app home page")
@@ -158,7 +158,6 @@ async def get_camera_for_date_page(
     camera_name: str,
     date_str: str,
     request: Request,
-    logger: BoundLogger = Depends(logger_dependency),
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online:
@@ -228,7 +227,6 @@ async def get_historical_camera_page(
     location_name: str,
     camera_name: str,
     request: Request,
-    logger: BoundLogger = Depends(logger_dependency),
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online:

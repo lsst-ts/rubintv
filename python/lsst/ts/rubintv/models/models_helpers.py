@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Any, Iterable
 
-import structlog
+from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.models.models import Camera, Channel, Event, NightReportData
 
 __all__ = [
@@ -86,7 +86,7 @@ async def objects_to_events(objects: list[dict]) -> list[Event]:
     list[Event]
         A list of Event objects created from the provided dictionaries.
     """
-    logger = structlog.get_logger("rubintv")
+    logger = rubintv_logger()
     events = []
     for object in objects:
         try:
@@ -98,7 +98,7 @@ async def objects_to_events(objects: list[dict]) -> list[Event]:
 
 
 async def objects_to_ngt_report_data(objects: list[dict]) -> list[NightReportData]:
-    logger = structlog.get_logger("rubintv")
+    logger = rubintv_logger()
     night_reports: list[NightReportData] = []
     for object in objects:
         try:
