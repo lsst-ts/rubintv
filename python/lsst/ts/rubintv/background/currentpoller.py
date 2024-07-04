@@ -1,4 +1,3 @@
-import asyncio
 from time import time
 from typing import AsyncGenerator
 
@@ -101,8 +100,6 @@ class CurrentPoller:
                         break
                 t_dur = time() - t_start
                 logger.info("Current - time taken:", time=t_dur)
-                await asyncio.sleep(1)
-                logger.info("CurrentPoller running...")
             except Exception:
                 logger.exception("Caught exception during poll for data")
 
