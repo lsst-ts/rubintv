@@ -1,3 +1,4 @@
+import asyncio
 from datetime import date
 from typing import Any, Iterable
 
@@ -66,8 +67,7 @@ def string_int_to_date(date_string: str) -> date:
     d = date_string
     return date(int(d[0:4]), int(d[4:6]), int(d[6:8]))
 
-
-async def objects_to_events(objects: list[dict]) -> list[Event]:
+    # async def objects_to_events(objects: list[dict]) -> list[Event]:
     """Asynchronously convert a list of dictionaries to a list of Event
     objects.
 
@@ -86,14 +86,67 @@ async def objects_to_events(objects: list[dict]) -> list[Event]:
     list[Event]
         A list of Event objects created from the provided dictionaries.
     """
+
+
+#     logger = structlog.get_logger("rubintv")
+#     events = []
+#     for object in objects:
+#         try:
+#             event = Event(**object)
+#             events.append(event)
+#         except ValueError as e:
+#             logger.error(e)
+#     return events
+
+
+def process_batch(batch: list[dict]) -> list[Event]:
+    """Convert a batch of event dicts to Event objects.
+
+    Parameters
+    ----------
+    batch : list[dict]
+        A batch list of event dicts.
+
+    Returns
+    -------
+    list[Event]
+        A batch list of `Event` objects.
+    """
     logger = rubintv_logger()
     events = []
-    for object in objects:
+    for obj in batch:
         try:
-            event = Event(**object)
+            event = Event(**obj)
             events.append(event)
         except ValueError as e:
             logger.error(e)
+    return events
+
+
+async def objects_to_events(objects: list[dict], batch_size: int = 1000) -> list[Event]:
+    """Asynchronously convert a list of dictionaries to a list of Event
+    objects in batches.
+
+    Parameters
+    ----------
+    objects : list[dict]
+        A list of dictionaries, each representing the data for an Event object.
+
+    Returns
+    -------
+    events: list[Event]
+        A list of Event objects created from the provided dictionaries.
+    """
+    tasks = []
+    # Split objects into batches
+    for i in range(0, len(objects), batch_size):
+        batch = objects[i : i + batch_size]
+        tasks.append(asyncio.to_thread(process_batch, batch))
+
+    results = await asyncio.gather(*tasks)
+
+    # Flatten the list of lists
+    events = [event for batch in results for event in batch]
     return events
 
 
