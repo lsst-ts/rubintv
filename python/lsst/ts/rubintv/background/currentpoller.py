@@ -1,4 +1,5 @@
 import asyncio
+from time import time
 from typing import AsyncGenerator
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
@@ -61,6 +62,7 @@ class CurrentPoller:
 
     async def poll_buckets_for_todays_data(self, test_day: str = "") -> None:
         while True:
+            t_start = time()
             try:
                 if self._current_day_obs != get_current_day_obs():
                     logger.info(
@@ -97,6 +99,8 @@ class CurrentPoller:
                     self._test_iterations -= 1
                     if self._test_iterations <= 0:
                         break
+                t_dur = time() - t_start
+                logger.info("Current - time taken:", time=t_dur)
                 await asyncio.sleep(1)
                 logger.info("CurrentPoller running...")
             except Exception:
