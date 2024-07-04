@@ -1,5 +1,7 @@
 import asyncio
+import pickle
 import re
+import zlib
 from datetime import date
 from time import time
 from typing import Any
@@ -38,8 +40,9 @@ class HistoricalPoller:
 
     def __init__(self, locations: list[Location], test_mode: bool = False) -> None:
         self._clients: dict[str, S3Client] = {}
-        self._metadata: dict[str, dict[str, str]] = {}
-        self._events: dict[str, list[Event]] = {}
+        self._metadata: dict[str, bytes] = {}
+        self._temp_events: dict[str, list[Event]] = {}
+        self._events: dict[str, bytes] = {}
         self._nr_metadata: dict[str, list[NightReportData]] = {}
         self._calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
         self._locations = locations
@@ -95,7 +98,6 @@ class HistoricalPoller:
             logger.error(e)
 
     async def _refresh_location_store(self, location: Location) -> None:
-        # handle blocking call in async code
         try:
             up_to_date_objects = await self._get_objects(location)
             await self.filter_convert_store_objects(up_to_date_objects, location)
@@ -148,14 +150,24 @@ class HistoricalPoller:
         self._nr_metadata[locname] = await objects_to_ngt_report_data(n_report_objs)
         events = await objects_to_events(event_objs)
         await self.store_events(events, locname)
+        await self.compress_events()
+
+    async def compress_events(self) -> None:
+        t = time()
+        for storage_key, events in self._temp_events.items():
+            compressed = zlib.compress(pickle.dumps(events))
+            self._events[storage_key] = compressed
+        self._temp_events = {}
+        dur = time() - t
+        logger.info("Compression took:", storage_key=storage_key, dur=dur)
 
     async def store_events(self, events: list[Event], locname: str) -> None:
         logger.info("starting store_events")
         for event in events:
-            storage_name = await self.storage_name_for_event(event, locname)
-            if storage_name not in self._events:
-                self._events[storage_name] = []
-            self._events[storage_name].append(event)
+            storage_key = await self.storage_key_for_event(event, locname)
+            if storage_key not in self._temp_events:
+                self._temp_events[storage_key] = []
+            self._temp_events[storage_key].append(event)
 
             seq_num = event.seq_num
             if isinstance(seq_num, str):
@@ -173,15 +185,16 @@ class HistoricalPoller:
                 self._calendar[loc_cam][year][month][day] = seq_num
         logger.info("ending store_events")
 
-    async def storage_name_for_event(self, event: Event, locname: str) -> str:
+    async def storage_key_for_event(self, event: Event, locname: str) -> str:
         return f"{locname}/{event.camera_name}"
 
     async def download_and_store_metadata(
         self, locname: str, metadata_objs: list[dict[str, str]]
     ) -> None:
-        # metadata is downloaded and stored against it's loc/cam/date
+        # metadata is downloaded and stored against its loc/cam/date
         # for efficient retrieval
-        logger.info("starting to fetch metadata")
+        logger.info("Fetching metadata for:", locname=locname)
+        t = time()
         for md_obj in metadata_objs:
             key = md_obj.get("key")
             if not key:
@@ -192,8 +205,10 @@ class HistoricalPoller:
             if not md:
                 logger.info("Missing metadata for:", md_obj=md_obj)
                 continue
-            self._metadata[storage_name] = md
-        logger.info("ending metatdata fetch")
+            compressed_md = zlib.compress(pickle.dumps(md))
+            self._metadata[storage_name] = compressed_md
+        dur = time() - t
+        logger.info("Metatdata fetch took", locname=locname, dur=dur)
 
     async def get_night_report_payload(
         self, location: Location, camera: Camera, day_obs: date
@@ -254,7 +269,9 @@ class HistoricalPoller:
     ) -> list[Event]:
         loc_cam = f"{location.name}/{camera.name}"
         date_str = a_date.isoformat()
-        events = [e for e in self._events[loc_cam] if e.day_obs == date_str]
+        compressed = self._events[loc_cam]
+        events: list[Event] = pickle.loads(zlib.decompress(compressed))
+        events = [e for e in events if e.day_obs == date_str]
         return events
 
     async def get_channel_data_for_date(
@@ -288,7 +305,10 @@ class HistoricalPoller:
         if camera.metadata_from:
             cam_name = camera.metadata_from
         loc_cam_date = f"{location.name}/{cam_name}/{day_obs}"
-        return self._metadata.get(loc_cam_date, {})
+        compressed = self._metadata.get(loc_cam_date, None)
+        if compressed is None:
+            return {}
+        return pickle.loads(zlib.decompress(compressed))
 
     async def get_most_recent_day(
         self, location: Location, camera: Camera
@@ -309,18 +329,22 @@ class HistoricalPoller:
         day_obs = await self.get_most_recent_day(location, camera)
         if not day_obs:
             return []
+        compressed = self._events.get(loc_cam, None)
+        if compressed is None:
+            return []
+        events = pickle.loads(zlib.decompress(compressed))
         date_str = day_obs.isoformat()
-        return [e for e in self._events[loc_cam] if e.day_obs == date_str]
+        return [e for e in events if e.day_obs == date_str]
 
     async def get_most_recent_event(
         self, location: Location, camera: Camera, channel: Channel
     ) -> Event | None:
         loc_cam = f"{location.name}/{camera.name}"
-        events = [
-            event
-            for event in self._events.get(loc_cam, [])
-            if event.channel_name == channel.name
-        ]
+        compressed = self._events.get(loc_cam, None)
+        if compressed is None:
+            return None
+        events = pickle.loads(zlib.decompress(compressed))
+        events = [event for event in events if event.channel_name == channel.name]
         if not events:
             return None
         return max(events)
