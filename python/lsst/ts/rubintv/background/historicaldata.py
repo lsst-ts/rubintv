@@ -1,6 +1,7 @@
 import asyncio
 import re
 from datetime import date
+from time import time
 from typing import Any
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
@@ -74,13 +75,17 @@ class HistoricalPoller:
                     not self._have_downloaded
                     or self._last_reload < get_current_day_obs()
                 ):
+                    time_start = time()
                     await self.clear_all_data()
                     for location in self._locations:
                         await self._refresh_location_store(location)
 
                     self._last_reload = get_current_day_obs()
                     self._have_downloaded = True
-                    logger.info("Completed historical")
+
+                    time_taken = time() - time_start
+                    logger.info("Historical polling took:", time_taken=time_taken)
+
                     await notify_all_status_change(historical_busy=False)
                 else:
                     if self.test_mode:
@@ -133,7 +138,9 @@ class HistoricalPoller:
         n_report_objs = [o for o in objects if "night_report" in o["key"]]
 
         event_objs = [
-            o for o in objects if o not in metadata_objs and o not in n_report_objs
+            o
+            for o in objects
+            if "metadata.json" not in o["key"] and "night_report" not in o["key"]
         ]
 
         await self.download_and_store_metadata(locname, metadata_objs)
