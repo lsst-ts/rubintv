@@ -336,6 +336,7 @@ async def get_historical_night_report_page(
         camera_name=camera_name,
         date_str=date_str,
         request=request,
+        # default return is empty night report
         is_busy_default=NightReport(),
     )
 
@@ -353,9 +354,7 @@ async def get_historical_night_report_page(
             "location": location,
             "camera": camera.model_dump(),
             "date": day_obs,
-            "night_report": (
-                night_report.model_dump() if night_report is not None else {}
-            ),
+            "night_report": (night_report.model_dump()),
             "historical_busy": historical_busy,
             "title": title,
         },
