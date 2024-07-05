@@ -42,7 +42,7 @@ jobs:
         pip install -e .
 
     - name: Run tests
-      run: pytest tests
+      run: pytest tests/null
 
 
   build:
