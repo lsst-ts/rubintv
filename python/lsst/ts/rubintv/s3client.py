@@ -22,10 +22,16 @@ class S3Client:
 
     async def _get_client(self) -> AioBaseClient:
         if not self._client:
-            async with self._session.create_client(
-                "s3", endpoint_url=self.endpoint_url, region_name="us-east-1"
-            ) as client:
-                self._client = client
+            if self.endpoint_url != "testing":
+                async with self._session.create_client(
+                    "s3", endpoint_url=self.endpoint_url, region_name="us-east-1"
+                ) as client:
+                    self._client = client
+            else:
+                async with self._session.create_client(
+                    "s3", region_name="us-east-1"
+                ) as client:
+                    self._client = client
         return self._client
 
     async def async_list_objects(self, prefix: str) -> list[dict[str, str]]:
