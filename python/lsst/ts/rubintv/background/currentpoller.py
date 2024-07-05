@@ -14,8 +14,8 @@ from lsst.ts.rubintv.models.models import (
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as Service
 from lsst.ts.rubintv.models.models import get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import (
+    all_objects_to_events,
     make_table_from_event_list,
-    objects_to_events,
     objects_to_ngt_report_data,
 )
 from lsst.ts.rubintv.s3client import S3Client
@@ -110,7 +110,7 @@ class CurrentPoller:
             loc_cam not in self._objects or objects != self._objects[loc_cam]
         ):
             self._objects[loc_cam] = objects
-            events = await objects_to_events(objects)
+            events = await all_objects_to_events(objects)
             self._events[loc_cam] = events
             await self.update_channel_events(events, loc_cam, camera)
 

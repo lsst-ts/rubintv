@@ -1,6 +1,6 @@
 import asyncio
 from datetime import date
-from typing import Any, Iterable
+from typing import Any, AsyncGenerator, Iterable
 
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.models.models import Camera, Channel, Event, NightReportData
@@ -11,6 +11,7 @@ __all__ = [
     "string_int_to_date",
     "date_str_to_date",
     "objects_to_events",
+    "all_objects_to_events",
     "objects_to_ngt_report_data",
 ]
 
@@ -67,37 +68,6 @@ def string_int_to_date(date_string: str) -> date:
     d = date_string
     return date(int(d[0:4]), int(d[4:6]), int(d[6:8]))
 
-    # async def objects_to_events(objects: list[dict]) -> list[Event]:
-    """Asynchronously convert a list of dictionaries to a list of Event
-    objects.
-
-    This function attempts to create Event objects from the given dictionaries.
-    If a dictionary does not match the expected structure of an Event, a
-    ValueError is caught, logged, and the function continues to process the
-    next dictionary.
-
-    Parameters
-    ----------
-    objects : list[dict]
-        A list of dictionaries, each representing the data for an Event object.
-
-    Returns
-    -------
-    list[Event]
-        A list of Event objects created from the provided dictionaries.
-    """
-
-
-#     logger = structlog.get_logger("rubintv")
-#     events = []
-#     for object in objects:
-#         try:
-#             event = Event(**object)
-#             events.append(event)
-#         except ValueError as e:
-#             logger.error(e)
-#     return events
-
 
 def process_batch(batch: list[dict]) -> list[Event]:
     """Convert a batch of event dicts to Event objects.
@@ -123,7 +93,16 @@ def process_batch(batch: list[dict]) -> list[Event]:
     return events
 
 
-async def objects_to_events(objects: list[dict], batch_size: int = 1000) -> list[Event]:
+async def all_objects_to_events(objects: list[dict]) -> list[Event]:
+    events = []
+    async for events_batch in objects_to_events(objects):
+        events.append(events_batch)
+    return events
+
+
+async def objects_to_events(
+    objects: list[dict], batch_size: int = 1000
+) -> AsyncGenerator[list[Event], None]:
     """Asynchronously convert a list of dictionaries to a list of Event
     objects in batches.
 
@@ -131,23 +110,19 @@ async def objects_to_events(objects: list[dict], batch_size: int = 1000) -> list
     ----------
     objects : list[dict]
         A list of dictionaries, each representing the data for an Event object.
+    batch_size : int, optional
+        The size of each batch to process asynchronously, by default 1000
 
-    Returns
-    -------
-    events: list[Event]
-        A list of Event objects created from the provided dictionaries.
+    Yields
+    ------
+    list[Event]
+        A batch of Event objects created from the provided dictionaries.
     """
-    tasks = []
-    # Split objects into batches
+    # Split objects into batches and process them asynchronously
     for i in range(0, len(objects), batch_size):
         batch = objects[i : i + batch_size]
-        tasks.append(asyncio.to_thread(process_batch, batch))
-
-    results = await asyncio.gather(*tasks)
-
-    # Flatten the list of lists
-    events = [event for batch in results for event in batch]
-    return events
+        events = await asyncio.to_thread(process_batch, batch)
+        yield events
 
 
 async def objects_to_ngt_report_data(objects: list[dict]) -> list[NightReportData]:
