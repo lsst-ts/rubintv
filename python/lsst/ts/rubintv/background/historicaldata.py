@@ -148,10 +148,10 @@ class HistoricalPoller:
         await self.download_and_store_metadata(locname, metadata_objs)
 
         self._nr_metadata[locname] = await objects_to_ngt_report_data(n_report_objs)
-        for events_batch in objects_to_events(event_objs):
+        async for events_batch in objects_to_events(event_objs):
             await self.store_events(events_batch, locname)
             await self.compress_events()
-            del self._temp_events
+            self._temp_events = {}
 
     async def compress_events(self) -> None:
         t = time()
