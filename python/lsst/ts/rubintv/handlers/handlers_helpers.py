@@ -105,14 +105,14 @@ async def get_current_night_report_payload(
 
 
 async def try_historical_call(
-    async_func: Callable, *args: Any, **kwargs: Any
+    async_func: Callable, is_busy_default: Any = None, *args: Any, **kwargs: Any
 ) -> tuple[Any, bool]:
     try:
         result = await async_func(*args, **kwargs)
         return result, False
     except HTTPException as e:
         if e.status_code == 423:
-            return None, True
+            return is_busy_default, True
         else:
             raise e
 

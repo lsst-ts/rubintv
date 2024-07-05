@@ -332,10 +332,11 @@ async def get_historical_night_report_page(
     night_report: NightReport
     night_report, historical_busy = await try_historical_call(
         get_night_report_for_date,
-        location_name,
-        camera_name,
-        date_str,
-        request,
+        location_name=location_name,
+        camera_name=camera_name,
+        date_str=date_str,
+        request=request,
+        is_busy_default=NightReport(),
     )
 
     title = build_title(
@@ -352,7 +353,9 @@ async def get_historical_night_report_page(
             "location": location,
             "camera": camera.model_dump(),
             "date": day_obs,
-            "night_report": night_report.model_dump(),
+            "night_report": (
+                night_report.model_dump() if night_report is not None else {}
+            ),
             "historical_busy": historical_busy,
             "title": title,
         },
@@ -382,7 +385,11 @@ async def get_specific_channel_event_page(
     if channel:
         channel_title = channel.title
         next_prev, historical_busy = await try_historical_call(
-            get_prev_next_event, location, camera, event, request
+            get_prev_next_event,
+            location=location,
+            camera=camera,
+            event=event,
+            request=request,
         )
         if historical_busy:
             next_prev = {}
