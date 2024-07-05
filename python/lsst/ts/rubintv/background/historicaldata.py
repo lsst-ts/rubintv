@@ -148,16 +148,16 @@ class HistoricalPoller:
         await self.download_and_store_metadata(locname, metadata_objs)
 
         self._nr_metadata[locname] = await objects_to_ngt_report_data(n_report_objs)
-        events = await objects_to_events(event_objs)
-        await self.store_events(events, locname)
-        await self.compress_events()
+        for events_batch in objects_to_events(event_objs):
+            await self.store_events(events_batch, locname)
+            await self.compress_events()
+            del self._temp_events
 
     async def compress_events(self) -> None:
         t = time()
         for storage_key, events in self._temp_events.items():
             compressed = zlib.compress(pickle.dumps(events))
             self._events[storage_key] = compressed
-        self._temp_events = {}
         dur = time() - t
         logger.info("Compression took:", storage_key=storage_key, dur=dur)
 
