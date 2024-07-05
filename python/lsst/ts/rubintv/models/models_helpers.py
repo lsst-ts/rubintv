@@ -96,7 +96,7 @@ def process_batch(batch: list[dict]) -> list[Event]:
 async def all_objects_to_events(objects: list[dict]) -> list[Event]:
     events = []
     async for events_batch in objects_to_events(objects):
-        events.append(events_batch)
+        events.extend(events_batch)
     return events
 
 
