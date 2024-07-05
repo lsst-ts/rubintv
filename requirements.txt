@@ -9,3 +9,4 @@ moto
 pytest_asyncio
 websocket-client
 beautifulsoup4
+aiobotocore
