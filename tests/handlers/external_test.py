@@ -73,8 +73,10 @@ async def test_current_channels(
     client, app, mocker = mocked_client
 
     cp: CurrentPoller = app.state.current_poller
+    hp: HistoricalPoller = app.state.historical
     cp.test_mode = True
-    while cp.completed_first_poll is not True:
+    hp.test_mode = True
+    while cp.completed_first_poll is False or hp._have_downloaded is False:
         await asyncio.sleep(0.1)
 
     for location in m.locations:
