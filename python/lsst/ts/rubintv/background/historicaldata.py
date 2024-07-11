@@ -164,7 +164,7 @@ class HistoricalPoller:
     async def store_events(self, events: list[Event], locname: str) -> None:
         logger.info("starting store_events")
         for event in events:
-            storage_key = await self.storage_key_for_event(event, locname)
+            storage_key = f"{locname}/{event.camera_name}"
             if storage_key not in self._temp_events:
                 self._temp_events[storage_key] = []
             self._temp_events[storage_key].append(event)
@@ -184,9 +184,6 @@ class HistoricalPoller:
             if self._calendar[loc_cam][year][month].get(day, 0) <= seq_num:
                 self._calendar[loc_cam][year][month][day] = seq_num
         logger.info("ending store_events")
-
-    async def storage_key_for_event(self, event: Event, locname: str) -> str:
-        return f"{locname}/{event.camera_name}"
 
     async def download_and_store_metadata(
         self, locname: str, metadata_objs: list[dict[str, str]]

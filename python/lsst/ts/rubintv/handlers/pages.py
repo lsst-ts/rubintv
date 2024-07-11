@@ -48,7 +48,6 @@ async def get_home(
     request: Request,
 ) -> Response:
     """GET ``/rubintv/`` (the app's external root)."""
-    # logger.info("Request for the app home page")
     locations: list[Location] = request.app.state.models.locations
     if len(locations) < 2:
         location = locations[0]
@@ -354,7 +353,7 @@ async def get_historical_night_report_page(
             "location": location,
             "camera": camera.model_dump(),
             "date": day_obs,
-            "night_report": (night_report.model_dump()),
+            "night_report": night_report.model_dump(),
             "historical_busy": historical_busy,
             "title": title,
         },
