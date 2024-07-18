@@ -13,6 +13,7 @@ from lsst.ts.rubintv.handlers.api import (
     get_specific_channel_event,
 )
 from lsst.ts.rubintv.handlers.handlers_helpers import (
+    date_validation,
     get_camera_calendar,
     get_camera_current_data,
     get_camera_events_for_date,
@@ -28,7 +29,7 @@ from lsst.ts.rubintv.handlers.pages_helpers import (
     to_dict,
 )
 from lsst.ts.rubintv.models.models import Channel, Event, Location, NightReport
-from lsst.ts.rubintv.models.models_helpers import date_str_to_date, find_first
+from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.templates_init import get_templates
 
 __all__ = ["get_home", "pages_router", "templates"]
@@ -162,10 +163,9 @@ async def get_camera_for_date_page(
     location, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online:
         raise HTTPException(404, "Camera not online.")
-    try:
-        day_obs = date_str_to_date(date_str)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Invalid date.")
+
+    day_obs = date_validation(date_str)
+
     historical_busy = False
     nr_exists = False
     metadata: dict = {}
@@ -326,10 +326,8 @@ async def get_historical_night_report_page(
     request: Request,
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
-    try:
-        day_obs = date_str_to_date(date_str)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Invalid date.")
+
+    day_obs = date_validation(date_str)
 
     night_report: NightReport
     night_report, historical_busy = await try_historical_call(
