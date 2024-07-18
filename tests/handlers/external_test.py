@@ -109,11 +109,12 @@ async def test_all_endpoints(
     summit: Location = find_first(m.locations, "name", "summit-usdf")
     assert isinstance(summit, Location)
 
-    cameras = [f"{summit.name}/{cam.name}" for cam in summit.cameras if cam.online]
-    camera_historical = [f"{cam}/historical" for cam in cameras]
-    camera_dates = [f"{cam}/date/{day_obs}" for cam in cameras if cam]
-    night_reports = [f"{cam}/night_report" for cam in cameras]
-    night_reports = [f"{cam}/night_report/{day_obs}" for cam in cameras]
+    all_cams = [f"{summit.name}/{cam.name}" for cam in summit.cameras]
+    online_cams = [f"{summit.name}/{cam.name}" for cam in summit.cameras if cam.online]
+    camera_historical = [f"{cam}/historical" for cam in online_cams]
+    camera_dates = [f"{cam}/date/{day_obs}" for cam in online_cams if cam]
+    nr_current = [f"{cam}/night_report" for cam in online_cams]
+    nr_dates = [f"{cam}/night_report/{day_obs}" for cam in online_cams]
 
     auxtel: Camera = find_first(summit.cameras, "name", "auxtel")
     assert isinstance(auxtel, Camera)
@@ -125,23 +126,58 @@ async def test_all_endpoints(
 
     page_rel_urls = [
         "admin",
+        *all_cams,
         *locations,
-        *cameras,
         *camera_dates,
         *camera_historical,
-        *night_reports,
+        *nr_current,
+        *nr_dates,
         *channels,
     ]
-
-    for url_frag in page_rel_urls:
-        url = f"/{app_name}/{url_frag}"
-        print(f"Looking for: {url}")
-        res = await client.get(url)
-        assert res.is_success
 
     hp: HistoricalPoller = app.state.historical
     while hp._have_downloaded is False:
         await asyncio.sleep(0.1)
 
-    # make sure we've reached here!
-    assert True
+    for url_frag in page_rel_urls:
+        url = f"/{app_name}/{url_frag}"
+        res = await client.get(url)
+        assert res.is_success
+
+
+@pytest.mark.asyncio
+async def test_request_invalid_dates(
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+) -> None:
+
+    client, app, mocker = mocked_client
+
+    summit: Location = find_first(m.locations, "name", "summit-usdf")
+    assert isinstance(summit, Location)
+
+    online_cams = [f"{summit.name}/{cam.name}" for cam in summit.cameras if cam.online]
+    cam_date_words = [f"{cam}/date/not-a-date" for cam in online_cams if cam]
+    cam_invalid_day = [f"{cam}/date/2000-49-10" for cam in online_cams if cam]
+    cam_invalid_month = [f"{cam}/date/2000-27-13" for cam in online_cams if cam]
+    cam_invalid_year = [f"{cam}/date/20001-27-12" for cam in online_cams if cam]
+    cam_empty_year = [f"{cam}/date/1969-01-01" for cam in online_cams if cam]
+
+    invalid_urls = [
+        *cam_date_words,
+        *cam_invalid_day,
+        *cam_invalid_month,
+        *cam_invalid_year,
+    ]
+
+    for url_frag in invalid_urls:
+        url = f"/{app_name}/{url_frag}"
+        res = await client.get(url)
+        assert res.is_error
+
+    # TODO: This needs not to be just a success, but a page with a
+    # 'nothing for this day' message.
+    # See DM-45327 https://rubinobs.atlassian.net/browse/DM-45327
+    for url_frag in cam_empty_year:
+        url = f"/{app_name}/{url_frag}"
+        res = await client.get(url)
+        assert res.is_success
