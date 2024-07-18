@@ -125,6 +125,7 @@ async def test_all_endpoints(
     ]
 
     page_rel_urls = [
+        "",
         "admin",
         *all_cams,
         *locations,
