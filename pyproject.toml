@@ -13,7 +13,6 @@ dependencies = [
   "uvicorn[standard]",
   "pydantic_settings",
   # Other dependencies.
-  "safir>=3.4.0",
   "boto3",
   "jinja2",
   "websockets",
