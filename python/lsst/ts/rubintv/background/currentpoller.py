@@ -1,5 +1,6 @@
 from time import time
 from typing import AsyncGenerator
+from asyncio import sleep
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.config import rubintv_logger
@@ -27,6 +28,9 @@ class CurrentPoller:
     """Polls and holds state of the current day obs data in the s3 bucket and
     notifies the websocket server of changes.
     """
+
+    # min time between polls
+    MIN_INTERVAL = 1
 
     def __init__(self, locations: list[Location], test_mode: bool = False) -> None:
         self._clients: dict[str, S3Client] = {}
@@ -61,7 +65,7 @@ class CurrentPoller:
 
     async def poll_buckets_for_todays_data(self, test_day: str = "") -> None:
         while True:
-            t_start = time()
+            timer_start = time()
             try:
                 if self._current_day_obs != get_current_day_obs():
                     logger.info(
@@ -98,8 +102,12 @@ class CurrentPoller:
                     self._test_iterations -= 1
                     if self._test_iterations <= 0:
                         break
-                t_dur = time() - t_start
-                logger.info("Current - time taken:", time=t_dur)
+
+                elapsed = time() - timer_start
+                logger.info("Current - time taken:", elapsed=elapsed)
+                if elapsed < self.MIN_INTERVAL:
+                    await sleep(self.MIN_INTERVAL - elapsed)
+
             except Exception:
                 logger.exception("Caught exception during poll for data")
 
