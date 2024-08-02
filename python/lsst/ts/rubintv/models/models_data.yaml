@@ -202,11 +202,14 @@ cameras:
     logo: ComCam.jpg
     channels:
       - name: focal_plane_mosaic
-        title: Focal Plane mosaic
+        title: Post-ISR mosaic
         colour: "#85e986"
-      - name: noise_map
-        title: Noise Map
+      - name: calexp_mosaic
+        title: Calexp mosaic
         colour: "#E76FD8"
+      - name: psf_shape_azel
+        title: PSF shape AzEl
+        colour: "#6F58E7"
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
     {seqNum}}"
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
