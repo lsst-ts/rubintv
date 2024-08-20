@@ -1,6 +1,6 @@
+from asyncio import sleep
 from time import time
 from typing import AsyncGenerator
-from asyncio import sleep
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.config import rubintv_logger
