@@ -80,6 +80,8 @@ async def get_camera_events_for_date(
     metadata = await historical.get_metadata_for_date(location, camera, day_obs)
     per_day = await historical.get_per_day_for_date(location, camera, day_obs)
     nr_exists = await historical.night_report_exists_for(location, camera, day_obs)
+    if not (channel_data or metadata or per_day or nr_exists):
+        return None
     return (channel_data, per_day, metadata, nr_exists)
 
 
