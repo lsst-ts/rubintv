@@ -39,7 +39,7 @@ class CurrentPoller:
         self._metadata: dict[str, dict] = {}
         self._table: dict[str, dict[int, dict[str, dict]]] = {}
         self._per_day: dict[str, dict[str, dict]] = {}
-        self._yester_pd_prefixes: dict[str, list[str]] = {}
+        self._yesterday_prefixes: dict[str, list[str]] = {}
         self._most_recent_events: dict[str, Event] = {}
         self._nr_metadata: dict[str, NightReportData] = {}
         self._night_reports: dict[str, NightReport] = {}
@@ -67,7 +67,7 @@ class CurrentPoller:
     async def check_for_empty_per_day_channels(self) -> None:
         for location in self.locations:
             # clear out yesterday's stash
-            self._yester_pd_prefixes[location.name] = []
+            self._yesterday_prefixes[location.name] = []
             for camera in location.cameras:
                 if not camera.online:
                     continue
@@ -79,7 +79,7 @@ class CurrentPoller:
                 missing_chans = [
                     chan for chan in chans if chan.name not in stored_per_day
                 ]
-                loc_prefixes = self._yester_pd_prefixes[location.name]
+                loc_prefixes = self._yesterday_prefixes[location.name]
                 for chan in missing_chans:
                     prefix = f"{camera.name}/{self._current_day_obs}/{chan.name}"
                     loc_prefixes.append(prefix)
@@ -114,7 +114,7 @@ class CurrentPoller:
                         )
                         await self.process_channel_objects(objects, loc_cam, camera)
 
-                    await self.poll_for_yesterdays_stragglers(location)
+                    await self.poll_for_yesterdays_per_day(location)
 
                 self.completed_first_poll = True
 
@@ -131,10 +131,10 @@ class CurrentPoller:
             except Exception:
                 logger.exception("Caught exception during poll for data")
 
-    async def poll_for_yesterdays_stragglers(self, location: Location) -> None:
+    async def poll_for_yesterdays_per_day(self, location: Location) -> None:
         client = self._s3clients[location.name]
         found = []
-        for prefix in self._yester_pd_prefixes.get(location.name, []):
+        for prefix in self._yesterday_prefixes.get(location.name, []):
             objects = await client.async_list_objects(prefix)
             if objects:
                 found.append(prefix)
@@ -142,11 +142,14 @@ class CurrentPoller:
                 pd_data = {e.channel_name: e.__dict__ for e in events}
                 cam_name = prefix.split("/")[0]
                 loc_cam = f"{location.name}/{cam_name}"
+                logger.info(
+                    "Found yesterday's per day data:", loc_cam=loc_cam, pd_data=pd_data
+                )
                 await notify_ws_clients(
                     "camera", MessageType.CAMERA_PD_BACKDATED, loc_cam, pd_data
                 )
         for prefix in found:
-            self._yester_pd_prefixes[location.name].remove(prefix)
+            self._yesterday_prefixes[location.name].remove(prefix)
 
     async def process_channel_objects(
         self, objects: list[dict[str, str]], loc_cam: str, camera: Camera
