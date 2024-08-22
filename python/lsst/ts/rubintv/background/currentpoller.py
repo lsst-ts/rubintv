@@ -54,7 +54,7 @@ class CurrentPoller:
                 location.profile_name, location.bucket_name
             )
 
-    async def clear_all_data(self) -> None:
+    async def clear_todays_data(self) -> None:
         self._objects = {}
         self._events = {}
         self._metadata = {}
@@ -87,11 +87,13 @@ class CurrentPoller:
     async def poll_buckets_for_todays_data(self, test_day: str = "") -> None:
         while True:
             timer_start = time()
+            data_for_today_found = False
             try:
-                # if self._current_day_obs != get_current_day_obs():
-                await self.check_for_empty_per_day_channels()
-                await self.clear_all_data()
-                day_obs = self._current_day_obs = get_current_day_obs()
+                if self._current_day_obs != get_current_day_obs():
+                    await self.check_for_empty_per_day_channels()
+                    await self.clear_todays_data()
+                    day_obs = self._current_day_obs = get_current_day_obs()
+                    data_for_today_found = False
 
                 for location in self.locations:
                     client = self._s3clients[location.name]
@@ -104,17 +106,21 @@ class CurrentPoller:
                             prefix = f"{camera.name}/{test_day}"
 
                         objects = await client.async_list_objects(prefix)
-                        loc_cam = self._get_loc_cam(location.name, camera)
+                        if objects:
+                            data_for_today_found = True
+                            loc_cam = self._get_loc_cam(location.name, camera)
+                            objects = await self.sieve_out_metadata(
+                                objects, prefix, location, camera
+                            )
+                            objects = await self.sieve_out_night_reports(
+                                objects, location, camera
+                            )
+                            await self.process_channel_objects(objects, loc_cam, camera)
 
-                        objects = await self.sieve_out_metadata(
-                            objects, prefix, location, camera
-                        )
-                        objects = await self.sieve_out_night_reports(
-                            objects, location, camera
-                        )
-                        await self.process_channel_objects(objects, loc_cam, camera)
-
-                    await self.poll_for_yesterdays_per_day(location)
+                    # Only look for yesterday's missing per day data if nothing
+                    # yet found for today.
+                    if not data_for_today_found:
+                        await self.poll_for_yesterdays_per_day(location)
 
                 self.completed_first_poll = True
 

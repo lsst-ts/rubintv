@@ -93,7 +93,7 @@ async def test_clear_all_data(current_poller: CurrentPoller) -> None:
     assert current_poller.completed_first_poll is True
     assert current_poller._objects != {}
 
-    await current_poller.clear_all_data()
+    await current_poller.clear_todays_data()
     assert current_poller._objects == {}
     assert current_poller._events == {}
     assert current_poller._metadata == {}
@@ -108,7 +108,7 @@ async def test_clear_all_data(current_poller: CurrentPoller) -> None:
 async def test_process_channel_objects(
     current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
 ) -> None:
-    await current_poller.clear_all_data()
+    await current_poller.clear_todays_data()
 
     camera, location = await get_test_camera_and_location()
     loc_cam = f"{location.name}/{camera.name}"
@@ -152,7 +152,7 @@ async def test_update_channel_events(
         loc_cam = f"{location.name}/{camera.name}"
         events = rubin_data_mocker.events[loc_cam]
 
-        await current_poller.clear_all_data()
+        await current_poller.clear_todays_data()
         assert current_poller._most_recent_events == {}
         loc_cam = f"{location.name}/{camera.name}"
         await current_poller.update_channel_events(events, loc_cam, camera)
