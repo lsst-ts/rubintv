@@ -92,8 +92,8 @@ class CurrentPoller:
                 if self._current_day_obs != get_current_day_obs():
                     await self.check_for_empty_per_day_channels()
                     await self.clear_todays_data()
-                    day_obs = self._current_day_obs = get_current_day_obs()
                     data_for_today_found = False
+                day_obs = self._current_day_obs = get_current_day_obs()
 
                 for location in self.locations:
                     client = self._s3clients[location.name]

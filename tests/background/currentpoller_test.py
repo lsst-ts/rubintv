@@ -37,7 +37,7 @@ async def test_poll_buckets_for_todays_data(
             return_value="2024-03-28",
         ) as mock_day_obs,
         patch(
-            "lsst.ts.rubintv.background.currentpoller.CurrentPoller.clear_all_data",
+            "lsst.ts.rubintv.background.currentpoller.CurrentPoller.clear_todays_data",
             new_callable=AsyncMock,
         ),
         patch(
@@ -87,7 +87,7 @@ async def test_poll_buckets_for_today_process_and_store_seq_events(
 
 
 @pytest.mark.asyncio
-async def test_clear_all_data(current_poller: CurrentPoller) -> None:
+async def test_clear_todays_data(current_poller: CurrentPoller) -> None:
     await current_poller.poll_buckets_for_todays_data()
 
     assert current_poller.completed_first_poll is True
@@ -215,6 +215,13 @@ async def test_day_rollover(
         await current_poller.poll_buckets_for_todays_data()
 
         assert mock_day_obs
+
+
+@pytest.mark.asyncio
+async def test_pick_up_yesterdays_movie(
+    current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
+) -> None:
+    pass
 
 
 async def get_test_camera_and_location() -> tuple[Camera, Location]:
