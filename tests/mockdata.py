@@ -48,9 +48,9 @@ class RubinDataMocker:
         self.s3_required = s3_required
         self.day_obs = day_obs
         self.location_channels: dict[str, list[Channel]] = {}
-        self.seq_objs: dict[str, list[dict[str, str]]] = {}
         self.empty_channel: dict[str, str] = {}
         self.events: dict[str, list[Event]] = {}
+        self.seq_objs: dict[str, list[dict[str, str]]] = {}
         self.metadata: dict[str, dict[str, str]] = {}
         self.mock_up_data()
 
@@ -78,7 +78,6 @@ class RubinDataMocker:
 
         for location in self._locations:
             loc_name = location.name
-            self.events[loc_name] = []
             self.location_channels[loc_name] = []
             groups = location.camera_groups.values()
             camera_names = list(chain(*groups))
@@ -97,7 +96,9 @@ class RubinDataMocker:
                     metadata = self.add_camera_metadata(location, camera)
                     self.metadata[loc_cam] = metadata
 
-    def add_seq_objs(self, location: Location, camera: Camera) -> None:
+    def add_seq_objs(
+        self, location: Location, camera: Camera, include_empty_channel: bool = True
+    ) -> None:
         """
         Generate mock channel objects and an empty channel string for a given
         camera and location.
@@ -117,44 +118,49 @@ class RubinDataMocker:
             A tuple containing a list of mock channel dictionaries and an
             updated empty channel string.
         """
-
-        channel_data: list[dict[str, str]] = []
         loc_cam = f"{location.name}/{camera.name}"
-        iterations = 8
 
         empty_channel = ""
-        seq_chans = [chan.name for chan in camera.seq_channels()]
-        if seq_chans:
-            empty_channel = random.choice(seq_chans)
+        if include_empty_channel:
+            seq_chans = [chan.name for chan in camera.seq_channels()]
+            if seq_chans:
+                empty_channel = random.choice(seq_chans)
 
         for channel in camera.channels:
-            loc_cam_chan = f"{loc_cam}/{channel.name}"
-            start = self.last_seq.get(loc_cam_chan, self.FIRST_SEQ)
-
             if empty_channel == channel.name:
                 self.empty_channel[loc_cam] = empty_channel
                 continue
+            self.add_seq_objs_for_channel(location, camera, channel, 2)
 
-            for index in range(start, start + iterations):
-                seq_num = f"{index:06}"
+    def add_seq_objs_for_channel(
+        self, location: Location, camera: Camera, channel: Channel, num_objs: int
+    ) -> None:
+        channel_data: list[dict[str, str]] = []
+        loc_cam = f"{location.name}/{camera.name}"
+        loc_cam_chan = f"{location.name}/{camera.name}/{channel.name}"
+        start = self.last_seq.get(loc_cam_chan, self.FIRST_SEQ)
 
-                if channel.per_day and index == start + iterations - 1:
-                    seq_num = random.choice((seq_num, "final"))
+        for index in range(start, start + num_objs):
+            seq_num = f"{index:06}"
 
-                event_obj = self.generate_event(
-                    location.bucket_name, camera.name, channel.name, seq_num
-                )
+            if channel.per_day and index == start + num_objs - 1:
+                seq_num = random.choice((seq_num, "final"))
 
-                channel_data.append(event_obj)
-            self.last_seq[loc_cam_chan] = index
+            event_obj = self.generate_event(
+                location.bucket_name, camera.name, channel.name, seq_num
+            )
+
+            channel_data.append(event_obj)
+        self.last_seq[loc_cam_chan] = index
 
         # store the objects for testing against
-        if loc_cam in self.seq_objs:
+        event = self.dicts_to_events(channel_data)
+        if loc_cam in self.events:
+            self.events[loc_cam].extend(event)
             self.seq_objs[loc_cam].extend(channel_data)
-            self.events[loc_cam].extend(self.dicts_to_events(channel_data))
         else:
+            self.events[loc_cam] = event
             self.seq_objs[loc_cam] = channel_data
-            self.events[loc_cam] = self.dicts_to_events(channel_data)
 
     def generate_event(
         self, bucket_name: str, camera_name: str, channel_name: str, seq_num: str
@@ -172,6 +178,28 @@ class RubinDataMocker:
         if hash is None:
             hash = str(random.getrandbits(128))
         return {"key": key, "hash": hash}
+
+    def delete_channel_events(
+        self, location: Location, camera: Camera, channel: Channel
+    ) -> None:
+        bucket_name = location.bucket_name
+        loc_cam = f"{location.name}/{camera.name}"
+        loc_cam_chan = f"{loc_cam}/{channel.name}"
+        events = self.events.get(loc_cam, [])
+        chan_evs = [ev for ev in events if ev.channel_name == channel.name]
+
+        for ev in chan_evs:
+            self.events[loc_cam].remove(ev)
+            if self.s3_required:
+                res = self.s3_client.delete_object(Bucket=bucket_name, Key=ev.key)
+                print(f"Attempted to delete object: {ev.key}, result is: {res}")
+
+        if loc_cam_chan in self.last_seq:
+            del self.last_seq[loc_cam_chan]
+        if self.empty_channel[loc_cam] == channel.name:
+            del self.empty_channel[loc_cam]
+        if channel in self.location_channels[location.name]:
+            self.location_channels[location.name].remove(channel)
 
     def dicts_to_events(self, channel_dicts: list[dict[str, str]]) -> list[Event]:
         """

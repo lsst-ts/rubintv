@@ -73,7 +73,8 @@ async def test_poll_buckets_for_today_process_and_store_seq_events(
 ) -> None:
     await current_poller.poll_buckets_for_todays_data()
 
-    mocked_objs_keys = rubin_data_mocker.seq_objs.keys()
+    mocked_objs_keys = rubin_data_mocker.events.keys()
+    print(mocked_objs_keys)
 
     # make sure the keys for the location/cameras match up
     current_keys = sorted([k for k in current_poller._events.keys()])
@@ -110,7 +111,7 @@ async def test_process_channel_objects(
 ) -> None:
     await current_poller.clear_todays_data()
 
-    camera, location = await get_test_camera_and_location()
+    camera, location = get_test_camera_and_location()
     loc_cam = f"{location.name}/{camera.name}"
     objects = rubin_data_mocker.seq_objs[loc_cam]
 
@@ -148,7 +149,7 @@ async def test_update_channel_events(
             "lsst.ts.rubintv.background.currentpoller." "notify_ws_clients",
         ) as mock_notify_ws_clients,
     ):
-        camera, location = await get_test_camera_and_location()
+        camera, location = get_test_camera_and_location()
         loc_cam = f"{location.name}/{camera.name}"
         events = rubin_data_mocker.events[loc_cam]
 
@@ -191,6 +192,8 @@ async def test_make_per_day_data(
 async def test_day_rollover(
     current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
 ) -> None:
+    # TODO: This doesn't actually test for anything!
+    # Make it so it does.
     day_obs = get_current_day_obs()
     with (
         patch(
@@ -203,15 +206,10 @@ async def test_day_rollover(
         assert mock_day_obs
         assert current_poller.completed_first_poll is True
 
-    day_obs = day_obs + timedelta(days=1)
-    rubin_data_mocker.day_obs = day_obs
-    rubin_data_mocker.mock_up_data()
-    with (
-        patch(
-            "lsst.ts.rubintv.background.currentpoller.get_current_day_obs",
-            return_value=day_obs.isoformat(),
-        ) as mock_day_obs,
-    ):
+        day_obs = day_obs + timedelta(days=1)
+        rubin_data_mocker.day_obs = day_obs
+        rubin_data_mocker.mock_up_data()
+
         await current_poller.poll_buckets_for_todays_data()
 
         assert mock_day_obs
@@ -221,10 +219,48 @@ async def test_day_rollover(
 async def test_pick_up_yesterdays_movie(
     current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
 ) -> None:
-    pass
+    camera, location = get_test_camera_and_location()
+    channel = camera.pd_channels()[0]
+    mocked = rubin_data_mocker
+    day_obs = get_current_day_obs()
+
+    with (
+        patch(
+            "lsst.ts.rubintv.background.currentpoller.get_current_day_obs",
+            return_value=day_obs.isoformat(),
+        ) as mock_day_obs,
+    ):
+        assert mock_day_obs
+        await current_poller.poll_buckets_for_todays_data()
+        assert current_poller.completed_first_poll is True
+
+        # clear movie channel
+        mocked.delete_channel_events(location, camera, channel)
+        await current_poller.poll_buckets_for_todays_data()
+
+        print(current_poller._yesterday_prefixes)
+        # rollover day obs
+        yesterday = day_obs
+        day_obs = day_obs + timedelta(days=1)
+        # rubin_data_mocker.day_obs = day_obs
+
+    with (
+        patch(
+            "lsst.ts.rubintv.background.currentpoller.get_current_day_obs",
+            return_value=day_obs.isoformat(),
+        ) as mock_day_obs,
+    ):
+        await current_poller.poll_buckets_for_todays_data()
+
+        # add movie data
+        mocked.add_seq_objs_for_channel(location, camera, channel, 3)
+        await current_poller.poll_buckets_for_todays_data()
+
+        print(await current_poller.get_current_per_day_data(location.name, camera))
+        print(yesterday)
 
 
-async def get_test_camera_and_location() -> tuple[Camera, Location]:
+def get_test_camera_and_location() -> tuple[Camera, Location]:
     location: Location = find_first(m.locations, "name", "base-usdf")
     # fake_auxtel has both 'streaming' and per-day channels
     camera: Camera = find_first(location.cameras, "name", "fake_auxtel")

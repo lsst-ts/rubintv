@@ -119,6 +119,10 @@ class CurrentPoller:
 
                     # Only look for yesterday's missing per day data if nothing
                     # yet found for today.
+
+                    # TODO: This is too broad- check for data from each camera
+                    # separately
+
                     if not data_for_today_found:
                         await self.poll_for_yesterdays_per_day(location)
 
