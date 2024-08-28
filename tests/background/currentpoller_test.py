@@ -4,7 +4,12 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
-from lsst.ts.rubintv.models.models import Camera, Location, get_current_day_obs
+from lsst.ts.rubintv.models.models import (
+    Camera,
+    Location,
+    ServiceMessageTypes,
+    get_current_day_obs,
+)
 from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
 
@@ -227,7 +232,7 @@ async def test_pick_up_yesterdays_movie(
     with (
         patch(
             "lsst.ts.rubintv.background.currentpoller.get_current_day_obs",
-            return_value=day_obs.isoformat(),
+            return_value=day_obs,
         ) as mock_day_obs,
     ):
         assert mock_day_obs
@@ -238,26 +243,37 @@ async def test_pick_up_yesterdays_movie(
         mocked.delete_channel_events(location, camera, channel)
         await current_poller.poll_buckets_for_todays_data()
 
-        print(current_poller._yesterday_prefixes)
         # rollover day obs
         yesterday = day_obs
         day_obs = day_obs + timedelta(days=1)
-        # rubin_data_mocker.day_obs = day_obs
 
     with (
         patch(
             "lsst.ts.rubintv.background.currentpoller.get_current_day_obs",
-            return_value=day_obs.isoformat(),
+            return_value=day_obs,
         ) as mock_day_obs,
+        patch(
+            "lsst.ts.rubintv.background.currentpoller.notify_ws_clients",
+            new_callable=AsyncMock,
+        ) as mock_notify,
     ):
         await current_poller.poll_buckets_for_todays_data()
 
-        # add movie data
+        # add movie data (arbitrary number of objs)
         mocked.add_seq_objs_for_channel(location, camera, channel, 3)
         await current_poller.poll_buckets_for_todays_data()
 
-        print(await current_poller.get_current_per_day_data(location.name, camera))
-        print(yesterday)
+        # assert that notification was made with the new event
+        # from yesterday.
+        service_msg = ServiceMessageTypes.CAMERA_PD_BACKDATED
+        loc_cam = f"{location.name}/{camera.name}"
+        events = mocked.get_mocked_events(location, camera, channel)
+        assert events is not []
+        last_event = max(events)
+        assert last_event
+        assert last_event.day_obs == yesterday.isoformat()
+        payload = {channel.name: last_event.__dict__}
+        mock_notify.assert_called_once_with("camera", service_msg, loc_cam, payload)
 
 
 def get_test_camera_and_location() -> tuple[Camera, Location]:

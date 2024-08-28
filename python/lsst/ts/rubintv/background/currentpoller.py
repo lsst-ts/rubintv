@@ -87,12 +87,10 @@ class CurrentPoller:
     async def poll_buckets_for_todays_data(self, test_day: str = "") -> None:
         while True:
             timer_start = time()
-            data_for_today_found = False
             try:
                 if self._current_day_obs != get_current_day_obs():
                     await self.check_for_empty_per_day_channels()
                     await self.clear_todays_data()
-                    data_for_today_found = False
                 day_obs = self._current_day_obs = get_current_day_obs()
 
                 for location in self.locations:
@@ -107,7 +105,6 @@ class CurrentPoller:
 
                         objects = await client.async_list_objects(prefix)
                         if objects:
-                            data_for_today_found = True
                             loc_cam = self._get_loc_cam(location.name, camera)
                             objects = await self.sieve_out_metadata(
                                 objects, prefix, location, camera
@@ -117,14 +114,7 @@ class CurrentPoller:
                             )
                             await self.process_channel_objects(objects, loc_cam, camera)
 
-                    # Only look for yesterday's missing per day data if nothing
-                    # yet found for today.
-
-                    # TODO: This is too broad- check for data from each camera
-                    # separately
-
-                    if not data_for_today_found:
-                        await self.poll_for_yesterdays_per_day(location)
+                    await self.poll_for_yesterdays_per_day(location)
 
                 self.completed_first_poll = True
 
@@ -148,7 +138,7 @@ class CurrentPoller:
             objects = await client.async_list_objects(prefix)
             if objects:
                 found.append(prefix)
-                events = await objects_to_events(objects)
+                events = await all_objects_to_events(objects)
                 pd_data = {e.channel_name: e.__dict__ for e in events}
                 cam_name = prefix.split("/")[0]
                 loc_cam = f"{location.name}/{cam_name}"
@@ -187,6 +177,16 @@ class CurrentPoller:
                 max_seq=max(table) if table else -1,
             )
             await notify_ws_clients("camera", MessageType.CAMERA_TABLE, loc_cam, table)
+
+            # clear all relevant prefixes from the store looking for
+            # yesterday's per day updates
+
+            loc = loc_cam.split("/")[0]
+            prefixes = self._yesterday_prefixes.get(loc, [])
+            new_prefixes = [
+                prefix for prefix in prefixes if not prefix.startswith(camera.name)
+            ]
+            self._yesterday_prefixes[loc] = new_prefixes
 
     async def update_channel_events(
         self, events: list[Event], loc_cam: str, camera: Camera

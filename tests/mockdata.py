@@ -218,9 +218,11 @@ class RubinDataMocker:
         events = [Event(**cd) for cd in channel_dicts]
         return events
 
-    async def get_mocked_seq_events(self, location: Location) -> list[Event]:
+    def get_mocked_events(
+        self, location: Location, camera: Camera, channel: Channel
+    ) -> list[Event]:
         """
-        Asynchronously retrieve sequence events for a given location.
+        Retrieve events for a given location.
 
         Parameters
         ----------
@@ -232,13 +234,11 @@ class RubinDataMocker:
         list[Event]
             A list of Event objects representing sequence events.
         """
-        events = self.events.get(location.name)
-        if events is None:
-            return []
-        channels = self.location_channels[location.name]
-        seq_chan_names = [c for c in channels if not c.per_day]
-        seq_chan_events = [e for e in events if e.channel_name in seq_chan_names]
-        return seq_chan_events
+        loc_cam = f"{location.name}/{camera.name}"
+        events = [
+            e for e in self.events.get(loc_cam, []) if e.channel_name in channel.name
+        ]
+        return events
 
     def add_camera_metadata(self, location: Location, camera: Camera) -> dict[str, str]:
         """
