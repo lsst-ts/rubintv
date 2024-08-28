@@ -151,7 +151,7 @@ async def test_update_channel_events(
 ) -> None:
     with (
         patch(
-            "lsst.ts.rubintv.background.currentpoller." "notify_ws_clients",
+            "lsst.ts.rubintv.background.currentpoller.notify_ws_clients",
         ) as mock_notify_ws_clients,
     ):
         camera, location = get_test_camera_and_location()
@@ -197,8 +197,6 @@ async def test_make_per_day_data(
 async def test_day_rollover(
     current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
 ) -> None:
-    # TODO: This doesn't actually test for anything!
-    # Make it so it does.
     day_obs = get_current_day_obs()
     with (
         patch(
@@ -214,10 +212,19 @@ async def test_day_rollover(
         day_obs = day_obs + timedelta(days=1)
         rubin_data_mocker.day_obs = day_obs
         rubin_data_mocker.mock_up_data()
-
+    with (
+        patch(
+            "lsst.ts.rubintv.background.currentpoller.get_current_day_obs",
+            return_value=day_obs.isoformat(),
+        ) as mock_day_obs,
+        patch(
+            "lsst.ts.rubintv.background.currentpoller.CurrentPoller.clear_todays_data",
+            new_callable=AsyncMock,
+        ) as mock_clear_data,
+    ):
         await current_poller.poll_buckets_for_todays_data()
 
-        assert mock_day_obs
+        mock_clear_data.assert_called_once()
 
 
 @pytest.mark.asyncio
