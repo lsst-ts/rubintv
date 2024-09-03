@@ -7,12 +7,13 @@ from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.handlers_helpers import (
+    date_validation,
     get_camera_current_data,
     get_camera_events_for_date,
     get_current_night_report_payload,
 )
 from lsst.ts.rubintv.models.models import Camera, Event, Location, NightReport
-from lsst.ts.rubintv.models.models_helpers import date_str_to_date, find_first
+from lsst.ts.rubintv.models.models_helpers import find_first
 
 api_router = APIRouter()
 """FastAPI router for all external handlers."""
@@ -109,10 +110,9 @@ async def get_camera_events_for_date_api(
     location_name: str, camera_name: str, date_str: str, request: Request
 ) -> dict:
     location, camera = await get_location_camera(location_name, camera_name, request)
-    try:
-        day_obs = date_str_to_date(date_str)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Invalid date.")
+
+    day_obs = date_validation(date_str)
+
     data = await get_camera_events_for_date(location, camera, day_obs, request)
     if data:
         channel_data, per_day, metadata, nr_exists = data
@@ -200,10 +200,8 @@ async def get_night_report_for_date(
     location_name: str, camera_name: str, date_str: str, request: Request
 ) -> NightReport:
     location, camera = await get_location_camera(location_name, camera_name, request)
-    try:
-        day_obs = date_str_to_date(date_str)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Invalid date.")
+
+    day_obs = date_validation(date_str)
 
     historical: HistoricalPoller = request.app.state.historical
     if await historical.is_busy():

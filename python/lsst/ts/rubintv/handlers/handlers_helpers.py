@@ -15,6 +15,7 @@ from lsst.ts.rubintv.models.models import (
     NightReport,
     get_current_day_obs,
 )
+from lsst.ts.rubintv.models.models_helpers import date_str_to_date
 from starlette.requests import HTTPConnection
 
 logger = rubintv_logger()
@@ -131,3 +132,11 @@ async def get_prev_next_event(
             raise HTTPException(423, "Historical data is being processed")
         nxt, prv = await hp.get_next_prev_event(location, camera, event)
     return {"next": nxt, "prev": prv}
+
+
+def date_validation(date_str: str) -> date:
+    try:
+        day_obs = date_str_to_date(date_str)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Invalid date.")
+    return day_obs

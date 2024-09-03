@@ -10,13 +10,17 @@ from bs4 import BeautifulSoup
 from fastapi import FastAPI
 from httpx import AsyncClient
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
-from lsst.ts.rubintv.models.models import Location
+from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
+from lsst.ts.rubintv.config import config
+from lsst.ts.rubintv.models.models import Camera, Location, get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
 
 from ..mockdata import RubinDataMocker
 
 m = ModelsInitiator()
+app_name = config.name
+day_obs = get_current_day_obs().isoformat()
 
 
 @pytest.mark.asyncio
@@ -25,7 +29,7 @@ async def test_get_home(
 ) -> None:
     """Test that home page has links to every location"""
     client, app, mocker = mocked_client
-    response = await client.get("/rubintv/")
+    response = await client.get(f"/{app_name}/")
     html = await response.aread()
     parsed = BeautifulSoup(html, "html.parser")
     locations = m.locations
@@ -51,7 +55,7 @@ async def test_get_location(
 
     groups = location.camera_groups.values()
     camera_names = list(chain(*groups))
-    response = await client.get(f"/rubintv/{location_name}")
+    response = await client.get(f"/{app_name}/{location_name}")
     html = await response.aread()
 
     parsed = BeautifulSoup(html, "html.parser")
@@ -78,11 +82,12 @@ async def test_current_channels(
             loc_cam = f"{location.name}/{camera.name}"
             for seq_chan in camera.seq_channels():
                 url = (
-                    f"/rubintv/{location.name}/{camera.name}"
+                    f"/{app_name}/{location.name}/{camera.name}"
                     f"/current/{seq_chan.name}"
                 )
                 response = await client.get(url)
-                assert response.status_code == 200
+                assert response.is_success
+
                 html = await response.aread()
                 parsed = BeautifulSoup(html, "html.parser")
                 if mocker.empty_channel[loc_cam] == seq_chan.name:
@@ -91,3 +96,86 @@ async def test_current_channels(
                 else:
                     assert parsed.select(".event-info")
                     assert not parsed.select(".event-error")
+
+
+@pytest.mark.asyncio
+async def test_all_endpoints(
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+) -> None:
+
+    client, app, mocker = mocked_client
+
+    locations = [loc.name for loc in m.locations]
+    summit: Location = find_first(m.locations, "name", "summit-usdf")
+    assert isinstance(summit, Location)
+
+    all_cams = [f"{summit.name}/{cam.name}" for cam in summit.cameras]
+    online_cams = [f"{summit.name}/{cam.name}" for cam in summit.cameras if cam.online]
+    camera_historical = [f"{cam}/historical" for cam in online_cams]
+    camera_dates = [f"{cam}/date/{day_obs}" for cam in online_cams]
+    nr_current = [f"{cam}/night_report" for cam in online_cams]
+    nr_dates = [f"{cam}/night_report/{day_obs}" for cam in online_cams]
+
+    auxtel: Camera = find_first(summit.cameras, "name", "auxtel")
+    assert isinstance(auxtel, Camera)
+
+    channels = [
+        f"{summit.name}/{auxtel.name}/current/{chan.name}"
+        for chan in auxtel.seq_channels()
+    ]
+
+    page_rel_urls = [
+        "",
+        "admin",
+        *all_cams,
+        *locations,
+        *camera_dates,
+        *camera_historical,
+        *nr_current,
+        *nr_dates,
+        *channels,
+    ]
+
+    hp: HistoricalPoller = app.state.historical
+    while hp._have_downloaded is False:
+        await asyncio.sleep(0.1)
+
+    for url_frag in page_rel_urls:
+        url = f"/{app_name}/{url_frag}"
+        res = await client.get(url)
+        assert res.is_success
+
+
+@pytest.mark.asyncio
+async def test_request_invalid_dates(
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+) -> None:
+
+    client, app, mocker = mocked_client
+
+    summit: Location = find_first(m.locations, "name", "summit-usdf")
+    assert isinstance(summit, Location)
+
+    online_cams = [f"{summit.name}/{cam.name}" for cam in summit.cameras if cam.online]
+    cam_date_words = [f"{cam}/date/not-a-date" for cam in online_cams if cam]
+    cam_invalid_day = [f"{cam}/date/2000-49-10" for cam in online_cams if cam]
+    cam_invalid_month = [f"{cam}/date/2000-27-13" for cam in online_cams if cam]
+    cam_invalid_year = [f"{cam}/date/20001-27-12" for cam in online_cams if cam]
+    cam_empty_year = [f"{cam}/date/1969-01-01" for cam in online_cams if cam]
+
+    invalid_urls = [
+        *cam_date_words,
+        *cam_invalid_day,
+        *cam_invalid_month,
+        *cam_invalid_year,
+    ]
+
+    for url_frag in invalid_urls:
+        url = f"/{app_name}/{url_frag}"
+        res = await client.get(url)
+        assert res.is_error
+
+    for url_frag in cam_empty_year:
+        url = f"/{app_name}/{url_frag}"
+        res = await client.get(url)
+        assert res.is_success
