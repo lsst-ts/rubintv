@@ -357,5 +357,6 @@ class ServiceMessageTypes(Enum):
     CAMERA_TABLE: str = "channelData"
     CAMERA_METADATA: str = "metadata"
     CAMERA_PER_DAY: str = "perDay"
+    CAMERA_PD_BACKDATED: str = "perDayBackdated"
     NIGHT_REPORT: str = "nightReport"
     HISTORICAL_STATUS: str = "historicalStatus"

@@ -10,18 +10,18 @@ from lsst.ts.rubintv.handlers.websockets_clients import (
     services_clients,
     services_lock,
 )
-from lsst.ts.rubintv.models.models import ServiceMessageTypes as Service
+from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
 from lsst.ts.rubintv.models.models import get_current_day_obs
 
 logger = rubintv_logger()
 
 
 async def notify_ws_clients(
-    service: str, kind: str, loc_cam: str, payload: Any
+    service: str, message_type: MessageType, loc_cam: str, payload: Any
 ) -> None:
     service_loc_cam_chan = " ".join([service, loc_cam])
     to_notify = await get_clients_to_notify(service_loc_cam_chan)
-    await notify_clients(to_notify, kind, payload)
+    await notify_clients(to_notify, message_type, payload)
 
 
 async def notify_clients(
@@ -42,14 +42,17 @@ async def notify_clients(
 
 
 async def send_notification(
-    websocket: WebSocket, service: Service, payload: Any
+    websocket: WebSocket, messageType: MessageType, payload: Any
 ) -> None:
+    datestamp = get_current_day_obs().isoformat()
+    if messageType is MessageType.CAMERA_PD_BACKDATED and payload:
+        datestamp = payload.values()[0].get("day_obs", datestamp)
     try:
         await websocket.send_json(
             {
-                "dataType": service.value,
+                "dataType": messageType.value,
                 "payload": payload,
-                "datestamp": get_current_day_obs().isoformat(),
+                "datestamp": datestamp,
             }
         )
     except Exception as e:
@@ -66,7 +69,7 @@ async def get_clients_to_notify(service_cam_id: str) -> list[UUID]:
 
 
 async def notify_all_status_change(historical_busy: bool) -> None:
-    service = Service.HISTORICAL_STATUS
+    service = MessageType.HISTORICAL_STATUS
     key = service.value
     tasks = []
     async with services_lock:

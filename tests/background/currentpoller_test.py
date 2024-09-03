@@ -4,7 +4,12 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
-from lsst.ts.rubintv.models.models import Camera, Location, get_current_day_obs
+from lsst.ts.rubintv.models.models import (
+    Camera,
+    Location,
+    ServiceMessageTypes,
+    get_current_day_obs,
+)
 from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
 
@@ -37,7 +42,7 @@ async def test_poll_buckets_for_todays_data(
             return_value="2024-03-28",
         ) as mock_day_obs,
         patch(
-            "lsst.ts.rubintv.background.currentpoller.CurrentPoller.clear_all_data",
+            "lsst.ts.rubintv.background.currentpoller.CurrentPoller.clear_todays_data",
             new_callable=AsyncMock,
         ),
         patch(
@@ -73,7 +78,7 @@ async def test_poll_buckets_for_today_process_and_store_seq_events(
 ) -> None:
     await current_poller.poll_buckets_for_todays_data()
 
-    mocked_objs_keys = rubin_data_mocker.seq_objs.keys()
+    mocked_objs_keys = rubin_data_mocker.events.keys()
 
     # make sure the keys for the location/cameras match up
     current_keys = sorted([k for k in current_poller._events.keys()])
@@ -87,13 +92,13 @@ async def test_poll_buckets_for_today_process_and_store_seq_events(
 
 
 @pytest.mark.asyncio
-async def test_clear_all_data(current_poller: CurrentPoller) -> None:
+async def test_clear_todays_data(current_poller: CurrentPoller) -> None:
     await current_poller.poll_buckets_for_todays_data()
 
     assert current_poller.completed_first_poll is True
     assert current_poller._objects != {}
 
-    await current_poller.clear_all_data()
+    await current_poller.clear_todays_data()
     assert current_poller._objects == {}
     assert current_poller._events == {}
     assert current_poller._metadata == {}
@@ -108,9 +113,9 @@ async def test_clear_all_data(current_poller: CurrentPoller) -> None:
 async def test_process_channel_objects(
     current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
 ) -> None:
-    await current_poller.clear_all_data()
+    await current_poller.clear_todays_data()
 
-    camera, location = await get_test_camera_and_location()
+    camera, location = get_test_camera_and_location()
     loc_cam = f"{location.name}/{camera.name}"
     objects = rubin_data_mocker.seq_objs[loc_cam]
 
@@ -145,14 +150,14 @@ async def test_update_channel_events(
 ) -> None:
     with (
         patch(
-            "lsst.ts.rubintv.background.currentpoller." "notify_ws_clients",
+            "lsst.ts.rubintv.background.currentpoller.notify_ws_clients",
         ) as mock_notify_ws_clients,
     ):
-        camera, location = await get_test_camera_and_location()
+        camera, location = get_test_camera_and_location()
         loc_cam = f"{location.name}/{camera.name}"
         events = rubin_data_mocker.events[loc_cam]
 
-        await current_poller.clear_all_data()
+        await current_poller.clear_todays_data()
         assert current_poller._most_recent_events == {}
         loc_cam = f"{location.name}/{camera.name}"
         await current_poller.update_channel_events(events, loc_cam, camera)
@@ -203,21 +208,81 @@ async def test_day_rollover(
         assert mock_day_obs
         assert current_poller.completed_first_poll is True
 
-    day_obs = day_obs + timedelta(days=1)
-    rubin_data_mocker.day_obs = day_obs
-    rubin_data_mocker.mock_up_data()
+        day_obs = day_obs + timedelta(days=1)
+        rubin_data_mocker.day_obs = day_obs
+        rubin_data_mocker.mock_up_data()
     with (
         patch(
             "lsst.ts.rubintv.background.currentpoller.get_current_day_obs",
             return_value=day_obs.isoformat(),
         ) as mock_day_obs,
+        patch(
+            "lsst.ts.rubintv.background.currentpoller.CurrentPoller.clear_todays_data",
+            new_callable=AsyncMock,
+        ) as mock_clear_data,
     ):
         await current_poller.poll_buckets_for_todays_data()
 
+        mock_clear_data.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_pick_up_yesterdays_movie(
+    current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
+) -> None:
+    camera, location = get_test_camera_and_location()
+    channel = camera.pd_channels()[0]
+    mocked = rubin_data_mocker
+    day_obs = get_current_day_obs()
+
+    with (
+        patch(
+            "lsst.ts.rubintv.background.currentpoller.get_current_day_obs",
+            return_value=day_obs,
+        ) as mock_day_obs,
+    ):
         assert mock_day_obs
+        await current_poller.poll_buckets_for_todays_data()
+        assert current_poller.completed_first_poll is True
+
+        # clear movie channel
+        mocked.delete_channel_events(location, camera, channel)
+        await current_poller.poll_buckets_for_todays_data()
+
+        # rollover day obs
+        yesterday = day_obs
+        day_obs = day_obs + timedelta(days=1)
+
+    with (
+        patch(
+            "lsst.ts.rubintv.background.currentpoller.get_current_day_obs",
+            return_value=day_obs,
+        ) as mock_day_obs,
+        patch(
+            "lsst.ts.rubintv.background.currentpoller.notify_ws_clients",
+            new_callable=AsyncMock,
+        ) as mock_notify,
+    ):
+        await current_poller.poll_buckets_for_todays_data()
+
+        # add movie data (arbitrary number of objs)
+        mocked.add_seq_objs_for_channel(location, camera, channel, 3)
+        await current_poller.poll_buckets_for_todays_data()
+
+        # assert that notification was made with the new event
+        # from yesterday.
+        service_msg = ServiceMessageTypes.CAMERA_PD_BACKDATED
+        loc_cam = f"{location.name}/{camera.name}"
+        events = mocked.get_mocked_events(location, camera, channel)
+        assert events is not []
+        last_event = max(events)
+        assert last_event
+        assert last_event.day_obs == yesterday.isoformat()
+        payload = {channel.name: last_event.__dict__}
+        mock_notify.assert_called_once_with("camera", service_msg, loc_cam, payload)
 
 
-async def get_test_camera_and_location() -> tuple[Camera, Location]:
+def get_test_camera_and_location() -> tuple[Camera, Location]:
     location: Location = find_first(m.locations, "name", "base-usdf")
     # fake_auxtel has both 'streaming' and per-day channels
     camera: Camera = find_first(location.cameras, "name", "fake_auxtel")

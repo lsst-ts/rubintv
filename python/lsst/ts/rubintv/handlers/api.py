@@ -32,7 +32,7 @@ async def historical_reset(request: Request) -> None:
     historical: HistoricalPoller = request.app.state.historical
     await historical.trigger_reload_everything()
     current: CurrentPoller = request.app.state.current_poller
-    await current.clear_all_data()
+    await current.clear_todays_data()
 
 
 @api_router.get("/{location_name}", response_model=Location)
