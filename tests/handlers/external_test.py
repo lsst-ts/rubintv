@@ -112,7 +112,7 @@ async def test_all_endpoints(
     all_cams = [f"{summit.name}/{cam.name}" for cam in summit.cameras]
     online_cams = [f"{summit.name}/{cam.name}" for cam in summit.cameras if cam.online]
     camera_historical = [f"{cam}/historical" for cam in online_cams]
-    camera_dates = [f"{cam}/date/{day_obs}" for cam in online_cams if cam]
+    camera_dates = [f"{cam}/date/{day_obs}" for cam in online_cams]
     nr_current = [f"{cam}/night_report" for cam in online_cams]
     nr_dates = [f"{cam}/night_report/{day_obs}" for cam in online_cams]
 
@@ -175,9 +175,6 @@ async def test_request_invalid_dates(
         res = await client.get(url)
         assert res.is_error
 
-    # TODO: This needs not to be just a success, but a page with a
-    # 'nothing for this day' message.
-    # See DM-45327 https://rubinobs.atlassian.net/browse/DM-45327
     for url_frag in cam_empty_year:
         url = f"/{app_name}/{url_frag}"
         res = await client.get(url)
