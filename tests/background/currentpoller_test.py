@@ -79,7 +79,6 @@ async def test_poll_buckets_for_today_process_and_store_seq_events(
     await current_poller.poll_buckets_for_todays_data()
 
     mocked_objs_keys = rubin_data_mocker.events.keys()
-    print(mocked_objs_keys)
 
     # make sure the keys for the location/cameras match up
     current_keys = sorted([k for k in current_poller._events.keys()])

@@ -65,6 +65,11 @@ class CurrentPoller:
         self._night_reports = {}
 
     async def check_for_empty_per_day_channels(self) -> None:
+        """Creates a store of channel prefixes for per-day data that's not
+        been received over the course of a day's polling. The prefixes use the
+        date that's been rolled over from, i.e. yesterday's date, to continue
+        to look for that data into the new day.
+        """
         for location in self.locations:
             # clear out yesterday's stash
             self._yesterday_prefixes[location.name] = []
@@ -132,6 +137,20 @@ class CurrentPoller:
                 logger.exception("Caught exception during poll for data")
 
     async def poll_for_yesterdays_per_day(self, location: Location) -> None:
+        """Uses the store of prefixes for yesterday's missing per-day data to
+        poll for new objects that have maybe been delayed in processing (this
+        will mainly be movies) and didn't appear in the bucket before the day
+        rolled over.
+        Multiple objects will be ignored except for the most recent.
+        If an object is found in the bucket, the current page is notified.
+        Note: This does not effect historical pages.
+
+
+        Parameters
+        ----------
+        location : Location
+            A given location.
+        """
         client = self._s3clients[location.name]
         found = []
         for prefix in self._yesterday_prefixes.get(location.name, []):
