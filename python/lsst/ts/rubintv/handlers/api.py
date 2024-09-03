@@ -149,7 +149,7 @@ async def get_current_channel_event(
         if not event:
             historical: HistoricalPoller = request.app.state.historical
             if await historical.is_busy():
-                raise HTTPException(421, "Historical data is being processed")
+                raise HTTPException(423, "Historical data is being processed")
             event = await historical.get_most_recent_event(location, camera, channel)
             if not event:
                 return None

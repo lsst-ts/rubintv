@@ -1,4 +1,5 @@
-import asyncio
+from asyncio import sleep
+from time import time
 from typing import AsyncGenerator
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
@@ -14,8 +15,8 @@ from lsst.ts.rubintv.models.models import (
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as Service
 from lsst.ts.rubintv.models.models import get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import (
+    all_objects_to_events,
     make_table_from_event_list,
-    objects_to_events,
     objects_to_ngt_report_data,
 )
 from lsst.ts.rubintv.s3client import S3Client
@@ -27,6 +28,9 @@ class CurrentPoller:
     """Polls and holds state of the current day obs data in the s3 bucket and
     notifies the websocket server of changes.
     """
+
+    # min time between polls
+    MIN_INTERVAL = 1
 
     def __init__(self, locations: list[Location], test_mode: bool = False) -> None:
         self._clients: dict[str, S3Client] = {}
@@ -61,6 +65,7 @@ class CurrentPoller:
 
     async def poll_buckets_for_todays_data(self, test_day: str = "") -> None:
         while True:
+            timer_start = time()
             try:
                 if self._current_day_obs != get_current_day_obs():
                     logger.info(
@@ -97,8 +102,12 @@ class CurrentPoller:
                     self._test_iterations -= 1
                     if self._test_iterations <= 0:
                         break
-                await asyncio.sleep(1)
-                logger.info("CurrentPoller running...")
+
+                elapsed = time() - timer_start
+                logger.info("Current - time taken:", elapsed=elapsed)
+                if elapsed < self.MIN_INTERVAL:
+                    await sleep(self.MIN_INTERVAL - elapsed)
+
             except Exception:
                 logger.exception("Caught exception during poll for data")
 
@@ -109,7 +118,7 @@ class CurrentPoller:
             loc_cam not in self._objects or objects != self._objects[loc_cam]
         ):
             self._objects[loc_cam] = objects
-            events = await objects_to_events(objects)
+            events = await all_objects_to_events(objects)
             self._events[loc_cam] = events
             await self.update_channel_events(events, loc_cam, camera)
 
