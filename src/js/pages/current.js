@@ -21,7 +21,7 @@ import { WebsocketClient } from '../modules/ws-service-client'
     _getById('seqNum').textContent = newEvent.seq_num
     _getById('eventName').textContent = filename
     const oldImg = _getById('eventImage')
-    // create new repsonsive <img> element
+    // create new responsive <img> element
     const newImg = _elWithClass('img', 'resp')
     const imgURL = `${baseImgURL}/${filename}`
     newImg.src = imgURL
