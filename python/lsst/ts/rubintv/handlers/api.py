@@ -209,3 +209,22 @@ async def get_night_report_for_date(
 
     nr = await historical.get_night_report_payload(location, camera, day_obs)
     return nr
+
+
+@api_router.get("/{location_name}/{camera_name}/metadata/{date_str}")
+async def get_metadata_for_date(
+    location_name: str, camera_name: str, date_str: str, request: Request
+) -> dict:
+
+    historical: HistoricalPoller = request.app.state.historical
+    if await historical.is_busy():
+        raise HTTPException(423, "Historical data is being processed")
+
+    location, camera = await get_location_camera(location_name, camera_name, request)
+    if not camera.online:
+        raise HTTPException(status_code=404, detail="Camera not found.")
+
+    day_obs = date_validation(date_str)
+
+    metadata = await historical.get_metadata_for_date(location, camera, day_obs)
+    return metadata
