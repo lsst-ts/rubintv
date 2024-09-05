@@ -119,6 +119,7 @@ class Camera(HasButton):
     metadata_cols: dict[str, str] | None = None
     image_viewer_link: str = ""
     copy_row_template: str = ""
+    mosaic_view_meta: list[dict[str, list[str]]] = []
 
     def seq_channels(self) -> list[Channel]:
         return [c for c in self.channels if not c.per_day]
