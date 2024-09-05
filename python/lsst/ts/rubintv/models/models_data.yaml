@@ -143,6 +143,18 @@ cameras:
         label: "Movie for "
         colour: "#83daee"
 
+    mosaic_view_meta:
+      - monitor:
+        - Exposure time
+        - Airmass
+        - RA
+        - Dec
+      - imexam:
+        - Exposure time
+        - PSF-FWHM
+      - mount:
+        - Mount motion image degradation
+
 
   - name: startracker_narrow
     title: StarTracker Narrow
