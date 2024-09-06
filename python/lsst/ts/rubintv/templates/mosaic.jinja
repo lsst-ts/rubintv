@@ -1,0 +1,32 @@
+{% extends "_camera.jinja" %}
+
+{% block pagesubtitle %}
+  Latest Mosaic
+{% endblock pagesubtitle  %}
+
+{% block undertitle %}
+{% if date %}
+  <div id="header-date">{{ date }}</div>
+{% endif %}
+{% endblock undertitle %}
+
+{% block breadcrumb %}
+  <a href="{{ url_for('home') }}">
+    Home
+  </a>>
+  <a href="{{ url_for('location', location_name=location.name) }}">
+    {{ location.title }}
+  </a>>
+  <p>{{ camera.title }}</p>
+{% endblock breadcrumb  %}
+
+{% block content %}
+    <div id="camera-mosaic" class="columns">
+    {# React MosiacView root here #}
+    </div>
+  {% endif %}
+{% endblock content %}
+
+{% block footer_scripts %}
+  {{ super() }}
+{% endblock footer_scripts  %}
