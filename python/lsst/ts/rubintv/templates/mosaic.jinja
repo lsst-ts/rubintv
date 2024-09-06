@@ -21,12 +21,12 @@
 {% endblock breadcrumb  %}
 
 {% block content %}
-    <div id="camera-mosaic" class="columns">
-    {# React MosiacView root here #}
-    </div>
-  {% endif %}
+  <div id="camera-mosaic" class="columns">
+  {# React MosiacView root here #}
+  </div>
 {% endblock content %}
 
 {% block footer_scripts %}
+  <script src='{{ url_for("static", path="assets/mosaic-view.js") }}'></script>
   {{ super() }}
-{% endblock footer_scripts  %}
+{% endblock footer_scripts %}
