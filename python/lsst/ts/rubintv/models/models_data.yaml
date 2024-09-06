@@ -144,16 +144,19 @@ cameras:
         colour: "#83daee"
 
     mosaic_view_meta:
-      - monitor:
-        - Exposure time
-        - Airmass
-        - RA
-        - Dec
-      - imexam:
-        - Exposure time
-        - PSF-FWHM
-      - mount:
-        - Mount motion image degradation
+      - channel: monitor
+        metaColumns:
+          - Exposure time
+          - Airmass
+          - RA
+          - Dec
+      - channel: imexam
+        metaColumns:
+          - Exposure time
+          - PSF-FWHM
+      - channel: mount
+        metaColumns:
+          - Mount motion image degradation
 
 
   - name: startracker_narrow
