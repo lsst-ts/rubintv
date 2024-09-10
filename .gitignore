@@ -160,3 +160,4 @@ node_modules/
 .mypy.ini
 .ruff.toml
 towncrier.toml
+eslint.config.mjs
