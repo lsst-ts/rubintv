@@ -53,5 +53,5 @@ config = Configuration()
 
 
 def rubintv_logger() -> Any:
-    logger = get_logger(name=config.name)
+    logger = get_logger()
     return logger
