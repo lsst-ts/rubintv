@@ -2,13 +2,14 @@
 # when using the Dockerfile on the root folder.
 setuptools_scm
 asgi_lifespan
+structlog
 boto3
 fastapi
 httpx
-beautifulsoup4
-moto~=4.0
-safir
+moto
 pytest_asyncio
+websocket-client
+beautifulsoup4
+py-spy
 locust
 locust_plugins
-websocket-client

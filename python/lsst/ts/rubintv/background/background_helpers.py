@@ -1,11 +1,11 @@
-import structlog
+from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.models.models import Event
 
-logger = structlog.get_logger("rubintv")
+logger = rubintv_logger()
 
 
 async def get_next_previous_from_table(
-    table: dict[int | None, dict[str, dict]], event: Event
+    table: dict[int, dict[str, dict]], event: Event
 ) -> tuple[dict | None, ...]:
     """Takes an Event and a table of Event dicts keyed by seq. num and channel
     name and returns the next and previous event dicts.
@@ -37,14 +37,14 @@ async def get_next_previous_from_table(
     padded_seqs = [None, *chan_table.keys(), None]
 
     # find the index of event's seq num in that padded list
-    index = padded_seqs.index(event.seq_num)
+    index = padded_seqs.index(event.seq_num_force_int())
 
     next_seq = padded_seqs[index - 1]
     prev_seq = padded_seqs[index + 1]
 
     nxt_prv = (
-        chan_table.get(next_seq),
-        chan_table.get(prev_seq),
+        chan_table.get(next_seq),  # type: ignore
+        chan_table.get(prev_seq),  # type: ignore
     )
 
     return nxt_prv

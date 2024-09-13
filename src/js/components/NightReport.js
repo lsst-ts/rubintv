@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
+import { nightReportData } from './componentPropTypes'
 import { groupBy, sanitiseString } from '../modules/utils'
 
 function NightReportText ({ nightReport, selected }) {
@@ -157,10 +158,10 @@ function NightReportTabs ({ nightReport, tabNames, selected, setSelected }) {
             isSelected = 'selected'
           }
           return (
-            <div 
+            <div
               key={tabName}
               onClick={() => handleSelectionChange(tabName)}
-              id={`tabtitle-${tabId}`} 
+              id={`tabtitle-${tabId}`}
               className={`tab-title ${isDisabled} ${isSelected}`} >
                 {tabName}
             </div>
@@ -192,15 +193,15 @@ function NightReportPlots ({ nightReport, selected, camera, locationName, baseUr
             isSelected = 'selected'
           }
           return (
-            <div 
-              key={groupId} 
-              id={`tabgroup-${groupId}`} 
+            <div
+              key={groupId}
+              id={`tabgroup-${groupId}`}
               className={`tab-content plots-grid ${isSelected}`}
             >
               { groupedPlots.map(plot => {
                 const imgUrl = `${baseUrl}plot_image/${locationName}/${camera.name}/${group}/${plot.filename}`
                 return (
-                  <figure key={plot.filename} className='plot'>
+                  <figure key={plot.hash} className='plot'>
                     <a href={imgUrl}>
                       <img src={imgUrl} alt={plot.filename} />
                     </a>
@@ -216,7 +217,7 @@ function NightReportPlots ({ nightReport, selected, camera, locationName, baseUr
 }
 NightReportPlots.propTypes = {
   nightReport:  PropTypes.exact({
-    plots: PropTypes.arrayOf(PropTypes.object),
+    plots: PropTypes.arrayOf(nightReportData),
     text: PropTypes.object
   }),
   camera: PropTypes.object,
@@ -273,15 +274,15 @@ function NightReport ({ initialNightReport, initialDate, camera, locationName, b
       </h3>
 
       <div className='plots-section tabs'>
-          <NightReportTabs 
+          <NightReportTabs
             nightReport={nightReport}
-            tabNames={tabNames} 
-            selected={selected} 
+            tabNames={tabNames}
+            selected={selected}
             setSelected={setSelected} />
-          <NightReportText 
+          <NightReportText
             nightReport={nightReport}
             selected={selected}/>
-          <NightReportPlots 
+          <NightReportPlots
             nightReport={nightReport}
             selected={selected}
             camera={camera}
@@ -308,7 +309,7 @@ NightReport.propTypes = {
    * See NightReportText above for a brief description of the 'text' object.
    */
   initialNightReport: PropTypes.exact({
-    plots: PropTypes.arrayOf(PropTypes.object),
+    plots: PropTypes.arrayOf(nightReportData),
     text: PropTypes.object
   }),
   /** The camera object. Please see rubin-tv/src/rubintv/models/models.py

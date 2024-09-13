@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { indicatorForAttr, _elWithClass, _elWithAttrs, replaceInString, _getById } from '../modules/utils'
 import { metadatumType } from './componentPropTypes'
@@ -31,13 +31,15 @@ DictMetadata.propTypes = {
 function MetadataCell ({ data, indicator, seqNum, columnName }) {
   const className = ['grid-cell meta', indicator].join(' ')
   let toDisplay = data
+  let title = ''
   if (typeof data === 'number' && data % 1 !== 0) {
     toDisplay = data.toFixed(2)
+    title = data
   } else if (data && typeof data === 'object') {
     toDisplay = <DictMetadata data={data} seqNum={seqNum} columnName={columnName} />
   }
   return (
-    <td className={ className }>
+    <td className={ className } title={ title }>
       { toDisplay }
     </td>
   )

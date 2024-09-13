@@ -65,3 +65,24 @@ export const cameraType = PropTypes.shape({
 export const channelDataType = PropTypes.objectOf(
   PropTypes.objectOf(eventType)
 )
+
+export const nightReportData = PropTypes.shape({
+  /**
+   * nightReportData takes the shape:
+   
+    key: <reference for object in S3 bucket>
+    hash: <hash of object given by S3>
+    camera: <name of associated camera>
+    day_obs: <date of event in format 'YYYY-MM-DD'>
+    group: <group name of plot>
+    filename: <filename of the event>
+    ext: <file extension>
+   */
+  key: PropTypes.string,
+  hash: PropTypes.string,
+  camera: PropTypes.string,
+  day_obs: PropTypes.string,
+  group: PropTypes.string,
+  filename: PropTypes.string,
+  ext: PropTypes.string
+})

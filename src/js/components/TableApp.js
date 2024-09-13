@@ -69,6 +69,11 @@ export default function TableApp ({ camera, initialDate, initialChannelData, ini
     }
   }, [date]) // Only reattach the event listener if the date changes
 
+  if (Object.entries(metadata).length + Object.entries(channelData).length == 0) {
+    return (
+      <h3>There is no data for this day</h3>
+    )
+  }
   return (
     <div className="table-container">
       <div className="above-table-sticky">

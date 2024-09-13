@@ -1,4 +1,4 @@
-import { _getById } from '../modules/utils'
+import { _getById, _elWithClass } from '../modules/utils'
 import { WebsocketClient } from '../modules/ws-service-client'
 
 (function () {
@@ -21,7 +21,8 @@ import { WebsocketClient } from '../modules/ws-service-client'
     _getById('seqNum').textContent = newEvent.seq_num
     _getById('eventName').textContent = filename
     const oldImg = _getById('eventImage')
-    const newImg = document.createElement('img')
+    // create new responsive <img> element
+    const newImg = _elWithClass('img', 'resp')
     const imgURL = `${baseImgURL}/${filename}`
     newImg.src = imgURL
     newImg.id = oldImg.id

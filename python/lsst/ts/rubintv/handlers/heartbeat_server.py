@@ -1,7 +1,7 @@
 import asyncio
 
-import structlog
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from lsst.ts.rubintv.config import rubintv_logger
 from websockets import ConnectionClosed
 
 HEARTBEAT_INTERVAL = 5
@@ -11,8 +11,8 @@ heartbeats_sock_lock = asyncio.Lock()
 
 broadcast_task = None  # Reference to the broadcast task
 
-heartbeat_router = APIRouter()
-logger = structlog.get_logger("rubintv")
+heartbeat_ws_router = APIRouter()
+logger = rubintv_logger()
 
 
 async def remove_websocket(websocket: WebSocket) -> None:
@@ -59,7 +59,7 @@ async def broadcast_heartbeats() -> None:
         await asyncio.sleep(HEARTBEAT_INTERVAL)
 
 
-@heartbeat_router.websocket("/")
+@heartbeat_ws_router.websocket("/")
 async def heartbeat_server(websocket: WebSocket) -> None:
     """Route that adds a websocket connection, solely for broadcasting
     heartbeat data. Only one connection is made per browser and is
@@ -75,7 +75,7 @@ async def heartbeat_server(websocket: WebSocket) -> None:
     logger.info("Adding heartbeats broadcaster")
     async with heartbeats_sock_lock:
         heartbeat_sockets.append(websocket)
-        if broadcast_task is None or broadcast_task.done():
+        if broadcast_task is None:
             broadcast_task = asyncio.create_task(broadcast_heartbeats())
             logger.info("Started broadcast heartbeats task")
 

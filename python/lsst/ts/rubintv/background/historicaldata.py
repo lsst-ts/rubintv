@@ -1,9 +1,13 @@
 import asyncio
+import pickle
 import re
+import zlib
 from datetime import date
+from time import time
+from typing import Any
 
-import structlog
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
+from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.websocket_notifiers import notify_all_status_change
 from lsst.ts.rubintv.models.models import (
     Camera,
@@ -11,17 +15,17 @@ from lsst.ts.rubintv.models.models import (
     Event,
     Location,
     NightReport,
-    NightReportPayload,
+    NightReportData,
     get_current_day_obs,
 )
 from lsst.ts.rubintv.models.models_helpers import (
     make_table_from_event_list,
     objects_to_events,
-    objects_to_ngt_reports,
+    objects_to_ngt_report_data,
 )
 from lsst.ts.rubintv.s3client import S3Client
 
-logger = structlog.get_logger("rubintv")
+logger = rubintv_logger()
 
 
 class HistoricalPoller:
@@ -34,11 +38,12 @@ class HistoricalPoller:
     # polling period in seconds
     CHECK_NEW_DAY_PERIOD = 5
 
-    def __init__(self, locations: list[Location]) -> None:
+    def __init__(self, locations: list[Location], test_mode: bool = False) -> None:
         self._clients: dict[str, S3Client] = {}
-        self._metadata: dict[str, dict] = {}
-        self._events: dict[str, list[Event]] = {}
-        self._nr_metadata: dict[str, list[NightReport]] = {}
+        self._metadata: dict[str, bytes] = {}
+        self._temp_events: dict[str, list[Event]] = {}
+        self._events: dict[str, bytes] = {}
+        self._nr_metadata: dict[str, list[NightReportData]] = {}
         self._calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
         self._locations = locations
         self._clients = {
@@ -50,6 +55,8 @@ class HistoricalPoller:
         self._last_reload = get_current_day_obs()
 
         self.cam_year_rgx = re.compile(r"(\w+)\/([\d]{4})-[\d]{2}-[\d]{2}")
+
+        self.test_mode = test_mode
 
     async def clear_all_data(self) -> None:
         self._have_downloaded = False
@@ -71,21 +78,26 @@ class HistoricalPoller:
                     not self._have_downloaded
                     or self._last_reload < get_current_day_obs()
                 ):
+                    time_start = time()
                     await self.clear_all_data()
                     for location in self._locations:
                         await self._refresh_location_store(location)
 
                     self._last_reload = get_current_day_obs()
                     self._have_downloaded = True
-                    logger.info("Completed historical")
+
+                    time_taken = time() - time_start
+                    logger.info("Historical polling took:", time_taken=time_taken)
+
                     await notify_all_status_change(historical_busy=False)
                 else:
+                    if self.test_mode:
+                        break
                     await asyncio.sleep(self.CHECK_NEW_DAY_PERIOD)
         except Exception as e:
             logger.error(e)
 
     async def _refresh_location_store(self, location: Location) -> None:
-        # handle blocking call in async code
         try:
             up_to_date_objects = await self._get_objects(location)
             await self.filter_convert_store_objects(up_to_date_objects, location)
@@ -111,9 +123,8 @@ class HistoricalPoller:
                     prefix=prefix,
                 )
                 try:
-                    one_load = await self._clients[location.name].async_list_objects(
-                        prefix=prefix
-                    )
+                    client: S3Client = self._clients[location.name]
+                    one_load = await client.async_list_objects(prefix=prefix)
                     objects.extend(one_load)
                     logger.info("Found:", num_objects=len(one_load))
                 except Exception as e:
@@ -129,22 +140,34 @@ class HistoricalPoller:
         n_report_objs = [o for o in objects if "night_report" in o["key"]]
 
         event_objs = [
-            o for o in objects if o not in metadata_objs and o not in n_report_objs
+            o
+            for o in objects
+            if "metadata.json" not in o["key"] and "night_report" not in o["key"]
         ]
 
         await self.download_and_store_metadata(locname, metadata_objs)
 
-        self._nr_metadata[locname] = await objects_to_ngt_reports(n_report_objs)
-        events = await objects_to_events(event_objs)
-        await self.store_events(events, locname)
+        self._nr_metadata[locname] = await objects_to_ngt_report_data(n_report_objs)
+        async for events_batch in objects_to_events(event_objs):
+            await self.store_events(events_batch, locname)
+            await self.compress_events()
+            self._temp_events = {}
+
+    async def compress_events(self) -> None:
+        t = time()
+        for storage_key, events in self._temp_events.items():
+            compressed = zlib.compress(pickle.dumps(events))
+            self._events[storage_key] = compressed
+        dur = time() - t
+        logger.info("Compression took:", storage_key=storage_key, dur=dur)
 
     async def store_events(self, events: list[Event], locname: str) -> None:
         logger.info("starting store_events")
         for event in events:
-            storage_name = await self.storage_name_for_event(event, locname)
-            if storage_name not in self._events:
-                self._events[storage_name] = []
-            self._events[storage_name].append(event)
+            storage_key = f"{locname}/{event.camera_name}"
+            if storage_key not in self._temp_events:
+                self._temp_events[storage_key] = []
+            self._temp_events[storage_key].append(event)
 
             seq_num = event.seq_num
             if isinstance(seq_num, str):
@@ -162,15 +185,13 @@ class HistoricalPoller:
                 self._calendar[loc_cam][year][month][day] = seq_num
         logger.info("ending store_events")
 
-    async def storage_name_for_event(self, event: Event, locname: str) -> str:
-        return f"{locname}/{event.camera_name}"
-
     async def download_and_store_metadata(
         self, locname: str, metadata_objs: list[dict[str, str]]
     ) -> None:
-        # metadata is downloaded and stored against it's loc/cam/date
+        # metadata is downloaded and stored against its loc/cam/date
         # for efficient retrieval
-        logger.info("starting to fetch metadata")
+        logger.info("Fetching metadata for:", locname=locname)
+        t = time()
         for md_obj in metadata_objs:
             key = md_obj.get("key")
             if not key:
@@ -181,15 +202,15 @@ class HistoricalPoller:
             if not md:
                 logger.info("Missing metadata for:", md_obj=md_obj)
                 continue
-            self._metadata[storage_name] = md
-        logger.info("ending metatdata fetch")
+            compressed_md = zlib.compress(pickle.dumps(md))
+            self._metadata[storage_name] = compressed_md
+        dur = time() - t
+        logger.info("Metatdata fetch took", locname=locname, dur=dur)
 
     async def get_night_report_payload(
         self, location: Location, camera: Camera, day_obs: date
-    ) -> NightReportPayload:
-        """Returns a dict containing a list of Night Reports for
-        the camera and date and a text metadata dict. Both values are
-        optional (see `NightReportPayload`).
+    ) -> NightReport:
+        """Returns a NightReport for the camera and date.
 
         Parameters
         ----------
@@ -200,26 +221,27 @@ class HistoricalPoller:
 
         Returns
         -------
-        report : NightReportPayload:
-            A dict containing a list of Night Report objects and text metadata.
+        report : `NightReport`
+            A NightReport containing a list of Night Report Data and text
+            metadata.
         """
-        nr_objs = await self._get_night_report(location, camera, day_obs)
-        text_reports = [r for r in nr_objs if r.group == "metadata"]
-        report: NightReportPayload = {}
+        nr_data = await self._get_night_report_data(location, camera, day_obs)
+        text_reports = [r for r in nr_data if r.group == "metadata"]
+        report: NightReport = NightReport()
         if text_reports:
             text_report = text_reports[0]
             key = text_report.key
             client = self._clients[location.name]
-            text_obj = await client.get_metadata_obj(key)
-            report["text"] = text_obj
-            nr_objs.remove(text_report)
-        if nr_objs:
-            report["plots"] = nr_objs
+            text_obj = await client.async_get_object(key)
+            report.text = text_obj
+            nr_data.remove(text_report)
+        if nr_data:
+            report.plots = nr_data
         return report
 
-    async def _get_night_report(
+    async def _get_night_report_data(
         self, location: Location, camera: Camera, day_obs: date
-    ) -> list[NightReport]:
+    ) -> list[NightReportData]:
         date_str = day_obs.isoformat()
         report = []
         if location.name in self._nr_metadata:
@@ -233,8 +255,8 @@ class HistoricalPoller:
     async def night_report_exists_for(
         self, location: Location, camera: Camera, day_obs: date
     ) -> bool:
-        nr_objs = await self._get_night_report(location, camera, day_obs)
-        if nr_objs:
+        nr_data = await self._get_night_report_data(location, camera, day_obs)
+        if nr_data:
             return True
         else:
             return False
@@ -244,7 +266,9 @@ class HistoricalPoller:
     ) -> list[Event]:
         loc_cam = f"{location.name}/{camera.name}"
         date_str = a_date.isoformat()
-        events = [e for e in self._events[loc_cam] if e.day_obs == date_str]
+        compressed = self._events[loc_cam]
+        events: list[Event] = pickle.loads(zlib.decompress(compressed))
+        events = [e for e in events if e.day_obs == date_str]
         return events
 
     async def get_channel_data_for_date(
@@ -273,9 +297,15 @@ class HistoricalPoller:
 
     async def get_metadata_for_date(
         self, location: Location, camera: Camera, day_obs: date
-    ) -> dict[str, dict]:
-        loc_cam_date = f"{location.name}/{camera.metadata_from}/{day_obs}"
-        return self._metadata.get(loc_cam_date, {})
+    ) -> dict[str, Any]:
+        cam_name = camera.name
+        if camera.metadata_from:
+            cam_name = camera.metadata_from
+        loc_cam_date = f"{location.name}/{cam_name}/{day_obs}"
+        compressed = self._metadata.get(loc_cam_date, None)
+        if compressed is None:
+            return {}
+        return pickle.loads(zlib.decompress(compressed))
 
     async def get_most_recent_day(
         self, location: Location, camera: Camera
@@ -296,20 +326,25 @@ class HistoricalPoller:
         day_obs = await self.get_most_recent_day(location, camera)
         if not day_obs:
             return []
+        compressed = self._events.get(loc_cam, None)
+        if compressed is None:
+            return []
+        events = pickle.loads(zlib.decompress(compressed))
         date_str = day_obs.isoformat()
-        return [e for e in self._events[loc_cam] if e.day_obs == date_str]
+        return [e for e in events if e.day_obs == date_str]
 
     async def get_most_recent_event(
         self, location: Location, camera: Camera, channel: Channel
     ) -> Event | None:
-        events = [
-            event
-            for event in await self.get_most_recent_events(location, camera)
-            if event.channel_name == channel.name
-        ]
+        loc_cam = f"{location.name}/{camera.name}"
+        compressed = self._events.get(loc_cam, None)
+        if compressed is None:
+            return None
+        events = pickle.loads(zlib.decompress(compressed))
+        events = [event for event in events if event.channel_name == channel.name]
         if not events:
             return None
-        return events.pop()
+        return max(events)
 
     async def get_next_prev_event(
         self, location: Location, camera: Camera, event: Event

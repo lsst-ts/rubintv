@@ -1,12 +1,13 @@
 """Configuration definition."""
 
 import os
+from typing import Any
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from safir.logging import LogLevel, Profile
+from structlog import get_logger
 
-__all__ = ["Configuration", "config"]
+__all__ = ["Configuration", "config", "rubintv_logger"]
 
 
 def where_am_i() -> str:
@@ -30,42 +31,27 @@ class Configuration(BaseSettings):
 
     name: str = Field(
         default="rubintv",
-        json_schema_extra={
-            "title": "Name of application",
-            "validation_alias": "SAFIR_NAME",
-        },
+        validation_alias="SAFIR_NAME",
+        json_schema_extra={"title": "Name of application"},
     )
 
     path_prefix: str = Field(
         default="/rubintv",
-        json_schema_extra={
-            "title": "URL prefix for application",
-            "validation_alias": "SAFIR_PATH_PREFIX",
-        },
+        validation_alias="SAFIR_PATH_PREFIX",
+        json_schema_extra={"title": "URL prefix for application"},
     )
 
-    site_location: str = Field(default=where_am_i())
+    site_location: str = where_am_i()
 
-    s3_endpoint_url: str | None = Field(default=os.getenv("S3_ENDPOINT_URL"))
-
-    profile: Profile = Field(
-        default=Profile.development,
-        json_schema_extra={
-            "title": "Application logging profile",
-            "validation_alias": "SAFIR_PROFILE",
-        },
-    )
-
-    log_level: LogLevel = Field(
-        default=LogLevel.INFO,
-        json_schema_extra={
-            "title": "Log level of the application's logger",
-            "validation_alias": "SAFIR_LOG_LEVEL",
-        },
-    )
+    s3_endpoint_url: str = Field(default="testing", alias="S3_ENDPOINT_URL")
 
     model_config = SettingsConfigDict(env_prefix="SAFIR_", case_sensitive=False)
 
 
 config = Configuration()
 """Configuration for rubintv."""
+
+
+def rubintv_logger() -> Any:
+    logger = get_logger(name=config.name)
+    return logger

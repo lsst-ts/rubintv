@@ -2,8 +2,9 @@
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.api import (
     get_current_channel_event,
     get_location,
@@ -12,6 +13,7 @@ from lsst.ts.rubintv.handlers.api import (
     get_specific_channel_event,
 )
 from lsst.ts.rubintv.handlers.handlers_helpers import (
+    date_validation,
     get_camera_calendar,
     get_camera_current_data,
     get_camera_events_for_date,
@@ -24,14 +26,11 @@ from lsst.ts.rubintv.handlers.pages_helpers import (
     build_title,
     calendar_factory,
     month_names,
-    night_report_to_dict,
     to_dict,
 )
-from lsst.ts.rubintv.models.models import Channel, Event, Location, NightReportPayload
-from lsst.ts.rubintv.models.models_helpers import date_str_to_date, find_first
+from lsst.ts.rubintv.models.models import Channel, Event, Location, NightReport
+from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.templates_init import get_templates
-from safir.dependencies.logger import logger_dependency
-from structlog.stdlib import BoundLogger
 
 __all__ = ["get_home", "pages_router", "templates"]
 
@@ -41,14 +40,14 @@ pages_router = APIRouter()
 templates = get_templates()
 """Jinja2 for templating."""
 
+logger = rubintv_logger()
+
 
 @pages_router.get("/", response_class=HTMLResponse, name="home")
 async def get_home(
     request: Request,
-    logger: BoundLogger = Depends(logger_dependency),
 ) -> Response:
     """GET ``/rubintv/`` (the app's external root)."""
-    logger.info("Request for the app home page")
     locations: list[Location] = request.app.state.models.locations
     if len(locations) < 2:
         location = locations[0]
@@ -159,15 +158,13 @@ async def get_camera_for_date_page(
     camera_name: str,
     date_str: str,
     request: Request,
-    logger: BoundLogger = Depends(logger_dependency),
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online:
         raise HTTPException(404, "Camera not online.")
-    try:
-        day_obs = date_str_to_date(date_str)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Invalid date.")
+
+    day_obs = date_validation(date_str)
+
     historical_busy = False
     nr_exists = False
     metadata: dict = {}
@@ -229,7 +226,6 @@ async def get_historical_camera_page(
     location_name: str,
     camera_name: str,
     request: Request,
-    logger: BoundLogger = Depends(logger_dependency),
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online:
@@ -291,7 +287,9 @@ async def get_historical_camera_page(
     name="night_report",
 )
 async def get_current_night_report_page(
-    location_name: str, camera_name: str, request: Request
+    location_name: str,
+    camera_name: str,
+    request: Request,
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
     day_obs: date | None = None
@@ -309,7 +307,7 @@ async def get_current_night_report_page(
             "location": location,
             "camera": camera.model_dump(),
             "date": day_obs,
-            "night_report": await night_report_to_dict(night_report),
+            "night_report": night_report.model_dump(),
             "title": title,
         },
     )
@@ -327,18 +325,18 @@ async def get_historical_night_report_page(
     request: Request,
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
-    try:
-        day_obs = date_str_to_date(date_str)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Invalid date.")
 
-    night_report: NightReportPayload
+    day_obs = date_validation(date_str)
+
+    night_report: NightReport
     night_report, historical_busy = await try_historical_call(
         get_night_report_for_date,
-        location_name,
-        camera_name,
-        date_str,
-        request,
+        location_name=location_name,
+        camera_name=camera_name,
+        date_str=date_str,
+        request=request,
+        # default return is empty night report
+        is_busy_default=NightReport(),
     )
 
     title = build_title(
@@ -355,7 +353,7 @@ async def get_historical_night_report_page(
             "location": location,
             "camera": camera.model_dump(),
             "date": day_obs,
-            "night_report": await night_report_to_dict(night_report),
+            "night_report": night_report.model_dump(),
             "historical_busy": historical_busy,
             "title": title,
         },
@@ -385,7 +383,11 @@ async def get_specific_channel_event_page(
     if channel:
         channel_title = channel.title
         next_prev, historical_busy = await try_historical_call(
-            get_prev_next_event, location, camera, event, request
+            get_prev_next_event,
+            location=location,
+            camera=camera,
+            event=event,
+            request=request,
         )
         if historical_busy:
             next_prev = {}
@@ -420,14 +422,12 @@ async def get_current_channel_event_page(
     event = await get_current_channel_event(
         location_name, camera_name, channel_name, request
     )
-    channel: Channel | None = None
-    channel_title = ""
-    if event:
-        channel = find_first(camera.channels, "name", event.channel_name)
-    if channel:
-        channel_title = channel.title
 
-    title = build_title(location.title, camera.title, channel_title, "Current")
+    channel: Channel = find_first(camera.channels, "name", channel_name)
+    if channel is None or channel not in camera.channels:
+        raise HTTPException(status_code=404, detail="Channel not found.")
+
+    title = build_title(location.title, camera.title, channel.title, "Current")
 
     return templates.TemplateResponse(
         request=request,

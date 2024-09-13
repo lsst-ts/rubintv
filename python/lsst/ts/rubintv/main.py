@@ -13,35 +13,27 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from safir.dependencies.http_client import http_client_dependency
-from safir.logging import configure_logging, configure_uvicorn_logging
-from safir.middleware.x_forwarded import XForwardedMiddleware
 
 from . import __version__
 from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
 from .config import config
 from .handlers.api import api_router
-from .handlers.heartbeat_server import heartbeat_router
+from .handlers.ddv_routes_handler import ddv_router
+from .handlers.ddv_websocket_handler import ddv_client_ws_router, internal_ws_router
+from .handlers.heartbeat_server import heartbeat_ws_router
 from .handlers.internal import internal_router
 from .handlers.pages import pages_router
 from .handlers.proxies import proxies_router
-from .handlers.websocket import ws_router
+from .handlers.websocket import data_ws_router
 from .handlers.websockets_clients import clients
+from .middleware.x_forwarded import XForwardedMiddleware
 from .models.models_init import ModelsInitiator
 from .s3client import S3Client
 
 __all__ = ["app", "config"]
-
-
-configure_logging(
-    profile=config.profile,
-    log_level=config.log_level,
-    name=config.name,
-)
-configure_uvicorn_logging(config.log_level)
 
 
 @asynccontextmanager
@@ -73,13 +65,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     today_polling.cancel()
     for c in clients.values():
         await c.close()
-    await http_client_dependency.aclose()
 
 
 def create_app() -> FastAPI:
     """The main FastAPI application for rubintv."""
     app = FastAPI(
-        title="rubintv",
+        title=config.name,
         description="rubinTV is a Web app to display Butler-served data sets",
         version=__version__,
         openapi_url=f"{config.path_prefix}/openapi.json",
@@ -88,14 +79,6 @@ def create_app() -> FastAPI:
         debug=True,
         lifespan=lifespan,
     )
-
-    @app.middleware("http")
-    async def add_cache_control_header(
-        request: Request, call_next: Response
-    ) -> Response:
-        response = await call_next(request)
-        response.headers["Cache-Control"] = "public, max-age=3600, must-revalidate"
-        return response
 
     # Intwine webpack assets
     # generated with npm run build
@@ -113,11 +96,39 @@ def create_app() -> FastAPI:
         name="static",
     )
 
+    external_ws_router_prefix = f"{config.path_prefix}/ws"
+
+    # Mount Derived Data Visualization Flutter app.
+    ddv_app_root = "ddv/build/web"
+    if os.path.isdir(ddv_app_root):
+        app.mount(
+            f"{config.path_prefix}/ddv",
+            StaticFiles(directory=ddv_app_root, html=True),
+            name="ddv-flutter",
+        )
+        app.state.ddv_path = ddv_app_root
+        # Attach DDV Flutter client websocket (external):
+        app.include_router(
+            ddv_client_ws_router, prefix=f"{external_ws_router_prefix}/ddv"
+        )
+        # Provide router that hooks up ddv/index.html
+        app.include_router(ddv_router, prefix=f"{config.path_prefix}/ddv")
+
     # Attach the routers.
+
+    # Internal routing:
     app.include_router(internal_router)
+    # Below includes DDV worker pod websocket (internal):
+    app.include_router(internal_ws_router, prefix="/ws")
+
+    # External websocket routing:
+    app.include_router(data_ws_router, prefix=f"{external_ws_router_prefix}/data")
+    app.include_router(
+        heartbeat_ws_router, prefix=f"{external_ws_router_prefix}/heartbeats"
+    )
+
+    # External HTTP routing:
     app.include_router(api_router, prefix=f"{config.path_prefix}/api")
-    app.include_router(heartbeat_router, prefix=f"{config.path_prefix}/heartbeats")
-    app.include_router(ws_router, prefix=f"{config.path_prefix}/ws")
     app.include_router(proxies_router, prefix=f"{config.path_prefix}")
     app.include_router(pages_router, prefix=f"{config.path_prefix}")
 

@@ -6,24 +6,14 @@ from datetime import date, datetime, timedelta, timezone
 from enum import Enum
 from typing import Any
 
-import structlog
-from pydantic import BaseModel, ConfigDict, validator
+from lsst.ts.rubintv.config import rubintv_logger
+from pydantic import BaseModel, ConfigDict
 from pydantic.dataclasses import dataclass
-from typing_extensions import NotRequired, TypedDict
 
 from .. import __version__
 from ..config import config
 
-__all__ = [
-    "Metadata",
-    "Location",
-    "Channel",
-    "Camera",
-    "Event",
-    "get_current_day_obs",
-]
-
-logger = structlog.get_logger("rubintv")
+logger = rubintv_logger()
 
 
 class Metadata(BaseModel):
@@ -130,10 +120,6 @@ class Camera(HasButton):
     image_viewer_link: str = ""
     copy_row_template: str = ""
 
-    @validator("metadata_from", pre=True, always=True)
-    def default_metadata_from(cls: Any, v: Any, values: Any) -> Any:
-        return v or values.get("name", "")
-
     def seq_channels(self) -> list[Channel]:
         return [c for c in self.channels if not c.per_day]
 
@@ -164,6 +150,7 @@ class Event:
     ext: str = ""
 
     def __lt__(self, other: Any) -> bool:
+        """Used by max()"""
         if type(other) is not type(self):
             raise TypeError
         return self.key < other.key
@@ -220,8 +207,8 @@ class Event:
 
 
 @dataclass
-class NightReport:
-    """Wrapper for a night report blob.
+class NightReportData:
+    """Wrapper for a night report file metadata object.
 
         -   Night Reports can be located in a given bucket using the prefix:
             ``f"/{camera_name}/{date_str}/night_report/"``.
@@ -302,9 +289,9 @@ class NightReport:
         return int(f"0x{self.hash}", 0)
 
 
-class NightReportPayload(TypedDict):
-    text: NotRequired[dict]
-    plots: NotRequired[list[NightReport]]
+class NightReport(BaseModel):
+    text: dict[str, Any] | None = {}
+    plots: list[NightReportData] | None = []
 
 
 def get_current_day_obs() -> date:
@@ -363,3 +350,13 @@ class Heartbeat:
             "isActive": bool(self.state.value),
             "nextExpected": self.next_expected.isoformat(),  # Convert datetime to string
         }
+
+
+class ServiceMessageTypes(Enum):
+    CHANNEL_EVENT: str = "event"
+    CAMERA_TABLE: str = "channelData"
+    CAMERA_METADATA: str = "metadata"
+    CAMERA_PER_DAY: str = "perDay"
+    CAMERA_PD_BACKDATED: str = "perDayBackdated"
+    NIGHT_REPORT: str = "nightReport"
+    HISTORICAL_STATUS: str = "historicalStatus"

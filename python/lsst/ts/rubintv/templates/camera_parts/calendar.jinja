@@ -1,4 +1,5 @@
 {% set year_to_display = calendar|last %}
+{% set camera_url = url_for('camera', location_name=location.name, camera_name=camera.name) %}
 {% if camera.name == "allsky" %}
   {% set no_total_seq = True %}
 {% endif %}
@@ -42,7 +43,7 @@
                   {% if day in calendar[year][month]|list %}
                     {% set date_str = "{:04}-{:02}-{:02}".format(year, month, day) %}
                     <a  class="day obs"
-                        href="{{ url_for('camera_for_date', location_name=location.name, camera_name=camera.name, date_str=date_str) }}">
+                        href="{{ camera_url }}/date/{{ date_str }}">
                       <span class="day_num">{{ day }}</span>
                       {% if not no_total_seq %}
                         <span class="num_evs">({{ calendar[year][month][day] }})</span>

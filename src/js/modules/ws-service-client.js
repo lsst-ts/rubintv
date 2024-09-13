@@ -7,7 +7,7 @@ export class WebsocketClient {
   // pageType for 'service's are either 'camera', 'channel' or 'nightreport'
   constructor () {
     this.clientID = null
-    this.ws = new ReconnectingWebSocket(getWebSockURL('ws'))
+    this.ws = new ReconnectingWebSocket(getWebSockURL('ws/data'))
     this.ws.onmessage = this.handleMessage.bind(this)
     this.ws.onclose = this.handleClose.bind(this)
   }

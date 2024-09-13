@@ -11,35 +11,60 @@
 
 FROM python:3.11.1-slim-bullseye
 
-USER root
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install required packages
+# Install system dependencies
 RUN apt-get update && \
     apt-get install -y \
     libsasl2-dev \
     python-dev \
     libldap2-dev \
-    git \
     inetutils-ping \
     vim \
     nano \
-    curl \
     procps \
     findutils \
-    libssl-dev && \
+    libssl-dev \
+    git curl unzip xz-utils zip libglu1-mesa \
+    python3-venv \
+    libgl1-mesa-glx && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /usr/src/rubintv/
-COPY . .
+# Add a user with UID and GID 1000
+RUN groupadd -g 1000 rubintv && \
+useradd -r -u 1000 -g rubintv -m rubintv
 
-# Install dependencies
+# Setup work directory and adjust permissions
+WORKDIR /usr/src/rubintv
+RUN chown -R rubintv:rubintv /usr/src/rubintv
+
+# Switch to the new user
+USER rubintv
+
+# Setup Flutter
+RUN git clone https://github.com/flutter/flutter.git /home/rubintv/flutter
+ENV PATH="/home/rubintv/flutter/bin:/home/rubintv/flutter/bin/cache/dart-sdk/bin:${PATH}"
+RUN flutter doctor && \
+    flutter channel master && \
+    flutter upgrade
+
+# Create a virtual environment
+RUN python -m venv venv
+
+# Activate virtual environment
+ENV PATH="/usr/src/rubintv/venv/bin:$PATH"
+
+# Copy the rest of the application
+COPY --chown=rubintv:rubintv . .
+
+# Install Python dependencies
 RUN pip install -r requirements.txt && \
     python setup.py install
 
 # Adjust permissions for executable
-RUN chmod +x /usr/src/rubintv/start-daemon.sh
+RUN chmod +x start-daemon.sh
 
-# Expose the port.
+# Expose the port and define the CMD
 EXPOSE 8000
-
-CMD ["/usr/src/rubintv/start-daemon.sh"]
+CMD ["./start-daemon.sh"]

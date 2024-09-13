@@ -1,8 +1,9 @@
+import asyncio
 from datetime import date
-from typing import Any, Iterable
+from typing import Any, AsyncGenerator, Iterable
 
-import structlog
-from lsst.ts.rubintv.models.models import Camera, Channel, Event, NightReport
+from lsst.ts.rubintv.config import rubintv_logger
+from lsst.ts.rubintv.models.models import Camera, Channel, Event, NightReportData
 
 __all__ = [
     "find_first",
@@ -10,7 +11,8 @@ __all__ = [
     "string_int_to_date",
     "date_str_to_date",
     "objects_to_events",
-    "objects_to_ngt_reports",
+    "all_objects_to_events",
+    "objects_to_ngt_report_data",
 ]
 
 
@@ -67,42 +69,68 @@ def string_int_to_date(date_string: str) -> date:
     return date(int(d[0:4]), int(d[4:6]), int(d[6:8]))
 
 
-async def objects_to_events(objects: list[dict]) -> list[Event]:
-    """Asynchronously convert a list of dictionaries to a list of Event
-    objects.
-
-    This function attempts to create Event objects from the given dictionaries.
-    If a dictionary does not match the expected structure of an Event, a
-    ValueError is caught, logged, and the function continues to process the
-    next dictionary.
+def process_batch(batch: list[dict]) -> list[Event]:
+    """Convert a batch of event dicts to Event objects.
 
     Parameters
     ----------
-    objects : list[dict]
-        A list of dictionaries, each representing the data for an Event object.
+    batch : list[dict]
+        A batch list of event dicts.
 
     Returns
     -------
     list[Event]
-        A list of Event objects created from the provided dictionaries.
+        A batch list of `Event` objects.
     """
-    logger = structlog.get_logger("rubintv")
+    logger = rubintv_logger()
     events = []
-    for object in objects:
+    for obj in batch:
         try:
-            event = Event(**object)
+            event = Event(**obj)
             events.append(event)
         except ValueError as e:
             logger.error(e)
     return events
 
 
-async def objects_to_ngt_reports(objects: list[dict]) -> list[NightReport]:
-    logger = structlog.get_logger("rubintv")
-    night_reports: list[NightReport] = []
+async def all_objects_to_events(objects: list[dict]) -> list[Event]:
+    events = []
+    async for events_batch in objects_to_events(objects):
+        events.extend(events_batch)
+    return events
+
+
+async def objects_to_events(
+    objects: list[dict], batch_size: int = 1000
+) -> AsyncGenerator[list[Event], None]:
+    """Asynchronously convert a list of dictionaries to a list of Event
+    objects in batches.
+
+    Parameters
+    ----------
+    objects : list[dict]
+        A list of dictionaries, each representing the data for an Event object.
+    batch_size : int, optional
+        The size of each batch to process asynchronously, by default 1000
+
+    Yields
+    ------
+    list[Event]
+        A batch of Event objects created from the provided dictionaries.
+    """
+    # Split objects into batches and process them asynchronously
+    for i in range(0, len(objects), batch_size):
+        batch = objects[i : i + batch_size]
+        events = await asyncio.to_thread(process_batch, batch)
+        yield events
+
+
+async def objects_to_ngt_report_data(objects: list[dict]) -> list[NightReportData]:
+    logger = rubintv_logger()
+    night_reports: list[NightReportData] = []
     for object in objects:
         try:
-            event = NightReport(**object)
+            event = NightReportData(**object)
             night_reports.append(event)
         except ValueError as e:
             logger.info(e)

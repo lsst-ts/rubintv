@@ -2,29 +2,23 @@
 
 from typing import Annotated
 
-import structlog
 from fastapi import APIRouter, HTTPException, Query, Request
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
+from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.handlers_helpers import (
+    date_validation,
     get_camera_current_data,
     get_camera_events_for_date,
     get_current_night_report_payload,
 )
-from lsst.ts.rubintv.models.models import Camera, Event, Location, NightReportPayload
-from lsst.ts.rubintv.models.models_helpers import date_str_to_date, find_first
-
-__all__ = [
-    "api_router",
-    "get_location",
-    "get_location_camera",
-    "get_camera_current_events_api",
-]
+from lsst.ts.rubintv.models.models import Camera, Event, Location, NightReport
+from lsst.ts.rubintv.models.models_helpers import find_first
 
 api_router = APIRouter()
 """FastAPI router for all external handlers."""
 
-logger = structlog.get_logger("rubintv")
+logger = rubintv_logger()
 
 
 @api_router.get("/", response_model=list[Location])
@@ -38,7 +32,7 @@ async def historical_reset(request: Request) -> None:
     historical: HistoricalPoller = request.app.state.historical
     await historical.trigger_reload_everything()
     current: CurrentPoller = request.app.state.current_poller
-    await current.clear_all_data()
+    await current.clear_todays_data()
 
 
 @api_router.get("/{location_name}", response_model=Location)
@@ -116,10 +110,9 @@ async def get_camera_events_for_date_api(
     location_name: str, camera_name: str, date_str: str, request: Request
 ) -> dict:
     location, camera = await get_location_camera(location_name, camera_name, request)
-    try:
-        day_obs = date_str_to_date(date_str)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Invalid date.")
+
+    day_obs = date_validation(date_str)
+
     data = await get_camera_events_for_date(location, camera, day_obs, request)
     if data:
         channel_data, per_day, metadata, nr_exists = data
@@ -156,7 +149,7 @@ async def get_current_channel_event(
         if not event:
             historical: HistoricalPoller = request.app.state.historical
             if await historical.is_busy():
-                raise HTTPException(421, "Historical data is being processed")
+                raise HTTPException(423, "Historical data is being processed")
             event = await historical.get_most_recent_event(location, camera, channel)
             if not event:
                 return None
@@ -181,7 +174,7 @@ async def get_specific_channel_event(
     if not camera.online or not key:
         return None
 
-    event = Event(key)
+    event = Event(key=key)
     if event.ext not in ["png", "jpg", "jpeg", "mp4"]:
         return None
     return event
@@ -201,16 +194,14 @@ async def get_current_night_report_api(
 
 @api_router.get(
     "/{location_name}/{camera_name}/night_report/{date_str}",
-    response_model=NightReportPayload,
+    response_model=NightReport,
 )
 async def get_night_report_for_date(
     location_name: str, camera_name: str, date_str: str, request: Request
-) -> NightReportPayload:
+) -> NightReport:
     location, camera = await get_location_camera(location_name, camera_name, request)
-    try:
-        day_obs = date_str_to_date(date_str)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Invalid date.")
+
+    day_obs = date_validation(date_str)
 
     historical: HistoricalPoller = request.app.state.historical
     if await historical.is_busy():

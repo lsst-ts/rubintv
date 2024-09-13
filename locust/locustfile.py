@@ -4,8 +4,20 @@ import time
 
 from locust_plugins.users.socketio import SocketIOUser
 
-# no idea why mypy is complaining about this:
-from locust import between, task  # type: ignore
+from locust import HttpUser, between, task  # type: ignore
+
+
+class RubinTVHttpUser(HttpUser):
+    wait_time = between(5, 10)
+
+    @task
+    def get_most_recent_summit_auxtel_channels(self) -> None:
+        for chan in ["monitor", "imexam", "specexam", "mount"]:
+            self.client.get(f"summit-usdf/auxtel/current/{chan}")
+
+    @task
+    def get_most_recent_auxtel_table(self) -> None:
+        self.client.get("summit-usdf/auxtel")
 
 
 class RubinTVWebsocketTester(SocketIOUser):
@@ -16,8 +28,8 @@ class RubinTVWebsocketTester(SocketIOUser):
         self.client_id: None | str = None
 
     @task
-    def my_task(self) -> None:
-        local_url = "ws://localhost:8000/rubintv/ws/"
+    def connect_disconnect(self) -> None:
+        local_url = "ws://localhost:8000/rubintv/ws/data/"
 
         self.connect(local_url)
 
