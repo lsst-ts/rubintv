@@ -41,10 +41,10 @@ export class WebsocketClient {
   #getSubscriptionPayload(subscriptionType, servicePageType, pageID) {
     let payload
     if (subscriptionType === "historicalStatus") {
-      payload = { messageType: subscriptionType }
+      payload = { message: subscriptionType }
     } else {
       const message = [servicePageType, pageID].join(" ")
-      payload = { messageType: "service", message }
+      payload = { message }
     }
     return payload
   }

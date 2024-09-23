@@ -39,53 +39,20 @@ async def data_websocket(
 
         while True:
             raw: str = await websocket.receive_text()
-            logger.info("websocket server recvd:", raw=raw)
-            try:
-                data: dict = json.loads(raw)
-            except json.JSONDecodeError as e:
-                logger.error("JSON not well formed", error=e)
+            logger.info("Ws recvd:", raw=raw)
+            validated = await validate_raw_message(raw)
+            if validated is None:
                 continue
-            if not await is_valid_client_request(data):
-                logger.error("Not valid request", data=data)
-                continue
-            r_client_id = uuid.UUID(data["clientID"])
-            if "messageType" not in data:
-                logger.warn(
-                    "No message type found in data from client",
-                    client_id=r_client_id,
-                    data=data,
-                )
-                continue
-            message_type = data["messageType"]
-            match message_type:
-                case "service":
-                    if "message" in data:
-                        service = data["message"]
-                        logger.info(
-                            "Attaching:",
-                            client_id=r_client_id,
-                            service=service,
-                        )
-                        await attach_service(r_client_id, service, websocket)
-                    else:
-                        logger.warn(
-                            "No service found in message from client",
-                            client_id=r_client_id,
-                        )
-                    continue
-                case "historicalStatus":
-                    historical_busy = await websocket.app.state.historical.is_busy()
-                    await websocket.send_json(
-                        {
-                            "dataType": MessageType.HISTORICAL_STATUS.value,
-                            "payload": historical_busy,
-                        }
-                    )
-                    async with services_lock:
-                        if "historicalStatus" not in services_clients:
-                            services_clients["historicalStatus"] = [r_client_id]
-                        else:
-                            services_clients["historicalStatus"].append(r_client_id)
+            r_client_id, data = validated
+
+            if "message" in data:
+                service = data["message"]
+                logger.info("Attaching:", id=r_client_id, service=service)
+                await attach_service(r_client_id, service, websocket)
+            else:
+                logger.warn("No message:", client_id=r_client_id, data=data)
+            continue
+
     except WebSocketDisconnect:
         async with clients_lock:
             if websocket in websocket_to_client:
@@ -97,6 +64,19 @@ async def data_websocket(
                 await remove_client_from_services(client_id)
     except Exception:
         logger.exception("Caught surprise exception")
+
+
+async def validate_raw_message(raw: str) -> tuple[uuid.UUID, dict] | None:
+    try:
+        data: dict = json.loads(raw)
+    except json.JSONDecodeError as e:
+        logger.error("JSON not well formed", error=e)
+        return None
+    if not await is_valid_client_request(data):
+        logger.error("Not valid request", data=data)
+        return None
+    r_client_id = uuid.UUID(data["clientID"])
+    return r_client_id, data
 
 
 async def remove_client_from_services(client_id: uuid.UUID) -> None:
@@ -123,6 +103,10 @@ async def remove_client_from_services(client_id: uuid.UUID) -> None:
 async def attach_service(
     client_id: uuid.UUID, service_loc_cam: str, websocket: WebSocket
 ) -> None:
+    if service_loc_cam == "historicalStatus":
+        await attach_historical_busy_service(client_id, websocket)
+        return
+
     if not await is_valid_service(service_loc_cam):
         logger.error(
             "Not valid service",
@@ -162,6 +146,23 @@ async def attach_service(
             services_clients[service_loc_cam].append(client_id)
         else:
             services_clients[service_loc_cam] = [client_id]
+
+
+async def attach_historical_busy_service(
+    client_id: uuid.UUID, websocket: WebSocket
+) -> None:
+    historical_busy = await websocket.app.state.historical.is_busy()
+    await websocket.send_json(
+        {
+            "dataType": MessageType.HISTORICAL_STATUS.value,
+            "payload": historical_busy,
+        }
+    )
+    async with services_lock:
+        if "historicalStatus" not in services_clients:
+            services_clients["historicalStatus"] = [client_id]
+        else:
+            services_clients["historicalStatus"].append(client_id)
 
 
 async def is_valid_client_request(data: dict) -> bool:
