@@ -46,6 +46,7 @@ async def send_notification(
 ) -> None:
     datestamp = get_current_day_obs().isoformat()
     if messageType is MessageType.CAMERA_PD_BACKDATED and payload:
+        # use the day_obs in the backdated event, rather than today
         datestamp = payload.values()[0].get("day_obs", datestamp)
     try:
         await websocket.send_json(
