@@ -2,10 +2,12 @@ import ReconnectingWebSocket from "reconnecting-websocket"
 import { validate } from "uuid"
 import { getWebSockURL } from "./utils"
 
+// TODO - Simplify this class since subscriptionType is no longer rqrd.
+// See DM-46449
+
 export class WebsocketClient {
   constructor() {
     this.connectionID = null
-    this.latestDataBySubscription = new Map() // Store latest data per subscription
     this.ws = new ReconnectingWebSocket(getWebSockURL("ws/data"))
     this.ws.onmessage = this.handleMessage.bind(this)
     this.ws.onclose = this.handleClose.bind(this)
@@ -94,7 +96,6 @@ export class WebsocketClient {
         data: data.payload,
         datestamp: data.datestamp,
       }
-      this.latestDataBySubscription.set(data.dataType, detail) // Store the latest data by subscription type
       window.dispatchEvent(new CustomEvent(data.dataType, { detail }))
     }
   }
@@ -117,10 +118,5 @@ export class WebsocketClient {
       }
       this.ws.send(JSON.stringify(message))
     }
-  }
-
-  // New method to retrieve the latest detail for a specific subscription
-  getLatestDataForSubscription(subscriptionType) {
-    return this.latestDataBySubscription.get(subscriptionType) || null
   }
 }
