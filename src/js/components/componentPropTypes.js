@@ -86,3 +86,10 @@ export const nightReportData = PropTypes.shape({
   filename: PropTypes.string,
   ext: PropTypes.string
 })
+
+export const mosaicSingleView = PropTypes.shape({
+  channel: PropTypes.string,
+  metaColumns: PropTypes.arrayOf(PropTypes.string),
+  latestImage: PropTypes.string,
+  latestMetadata: metadataType,
+})
