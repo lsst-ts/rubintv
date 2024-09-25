@@ -317,6 +317,13 @@ class Heartbeat:
         }
 
 
+class ServiceTypes(Enum):
+    CAMERA: str = "camera"
+    CHANNEL: str = "channel"
+    NIGHTREPORT: str = "nightreport"
+    HISTORICALSTATUS = str = "historicalStatus"
+
+
 class ServiceMessageTypes(Enum):
     CHANNEL_EVENT: str = "event"
     CAMERA_TABLE: str = "channelData"

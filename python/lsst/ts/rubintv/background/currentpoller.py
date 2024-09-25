@@ -13,6 +13,7 @@ from lsst.ts.rubintv.models.models import (
     NightReportData,
 )
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
+from lsst.ts.rubintv.models.models import ServiceTypes as Service
 from lsst.ts.rubintv.models.models import get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import (
     all_objects_to_events,
@@ -129,7 +130,7 @@ class CurrentPoller:
                         break
 
                 elapsed = time() - timer_start
-                logger.info("Current - time taken:", elapsed=elapsed)
+                # logger.info("Current - time taken:", elapsed=elapsed)
                 if elapsed < self.MIN_INTERVAL:
                     await sleep(self.MIN_INTERVAL - elapsed)
 
@@ -165,7 +166,7 @@ class CurrentPoller:
                     "Found yesterday's per day data:", loc_cam=loc_cam, pd_data=pd_data
                 )
                 await notify_ws_clients(
-                    "camera", MessageType.CAMERA_PD_BACKDATED, loc_cam, pd_data
+                    Service.CAMERA, MessageType.CAMERA_PD_BACKDATED, loc_cam, pd_data
                 )
         for prefix in found:
             self._yesterday_prefixes[location.name].remove(prefix)
@@ -184,28 +185,30 @@ class CurrentPoller:
             pd_data = await self.make_per_day_data(camera, events)
             self._per_day[loc_cam] = pd_data
             await notify_ws_clients(
-                "camera", MessageType.CAMERA_PER_DAY, loc_cam, pd_data
+                Service.CAMERA, MessageType.CAMERA_PER_DAY, loc_cam, pd_data
             )
 
             table = await self.make_channel_table(camera, events)
             self._table[loc_cam] = table
-            logger.info(
-                "Current - updating table for:",
-                loc_cam=loc_cam,
-                num_seqs=len(table),
-                max_seq=max(table) if table else -1,
+            # logger.info(
+            #     "Current - updating table for:",
+            #     loc_cam=loc_cam,
+            #     num_seqs=len(table),
+            #     max_seq=max(table) if table else -1,
+            # )
+            await notify_ws_clients(
+                Service.CAMERA, MessageType.CAMERA_TABLE, loc_cam, table
             )
-            await notify_ws_clients("camera", MessageType.CAMERA_TABLE, loc_cam, table)
 
-            # clear all relevant prefixes from the store looking for
-            # yesterday's per day updates
+        # clear all relevant prefixes from the store looking for
+        # yesterday's per day updates
 
-            loc = loc_cam.split("/")[0]
-            prefixes = self._yesterday_prefixes.get(loc, [])
-            new_prefixes = [
-                prefix for prefix in prefixes if not prefix.startswith(camera.name)
-            ]
-            self._yesterday_prefixes[loc] = new_prefixes
+        loc = loc_cam.split("/")[0]
+        prefixes = self._yesterday_prefixes.get(loc, [])
+        new_prefixes = [
+            prefix for prefix in prefixes if not prefix.startswith(camera.name)
+        ]
+        self._yesterday_prefixes[loc] = new_prefixes
 
     async def update_channel_events(
         self, events: list[Event], loc_cam: str, camera: Camera
@@ -225,7 +228,7 @@ class CurrentPoller:
             ):
                 self._most_recent_events[chan_lookup] = current_event
                 await notify_ws_clients(
-                    "channel",
+                    Service.CHANNEL,
                     MessageType.CHANNEL_EVENT,
                     chan_lookup,
                     current_event.__dict__,
@@ -300,7 +303,7 @@ class CurrentPoller:
             for cam in to_notify:
                 loc_cam = self._get_loc_cam(location.name, cam)
                 await notify_ws_clients(
-                    "camera", MessageType.CAMERA_METADATA, loc_cam, data
+                    Service.CAMERA, MessageType.CAMERA_METADATA, loc_cam, data
                 )
 
     async def sieve_out_night_reports(
@@ -311,7 +314,7 @@ class CurrentPoller:
         if report_objs:
             if not self.night_report_exists(location.name, camera.name):
                 await notify_ws_clients(
-                    "camera",
+                    Service.CAMERA,
                     MessageType.CAMERA_PER_DAY,
                     loc_cam,
                     {"nightReportExists": True},
@@ -357,7 +360,7 @@ class CurrentPoller:
 
         if prev_nr.text != night_report.text or prev_nr.plots != night_report.plots:
             await notify_ws_clients(
-                "nightreport",
+                Service.NIGHTREPORT,
                 MessageType.NIGHT_REPORT,
                 loc_cam,
                 night_report.model_dump(),
@@ -468,17 +471,17 @@ class CurrentPoller:
         location: Location,
         camera: Camera,
         channel_name: str,
-        service: str,
+        service: Service,
     ) -> AsyncGenerator:
         match service:
-            case "camera":
-                if channel_data := await self.get_current_channel_table(
+            case Service.CAMERA:
+                channel_data = await self.get_current_channel_table(
                     location.name, camera
-                ):
-                    yield MessageType.CAMERA_TABLE, channel_data
+                )
+                yield MessageType.CAMERA_TABLE, channel_data
 
-                if metadata := await self.get_current_metadata(location.name, camera):
-                    yield MessageType.CAMERA_METADATA, metadata
+                metadata = await self.get_current_metadata(location.name, camera)
+                yield MessageType.CAMERA_METADATA, metadata
 
                 if per_day := await self.get_current_per_day_data(
                     location.name, camera
@@ -488,13 +491,13 @@ class CurrentPoller:
                 if self.night_report_exists(location.name, camera.name):
                     yield MessageType.CAMERA_PER_DAY, {"nightReportLink": "current"}
 
-            case "channel":
-                if event := await self.get_current_channel_event(
+            case Service.CHANNEL:
+                event = await self.get_current_channel_event(
                     location.name, camera.name, channel_name
-                ):
-                    yield MessageType.CHANNEL_EVENT, event.__dict__
+                )
+                yield MessageType.CHANNEL_EVENT, event.__dict__ if event else None
 
-            case "nightreport":
+            case Service.NIGHTREPORT:
                 night_report = await self.get_current_night_report(
                     location.name, camera.name
                 )

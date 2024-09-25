@@ -11,7 +11,7 @@ export class WebsocketClient {
     this.ws = new ReconnectingWebSocket(getWebSockURL("ws/data"))
     this.ws.onmessage = this.handleMessage.bind(this)
     this.ws.onclose = this.handleClose.bind(this)
-    this.subscriptions = new Map() // To store multiple subscriptions
+    this.subscriptions = [] // To store multiple subscriptions
   }
 
   subscribe(
@@ -33,7 +33,7 @@ export class WebsocketClient {
     )
 
     // Add the subscription to the Map
-    this.subscriptions.set(eventType, { subscriptionPayload })
+    this.subscriptions.push(subscriptionPayload)
 
     if (this.connectionID) {
       this.sendSubscriptionMessages()
@@ -88,16 +88,12 @@ export class WebsocketClient {
       return
     }
 
-    // Store the latest data for this specific subscription
-    const subscription = this.subscriptions.get(data.dataType)
-    if (subscription) {
-      const detail = {
-        dataType: data.dataType,
-        data: data.payload,
-        datestamp: data.datestamp,
-      }
-      window.dispatchEvent(new CustomEvent(data.dataType, { detail }))
+    const detail = {
+      dataType: data.dataType,
+      data: data.payload,
+      datestamp: data.datestamp,
     }
+    window.dispatchEvent(new CustomEvent(data.service, { detail }))
   }
 
   setConnectionID(messageData) {
@@ -111,12 +107,12 @@ export class WebsocketClient {
   }
 
   sendSubscriptionMessages() {
-    for (const { subscriptionPayload } of this.subscriptions.values()) {
+    this.subscriptions.forEach( subscriptionPayload => {
       const message = {
         ...subscriptionPayload,
         clientID: this.connectionID,
       }
       this.ws.send(JSON.stringify(message))
-    }
+    })
   }
 }
