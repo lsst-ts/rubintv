@@ -15,6 +15,7 @@ from lsst.ts.rubintv.handlers.websockets_clients import (
 )
 from lsst.ts.rubintv.models.models import Camera, Location
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
+from lsst.ts.rubintv.models.models import ServiceTypes as Service
 from lsst.ts.rubintv.models.models_helpers import find_first
 
 data_ws_router = APIRouter()
@@ -46,9 +47,9 @@ async def data_websocket(
             r_client_id, data = validated
 
             if "message" in data:
-                service = data["message"]
-                logger.info("Attaching:", id=r_client_id, service=service)
-                await attach_service(r_client_id, service, websocket)
+                service_loc_cam = data["message"]
+                logger.info("Attaching:", id=r_client_id, service=service_loc_cam)
+                await attach_service(r_client_id, service_loc_cam, websocket)
             else:
                 logger.warn("No message:", client_id=r_client_id, data=data)
             continue
@@ -115,9 +116,10 @@ async def attach_service(
         )
         return
     try:
-        service, loc_cam = service_loc_cam.split(" ")
+        service_str, loc_cam = service_loc_cam.split(" ")
+        service = Service[service_str.upper()]
     except ValueError:
-        logger.error("Bad request", service=service, client_id=client_id)
+        logger.error("Bad request", service=service_str, client_id=client_id)
         return
 
     channel_name = ""
@@ -154,6 +156,7 @@ async def attach_historical_busy_service(
     historical_busy = await websocket.app.state.historical.is_busy()
     await websocket.send_json(
         {
+            "service": Service.HISTORICALSTATUS.value,
             "dataType": MessageType.HISTORICAL_STATUS.value,
             "payload": historical_busy,
         }
@@ -205,11 +208,11 @@ async def notify_new_client(
     location: Location,
     camera: Camera,
     channel_name: str,
-    service: str,
+    service: Service,
 ) -> None:
 
     current_poller: CurrentPoller = websocket.app.state.current_poller
-    async for service_type, data in current_poller.get_latest_data(
+    async for message_type, data in current_poller.get_latest_data(
         location, camera, channel_name, service
     ):
-        await send_notification(websocket, service_type, data)
+        await send_notification(websocket, service, message_type, data)
