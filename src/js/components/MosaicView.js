@@ -14,70 +14,77 @@ const commonColumns = ["seqNum"]
 
 export default function MosaicView({ locationName, camera, initialDate }) {
   const [historicalBusy, setHistoricalBusy] = useState(null)
-  const [currentMeta, setCurrentMeta] = useState(null)
+  const [currentMeta, setCurrentMeta] = useState({})
   const [date, setDate] = useState(initialDate)
 
-  const initialViews = camera.mosaic_view_meta.map(view => (
-    {
-      ...view,
-      dayObs: null,
-      latestEvent: {},
-      latestMetadata: {}
-    }))
+  const initialViews = camera.mosaic_view_meta.map((view) => ({
+    ...view,
+    latestEvent: {},
+  }))
   const [views, setViews] = useState(initialViews)
 
   useEffect(() => {
-    function handleMetadataChange (event) {
+    function handleMetadataChange(event) {
       const { datestamp, data, dataType } = event.detail
-      if (Object.entries(data).length < 1 || dataType !== 'metadata') {
+      if (Object.entries(data).length < 1 || dataType !== "metadata") {
         return
       }
-      console.debug("Got metadata!", data)
+      setCurrentMeta(data)
     }
-    window.addEventListener('camera', handleMetadataChange)
+    window.addEventListener("camera", handleMetadataChange)
     return () => {
-      window.removeEventListener('camera', handleMetadataChange)
+      window.removeEventListener("camera", handleMetadataChange)
     }
   })
 
   useEffect(() => {
-    function handleHistoricalStateChange (event) {
+    function handleHistoricalStateChange(event) {
       const { data: historicalBusy } = event.detail
-      setHistoricalBusy( historicalBusy )
+      setHistoricalBusy(historicalBusy)
     }
-    window.addEventListener('historicalStatus', handleHistoricalStateChange)
+    window.addEventListener("historicalStatus", handleHistoricalStateChange)
     return () => {
-      window.removeEventListener('historicalStatus', handleHistoricalStateChange)
+      window.removeEventListener(
+        "historicalStatus",
+        handleHistoricalStateChange
+      )
     }
   })
 
   useEffect(() => {
-    function handleChannelEvent (event) {
+    function handleChannelEvent(event) {
       const { datestamp, data } = event.detail
       if (!data) {
         return
       }
       const { channel_name: chanName } = data
       setViews((prevViews) =>
-        prevViews.map(view =>
-          view.channel === chanName ? { ...view, dayObs: datestamp, latestEvent: data } : view))
+        prevViews.map((view) =>
+          view.channel === chanName ? { ...view, latestEvent: data } : view
+        )
+      )
     }
-    window.addEventListener('channel', handleChannelEvent)
-  
-    // Cleanup the event listener on component unmount
+    window.addEventListener("channel", handleChannelEvent)
     return () => {
-      window.removeEventListener('channel', handleChannelEvent)
+      window.removeEventListener("channel", handleChannelEvent)
     }
   })
 
   return (
     <div className="viewsArea">
-      <h3 className="viewsTitle">Mosaic View: <span className="date">{date}</span></h3>
+      <h3 className="viewsTitle">
+        Mosaic View: <span className="date">{date}</span>
+      </h3>
       <ul className="views">
         {views.map((view) => {
           return (
             <li key={view.channel} className="view">
-              <ChannelView locationName={locationName} camera={camera} view={view} />
+              <ChannelView
+                locationName={locationName}
+                camera={camera}
+                view={view}
+                currentMeta={currentMeta}
+              />
             </li>
           )
         })}
@@ -91,20 +98,25 @@ MosaicView.propTypes = {
   initialDate: PropTypes.string,
 }
 
-function ChannelView({ locationName, camera, view }) {
+function ChannelView({ locationName, camera, view, currentMeta }) {
   let channel
   try {
-    channel = camera.channels.filter(({name}) => name === view.channel)[0]
+    channel = camera.channels.filter(({ name }) => name === view.channel)[0]
   } catch (error) {
-    return (
-      <h3>Channel { view.channel } not found</h3>
-    )
+    return <h3>Channel {view.channel} not found</h3>
   }
   return (
     <>
-      <h3 className="channel">{ channel.title } - { view.dayObs }</h3>
-      <ChannelImage locationName={locationName} camera={camera} event={view.latestEvent} />
-      <ChannelMetadata viewMetaColumns={view.metaColumns} metadata={view.latestMetadata} />
+      <h3 className="channel">{channel.title}</h3>
+      <ChannelImage
+        locationName={locationName}
+        camera={camera}
+        event={view.latestEvent}
+      />
+      <ChannelMetadata
+        view={view}
+        metadata={currentMeta}
+      />
     </>
   )
 }
@@ -112,24 +124,30 @@ ChannelView.propTypes = {
   locationName: PropTypes.string,
   camera: cameraType,
   view: mosaicSingleView,
+  currentMeta: metadataType
 }
-
 
 function ChannelImage({ locationName, camera, event }) {
   const { filename } = event
-  const relUrl = buildImageURI(locationName, camera.name, event.channel_name, filename)
+  const relUrl = buildImageURI(
+    locationName,
+    camera.name,
+    event.channel_name,
+    filename
+  )
   const imgSrc = new URL(`event_image/${relUrl}`, APP_DATA.baseUrl)
   if (filename) {
     return (
       <div className="viewImage">
         <a href={imgSrc}>
-          <img className="resp" src={imgSrc}/>
+          <img className="resp" src={imgSrc} />
         </a>
       </div>
     )
   } else {
     return (
-      <div className="viewImage">
+      <div className="viewImage placeholder">
+        <h4 className="image-placeholder">No image for today</h4>
       </div>
     )
   }
@@ -140,24 +158,26 @@ ChannelImage.propTypes = {
   event: eventType,
 }
 
-function ChannelMetadata({ viewMetaColumns, metadata }) {
-  const columns = [...commonColumns, ...viewMetaColumns]
+function ChannelMetadata({ view, metadata }) {
+  const { metaColumns: viewColumns, latestEvent: {seq_num: seqNum} } = view
+  const columns = [...commonColumns, ...viewColumns]
+  const metadatum = metadata[seqNum] || {}
   return (
     <ul className="viewMeta">
       {columns.map((column) => {
-        const value = metadata[column] ? metadata[column] : "No value set"
+        const value = metadatum[column] ? metadatum[column] : "No value set"
         return (
-           <li key={column} className="viewMetaCol">
+          <li key={column} className="viewMetaCol">
             <div className="colName">{column}</div>
             <div className="colValue">{value}</div>
-           </li>
+          </li>
         )
       })}
     </ul>
   )
 }
 ChannelMetadata.propTypes = {
-  viewMetaColumns: PropTypes.arrayOf(PropTypes.string),
+  view: mosaicSingleView,
   metadata: metadataType,
 }
 
