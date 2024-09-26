@@ -1,18 +1,7 @@
 {% extends "_camera.jinja" %}
 
-{% block pagesubtitle %}
-  Latest Mosaic
-{% endblock pagesubtitle  %}
-
-{% block breadcrumb %}
-  <a href="{{ url_for('home') }}">
-    Home
-  </a>>
-  <a href="{{ url_for('location', location_name=location.name) }}">
-    {{ location.title }}
-  </a>>
-  <p>{{ camera.title }}</p>
-{% endblock breadcrumb  %}
+{% block header %}
+{% endblock header  %}
 
 {% block content %}
   <div id="mosaic-view" class="columns">
