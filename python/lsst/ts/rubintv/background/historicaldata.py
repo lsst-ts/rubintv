@@ -150,6 +150,8 @@ class HistoricalPoller:
             await self.store_events(events_batch, locname)
         await self.compress_events()
         self._temp_events = {}
+        await self.compress_events()
+        self._temp_events = {}
 
         await self.download_and_store_metadata(locname, metadata_objs)
 
