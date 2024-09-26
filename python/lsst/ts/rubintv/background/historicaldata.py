@@ -150,19 +150,18 @@ class HistoricalPoller:
         self._nr_metadata[locname] = await objects_to_ngt_report_data(n_report_objs)
         async for events_batch in objects_to_events(event_objs):
             await self.store_events(events_batch, locname)
-            await self.compress_events()
-            self._temp_events = {}
+        await self.compress_events()
+        self._temp_events = {}
 
     async def compress_events(self) -> None:
-        t = time()
         for storage_key, events in self._temp_events.items():
             compressed = zlib.compress(pickle.dumps(events))
-            self._events[storage_key] = compressed
-        dur = time() - t
-        logger.info("Compression took:", storage_key=storage_key, dur=dur)
+            if storage_key in self._events:
+                self._events[storage_key] += compressed
+            else:
+                self._events[storage_key] = compressed
 
     async def store_events(self, events: list[Event], locname: str) -> None:
-        logger.info("starting store_events")
         for event in events:
             storage_key = f"{locname}/{event.camera_name}"
             if storage_key not in self._temp_events:
@@ -183,7 +182,6 @@ class HistoricalPoller:
                 self._calendar[loc_cam][year][month] = {}
             if self._calendar[loc_cam][year][month].get(day, 0) <= seq_num:
                 self._calendar[loc_cam][year][month][day] = seq_num
-        logger.info("ending store_events")
 
     async def download_and_store_metadata(
         self, locname: str, metadata_objs: list[dict[str, str]]
