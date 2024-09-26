@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react"
 import PropTypes from "prop-types"
-import { WebsocketClient } from "../modules/ws-service-client"
 import {
   cameraType,
-  channelDataType,
   eventType,
   metadataType,
   mosaicSingleView,
@@ -159,21 +157,21 @@ ChannelImage.propTypes = {
 }
 
 function ChannelMetadata({ view, metadata }) {
-  const { metaColumns: viewColumns, latestEvent: {seq_num: seqNum} } = view
+  const { channel, metaColumns: viewColumns, latestEvent: {seq_num: seqNum} } = view
   const columns = [...commonColumns, ...viewColumns]
   const metadatum = metadata[seqNum] || {}
   return (
-    <ul className="viewMeta">
+    <table className="viewMeta" id={`table-${channel}`}>
       {columns.map((column) => {
         const value = metadatum[column] ? metadatum[column] : "No value set"
         return (
-          <li key={column} className="viewMetaCol">
-            <div className="colName">{column}</div>
-            <div className="colValue">{value}</div>
-          </li>
+          <tr key={column} className="viewMetaCol">
+            <th scope="row" className="colName">{column}</th>
+            <td className="colValue">{value}</td>
+          </tr>
         )
       })}
-    </ul>
+    </table>
   )
 }
 ChannelMetadata.propTypes = {

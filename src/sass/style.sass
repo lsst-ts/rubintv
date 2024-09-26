@@ -544,19 +544,29 @@ section
 		justify-content: space-between
 		gap: 1em
 
+
 	.view
 		width: 100%
 
 	.viewImage
 		width: 100%
-		background: rgba(255,255,255,0.3)
 		aspect-ratio: 1
 	
 	.viewMeta
+		width: 100%
 		margin-top: 1em
-
-	.viewMetaCol
-		display: flex
+		border-collapse: separate
+		border-spacing: 0 0.1em
 
 	.colName
-		flex-basis: 52%
+		width: min-content
+
+	.colValue
+		font-family: 'Red Hat Mono', monospace
+
+	.placeholder
+		background: rgba(0,0,0,0.3)
+		display: flex
+		justify-content: center
+		align-items: center
+
