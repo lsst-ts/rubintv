@@ -6,14 +6,12 @@ import {
   metadataType,
   mosaicSingleView,
 } from "./componentPropTypes"
-import { simpleGet } from "../modules/utils"
 
 const commonColumns = ["seqNum"]
 
-export default function MosaicView({ locationName, camera, initialDate }) {
+export default function MosaicView({ locationName, camera }) {
   const [historicalBusy, setHistoricalBusy] = useState(null)
   const [currentMeta, setCurrentMeta] = useState({})
-  const [date, setDate] = useState(initialDate)
 
   const initialViews = camera.mosaic_view_meta.map((view) => ({
     ...view,
@@ -23,7 +21,7 @@ export default function MosaicView({ locationName, camera, initialDate }) {
 
   useEffect(() => {
     function handleMetadataChange(event) {
-      const { datestamp, data, dataType } = event.detail
+      const { data, dataType } = event.detail
       if (Object.entries(data).length < 1 || dataType !== "metadata") {
         return
       }
@@ -51,7 +49,7 @@ export default function MosaicView({ locationName, camera, initialDate }) {
 
   useEffect(() => {
     function handleChannelEvent(event) {
-      const { datestamp, data } = event.detail
+      const { data } = event.detail
       if (!data) {
         return
       }
@@ -70,9 +68,6 @@ export default function MosaicView({ locationName, camera, initialDate }) {
 
   return (
     <div className="viewsArea">
-      <h3 className="viewsTitle">
-        Mosaic View: <span className="date">{date}</span>
-      </h3>
       <ul className="views">
         {views.map((view) => {
           return (
@@ -93,7 +88,6 @@ export default function MosaicView({ locationName, camera, initialDate }) {
 MosaicView.propTypes = {
   locationName: PropTypes.string,
   camera: cameraType,
-  initialDate: PropTypes.string,
 }
 
 function ChannelView({ locationName, camera, view, currentMeta }) {
@@ -103,9 +97,14 @@ function ChannelView({ locationName, camera, view, currentMeta }) {
   } catch (error) {
     return <h3>Channel {view.channel} not found</h3>
   }
+  const { latestEvent: { day_obs: dayObs }} = view
   return (
     <>
-      <h3 className="channel">{channel.title}</h3>
+      <h3 className="channel">{channel.title}
+        { dayObs && (
+          <span>: { dayObs }</span>
+        ) }
+      </h3>
       <ChannelImage
         locationName={locationName}
         camera={camera}
@@ -162,15 +161,17 @@ function ChannelMetadata({ view, metadata }) {
   const metadatum = metadata[seqNum] || {}
   return (
     <table className="viewMeta" id={`table-${channel}`}>
-      {columns.map((column) => {
-        const value = metadatum[column] ? metadatum[column] : "No value set"
-        return (
-          <tr key={column} className="viewMetaCol">
-            <th scope="row" className="colName">{column}</th>
-            <td className="colValue">{value}</td>
-          </tr>
-        )
-      })}
+      <tbody>
+        {columns.map((column) => {
+          const value = metadatum[column] ? metadatum[column] : "No value set"
+          return (
+            <tr key={column} className="viewMetaCol">
+              <th scope="row" className="colName">{column}</th>
+              <td className="colValue">{value}</td>
+            </tr>
+          )
+        })}
+      </tbody>
     </table>
   )
 }

@@ -7,7 +7,6 @@ import { _getById } from "../modules/utils"
 ;(function () {
   const locationName = window.APP_DATA.locationName || ""
   const camera = window.APP_DATA.camera || {}
-  const date = window.APP_DATA.date || ""
   const ws = new WebsocketClient()
   ws.subscribe("historicalStatus")
   ws.subscribe("service", "camera", locationName, camera.name)
@@ -22,7 +21,6 @@ import { _getById } from "../modules/utils"
       <MosaicView
         locationName={locationName}
         camera={camera}
-        initialDate={date}
       />
     </React.StrictMode>
   )

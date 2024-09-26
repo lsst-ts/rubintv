@@ -4,12 +4,6 @@
   Latest Mosaic
 {% endblock pagesubtitle  %}
 
-{% block undertitle %}
-{% if date %}
-  <div id="header-date">{{ date }}</div>
-{% endif %}
-{% endblock undertitle %}
-
 {% block breadcrumb %}
   <a href="{{ url_for('home') }}">
     Home
