@@ -45,6 +45,10 @@ export default function TableApp ({ camera, initialDate, initialChannelData, ini
 
   function handleCameraEvent (event) {
     const { datestamp, data, dataType } = event.detail
+    // if there's no data, don't update
+    if (Object.entries(data).length === 0) {
+      return
+    }
 
     if (datestamp && datestamp !== date) {
       window.APP_DATA.date = datestamp

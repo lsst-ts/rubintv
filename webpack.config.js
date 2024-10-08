@@ -12,6 +12,7 @@ const pagesWithoutHistory = [
 }), {})
 
 const pagesWithHistory = [
+  'mosaic-view',
   'night_report',
   'single',
   'current',
