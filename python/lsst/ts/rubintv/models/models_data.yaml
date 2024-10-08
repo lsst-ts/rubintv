@@ -265,9 +265,13 @@ cameras:
 
   - name: lsstcam
     title: LSSTCam
-    online: False
+    online: True
     logo: LSSTSummit.jpg
     text_colour: "#fff"
+    channels:
+      - name: focal_plane_mosaic
+        title: Focal Plane mosaic
+        colour: "#61cca2"
 
   - name: slac_lsstcam
     title: LSSTCam
@@ -405,6 +409,18 @@ metadata_cols:
     DIMM Seeing:
       The seeing, as measured by the DIMM, if available
   slac_lsstcam:
+    Run number:
+      The run number, as taken from the exposure record's science_program field
+    Exposure time:
+      The image exposure time
+    Dark time:
+      The image dark time
+    Image type:
+      The image type, e.g. bias, dark, flat etc
+    Test type:
+      The type of test being run, e.g. superflats
+
+  lsstcam:
     Run number:
       The run number, as taken from the exposure record's science_program field
     Exposure time:
