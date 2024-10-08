@@ -92,7 +92,7 @@ async def test_current_channels(
 
                 html = await response.aread()
                 parsed = BeautifulSoup(html, "html.parser")
-                if mocker.empty_channel[loc_cam] == seq_chan.name:
+                if mocker.empty_channel.get(loc_cam) == seq_chan.name:
                     assert parsed.select(".event-error")
                     assert not parsed.select(".event-info")
                 else:
