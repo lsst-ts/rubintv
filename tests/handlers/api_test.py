@@ -87,12 +87,17 @@ async def test_get_api_location_camera_current_for_offline(
     """Test that api location camera current gives no events for offline
     camera"""
     client, app, mocker = mocked_client
-    location_name = "summit-usdf"
-    camera_name = "lsstcam"
 
-    response = await client.get(f"/rubintv/api/{location_name}/{camera_name}/current")
-    data = response.json()
-    assert data == {}
+    location_name = "summit-usdf"
+    location: Location | None = find_first(m.locations, "name", location_name)
+    assert location is not None
+    for camera in location.cameras:
+        if not camera.online:
+            response = await client.get(
+                f"/rubintv/api/{location_name}/{camera.name}/current"
+            )
+            data = response.json()
+            assert data == {}
 
 
 @pytest.mark.asyncio

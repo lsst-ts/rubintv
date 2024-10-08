@@ -123,7 +123,7 @@ class RubinDataMocker:
         empty_channel = ""
         if include_empty_channel:
             seq_chans = [chan.name for chan in camera.seq_channels()]
-            if seq_chans:
+            if seq_chans and len(seq_chans) > 1:
                 empty_channel = random.choice(seq_chans)
 
         for channel in camera.channels:
