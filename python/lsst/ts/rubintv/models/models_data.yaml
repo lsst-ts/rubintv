@@ -272,6 +272,9 @@ cameras:
       - name: focal_plane_mosaic
         title: Focal Plane mosaic
         colour: "#61cca2"
+    image_viewer_link: "http://lsstcam-mcm.cp.lsst.org/FITSInfo/view.html\
+      ?image=MC_C_{dayObs}_{seqNum}&raft=all&color=grey\
+      &bias=Simple+Overscan+Correction&scale=Per-Segment&source=raw"
 
   - name: slac_lsstcam
     title: LSSTCam
