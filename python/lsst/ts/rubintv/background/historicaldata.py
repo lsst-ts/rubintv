@@ -145,13 +145,13 @@ class HistoricalPoller:
             if "metadata.json" not in o["key"] and "night_report" not in o["key"]
         ]
 
-        await self.download_and_store_metadata(locname, metadata_objs)
-
         self._nr_metadata[locname] = await objects_to_ngt_report_data(n_report_objs)
         async for events_batch in objects_to_events(event_objs):
             await self.store_events(events_batch, locname)
         await self.compress_events()
         self._temp_events = {}
+
+        await self.download_and_store_metadata(locname, metadata_objs)
 
     async def compress_events(self) -> None:
         for storage_key, events in self._temp_events.items():
@@ -161,29 +161,30 @@ class HistoricalPoller:
             else:
                 self._compressed_events[storage_key] = compressed
 
-    # async def add_metadata_to_calendar(self) -> None:
-
     async def store_events(self, events: list[Event], locname: str) -> None:
         for event in events:
-            storage_key = f"{locname}/{event.camera_name}"
-            if storage_key not in self._temp_events:
-                self._temp_events[storage_key] = []
-            self._temp_events[storage_key].append(event)
+            loc_cam = f"{locname}/{event.camera_name}"
+
+            if loc_cam not in self._temp_events:
+                self._temp_events[loc_cam] = []
+            self._temp_events[loc_cam].append(event)
 
             seq_num = event.seq_num
             if isinstance(seq_num, str):
                 seq_num = 1
-            year_str, month_str, day_str = event.day_obs.split("-")
-            year, month, day = (int(year_str), int(month_str), int(day_str))
-            loc_cam = f"{locname}/{event.camera_name}"
-            if loc_cam not in self._calendar:
-                self._calendar[loc_cam] = {}
-            if year not in self._calendar[loc_cam]:
-                self._calendar[loc_cam][year] = {}
-            if month not in self._calendar[loc_cam][year]:
-                self._calendar[loc_cam][year][month] = {}
-            if self._calendar[loc_cam][year][month].get(day, 0) <= seq_num:
-                self._calendar[loc_cam][year][month][day] = seq_num
+            self.add_to_calendar(loc_cam, event.day_obs, seq_num)
+
+    def add_to_calendar(self, loc_cam: str, date_str: str, seq_num: int) -> None:
+        year_str, month_str, day_str = date_str.split("-")
+        year, month, day = (int(year_str), int(month_str), int(day_str))
+        if loc_cam not in self._calendar:
+            self._calendar[loc_cam] = {}
+        if year not in self._calendar[loc_cam]:
+            self._calendar[loc_cam][year] = {}
+        if month not in self._calendar[loc_cam][year]:
+            self._calendar[loc_cam][year][month] = {}
+        if self._calendar[loc_cam][year][month].get(day, 0) <= seq_num:
+            self._calendar[loc_cam][year][month][day] = seq_num
 
     async def download_and_store_metadata(
         self, locname: str, metadata_objs: list[dict[str, str]]
@@ -197,6 +198,10 @@ class HistoricalPoller:
             if not key:
                 continue
             storage_name = locname + "/" + key.split("/metadata")[0]
+            _, cam_name, date_str = storage_name.split("/")
+            loc_cam = f"{locname}/{cam_name}"
+            self.add_to_calendar(loc_cam, date_str, 0)
+
             client = self._clients[locname]
             md = await client.async_get_object(key)
             if not md:
