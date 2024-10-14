@@ -130,7 +130,7 @@ class CurrentPoller:
                         break
 
                 elapsed = time() - timer_start
-                # logger.info("Current - time taken:", elapsed=elapsed)
+                logger.info("Current - time taken:", elapsed=elapsed)
                 if elapsed < self.MIN_INTERVAL:
                     await sleep(self.MIN_INTERVAL - elapsed)
 
@@ -190,12 +190,6 @@ class CurrentPoller:
 
             table = await self.make_channel_table(camera, events)
             self._table[loc_cam] = table
-            # logger.info(
-            #     "Current - updating table for:",
-            #     loc_cam=loc_cam,
-            #     num_seqs=len(table),
-            #     max_seq=max(table) if table else -1,
-            # )
             await notify_ws_clients(
                 Service.CAMERA, MessageType.CAMERA_TABLE, loc_cam, table
             )

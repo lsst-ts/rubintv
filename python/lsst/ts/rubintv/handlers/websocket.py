@@ -52,7 +52,6 @@ async def data_websocket(
                 await attach_service(r_client_id, service_loc_cam, websocket)
             else:
                 logger.warn("No message:", client_id=r_client_id, data=data)
-            continue
 
     except WebSocketDisconnect:
         async with clients_lock:

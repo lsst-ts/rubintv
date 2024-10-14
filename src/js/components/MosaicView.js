@@ -12,14 +12,18 @@ const commonColumns = ["seqNum"]
 export default function MosaicView({ locationName, camera }) {
   const [historicalBusy, setHistoricalBusy] = useState(null)
   const [currentMeta, setCurrentMeta] = useState({})
+  const [views, setViews] = useState(initialViews)
 
   const initialViews = camera.mosaic_view_meta.map((view) => ({
     ...view,
     latestEvent: {},
   }))
-  const [views, setViews] = useState(initialViews)
 
   useEffect(() => {
+    window.addEventListener("camera", handleMetadataChange)
+    window.addEventListener("historicalStatus", handleHistoricalStateChange)
+    window.addEventListener("channel", handleChannelEvent)
+    
     function handleMetadataChange(event) {
       const { data, dataType } = event.detail
       if (Object.entries(data).length < 1 || dataType !== "metadata") {
@@ -27,27 +31,12 @@ export default function MosaicView({ locationName, camera }) {
       }
       setCurrentMeta(data)
     }
-    window.addEventListener("camera", handleMetadataChange)
-    return () => {
-      window.removeEventListener("camera", handleMetadataChange)
-    }
-  })
 
-  useEffect(() => {
     function handleHistoricalStateChange(event) {
       const { data: historicalBusy } = event.detail
       setHistoricalBusy(historicalBusy)
     }
-    window.addEventListener("historicalStatus", handleHistoricalStateChange)
-    return () => {
-      window.removeEventListener(
-        "historicalStatus",
-        handleHistoricalStateChange
-      )
-    }
-  })
 
-  useEffect(() => {
     function handleChannelEvent(event) {
       const { data } = event.detail
       if (!data) {
@@ -60,8 +49,13 @@ export default function MosaicView({ locationName, camera }) {
         )
       )
     }
-    window.addEventListener("channel", handleChannelEvent)
+
     return () => {
+      window.removeEventListener("camera", handleMetadataChange)
+      window.removeEventListener(
+        "historicalStatus",
+        handleHistoricalStateChange
+      )
       window.removeEventListener("channel", handleChannelEvent)
     }
   })

@@ -151,8 +151,6 @@ async def get_current_channel_event(
             if await historical.is_busy():
                 raise HTTPException(423, "Historical data is being processed")
             event = await historical.get_most_recent_event(location, camera, channel)
-            if not event:
-                return None
     return event
 
 
@@ -173,7 +171,6 @@ async def get_specific_channel_event(
     location, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online or not key:
         return None
-
     event = Event(key=key)
     if event.ext not in ["png", "jpg", "jpeg", "mp4"]:
         return None

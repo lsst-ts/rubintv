@@ -33,7 +33,6 @@ async def notify_clients(
 ) -> None:
     tasks = []
     async with clients_lock:
-        # logger.info("Sending updates to:", num_clients=len(clients_list))
         for client_id in clients_list:
             if client_id in clients:
                 websocket = clients[client_id]
