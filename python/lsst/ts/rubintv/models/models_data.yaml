@@ -105,7 +105,7 @@ cameras:
         title: M1M3 HP and Slew Profile
         colour: "#97d2f0"
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
-    {seqNum}}"
+      {seqNum}}"
 
   - name: auxtel
     title: AuxTel
@@ -113,11 +113,11 @@ cameras:
     logo: AuxTel.jpg
     night_report_prefix: auxtel_night_reports
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
-    {seqNum}, \"detector\": 0}"
+      {seqNum}, \"detector\": 0}"
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/view.html?\
-    image=AT_O_{dayObs}_{seqNum}\
-    &raft=R00&color=grey&bias=Simple+Overscan+Correction\
-    &scale=Per-Segment&source=RubinTV"
+      image=AT_O_{dayObs}_{seqNum}\
+      &raft=R00&color=grey&bias=Simple+Overscan+Correction\
+      &scale=Per-Segment&source=RubinTV"
     channels:
       -
         name: monitor
@@ -211,9 +211,9 @@ cameras:
         title: PSF shape AzEl
         colour: "#6F58E7"
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
-    {seqNum}}"
+      {seqNum}}"
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
-    view.html?image=CC_O_{dayObs}_{seqNum}"
+      view.html?image=CC_O_{dayObs}_{seqNum}"
 
   - name: comcam_sim
     title: ComCamSim
@@ -230,7 +230,7 @@ cameras:
         title: PSF shape AzEl
         colour: "#BC8CE7"
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
-    {seqNum}}"
+      {seqNum}}"
 
   - name: comcam_sim_aos
     title: ComCamSimAOS
@@ -261,7 +261,7 @@ cameras:
         title: Noise Map
         colour: "#e771a8"
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
-    {seqNum}}"
+      {seqNum}}"
 
   - name: lsstcam
     title: LSSTCam
@@ -294,7 +294,7 @@ cameras:
         colour: "#e7ae71"
     night_report_label: Trending Plots
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
-    FITSInfo/view.html?image=MC_C_{dayObs}_{seqNum}"
+      FITSInfo/view.html?image=MC_C_{dayObs}_{seqNum}"
 
 
   - name: slac_ts8
@@ -309,7 +309,7 @@ cameras:
         title: Noise Map
         colour: "#e771a8"
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
-    FITSInfo/view.html?image=TS_C_{dayObs}_{seqNum}"
+      FITSInfo/view.html?image=TS_C_{dayObs}_{seqNum}"
     night_report_label: Trending Plots
 
 
@@ -341,11 +341,11 @@ cameras:
         colour: "#83daee"
 
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
-    {seqNum}}"
+      {seqNum}}"
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/view.html?\
-    image=AT_O_{dayObs}_{seqNum}\
-    &raft=R00&color=grey&bias=Simple+Overscan+Correction\
-    &scale=Per-Segment&source=RubinTV"
+      image=AT_O_{dayObs}_{seqNum}\
+      &raft=R00&color=grey&bias=Simple+Overscan+Correction\
+      &scale=Per-Segment&source=RubinTV"
 
 
 services:

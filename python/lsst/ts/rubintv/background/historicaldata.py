@@ -42,7 +42,7 @@ class HistoricalPoller:
         self._clients: dict[str, S3Client] = {}
         self._metadata: dict[str, bytes] = {}
         self._temp_events: dict[str, list[Event]] = {}
-        self._events: dict[str, bytes] = {}
+        self._compressed_events: dict[str, bytes] = {}
         self._nr_metadata: dict[str, list[NightReportData]] = {}
         self._calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
         self._locations = locations
@@ -61,7 +61,7 @@ class HistoricalPoller:
     async def clear_all_data(self) -> None:
         self._have_downloaded = False
         self._metadata = {}
-        self._events = {}
+        self._compressed_events = {}
         self._nr_metadata = {}
         self._calendar = {}
 
@@ -145,43 +145,46 @@ class HistoricalPoller:
             if "metadata.json" not in o["key"] and "night_report" not in o["key"]
         ]
 
-        await self.download_and_store_metadata(locname, metadata_objs)
-
         self._nr_metadata[locname] = await objects_to_ngt_report_data(n_report_objs)
         async for events_batch in objects_to_events(event_objs):
             await self.store_events(events_batch, locname)
         await self.compress_events()
         self._temp_events = {}
 
+        await self.download_and_store_metadata(locname, metadata_objs)
+
     async def compress_events(self) -> None:
         for storage_key, events in self._temp_events.items():
             compressed = zlib.compress(pickle.dumps(events))
-            if storage_key in self._events:
-                self._events[storage_key] += compressed
+            if storage_key in self._compressed_events:
+                self._compressed_events[storage_key] += compressed
             else:
-                self._events[storage_key] = compressed
+                self._compressed_events[storage_key] = compressed
 
     async def store_events(self, events: list[Event], locname: str) -> None:
         for event in events:
-            storage_key = f"{locname}/{event.camera_name}"
-            if storage_key not in self._temp_events:
-                self._temp_events[storage_key] = []
-            self._temp_events[storage_key].append(event)
+            loc_cam = f"{locname}/{event.camera_name}"
+
+            if loc_cam not in self._temp_events:
+                self._temp_events[loc_cam] = []
+            self._temp_events[loc_cam].append(event)
 
             seq_num = event.seq_num
             if isinstance(seq_num, str):
                 seq_num = 1
-            year_str, month_str, day_str = event.day_obs.split("-")
-            year, month, day = (int(year_str), int(month_str), int(day_str))
-            loc_cam = f"{locname}/{event.camera_name}"
-            if loc_cam not in self._calendar:
-                self._calendar[loc_cam] = {}
-            if year not in self._calendar[loc_cam]:
-                self._calendar[loc_cam][year] = {}
-            if month not in self._calendar[loc_cam][year]:
-                self._calendar[loc_cam][year][month] = {}
-            if self._calendar[loc_cam][year][month].get(day, 0) <= seq_num:
-                self._calendar[loc_cam][year][month][day] = seq_num
+            self.add_to_calendar(loc_cam, event.day_obs, seq_num)
+
+    def add_to_calendar(self, loc_cam: str, date_str: str, seq_num: int) -> None:
+        year_str, month_str, day_str = date_str.split("-")
+        year, month, day = (int(year_str), int(month_str), int(day_str))
+        if loc_cam not in self._calendar:
+            self._calendar[loc_cam] = {}
+        if year not in self._calendar[loc_cam]:
+            self._calendar[loc_cam][year] = {}
+        if month not in self._calendar[loc_cam][year]:
+            self._calendar[loc_cam][year][month] = {}
+        if self._calendar[loc_cam][year][month].get(day, 0) <= seq_num:
+            self._calendar[loc_cam][year][month][day] = seq_num
 
     async def download_and_store_metadata(
         self, locname: str, metadata_objs: list[dict[str, str]]
@@ -195,6 +198,10 @@ class HistoricalPoller:
             if not key:
                 continue
             storage_name = locname + "/" + key.split("/metadata")[0]
+            _, cam_name, date_str = storage_name.split("/")
+            loc_cam = f"{locname}/{cam_name}"
+            self.add_to_calendar(loc_cam, date_str, 0)
+
             client = self._clients[locname]
             md = await client.async_get_object(key)
             if not md:
@@ -264,8 +271,10 @@ class HistoricalPoller:
     ) -> list[Event]:
         loc_cam = f"{location.name}/{camera.name}"
         date_str = a_date.isoformat()
-        compressed = self._events[loc_cam]
-        events: list[Event] = pickle.loads(zlib.decompress(compressed))
+        to_decompress = self._compressed_events.get(loc_cam, None)
+        if to_decompress is None:
+            return []
+        events: list[Event] = pickle.loads(zlib.decompress(to_decompress))
         events = [e for e in events if e.day_obs == date_str]
         return events
 
@@ -324,7 +333,7 @@ class HistoricalPoller:
         day_obs = await self.get_most_recent_day(location, camera)
         if not day_obs:
             return []
-        compressed = self._events.get(loc_cam, None)
+        compressed = self._compressed_events.get(loc_cam, None)
         if compressed is None:
             return []
         events = pickle.loads(zlib.decompress(compressed))
@@ -335,7 +344,7 @@ class HistoricalPoller:
         self, location: Location, camera: Camera, channel: Channel
     ) -> Event | None:
         loc_cam = f"{location.name}/{camera.name}"
-        compressed = self._events.get(loc_cam, None)
+        compressed = self._compressed_events.get(loc_cam, None)
         if compressed is None:
             return None
         events = pickle.loads(zlib.decompress(compressed))
