@@ -627,6 +627,10 @@ metadata_cols:
     Exposure time:
       The image exposure time
 
+  comcam_aos:
+    Exposure time:
+      The image exposure time
+
   comcam_sim:
     Exposure time:
       The image exposure time
