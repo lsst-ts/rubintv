@@ -53,7 +53,7 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ auxtel, comcam, lsstcam ]
+      Telescope Mounted: [ auxtel, comcam, comcam_aos, lsstcam ]
       Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
@@ -87,7 +87,7 @@ locations:
     bucket_name: rubintv
 
     camera_groups:
-      Telescope Mounted: [ auxtel, comcam, lsstcam ]
+      Telescope Mounted: [ auxtel, comcam, comcam_aos, lsstcam ]
       Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
@@ -250,23 +250,23 @@ cameras:
         title: Focus Sweep
         colour: "#967289"
 
-      - name: comcam_aos
-        title: ComCamAOS
-        online: True
-        logo: ComCamAOS.jpg
-        channels:
-          - name: fp_donut_gallery
-            title: Focal Plane Donut Gallery
-            colour: "#d4e6b5"
-          - name: zk_residual_pyramid
-            title: Zernike Residual Pyramid
-            colour: "#e2d686"
-          - name: zk_measurement_pyramid
-            title: Zernike Measurement Pyramid
-            colour: "#877b66"
-          - name: focus_sweep
-            title: Focus Sweep
-            colour: "#967289"
+  - name: comcam_aos
+    title: ComCamAOS
+    online: True
+    logo: ComCamAOS.jpg
+    channels:
+      - name: fp_donut_gallery
+        title: Focal Plane Donut Gallery
+        colour: "#c7e692"
+      - name: zk_residual_pyramid
+        title: Zernike Residual Pyramid
+        colour: "#e2d36b"
+      - name: zk_measurement_pyramid
+        title: Zernike Measurement Pyramid
+        colour: "#876f45"
+      - name: focus_sweep
+        title: Focus Sweep
+        colour: "#965d82"
 
   - name: comcam_sim_prep
     title: ComCamSimPrep
