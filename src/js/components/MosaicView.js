@@ -12,12 +12,12 @@ const commonColumns = ["seqNum"]
 export default function MosaicView({ locationName, camera }) {
   const [historicalBusy, setHistoricalBusy] = useState(null)
   const [currentMeta, setCurrentMeta] = useState({})
-  const [views, setViews] = useState(initialViews)
-
   const initialViews = camera.mosaic_view_meta.map((view) => ({
     ...view,
     latestEvent: {},
   }))
+  const [views, setViews] = useState(initialViews)
+
 
   useEffect(() => {
     window.addEventListener("camera", handleMetadataChange)
@@ -85,10 +85,8 @@ MosaicView.propTypes = {
 }
 
 function ChannelView({ locationName, camera, view, currentMeta }) {
-  let channel
-  try {
-    channel = camera.channels.filter(({ name }) => name === view.channel)[0]
-  } catch (error) {
+  const channel = camera.channels.find(({ name }) => name === view.channel)
+  if (!channel) {
     return <h3>Channel {view.channel} not found</h3>
   }
   const { latestEvent: { day_obs: dayObs }} = view
@@ -157,7 +155,7 @@ function ChannelMetadata({ view, metadata }) {
     <table className="viewMeta" id={`table-${channel}`}>
       <tbody>
         {columns.map((column) => {
-          const value = metadatum[column] ? metadatum[column] : "No value set"
+          const value = metadatum[column] ?? "No value set"
           return (
             <tr key={column} className="viewMetaCol">
               <th scope="row" className="colName">{column}</th>
