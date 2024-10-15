@@ -225,6 +225,14 @@ cameras:
       - name: psf_shape_azel
         title: PSF shape AzEl
         colour: "#6F58E7"
+
+      - name: day_movie
+        title: Whole Day Movie
+        per_day: True
+      - name: last_n_movie
+        title: Last N Images Movie
+        per_day: True
+
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
       {seqNum}}"
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
