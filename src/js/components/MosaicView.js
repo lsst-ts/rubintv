@@ -97,7 +97,7 @@ function ChannelView({ locationName, camera, view, currentMeta }) {
           <span>: { dayObs }</span>
         ) }
       </h3>
-      <ChannelImage
+      <ChannelMedia
         locationName={locationName}
         camera={camera}
         event={view.latestEvent}
@@ -116,16 +116,27 @@ ChannelView.propTypes = {
   currentMeta: metadataType
 }
 
-function ChannelImage({ locationName, camera, event }) {
-  const { filename } = event
-  const relUrl = buildImageURI(
-    locationName,
-    camera.name,
-    event.channel_name,
-    filename
-  )
-  const imgSrc = new URL(`event_image/${relUrl}`, APP_DATA.baseUrl)
-  if (filename) {
+function ChannelMedia({ locationName, camera, event }) {
+  const { filename, ext } = event
+  const mediaURL = buildMediaURI(locationName, camera.name, event.channel_name, filename)
+  switch (ext) {
+    case 'mp4':
+      return <ChannelVideo mediaURL={mediaURL} event={event}/>
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+      return <ChannelImage mediaURL={mediaURL} event={event}/>
+  }
+}
+ChannelMedia.propTypes = {
+  locationName: PropTypes.string,
+  camera: cameraType,
+  event: eventType,
+}
+
+function ChannelImage({mediaURL, event}) {
+  const imgSrc = new URL(`event_image/${mediaURL}`, APP_DATA.baseUrl)
+  if (event) {
     return (
       <div className="viewImage">
         <a href={imgSrc}>
@@ -136,19 +147,46 @@ function ChannelImage({ locationName, camera, event }) {
   } else {
     return (
       <div className="viewImage placeholder">
-        <h4 className="image-placeholder">No image for today</h4>
+        <h4 className="image-placeholder">No image yet</h4>
       </div>
     )
   }
 }
 ChannelImage.propTypes = {
-  locationName: PropTypes.string,
-  camera: cameraType,
+  mediaURL: PropTypes.string,
+  event: eventType,
+}
+
+function ChannelVideo({mediaURL, event}) {
+  const videoSrc = new URL(`event_video/${mediaURL}`, APP_DATA.baseUrl)
+  if (event) {
+    return (
+      <div className="viewVideo">
+        <a href={videoSrc}>
+          <video className="resp" controls autoPlay loop>
+            <source src={videoSrc}/>
+          </video>
+        </a>
+      </div>
+    )
+  } else {
+    return (
+      <div className="viewVideo placeholder">
+        <h4 className="video-placeholder">No movie yet</h4>
+      </div>
+    )
+  }
+}
+ChannelVideo.propTypes = {
+  mediaURL: PropTypes.string,
   event: eventType,
 }
 
 function ChannelMetadata({ view, metadata }) {
   const { channel, metaColumns: viewColumns, latestEvent: {seq_num: seqNum} } = view
+  if (viewColumns.length == 0) {
+    return
+  }
   const columns = [...commonColumns, ...viewColumns]
   const metadatum = metadata[seqNum] || {}
   return (
@@ -172,5 +210,5 @@ ChannelMetadata.propTypes = {
   metadata: metadataType,
 }
 
-const buildImageURI = (locationName, cameraName, channelName, filename) =>
+const buildMediaURI = (locationName, cameraName, channelName, filename) =>
   `${locationName}/${cameraName}/${channelName}/${filename}`

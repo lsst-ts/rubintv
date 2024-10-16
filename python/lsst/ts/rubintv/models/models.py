@@ -81,10 +81,13 @@ class MosaicViewMeta(BaseModel):
         The channel name.
     metaColumns : list[str]
         A list of metadata columns.
+    dataType : str
+        Presently, "image" or "video" are only options.
     """
 
     channel: str
     metaColumns: list[str]
+    dataType: str = "image"
 
 
 class Camera(HasButton):
