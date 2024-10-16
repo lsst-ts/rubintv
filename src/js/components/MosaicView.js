@@ -121,11 +121,13 @@ function ChannelMedia({ locationName, camera, event }) {
   const mediaURL = buildMediaURI(locationName, camera.name, event.channel_name, filename)
   switch (ext) {
     case 'mp4':
-      return <ChannelVideo mediaURL={mediaURL} event={event}/>
+      return <ChannelVideo mediaURL={mediaURL}/>
     case 'jpg':
     case 'jpeg':
     case 'png':
-      return <ChannelImage mediaURL={mediaURL} event={event}/>
+      return <ChannelImage mediaURL={mediaURL}/>
+    case undefined:
+      return <ChannelMediaPlaceholder/>
   }
 }
 ChannelMedia.propTypes = {
@@ -134,52 +136,42 @@ ChannelMedia.propTypes = {
   event: eventType,
 }
 
-function ChannelImage({mediaURL, event}) {
+function ChannelImage({mediaURL}) {
   const imgSrc = new URL(`event_image/${mediaURL}`, APP_DATA.baseUrl)
-  if (event) {
-    return (
-      <div className="viewImage">
-        <a href={imgSrc}>
-          <img className="resp" src={imgSrc} />
-        </a>
-      </div>
-    )
-  } else {
-    return (
-      <div className="viewImage placeholder">
-        <h4 className="image-placeholder">No image yet</h4>
-      </div>
-    )
-  }
+  return (
+    <div className="viewImage">
+      <a href={imgSrc}>
+        <img className="resp" src={imgSrc} />
+      </a>
+    </div>
+  )
 }
 ChannelImage.propTypes = {
   mediaURL: PropTypes.string,
-  event: eventType,
 }
 
 function ChannelVideo({mediaURL, event}) {
   const videoSrc = new URL(`event_video/${mediaURL}`, APP_DATA.baseUrl)
-  if (event) {
-    return (
-      <div className="viewVideo">
-        <a href={videoSrc}>
-          <video className="resp" controls autoPlay loop>
-            <source src={videoSrc}/>
-          </video>
-        </a>
-      </div>
-    )
-  } else {
-    return (
-      <div className="viewVideo placeholder">
-        <h4 className="video-placeholder">No movie yet</h4>
-      </div>
-    )
-  }
+  return (
+    <div className="viewVideo">
+      <a href={videoSrc}>
+        <video className="resp" controls autoPlay loop>
+          <source src={videoSrc}/>
+        </video>
+      </a>
+    </div>
+  )
 }
 ChannelVideo.propTypes = {
   mediaURL: PropTypes.string,
-  event: eventType,
+}
+
+function ChannelMediaPlaceholder() {
+  return (
+    <div className="viewImage placeholder">
+      <h4 className="image-placeholder">Nothing today yet</h4>
+    </div>
+  )
 }
 
 function ChannelMetadata({ view, metadata }) {
