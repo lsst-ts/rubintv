@@ -15,7 +15,8 @@ window.addEventListener('DOMContentLoaded',
       display.forEach((c) => displayEl.classList.add(c))
       const text = document.createTextNode(display.join(' '))
       displayEl.appendChild(text)
-      _getById('header-banner').append(displayEl)
+      const header = _getById('header-banner')
+      header && append(displayEl)
     }
 
     if (!!window.SharedWorker) {

@@ -126,7 +126,7 @@ function ChannelMedia({ locationName, camera, event }) {
     case 'jpeg':
     case 'png':
       return <ChannelImage mediaURL={mediaURL}/>
-    case undefined:
+    default:
       return <ChannelMediaPlaceholder/>
   }
 }
@@ -150,7 +150,7 @@ ChannelImage.propTypes = {
   mediaURL: PropTypes.string,
 }
 
-function ChannelVideo({mediaURL, event}) {
+function ChannelVideo({mediaURL}) {
   const videoSrc = new URL(`event_video/${mediaURL}`, APP_DATA.baseUrl)
   return (
     <div className="viewVideo">
