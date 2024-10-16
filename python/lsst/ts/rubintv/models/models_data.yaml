@@ -233,6 +233,10 @@ cameras:
         title: Last N Images Movie
         per_day: True
 
+    extra_buttons:
+      - title: Movies View
+        linkURL: "/mosaic"
+
     mosaic_view_meta:
       - channel: day_movie
         metaColumns: []

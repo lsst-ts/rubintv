@@ -90,6 +90,12 @@ class MosaicViewMeta(BaseModel):
     dataType: str = "image"
 
 
+class ExtraButton(BaseModel):
+    title: str
+    linkURL: str
+    logo: str = ""
+
+
 class Camera(HasButton):
     """Represents a camera entity, capable of handling different channels like
     images or movies.
@@ -143,6 +149,7 @@ class Camera(HasButton):
     image_viewer_link: str = ""
     copy_row_template: str = ""
     mosaic_view_meta: list[MosaicViewMeta] = []
+    extra_buttons: list[ExtraButton] = []
 
     def seq_channels(self) -> list[Channel]:
         return [c for c in self.channels if not c.per_day]
