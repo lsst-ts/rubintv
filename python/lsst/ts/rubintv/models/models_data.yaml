@@ -42,7 +42,7 @@ locations:
     bucket_name: rubin-rubintv-data-tts
     logo: cactus.svg
     camera_groups:
-      Cameras: [ auxtel, fake_auxtel, comcam ]
+      Cameras: [ auxtel, fake_auxtel, comcam, comcam_aos ]
       Telescopes: [ tma ]
 
   - name: summit-usdf
@@ -75,7 +75,7 @@ locations:
     bucket_name: rubintv
     logo: cactus.svg
     camera_groups:
-      Cameras: [ auxtel, fake_auxtel, comcam ]
+      Cameras: [ auxtel, fake_auxtel, comcam, comcam_aos ]
       Telescopes: [ tma ]
 
   - name: summit
