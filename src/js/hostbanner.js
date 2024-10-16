@@ -16,7 +16,7 @@ window.addEventListener('DOMContentLoaded',
       const text = document.createTextNode(display.join(' '))
       displayEl.appendChild(text)
       const header = _getById('header-banner')
-      header && append(displayEl)
+      header && header.append(displayEl)
     }
 
     if (!!window.SharedWorker) {
