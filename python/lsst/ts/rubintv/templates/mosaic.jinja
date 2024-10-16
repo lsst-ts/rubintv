@@ -1,7 +1,16 @@
 {% extends "_camera.jinja" %}
 
 {% block header %}
+  {% if not headerless %}
+    {{ super() }}
+  {% endif %}
 {% endblock header  %}
+
+{% block pagesubtitle %}
+  {% if not headerless %}
+    Current Mosaic
+  {% endif %}
+{% endblock pagesubtitle %}
 
 {% block content %}
   <div id="mosaic-view" class="columns">
