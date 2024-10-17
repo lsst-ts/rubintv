@@ -9,8 +9,8 @@ function Button({ clsName, url, bckCol, iconUrl, logoURL, label, date, textColou
     backgroundImage: `url(${logoURL})`,
     backgroundSize: 'contain',
   }
-  clsName = logoURL !== '' ? clsName + " button-logo" : clsName
-  clsName = textShadow !== '' ? clsName + " t-shadow" : clsName
+  clsName = !!logoURL ? clsName + " button-logo" : clsName
+  clsName = textShadow ? clsName + " t-shadow" : clsName
 
   return (
     <a
