@@ -13,6 +13,13 @@ bucket_configurations:
     [ slac, base-usdf, tucson-usdf, summit-usdf ]
 
 locations:
+  - name: test
+    title: TEST
+    profile_name: rubin-rubintv-data-summit
+    bucket_name: rubin-rubintv-data-summit
+    camera_groups:
+      Test: [ comcam ]
+
   - name: slac
     title: SLAC
     profile_name: rubin-rubintv-data-usdf
@@ -232,14 +239,21 @@ cameras:
       - name: day_movie
         title: Whole Day Movie
         per_day: True
+        color: "#83daee"
+        icon: movies
       - name: last_n_movie
         title: Last N Images Movie
         per_day: True
+        color: "#83eebe"
+        icon: movies
 
     extra_buttons:
       - title: Movies View
+        name: moviesView
         # relative url
-        linkURL: "mosaic"
+        linkURL: mosaic
+        logo: AI-astral-movie.jpg
+        text_colour: "#fff"
 
     mosaic_view_meta:
       - channel: day_movie

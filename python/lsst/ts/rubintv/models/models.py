@@ -41,6 +41,8 @@ class Channel(BaseModel):
     label: str = ""
     per_day: bool = False
     colour: str = ""
+    icon: str = ""
+    text_colour: str = "#000"
 
 
 class HasButton(BaseModel):
@@ -63,8 +65,8 @@ class HasButton(BaseModel):
         True for a shadow, false otherwise.
     """
 
-    name: str
     title: str
+    name: str = ""
     logo: str = ""
     text_colour: str = "#000"
     text_shadow: bool = False
@@ -90,10 +92,8 @@ class MosaicViewMeta(BaseModel):
     dataType: str = "image"
 
 
-class ExtraButton(BaseModel):
-    title: str
+class ExtraButton(HasButton):
     linkURL: str
-    logo: str = ""
 
 
 class Camera(HasButton):

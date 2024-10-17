@@ -2,14 +2,23 @@ import React, { useState, useEffect } from "react"
 import PropTypes from "prop-types"
 import { cameraType, eventType } from "./componentPropTypes"
 
-function Button({ clsName, url, bckCol, logoURL, label, date }) {
+function Button({ clsName, url, bckCol, iconUrl, logoURL, label, date, textColour, textShadow }) {
+  const style = {
+    backgroundColor: bckCol,
+    color: textColour,
+    backgroundImage: `url(${logoURL})`,
+    backgroundSize: 'contain',
+  }
+  clsName = logoURL !== '' ? clsName + " button-logo" : clsName
+  clsName = textShadow !== '' ? clsName + " t-shadow" : clsName
+
   return (
     <a
       className={`button button-large ${clsName}`}
       href={url}
-      style={bckCol && { backgroundColor: bckCol }}
+      style={style}
     >
-      {logoURL && <img src={logoURL} />}
+      {iconUrl && <img src={iconUrl} />}
       {label}
       {date && <span className="date">{date}</span>}
     </a>
@@ -18,9 +27,16 @@ function Button({ clsName, url, bckCol, logoURL, label, date }) {
 
 function PerDayChannels({ camera, date, perDay }) {
   const baseUrl = window.APP_DATA.baseUrl
+  const imageRoot = window.APP_DATA.imagesURL
   const isHistorical = window.APP_DATA.isHistorical
   const locationName = document.documentElement.dataset.locationname
   const channels = camera.channels
+  
+  const getImageURL = (path) => {
+    const [base, queriesMaybe] = imageRoot.split("?")
+    const queries = queriesMaybe ? "?" + queriesMaybe : ""
+    return new URL(path + queries, base + "/")
+  }
 
   return (
     ((perDay && Object.entries(perDay).length > 0) ||
@@ -35,31 +51,33 @@ function PerDayChannels({ camera, date, perDay }) {
               const label = channel.label ? channel.label : channel.title
               const filename = event.filename
               const url = `${baseUrl}event_video/${locationName}/${camera.name}/${channelName}/${filename}`
-              const logoURL = `${baseUrl}static/images/${channelName}.svg`
+              const icon = channel.icon === "" ? channelName : channel.icon
+              const iconUrl = getImageURL(`${icon}.svg`)
               return (
                 <li className="channel" key={channelName}>
                   <Button
                     clsName={channelName}
                     url={url}
                     bckCol={channel.colour}
-                    logoURL={logoURL}
+                    iconUrl={iconUrl}
                     label={label}
                     date={date}
                   />
                 </li>
               )
             })}
-          {!isHistorical && camera.extra_buttons.map(({ title, linkURL }) => {
+          {!isHistorical && camera.extra_buttons.map(({ name, title, linkURL, logo, text_colour, text_shadow }) => {
+            const logoURL = getImageURL(`logos/${logo}`)
             return (
-              <li className="channel" key={title}>
+              <li className="channel" key={name}>
                 {/* hardcoded for link to mosaic view page */}
                 <Button
-                  clsName="mosaic"
+                  clsName={name}
                   url={new URL(linkURL, location.href + '/')}
-                  bckCol="#fff"
-                  logoURL=""
+                  logoURL={logoURL}
                   label={title}
-                  date=""
+                  textColour={text_colour}
+                  textShadow={text_shadow}
                 />
               </li>
             )
