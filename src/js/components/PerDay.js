@@ -18,12 +18,13 @@ function Button({ clsName, url, bckCol, logoURL, label, date }) {
 
 function PerDayChannels({ camera, date, perDay }) {
   const baseUrl = window.APP_DATA.baseUrl
+  const isHistorical = window.APP_DATA.isHistorical
   const locationName = document.documentElement.dataset.locationname
   const channels = camera.channels
 
   return (
     ((perDay && Object.entries(perDay).length > 0) ||
-      camera.extra_buttons.length > 0) && (
+      camera.extra_buttons.length > 0 && !isHistorical) && (
       <nav id="per-day-menu" className="channel-menu" role="navigation">
         <h3>Per Day Channels</h3>
         <ul className="channels flr">
@@ -48,14 +49,13 @@ function PerDayChannels({ camera, date, perDay }) {
                 </li>
               )
             })}
-          {camera.extra_buttons.map(({ title, linkURL }) => {
+          {!isHistorical && camera.extra_buttons.map(({ title, linkURL }) => {
             return (
               <li className="channel" key={title}>
+                {/* hardcoded for link to mosaic view page */}
                 <Button
                   clsName="mosaic"
-                  // href is cast to string so that the whole URL is kept
-                  // intact
-                  url={new URL(linkURL, location.href.toString() + '/')}
+                  url={new URL(linkURL, location.href + '/')}
                   bckCol="#fff"
                   logoURL=""
                   label={title}
