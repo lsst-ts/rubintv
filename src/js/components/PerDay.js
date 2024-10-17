@@ -39,7 +39,7 @@ function PerDayChannels({ camera, date, perDay }) {
   }
 
   return (
-    ((perDay && Object.entries(perDay).length > 0) && (
+    (perDay && Object.entries(perDay).length > 0) && (
       <nav id="per-day-menu" className="channel-menu" role="navigation">
         <h3>Per Day Channels</h3>
         <ul className="channels flr">
