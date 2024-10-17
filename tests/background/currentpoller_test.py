@@ -8,6 +8,7 @@ from lsst.ts.rubintv.models.models import (
     Camera,
     Location,
     ServiceMessageTypes,
+    ServiceTypes,
     get_current_day_obs,
 )
 from lsst.ts.rubintv.models.models_helpers import find_first
@@ -271,7 +272,8 @@ async def test_pick_up_yesterdays_movie(
 
         # assert that notification was made with the new event
         # from yesterday.
-        service_msg = ServiceMessageTypes.CAMERA_PD_BACKDATED
+        service_type = ServiceTypes.CAMERA
+        message_type = ServiceMessageTypes.CAMERA_PD_BACKDATED
         loc_cam = f"{location.name}/{camera.name}"
         events = mocked.get_mocked_events(location, camera, channel)
         assert events is not []
@@ -279,7 +281,9 @@ async def test_pick_up_yesterdays_movie(
         assert last_event
         assert last_event.day_obs == yesterday.isoformat()
         payload = {channel.name: last_event.__dict__}
-        mock_notify.assert_called_once_with("camera", service_msg, loc_cam, payload)
+        mock_notify.assert_called_once_with(
+            service_type, message_type, loc_cam, payload
+        )
 
 
 def get_test_camera_and_location() -> tuple[Camera, Location]:

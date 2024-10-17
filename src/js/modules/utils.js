@@ -19,6 +19,17 @@ export async function simplePost (url) {
 }
 
 /**
+ * @param {RequestInfo | URL} url
+ */
+export async function simpleGet (url) {
+  const res = await fetch(url, {
+    method: 'GET',
+  })
+  const data = await res.text()
+  return data
+}
+
+/**
  * @param {string} tagName
  * @param {string} className
  */

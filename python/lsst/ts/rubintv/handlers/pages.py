@@ -28,7 +28,13 @@ from lsst.ts.rubintv.handlers.pages_helpers import (
     month_names,
     to_dict,
 )
-from lsst.ts.rubintv.models.models import Channel, Event, Location, NightReport
+from lsst.ts.rubintv.models.models import (
+    Channel,
+    Event,
+    Location,
+    NightReport,
+    get_current_day_obs,
+)
 from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.templates_init import get_templates
 
@@ -143,6 +149,36 @@ async def get_camera_page(
             "metadata": metadata,
             "historical_busy": historical_busy,
             "nr_link": nr_link,
+            "title": title,
+        },
+    )
+
+
+@pages_router.get(
+    "/{location_name}/{camera_name}/mosaic",
+    response_class=HTMLResponse,
+    name="camera_mosaic",
+)
+async def get_camera_mosaic_page(
+    location_name: str,
+    camera_name: str,
+    request: Request,
+) -> Response:
+    location, camera = await get_location_camera(location_name, camera_name, request)
+    if not camera.mosaic_view_meta:
+        raise HTTPException(404, "No mosaic found for this camera.")
+
+    day_obs = get_current_day_obs()
+
+    title = build_title(location.title, camera.title, "Current Mosaic")
+    return templates.TemplateResponse(
+        request=request,
+        name="mosaic.jinja",
+        context={
+            "request": request,
+            "date": day_obs,
+            "location": location,
+            "camera": camera.model_dump(),
             "title": title,
         },
     )
