@@ -235,7 +235,8 @@ cameras:
 
     extra_buttons:
       - title: Movies View
-        linkURL: "/mosaic"
+        # relative url
+        linkURL: "mosaic"
 
     mosaic_view_meta:
       - channel: day_movie
