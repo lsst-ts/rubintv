@@ -233,7 +233,7 @@ cameras:
         title: PSF shape AzEl
         colour: "#6F58E7"
       - name: mount
-        title: Mount Torques
+        title: Mount torques
         colour: "#58b4e7"
         
       - name: day_movie

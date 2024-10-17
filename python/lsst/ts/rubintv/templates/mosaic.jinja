@@ -18,6 +18,12 @@
     <a href="{{ url_for('location', location_name=location.name) }}">{{ location.title }}</a>>
     <a href="{{ url_for('camera', location_name=location.name, camera_name=camera.name) }}">{{ camera.title }}</a>>
     <p>Current Mosaic</p>
+  {% else %}
+    <style>
+      .breadcrumb {
+        padding: 0
+      }
+    </style>
   {% endif %}
 {% endblock breadcrumb %}
 
