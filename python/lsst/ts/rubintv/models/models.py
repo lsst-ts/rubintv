@@ -41,6 +41,8 @@ class Channel(BaseModel):
     label: str = ""
     per_day: bool = False
     colour: str = ""
+    icon: str = ""
+    text_colour: str = "#000"
 
 
 class HasButton(BaseModel):
@@ -63,8 +65,8 @@ class HasButton(BaseModel):
         True for a shadow, false otherwise.
     """
 
-    name: str
     title: str
+    name: str = ""
     logo: str = ""
     text_colour: str = "#000"
     text_shadow: bool = False
@@ -81,10 +83,17 @@ class MosaicViewMeta(BaseModel):
         The channel name.
     metaColumns : list[str]
         A list of metadata columns.
+    dataType : str
+        Presently, "image" or "video" are only options.
     """
 
     channel: str
     metaColumns: list[str]
+    dataType: str = "image"
+
+
+class ExtraButton(HasButton):
+    linkURL: str
 
 
 class Camera(HasButton):
@@ -140,6 +149,7 @@ class Camera(HasButton):
     image_viewer_link: str = ""
     copy_row_template: str = ""
     mosaic_view_meta: list[MosaicViewMeta] = []
+    extra_buttons: list[ExtraButton] = []
 
     def seq_channels(self) -> list[Channel]:
         return [c for c in self.channels if not c.per_day]

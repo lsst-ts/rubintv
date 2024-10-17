@@ -1,33 +1,83 @@
-import React, { useState, useEffect } from 'react'
-import PropTypes from 'prop-types'
-import { cameraType, eventType } from './componentPropTypes'
+import React, { useState, useEffect } from "react"
+import PropTypes from "prop-types"
+import { cameraType, eventType } from "./componentPropTypes"
 
-function PerDayChannels ({ camera, date, perDay }) {
+function Button({ clsName, url, bckCol, iconUrl, logoURL, label, date, textColour, textShadow }) {
+  const style = {
+    backgroundColor: bckCol,
+    color: textColour,
+    backgroundImage: `url(${logoURL})`,
+    backgroundSize: 'contain',
+  }
+  clsName = !!logoURL ? clsName + " button-logo" : clsName
+  clsName = textShadow ? clsName + " t-shadow" : clsName
+
+  return (
+    <a
+      className={`button button-large ${clsName}`}
+      href={url}
+      style={style}
+    >
+      {iconUrl && <img src={iconUrl} />}
+      {label}
+      {date && <span className="date">{date}</span>}
+    </a>
+  )
+}
+
+function PerDayChannels({ camera, date, perDay }) {
   const baseUrl = window.APP_DATA.baseUrl
+  const imageRoot = window.APP_DATA.imagesURL
+  const isHistorical = window.APP_DATA.isHistorical
   const locationName = document.documentElement.dataset.locationname
   const channels = camera.channels
+  
+  const getImageURL = (path) => {
+    const [base, queriesMaybe] = imageRoot.split("?")
+    const queries = queriesMaybe ? "?" + queriesMaybe : ""
+    return new URL(path + queries, base + "/")
+  }
+
   return (
     (perDay && Object.entries(perDay).length > 0) && (
       <nav id="per-day-menu" className="channel-menu" role="navigation">
-      <h3>Per Day Channels</h3>
+        <h3>Per Day Channels</h3>
         <ul className="channels flr">
-          { Object.entries(perDay).map(([channelName, event]) => {
-            const channel = channels[channels.map((chan) => chan.name).indexOf(channelName)]
-            const label = channel.label ? channel.label : channel.title
-            const filename = event.filename
+          {perDay &&
+            Object.entries(perDay).map(([channelName, event]) => {
+              const channel =
+                channels[channels.map((chan) => chan.name).indexOf(channelName)]
+              const label = channel.label ? channel.label : channel.title
+              const filename = event.filename
+              const url = `${baseUrl}event_video/${locationName}/${camera.name}/${channelName}/${filename}`
+              const icon = channel.icon === "" ? channelName : channel.icon
+              const iconUrl = getImageURL(`${icon}.svg`)
+              return (
+                <li className="channel" key={channelName}>
+                  <Button
+                    clsName={channelName}
+                    url={url}
+                    bckCol={channel.colour}
+                    iconUrl={iconUrl}
+                    label={label}
+                    date={date}
+                  />
+                </li>
+              )
+            })}
+          {!isHistorical && camera.extra_buttons.map(({ name, title, linkURL, logo, text_colour, text_shadow }) => {
+            const logoURL = getImageURL(`logos/${logo}`)
             return (
-              <li className="channel" key={channelName}>
-                <a
-                  className={`button button-large ${channelName}`}
-                  href={`${baseUrl}event_video/${locationName}/${camera.name}/${channelName}/${filename}`}
-                  style={
-                    { backgroundColor: channel.colour }
-                  }
-                >
-                  <img src={`${baseUrl}static/images/${channelName}.svg`} />
-                  {label}
-                  <span className="date">{ date }</span>
-                </a>
+              <li className="channel" key={name}>
+                {/* hardcoded for link to mosaic view page */}
+                <Button
+                  clsName={name}
+                  url={new URL(linkURL, location.href + '/')}
+                  logoURL={logoURL}
+                  label={title}
+                  textColour={text_colour}
+                  textShadow={text_shadow}
+                />
               </li>
             )
           })}
@@ -45,10 +95,10 @@ PerDayChannels.propTypes = {
    */
   perDay: PropTypes.objectOf(eventType),
   /** The chosen date. */
-  date: PropTypes.string
+  date: PropTypes.string,
 }
 
-function NightReportLink ({ camera, date, nightReportLink }) {
+function NightReportLink({ camera, date, nightReportLink }) {
   if (nightReportLink === "") {
     return null
   }
@@ -65,11 +115,9 @@ function NightReportLink ({ camera, date, nightReportLink }) {
   return (
     <div id="night_report_link">
       <h3>Night Report</h3>
-      <a
-        className="button button-large night-report"
-        href={link}>
-          <img src={`${baseUrl}static/images/crescent-moon.svg`} />
-          {label}
+      <a className="button button-large night-report" href={link}>
+        <img src={`${baseUrl}static/images/crescent-moon.svg`} />
+        {label}
       </a>
     </div>
   )
@@ -80,13 +128,18 @@ NightReportLink.propTypes = {
   nightReportLink: PropTypes.string,
 }
 
-export default function PerDay ({ camera, initialDate, initialPerDay, initialNRLink }) {
+export default function PerDay({
+  camera,
+  initialDate,
+  initialPerDay,
+  initialNRLink,
+}) {
   const [date, setDate] = useState(initialDate)
   const [perDay, setPerDay] = useState(initialPerDay)
   const [nightReportLink, setNightReportLink] = useState(initialNRLink)
 
   useEffect(() => {
-    function handleCameraEvent (event) {
+    function handleCameraEvent(event) {
       const { datestamp, data, dataType } = event.detail
 
       if (datestamp && datestamp !== date) {
@@ -96,18 +149,17 @@ export default function PerDay ({ camera, initialDate, initialPerDay, initialNRL
         setNightReportLink("")
       }
 
-      if (dataType === 'perDay' && !data.nightReportLink) {
+      if (dataType === "perDay" && !data.nightReportLink) {
         setPerDay(data)
-      }
-      else if (dataType === 'perDay' && data.nightReportLink) {
+      } else if (dataType === "perDay" && data.nightReportLink) {
         setNightReportLink("current")
       }
     }
-    window.addEventListener('camera', handleCameraEvent)
+    window.addEventListener("camera", handleCameraEvent)
 
     // Cleanup the event listener on component unmount
     return () => {
-      window.removeEventListener('camera', handleCameraEvent)
+      window.removeEventListener("camera", handleCameraEvent)
     }
   }, [date]) // Only reattach the event listener if the date changes
 
@@ -115,9 +167,10 @@ export default function PerDay ({ camera, initialDate, initialPerDay, initialNRL
     <>
       <PerDayChannels camera={camera} date={date} perDay={perDay} />
       <NightReportLink
-      camera={camera}
-      date={date}
-      nightReportLink={nightReportLink} />
+        camera={camera}
+        date={date}
+        nightReportLink={nightReportLink}
+      />
     </>
   )
 }

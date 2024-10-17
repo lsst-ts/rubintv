@@ -9,10 +9,19 @@ import { _getById } from "../modules/utils"
   const camera = window.APP_DATA.camera || {}
   const ws = new WebsocketClient()
   ws.subscribe("historicalStatus")
-  ws.subscribe("service", "camera", locationName, camera.name)
+
+  let hasSequencedChannels = null
   camera.mosaic_view_meta.forEach((view) => {
     ws.subscribe("service", "channel", locationName, camera.name, view.channel)
+    const channel = camera.channels.find(({name}) => name === view.channel)
+    if (!channel.per_day) {
+      console.log(`${channel.name} is sequenced`)
+      hasSequencedChannels = true
+    }
   })
+  if (hasSequencedChannels) {
+    ws.subscribe("service", "camera", locationName, camera.name)
+  }
 
   const mosaicRoot = createRoot(_getById("mosaic-view"))
   mosaicRoot.render(
