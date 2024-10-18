@@ -1,7 +1,31 @@
 {% extends "_camera.jinja" %}
 
 {% block header %}
+  {% if not headerless %}
+    {{ super() }}
+  {% endif %}
 {% endblock header  %}
+
+{% block pagesubtitle %}
+  {% if not headerless %}
+    Current Mosaic
+  {% endif %}
+{% endblock pagesubtitle %}
+
+{% block breadcrumb %}
+  {% if not headerless %}
+    <a href="{{ url_for('home') }}">Home</a>>
+    <a href="{{ url_for('location', location_name=location.name) }}">{{ location.title }}</a>>
+    <a href="{{ url_for('camera', location_name=location.name, camera_name=camera.name) }}">{{ camera.title }}</a>>
+    <p>Current Mosaic</p>
+  {% else %}
+    <style>
+      .breadcrumb {
+        padding: 0
+      }
+    </style>
+  {% endif %}
+{% endblock breadcrumb %}
 
 {% block content %}
   <div id="mosaic-view" class="columns">
@@ -11,5 +35,4 @@
 
 {% block footer_scripts %}
   <script src='{{ url_for("static", path="assets/mosaic-view.js") }}'></script>
-  {{ super() }}
 {% endblock footer_scripts %}

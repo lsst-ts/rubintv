@@ -163,7 +163,9 @@ async def get_camera_mosaic_page(
     location_name: str,
     camera_name: str,
     request: Request,
+    headerless: bool = False,
 ) -> Response:
+    logger.info("Getting mosaic page", headerless=headerless)
     location, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.mosaic_view_meta:
         raise HTTPException(404, "No mosaic found for this camera.")
@@ -180,6 +182,7 @@ async def get_camera_mosaic_page(
             "location": location,
             "camera": camera.model_dump(),
             "title": title,
+            "headerless": headerless,
         },
     )
 
