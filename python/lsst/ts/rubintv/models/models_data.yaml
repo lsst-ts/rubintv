@@ -26,9 +26,9 @@ locations:
     bucket_name: rubin-rubintv-data-usdf
     logo: SLAC_Logo.svg
     camera_groups:
+      Nightly Validation: [ comcam_sim, comcam ]
       Cleanroom Testing: [ slac_lsstcam, slac_ts8 ]
       Simulated Cameras: [ comcam_sim_prep ]
-      Nightly Validation: [ comcam_sim ]
     services: [ slac_lsstcam, slac_ts8, comcam_sim_prep ]
 
   - name: base-usdf
