@@ -1,5 +1,8 @@
 import PropTypes from 'prop-types'
 
+// TODO: Convert these defs to use typescript instead.
+// See: DM-46475 (https://rubinobs.atlassian.net/browse/DM-46475)
+
 /** A single item of metadata is either a string, number or nested object of
  * key-value pairs. In the case of the latter, if one of the keys is
  * 'DISPLAY_VALUE', it's value is a UTF-8 encoded character to display as an
@@ -85,4 +88,11 @@ export const nightReportData = PropTypes.shape({
   group: PropTypes.string,
   filename: PropTypes.string,
   ext: PropTypes.string
+})
+
+export const mosaicSingleView = PropTypes.shape({
+  channel: PropTypes.string,
+  metaColumns: PropTypes.arrayOf(PropTypes.string),
+  latestImage: PropTypes.string,
+  latestMetadata: metadataType,
 })

@@ -11,30 +11,33 @@ from lsst.ts.rubintv.handlers.websockets_clients import (
     services_lock,
 )
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
+from lsst.ts.rubintv.models.models import ServiceTypes as Service
 from lsst.ts.rubintv.models.models import get_current_day_obs
 
 logger = rubintv_logger()
 
 
 async def notify_ws_clients(
-    service: str, message_type: MessageType, loc_cam: str, payload: Any
+    service: Service, message_type: MessageType, loc_cam: str, payload: Any
 ) -> None:
-    service_loc_cam_chan = " ".join([service, loc_cam])
+    service_loc_cam_chan = " ".join([service.value, loc_cam])
     to_notify = await get_clients_to_notify(service_loc_cam_chan)
-    await notify_clients(to_notify, message_type, payload)
+    await notify_clients(to_notify, service, message_type, payload)
 
 
 async def notify_clients(
-    clients_list: list[UUID], data_type: str, payload: Mapping
+    clients_list: list[UUID],
+    service: Service,
+    message_type: MessageType,
+    payload: Mapping,
 ) -> None:
     tasks = []
     async with clients_lock:
-        logger.info("Sending updates to:", num_clients=len(clients_list))
         for client_id in clients_list:
             if client_id in clients:
                 websocket = clients[client_id]
                 task = asyncio.create_task(
-                    send_notification(websocket, data_type, payload)
+                    send_notification(websocket, service, message_type, payload)
                 )
                 tasks.append(task)
     # `return_exceptions=True` prevents one failed task from affecting others
@@ -42,14 +45,16 @@ async def notify_clients(
 
 
 async def send_notification(
-    websocket: WebSocket, messageType: MessageType, payload: Any
+    websocket: WebSocket, service: Service, messageType: MessageType, payload: Any
 ) -> None:
     datestamp = get_current_day_obs().isoformat()
     if messageType is MessageType.CAMERA_PD_BACKDATED and payload:
+        # use the day_obs in the backdated event, rather than today
         datestamp = payload.values()[0].get("day_obs", datestamp)
     try:
         await websocket.send_json(
             {
+                "service": service.value,
                 "dataType": messageType.value,
                 "payload": payload,
                 "datestamp": datestamp,
@@ -69,7 +74,8 @@ async def get_clients_to_notify(service_cam_id: str) -> list[UUID]:
 
 
 async def notify_all_status_change(historical_busy: bool) -> None:
-    service = MessageType.HISTORICAL_STATUS
+    service = Service.HISTORICALSTATUS
+    messageType = MessageType.HISTORICAL_STATUS
     key = service.value
     tasks = []
     async with services_lock:
@@ -85,7 +91,7 @@ async def notify_all_status_change(historical_busy: bool) -> None:
 
     # Prepare tasks for each websocket
     for websocket in websockets:
-        task = send_notification(websocket, service, historical_busy)
+        task = send_notification(websocket, service, messageType, historical_busy)
         tasks.append(task)
 
     # Use asyncio.gather to handle all tasks concurrently

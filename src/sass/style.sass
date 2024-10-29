@@ -531,3 +531,44 @@ section
 	pointer-events: none
 	&.development
 		background-color: burlywood
+
+
+#mosaic-view
+	.viewsArea
+		width: 100%
+		
+	.views
+		width: 100%
+		display: flex
+		flex-wrap: nowrap
+		justify-content: space-between
+		gap: 1em
+		align-items: flex-start
+
+	.view
+		width: 100%
+		padding: 1em
+		background-color: rgba(0, 0, 0, 0.2)
+
+	.viewImage
+		width: 100%
+	
+	.viewMeta
+		width: 100%
+		margin-top: 1em
+		border-collapse: separate
+		border-spacing: 0 0.1em
+
+	.colName
+		width: min-content
+
+	.colValue
+		font-family: 'Red Hat Mono', monospace
+
+	.placeholder
+		background: rgba(0,0,0,0.3)
+		display: flex
+		justify-content: center
+		align-items: center
+		aspect-ratio: 1.66
+

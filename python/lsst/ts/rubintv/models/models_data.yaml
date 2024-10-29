@@ -13,15 +13,22 @@ bucket_configurations:
     [ slac, base-usdf, tucson-usdf, summit-usdf ]
 
 locations:
+  - name: test
+    title: TEST
+    profile_name: rubin-rubintv-data-summit
+    bucket_name: rubin-rubintv-data-summit
+    camera_groups:
+      Test: [ comcam ]
+
   - name: slac
     title: SLAC
     profile_name: rubin-rubintv-data-usdf
     bucket_name: rubin-rubintv-data-usdf
     logo: SLAC_Logo.svg
     camera_groups:
+      Nightly Validation: [ comcam_sim, comcam ]
       Cleanroom Testing: [ slac_lsstcam, slac_ts8 ]
       Simulated Cameras: [ comcam_sim_prep ]
-      Nightly Validation: [ comcam_sim ]
     services: [ slac_lsstcam, slac_ts8, comcam_sim_prep ]
 
   - name: base-usdf
@@ -42,7 +49,7 @@ locations:
     bucket_name: rubin-rubintv-data-tts
     logo: cactus.svg
     camera_groups:
-      Cameras: [ auxtel, fake_auxtel, comcam ]
+      Cameras: [ auxtel, fake_auxtel, comcam, comcam_aos ]
       Telescopes: [ tma ]
 
   - name: summit-usdf
@@ -75,7 +82,7 @@ locations:
     bucket_name: rubintv
     logo: cactus.svg
     camera_groups:
-      Cameras: [ auxtel, fake_auxtel, comcam ]
+      Cameras: [ auxtel, fake_auxtel, comcam, comcam_aos ]
       Telescopes: [ tma ]
 
   - name: summit
@@ -142,6 +149,21 @@ cameras:
         title: Tonight's Movie
         label: "Movie for "
         colour: "#83daee"
+
+    mosaic_view_meta:
+      - channel: monitor
+        metaColumns:
+          - Exposure time
+          - Airmass
+          - RA
+          - Dec
+      - channel: imexam
+        metaColumns:
+          - Exposure time
+          - PSF-FWHM
+      - channel: mount
+        metaColumns:
+          - Mount motion image degradation
 
 
   - name: startracker_narrow
@@ -210,6 +232,35 @@ cameras:
       - name: psf_shape_azel
         title: PSF shape AzEl
         colour: "#6F58E7"
+      - name: mount
+        title: Mount torques
+        colour: "#58b4e7"
+        
+      - name: day_movie
+        title: Whole Day Movie
+        per_day: True
+        color: "#83daee"
+        icon: movies
+      - name: last_n_movie
+        title: Last N Images Movie
+        per_day: True
+        color: "#83eebe"
+        icon: movies
+
+    extra_buttons:
+      - title: Movies View
+        name: moviesView
+        # relative url
+        linkURL: mosaic
+        logo: AI-astral-movie.jpg
+        text_colour: "#fff"
+
+    mosaic_view_meta:
+      - channel: day_movie
+        metaColumns: []
+      - channel: last_n_movie
+        metaColumns: []
+
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
       {seqNum}}"
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/\

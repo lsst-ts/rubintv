@@ -41,6 +41,8 @@ class Channel(BaseModel):
     label: str = ""
     per_day: bool = False
     colour: str = ""
+    icon: str = ""
+    text_colour: str = "#000"
 
 
 class HasButton(BaseModel):
@@ -63,11 +65,35 @@ class HasButton(BaseModel):
         True for a shadow, false otherwise.
     """
 
-    name: str
     title: str
+    name: str = ""
     logo: str = ""
     text_colour: str = "#000"
     text_shadow: bool = False
+
+
+class MosaicViewMeta(BaseModel):
+    """Populated in the models data YAML file, each MosaicViewMeta object pairs
+    a channel name with a set of metadata columns to display alongside the
+    current image for that channel.
+
+    Attributes
+    ----------
+    channel : str
+        The channel name.
+    metaColumns : list[str]
+        A list of metadata columns.
+    dataType : str
+        Presently, "image" or "video" are only options.
+    """
+
+    channel: str
+    metaColumns: list[str]
+    dataType: str = "image"
+
+
+class ExtraButton(HasButton):
+    linkURL: str
 
 
 class Camera(HasButton):
@@ -98,6 +124,9 @@ class Camera(HasButton):
         A link to the image viewer. Defaults to an empty string.
     copy_row_template : str, optional
         Template string for copying a row. Defaults to an empty string.
+    mosaic_view_meta: list[MosaicViewMeta], optional
+        List of channels and associated metadata columns for a mosaic view of
+        current images and plots.
 
     Methods
     -------
@@ -119,6 +148,8 @@ class Camera(HasButton):
     metadata_cols: dict[str, str] | None = None
     image_viewer_link: str = ""
     copy_row_template: str = ""
+    mosaic_view_meta: list[MosaicViewMeta] = []
+    extra_buttons: list[ExtraButton] = []
 
     def seq_channels(self) -> list[Channel]:
         return [c for c in self.channels if not c.per_day]
@@ -350,6 +381,13 @@ class Heartbeat:
             "isActive": bool(self.state.value),
             "nextExpected": self.next_expected.isoformat(),  # Convert datetime to string
         }
+
+
+class ServiceTypes(Enum):
+    CAMERA: str = "camera"
+    CHANNEL: str = "channel"
+    NIGHTREPORT: str = "nightreport"
+    HISTORICALSTATUS = str = "historicalStatus"
 
 
 class ServiceMessageTypes(Enum):

@@ -4,7 +4,7 @@ export default function Banner ({ siteLocation, locationName, camera }) {
   const camName = camera.name
   let banner = ''
   let cls = 'banner-text'
-  if (camName === 'comcam_sim') {
+  if (camName === 'comcam_sim' || camName === 'comcam') {
     if (locationName === 'slac') {
       banner = 'USDF Nightly Validation Processing'
       cls += ' slac'
