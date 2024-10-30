@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from . import __version__
 from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
-from .config import config
+from .config import config, rubintv_logger
 from .handlers.api import api_router
 from .handlers.ddv_routes_handler import ddv_router
 from .handlers.ddv_websocket_handler import ddv_client_ws_router, internal_ws_router
@@ -32,6 +32,16 @@ from .handlers.websockets_clients import clients
 from .middleware.x_forwarded import XForwardedMiddleware
 from .models.models_init import ModelsInitiator
 from .s3client import S3Client
+
+logger = rubintv_logger()
+
+exp_checker_installed = False
+try:
+    from ..exp_checker import app as exp_checker_app
+
+    exp_checker_installed = True
+except ModuleNotFoundError:
+    logger.warn("exp-checker not found. Not mounting.")
 
 __all__ = ["app", "config"]
 
@@ -113,6 +123,10 @@ def create_app() -> FastAPI:
         )
         # Provide router that hooks up ddv/index.html
         app.include_router(ddv_router, prefix=f"{config.path_prefix}/ddv")
+
+    # Mount exp_checker FastAPI app.
+    if exp_checker_installed:
+        app.mount(f"{config.path_prefix}/exp_checker", exp_checker_app)
 
     # Attach the routers.
 
