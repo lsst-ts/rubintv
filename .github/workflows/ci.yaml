@@ -68,6 +68,12 @@ jobs:
           npm install
           npm run build
 
+      - name: install exp_checker
+        uses: actions/checkout@v4
+        with:
+          repository: lsst-sitcom/rubin_exp_checker
+          path: python/lsst/ts/exp_checker
+
       - name: Define the Docker tag
         id: vars
         run: echo "tag=$(scripts/docker-tag.sh)" >> $GITHUB_OUTPUT
