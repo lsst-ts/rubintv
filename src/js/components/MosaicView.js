@@ -199,17 +199,24 @@ ChannelImage.propTypes = {
 }
 
 function ChannelVideo({ mediaURL }) {
+  const [isLoaded, setIsLoaded] = useState(false)
+
   const videoSrc = new URL(`event_video/${mediaURL}`, APP_DATA.baseUrl)
   const vidID = `v_${mediaURL.hashCode()}`
   return (
     <div className="viewVideo">
       <a href={videoSrc}>
-        <video className="resp" id={vidID} autoPlay loop controls>
+        <video className="resp" id={vidID} autoPlay loop controls onLoadedData={() => setIsLoaded(true)}>
           <source src={videoSrc} />
         </video>
       </a>
-      <button onClick={() => frameStep(vidID, BACK)}>&lt;</button>
-      <button onClick={() => frameStep(vidID, FORWARD)}>&gt;</button>
+      { isLoaded && (
+        <div className="video-extra-controls">
+          <button onClick={() => frameStep(vidID, BACK)}>&lt;</button>
+          <button onClick={() => frameStep(vidID, FORWARD)}>&gt;</button>
+        </div>
+      )
+      }
     </div>
   )
 }
@@ -290,14 +297,6 @@ function videoControl(e) {
       break
     case "ArrowRight":
       timeDelta = FORWARD
-      break
-    case "Space":
-      if (video.isPaused) {
-        console.log('Gonna play again!')
-        video.play()
-      } else {
-        video.pause()
-      }
   }
   if (timeDelta) {
     frameStep(video.id, timeDelta)
@@ -307,7 +306,5 @@ function videoControl(e) {
 function pauseVideo(video) {
   if (!video.isPaused) {
     video.pause()
-    return true
   }
-  return false
 }
