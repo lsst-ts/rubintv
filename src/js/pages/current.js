@@ -9,7 +9,10 @@ import { WebsocketClient } from '../modules/ws-service-client'
   const location = document.documentElement.dataset.locationname
   const camera = initEvent.camera_name
   const channel = initEvent.channel_name
-  const baseImgURL = window.APP_DATA.imgURL.split('/').slice(0, -1).join('/')
+  let baseImgURL = window.APP_DATA.imgURL.split('/').slice(0, -1).join('/')
+  if (!baseImgURL.endsWith('/')) {
+    baseImgURL += '/'
+  }
   // eslint-disable-next-line no-unused-vars
   const ws = new WebsocketClient()
   ws.subscribe('service', 'channel', location, camera, channel)
