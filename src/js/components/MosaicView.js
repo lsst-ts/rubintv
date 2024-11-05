@@ -6,14 +6,11 @@ import {
   metadataType,
   mosaicSingleView,
 } from "./componentPropTypes"
-import { _getById, addStrHashCode } from "../modules/utils"
+import { _getById, getStrHashCode } from "../modules/utils"
 
 const FRAMELENGTH = 0.1
 const BACK = -FRAMELENGTH
 const FORWARD = FRAMELENGTH
-
-// add hashing method to String prototype
-addStrHashCode()
 
 const commonColumns = ["seqNum"]
 
@@ -35,7 +32,7 @@ export default function MosaicView({ locationName, camera }) {
   function checkNeedsFocusability() {
     // Is there more than one video?
     const vids = camera.mosaic_view_meta.filter(
-      ({ mediaType }) => mediaType === "image"
+      ({ mediaType }) => mediaType === "video"
     )
     return vids.length > 1 ? true : false
   }
@@ -202,7 +199,7 @@ function ChannelVideo({ mediaURL }) {
   const [isLoaded, setIsLoaded] = useState(false)
 
   const videoSrc = new URL(`event_video/${mediaURL}`, APP_DATA.baseUrl)
-  const vidID = `v_${mediaURL.hashCode()}`
+  const vidID = `v_${getStrHashCode(mediaURL)}`
   return (
     <div className="viewVideo">
       <a href={videoSrc}>

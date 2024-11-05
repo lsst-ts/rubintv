@@ -126,12 +126,10 @@ export function getWebSockURL (name) {
   return `${wsProtocol}//${hostname}/${appName}/${name}/`
 }
 
-export function addStrHashCode () {
-  String.prototype.hashCode = function() {
-    var hash = 0, i = 0, len = this.length
-    while ( i < len ) {
-        hash  = ((hash << 5) - hash + this.charCodeAt(i++)) << 0
-    }
-    return hash
+export function getStrHashCode (str) {
+  var hash = 0, i = 0, len = str.length
+  while ( i < len ) {
+      hash  = ((hash << 5) - hash + str.charCodeAt(i++)) << 0
   }
+  return hash
 }
