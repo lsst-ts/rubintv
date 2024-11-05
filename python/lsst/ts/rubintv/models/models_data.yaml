@@ -286,7 +286,7 @@ cameras:
   - name: comcam_sim_aos
     title: ComCamSimAOS
     online: True
-    logo: AOS_Homer.jpg
+    logo: Donut_watching.jpg
     channels:
       - name: fp_donut_gallery
         title: Focal Plane Donut Gallery
@@ -304,7 +304,8 @@ cameras:
   - name: comcam_aos
     title: ComCamAOS
     online: True
-    logo: ComCamAOS.jpg
+    logo: Donut_watching_grey.jpg
+    text_colour: "#fff"
     channels:
       - name: fp_donut_gallery
         title: Focal Plane Donut Gallery
