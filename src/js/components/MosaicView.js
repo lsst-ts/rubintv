@@ -14,7 +14,7 @@ const FORWARD = FRAMELENGTH
 
 const MediaType = {
   IMAGE: "image",
-  VIDEO: "video"
+  VIDEO: "video",
 }
 
 const commonColumns = ["seqNum"]
@@ -22,19 +22,24 @@ const commonColumns = ["seqNum"]
 export default function MosaicView({ locationName, camera }) {
   const [historicalBusy, setHistoricalBusy] = useState(null)
   const [currentMeta, setCurrentMeta] = useState({})
-  const isFocusable = checkNeedsFocusability()
   const [views, setViews] = useState(initialViews)
 
   function initialViews() {
-    const views = camera.mosaic_view_meta.map((view, index) => ({
-      ...view,
-      latestEvent: {},
-      hasFocus: index == 0 ? true : false,
-    }))
+    let videoCount = 0
+    const views = camera.mosaic_view_meta.map((view) => {
+      const isVideo = view.mediaType === MediaType.VIDEO
+      videoCount += isVideo ? 1 : 0
+      return {
+        ...view,
+        latestEvent: {},
+        // only apply 'selected == true' to first video
+        selected: isVideo && videoCount == 1 ? true : false,
+      }
+    })
     return views
   }
 
-  function checkNeedsFocusability() {
+  function hasMultipleVideos() {
     // Is there more than one video?
     const vids = camera.mosaic_view_meta.filter(
       ({ mediaType }) => mediaType === MediaType.VIDEO
@@ -42,12 +47,12 @@ export default function MosaicView({ locationName, camera }) {
     return vids.length > 1 ? true : false
   }
 
-  function setHasFocus(thisView) {
+  function selectView(thisView) {
     setViews((prevViews) =>
       prevViews.map((view) =>
         view.channel === thisView.channel
-          ? { ...view, hasFocus: true }
-          : { ...view, hasFocus: false }
+          ? { ...view, selected: true }
+          : { ...view, selected: false }
       )
     )
   }
@@ -103,8 +108,8 @@ export default function MosaicView({ locationName, camera }) {
               camera={camera}
               view={view}
               currentMeta={currentMeta}
-              setHasFocus={setHasFocus}
-              isFocusable={isFocusable}
+              selectView={selectView}
+              isSelectable={hasMultipleVideos}
               key={view.channel}
             />
           )
@@ -123,22 +128,22 @@ function ChannelView({
   camera,
   view,
   currentMeta,
-  setHasFocus,
-  isFocusable,
+  selectView,
+  isSelectable,
 }) {
   const channel = camera.channels.find(({ name }) => name === view.channel)
   if (!channel) {
     return <h3>Channel {view.channel} not found</h3>
   }
   const {
-    hasFocus,
+    selected,
     mediaType,
     latestEvent: { day_obs: dayObs },
   } = view
-  const clsName = ["view", `view-${mediaType}`, hasFocus ? "has-focus" : null]
+  const clsName = ["view", `view-${mediaType}`, selected ? "selected" : null]
     .join(" ")
     .trimEnd()
-  const clickHandler = isFocusable ? () => setHasFocus(view) : null
+  const clickHandler = isSelectable ? () => selectView(view) : null
   return (
     <li className={clsName} onClick={clickHandler}>
       <h3 className="channel">
@@ -208,17 +213,23 @@ function ChannelVideo({ mediaURL }) {
   return (
     <div className="viewVideo">
       <a href={videoSrc}>
-        <video className="resp" id={vidID} autoPlay loop controls onLoadedData={() => setIsLoaded(true)}>
+        <video
+          className="resp"
+          id={vidID}
+          autoPlay
+          loop
+          controls
+          onLoadedData={() => setIsLoaded(true)}
+        >
           <source src={videoSrc} />
         </video>
       </a>
-      { isLoaded && (
+      {isLoaded && (
         <div className="video-extra-controls">
           <button onClick={() => frameStep(vidID, BACK)}>&lt;</button>
           <button onClick={() => frameStep(vidID, FORWARD)}>&gt;</button>
         </div>
-      )
-      }
+      )}
     </div>
   )
 }
@@ -272,7 +283,7 @@ const buildMediaURI = (locationName, cameraName, channelName, filename) =>
   `${locationName}/${cameraName}/${channelName}/${filename}`
 
 function frameStep(vidID, timeDelta) {
-  console.log('frame delta is: ',timeDelta)
+  console.log("frame delta is: ", timeDelta)
   const video = _getById(vidID)
   pauseVideo(video)
   if (timeDelta < 0 && video.currentTime < 0) {
@@ -293,7 +304,7 @@ function videoControl(e) {
   }
   const key = e.code
   let timeDelta = 0
-  switch(key) {
+  switch (key) {
     case "ArrowLeft":
       timeDelta = BACK
       break

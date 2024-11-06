@@ -544,12 +544,12 @@ section
 		justify-content: space-between
 		gap: 1em
 		align-items: flex-start
-		// Complicated looking way of highlighting only one
-		// selected video view in a list of video views.
-		// Only apply .has-focus if there is at least one
+		// Only videos can be selected. If there is only
+		// one, there is no need to highlight the selection.
+		// Only apply .selected if there is at least one
 		// .view-video element within .views that does
-		// not have the .has-focus class.
-		&:has(.view-video:not(.has-focus)) .has-focus
+		// not have the .selected class.
+		&:has(.view-video:not(.selected)) .selected
 			box-shadow: 0 0 13px rgba(255,255,255,0.3)
 
 	.view

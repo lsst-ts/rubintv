@@ -219,6 +219,9 @@ cameras:
         per_day: True
 
     mosaic_view_meta:
+      - channel: stills
+        mediaType: image
+        metaColumns: []
       - channel: movies
         mediaType: video
         metaColumns: []
