@@ -12,6 +12,11 @@ const FRAMELENGTH = 0.1
 const BACK = -FRAMELENGTH
 const FORWARD = FRAMELENGTH
 
+const MediaType = {
+  IMAGE: "image",
+  VIDEO: "video"
+}
+
 const commonColumns = ["seqNum"]
 
 export default function MosaicView({ locationName, camera }) {
@@ -32,7 +37,7 @@ export default function MosaicView({ locationName, camera }) {
   function checkNeedsFocusability() {
     // Is there more than one video?
     const vids = camera.mosaic_view_meta.filter(
-      ({ mediaType }) => mediaType === "video"
+      ({ mediaType }) => mediaType === MediaType.VIDEO
     )
     return vids.length > 1 ? true : false
   }
@@ -167,9 +172,9 @@ function ChannelMedia({ locationName, camera, event, mediaType }) {
     filename
   )
   switch (mediaType) {
-    case "video":
+    case MediaType.VIDEO:
       return <ChannelVideo mediaURL={mediaURL} />
-    case "image":
+    case MediaType.IMAGE:
     default:
       return <ChannelImage mediaURL={mediaURL} />
   }
