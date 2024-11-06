@@ -165,6 +165,8 @@ ChannelView.propTypes = {
   camera: cameraType,
   view: mosaicSingleView,
   currentMeta: metadataType,
+  selectView: PropTypes.func,
+  isSelectable: PropTypes.bool,
 }
 
 function ChannelMedia({ locationName, camera, event, mediaType }) {
@@ -188,7 +190,10 @@ ChannelMedia.propTypes = {
   locationName: PropTypes.string,
   camera: cameraType,
   event: eventType,
-  mediaType: PropTypes.string,
+  mediaType: PropTypes.shape({
+    IMAGE: PropTypes.string,
+    VIDEO: PropTypes.string,
+  }),
 }
 
 function ChannelImage({ mediaURL }) {
