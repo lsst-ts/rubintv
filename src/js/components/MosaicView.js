@@ -103,7 +103,7 @@ export default function MosaicView({ locationName, camera }) {
       <ul className="views">
         {views.map((view) => {
           return (
-            <ChannelView
+            <ChannelViewListItem
               locationName={locationName}
               camera={camera}
               view={view}
@@ -123,7 +123,7 @@ MosaicView.propTypes = {
   camera: cameraType,
 }
 
-function ChannelView({
+function ChannelViewListItem({
   locationName,
   camera,
   view,
