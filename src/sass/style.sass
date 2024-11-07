@@ -544,11 +544,19 @@ section
 		justify-content: space-between
 		gap: 1em
 		align-items: flex-start
+		// Only videos can be selected. If there is only
+		// one, there is no need to highlight the selection.
+		// Only apply .selected if there is at least one
+		// .view-video element within .views that does
+		// not have the .selected class.
+		&:has(.view-video:not(.selected)) .selected
+			box-shadow: 0 0 13px rgba(255,255,255,0.3)
 
 	.view
 		width: 100%
 		padding: 1em
 		background-color: rgba(0, 0, 0, 0.2)
+		transition: 0.3s box-shadow
 
 	.viewImage
 		width: 100%

@@ -218,6 +218,14 @@ cameras:
         title: Current Image
         per_day: True
 
+    mosaic_view_meta:
+      - channel: stills
+        mediaType: image
+        metaColumns: []
+      - channel: movies
+        mediaType: video
+        metaColumns: []
+
   - name: comcam
     title: ComCam
     online: True
@@ -257,8 +265,10 @@ cameras:
 
     mosaic_view_meta:
       - channel: day_movie
+        mediaType: video
         metaColumns: []
       - channel: last_n_movie
+        mediaType: video
         metaColumns: []
 
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \

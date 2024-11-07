@@ -15,7 +15,6 @@ import { _getById } from "../modules/utils"
     ws.subscribe("service", "channel", locationName, camera.name, view.channel)
     const channel = camera.channels.find(({name}) => name === view.channel)
     if (!channel.per_day) {
-      console.log(`${channel.name} is sequenced`)
       hasSequencedChannels = true
     }
   })
