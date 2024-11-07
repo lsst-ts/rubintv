@@ -12,9 +12,20 @@ const FRAMELENGTH = 0.1
 const BACK = -FRAMELENGTH
 const FORWARD = FRAMELENGTH
 
-const MediaType = {
-  IMAGE: "image",
-  VIDEO: "video",
+class MediaType {
+  static IMAGE = { value: "image" }
+  static VIDEO = { value: "video" }
+
+  static getMediaType(type) {
+    switch (type) {
+      case "image":
+        return this.IMAGE
+      case "video":
+        return this.VIDEO
+      default:
+        return null
+    }
+  }
 }
 
 const commonColumns = ["seqNum"]
@@ -27,10 +38,11 @@ export default function MosaicView({ locationName, camera }) {
   function initialViews() {
     let videoCount = 0
     const views = camera.mosaic_view_meta.map((view) => {
-      const isVideo = view.mediaType === MediaType.VIDEO
+      const isVideo = view.mediaType === MediaType.VIDEO.value
       videoCount += isVideo ? 1 : 0
       return {
         ...view,
+        mediaType: MediaType.getMediaType(view.mediaType),
         latestEvent: {},
         // only apply 'selected == true' to first video
         selected: isVideo && videoCount == 1 ? true : false,
@@ -109,7 +121,7 @@ export default function MosaicView({ locationName, camera }) {
               view={view}
               currentMeta={currentMeta}
               selectView={selectView}
-              isSelectable={hasMultipleVideos}
+              isSelectable={hasMultipleVideos()}
               key={view.channel}
             />
           )
@@ -140,7 +152,11 @@ function ChannelViewListItem({
     mediaType,
     latestEvent: { day_obs: dayObs },
   } = view
-  const clsName = ["view", `view-${mediaType}`, selected ? "selected" : null]
+  const clsName = [
+    "view",
+    `view-${mediaType.value}`,
+    selected ? "selected" : null,
+  ]
     .join(" ")
     .trimEnd()
   const clickHandler = isSelectable ? () => selectView(view) : null
@@ -160,7 +176,7 @@ function ChannelViewListItem({
     </li>
   )
 }
-ChannelView.propTypes = {
+ChannelViewListItem.propTypes = {
   locationName: PropTypes.string,
   camera: cameraType,
   view: mosaicSingleView,
@@ -191,8 +207,7 @@ ChannelMedia.propTypes = {
   camera: cameraType,
   event: eventType,
   mediaType: PropTypes.shape({
-    IMAGE: PropTypes.string,
-    VIDEO: PropTypes.string,
+    value: PropTypes.string,
   }),
 }
 
@@ -212,7 +227,6 @@ ChannelImage.propTypes = {
 
 function ChannelVideo({ mediaURL }) {
   const [isLoaded, setIsLoaded] = useState(false)
-
   const videoSrc = new URL(`event_video/${mediaURL}`, APP_DATA.baseUrl)
   const vidID = `v_${getStrHashCode(mediaURL)}`
   return (
@@ -288,22 +302,26 @@ const buildMediaURI = (locationName, cameraName, channelName, filename) =>
   `${locationName}/${cameraName}/${channelName}/${filename}`
 
 function frameStep(vidID, timeDelta) {
-  console.log("frame delta is: ", timeDelta)
   const video = _getById(vidID)
   pauseVideo(video)
-  if (timeDelta < 0 && video.currentTime < 0) {
+  const currentTime = video.currentTime
+  const duration = video.duration
+  if (timeDelta < 0 && currentTime + timeDelta < 0) {
     video.currentTime = 0
-  } else if (timeDelta > 0 && video.currentTime > video.duration) {
+  } else if (
+    timeDelta > 0 &&
+    currentTime + timeDelta >= duration - FRAMELENGTH
+  ) {
     video.currentTime = video.duration
   } else {
-    video.currentTime = video.currentTime + timeDelta
+    video.currentTime = currentTime + timeDelta
   }
 }
 
 window.onkeydown = videoControl
 
 function videoControl(e) {
-  const video = document.querySelector(".view-video.has-focus video")
+  const video = document.querySelector(".view-video.selected video")
   if (!video) {
     return
   }
@@ -315,6 +333,7 @@ function videoControl(e) {
       break
     case "ArrowRight":
       timeDelta = FORWARD
+      break
   }
   if (timeDelta) {
     frameStep(video.id, timeDelta)
@@ -322,7 +341,7 @@ function videoControl(e) {
 }
 
 function pauseVideo(video) {
-  if (!video.isPaused) {
+  if (!video.paused) {
     video.pause()
   }
 }
