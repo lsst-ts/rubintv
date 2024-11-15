@@ -243,6 +243,9 @@ cameras:
       - name: mount
         title: Mount torques
         colour: "#58b4e7"
+      - name: imexam
+        title: Image Analysis
+        colour: "#e7587b"
         
       - name: day_movie
         title: Whole Day Movie
