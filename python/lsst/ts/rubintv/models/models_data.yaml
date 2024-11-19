@@ -313,6 +313,9 @@ cameras:
       - name: focus_sweep
         title: Focus Sweep
         colour: "#967289"
+      - name: psf_zk_panel
+        title: AOS residual FWHM
+        colour: "#d27c54"
 
   - name: comcam_aos
     title: ComCamAOS
@@ -332,6 +335,9 @@ cameras:
       - name: focus_sweep
         title: Focus Sweep
         colour: "#965d82"
+      - name: psf_zk_panel
+        title: AOS residual FWHM
+        colour: "#d27549"
 
   - name: comcam_sim_prep
     title: ComCamSimPrep

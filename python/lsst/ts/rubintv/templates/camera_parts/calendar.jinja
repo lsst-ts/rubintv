@@ -29,7 +29,7 @@
     <div class="year" id="year-{{ year }}">
   {% endif %}
 
-    {% for month in calendar[year]|reverse %}
+    {% for month in calendar[year]|sort|reverse %}
       <div class="month">
         <h5 class="month-title">
           {{ month_names[month - 1] }}
