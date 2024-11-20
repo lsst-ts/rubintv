@@ -1,19 +1,48 @@
-import PropTypes from 'prop-types'
-import React, { useState } from 'react'
-import Clock from './Clock'
-import { _getById } from '../modules/utils'
-import { metadataType } from './componentPropTypes'
+import PropTypes from "prop-types"
+import React, { useState } from "react"
+import Clock from "./Clock"
+import { _getById } from "../modules/utils"
+import { metadataType } from "./componentPropTypes"
 
-function TableControls ({ cameraName, allColNames, selected, setSelected, date, metadata }) {
+export default function AboveTableRow({
+  camera,
+  allColNames,
+  selected,
+  setSelected,
+  date,
+  metadata,
+}) {
+  return (
+    <div className="row">
+      <h3 id="the-date">
+        Data for day: <span className="date">{date}</span>
+      </h3>
+      <TableControls
+        cameraName={camera.name}
+        allColNames={allColNames}
+        selected={selected}
+        setSelected={setSelected}
+      />
+      <DownloadMetadataButton
+        date={date}
+        cameraName={cameraName}
+        metadata={metadata}
+      />
+      <Clock />
+    </div>
+  )
+}
+
+function TableControls({ cameraName, allColNames, selected, setSelected }) {
   const [controlsOpen, setControlsOpen] = useState(false)
 
   const locationName = document.documentElement.dataset.locationname
 
   const handleCheckboxChange = (name) => {
-    setSelected(prevSelected => {
+    setSelected((prevSelected) => {
       let updatedSelected
       if (prevSelected.includes(name)) {
-        updatedSelected = prevSelected.filter(attr => attr !== name)
+        updatedSelected = prevSelected.filter((attr) => attr !== name)
       } else {
         updatedSelected = [...prevSelected, name]
       }
@@ -21,7 +50,7 @@ function TableControls ({ cameraName, allColNames, selected, setSelected, date, 
       return updatedSelected
     })
   }
-  const panelClass = !controlsOpen ? 'table-panel' : 'table-panel open'
+  const panelClass = !controlsOpen ? "table-panel" : "table-panel open"
 
   return (
     <>
@@ -35,7 +64,7 @@ function TableControls ({ cameraName, allColNames, selected, setSelected, date, 
 
         {controlsOpen && (
           <div className="table-controls">
-            {allColNames.map(title => (
+            {allColNames.map((title) => (
               <div className="table-control" key={title}>
                 <label htmlFor={title}>
                   <input
@@ -53,11 +82,6 @@ function TableControls ({ cameraName, allColNames, selected, setSelected, date, 
           </div>
         )}
       </div>
-      <DownloadMetadataButton
-        date={date}
-        cameraName={cameraName}
-        metadata={metadata} />
-      <Clock />
     </>
   )
 }
@@ -73,39 +97,39 @@ TableControls.propTypes = {
   /** the given date */
   date: PropTypes.string,
   /** the current metadata for this camera/date */
-  metadata: metadataType
+  metadata: metadataType,
 }
 
-export default TableControls
-
-function storeSelected (selected, cameraName) {
+function storeSelected(selected, cameraName) {
   localStorage[cameraName] = JSON.stringify(selected)
 }
 
-export function JumpButtons () {
-  const { pathPrefix } = window.APP_DATA;
+export function JumpButtons() {
+  const { pathPrefix } = window.APP_DATA
   return (
-    <div className='jump-buttons'>
+    <div className="jump-buttons">
       <button
-        onClick={() => _getById('table').scrollIntoView()}
-        className='jump-button to-top'
-        title='to top'>
-        <img src={pathPrefix + '/static/images/jump-arrow.svg'}/>
+        onClick={() => _getById("table").scrollIntoView()}
+        className="jump-button to-top"
+        title="to top"
+      >
+        <img src={pathPrefix + "/static/images/jump-arrow.svg"} />
       </button>
       <button
-        onClick={() => _getById('table').scrollIntoView(false)}
-        className='jump-button to-bottom'
-        title='to bottom'>
-        <img src={pathPrefix + '/static/images/jump-arrow.svg'}/>
+        onClick={() => _getById("table").scrollIntoView(false)}
+        className="jump-button to-bottom"
+        title="to bottom"
+      >
+        <img src={pathPrefix + "/static/images/jump-arrow.svg"} />
       </button>
     </div>
   )
 }
 
-function DownloadMetadataButton ({ date, cameraName, metadata }) {
+function DownloadMetadataButton({ date, cameraName, metadata }) {
   return (
     <button
-      className='button button-small download-metadata'
+      className="button button-small download-metadata"
       onClick={() => downloadMetadata(date, cameraName, metadata)}
     >
       Download Metadata
@@ -115,11 +139,11 @@ function DownloadMetadataButton ({ date, cameraName, metadata }) {
 DownloadMetadataButton.propTypes = {
   cameraName: PropTypes.string,
   date: PropTypes.string,
-  metadata: PropTypes.object
+  metadata: PropTypes.object,
 }
 
-function downloadMetadata (date, cameraName, metadata) {
-  const a = document.createElement('a')
+function downloadMetadata(date, cameraName, metadata) {
+  const a = document.createElement("a")
   const blob = new Blob([JSON.stringify(metadata)])
   const url = window.URL.createObjectURL(blob)
   a.href = url
