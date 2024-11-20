@@ -6,12 +6,10 @@ from datetime import date, datetime, timedelta, timezone
 from enum import Enum
 from typing import Any
 
-from lsst.ts.rubintv.config import rubintv_logger
-from pydantic import BaseModel, ConfigDict
+from lsst.ts.rubintv import __version__
+from lsst.ts.rubintv.config import config, rubintv_logger
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.dataclasses import dataclass
-
-from .. import __version__
-from ..config import config
 
 logger = rubintv_logger()
 
@@ -98,7 +96,13 @@ class MosaicViewMeta(BaseModel):
 
 
 class ExtraButton(HasButton):
+    # relative link to related content
     linkURL: str
+
+
+class TimeSinceClock(BaseModel):
+    # label string to display next to clock
+    label: str
 
 
 class Camera(HasButton):
@@ -129,9 +133,14 @@ class Camera(HasButton):
         A link to the image viewer. Defaults to an empty string.
     copy_row_template : str, optional
         Template string for copying a row. Defaults to an empty string.
-    mosaic_view_meta: list[MosaicViewMeta], optional
+    mosaic_view_meta : list[MosaicViewMeta], optional
         List of channels and associated metadata columns for a mosaic view of
         current images and plots.
+    extra_buttons : list[ExtraButton], optional
+        Any extra buttons to link to other parts of the website.
+    time_since_clock : TimeSinceClock
+        Label to display next to the time since (for e.g. last image) clock.
+
 
     Methods
     -------
@@ -155,6 +164,7 @@ class Camera(HasButton):
     copy_row_template: str = ""
     mosaic_view_meta: list[MosaicViewMeta] = []
     extra_buttons: list[ExtraButton] = []
+    time_since_clock: TimeSinceClock | None = None
 
     def seq_channels(self) -> list[Channel]:
         return [c for c in self.channels if not c.per_day]
@@ -184,6 +194,7 @@ class Event:
     seq_num: int | str = ""
     filename: str = ""
     ext: str = ""
+    other_data: dict = Field(default_factory=dict)
 
     def __lt__(self, other: Any) -> bool:
         """Used by max()"""
