@@ -1,6 +1,6 @@
 import PropTypes from "prop-types"
 import React, { useState } from "react"
-import Clock from "./Clock"
+import Clock, { TimeSinceLastImageClock } from "./Clock"
 import { _getById } from "../modules/utils"
 import { metadataType } from "./componentPropTypes"
 
@@ -25,10 +25,13 @@ export default function AboveTableRow({
       />
       <DownloadMetadataButton
         date={date}
-        cameraName={cameraName}
+        cameraName={camera.name}
         metadata={metadata}
       />
       <Clock />
+      {camera.time_since_clock && (
+        <TimeSinceLastImageClock camera={camera} metadata={metadata} />
+      )}
     </div>
   )
 }

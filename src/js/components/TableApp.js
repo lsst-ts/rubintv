@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react"
 import PropTypes from "prop-types"
 import TableView, { TableHeader } from "./TableView"
-import TableControls, { JumpButtons } from "./TableControls"
+import AboveTableRow, { JumpButtons } from "./TableControls"
 import { _getById, intersect, retrieveSelected } from "../modules/utils"
 import { cameraType, channelDataType, metadataType } from "./componentPropTypes"
-import AboveTableRow from "./TableControls"
 
 export default function TableApp({
   camera,
