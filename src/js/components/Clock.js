@@ -36,7 +36,7 @@ function padZero(num) {
 }
 
 export function TimeSinceLastImageClock(props) {
-  const [offLine, setOffLine] = useState(false)
+  const [isOnline, setIsOnline] = useState(true)
   const [time, setTime] = useState(new Date())
   const { metadata, camera } = props
 
@@ -45,8 +45,16 @@ export function TimeSinceLastImageClock(props) {
       setTime(new Date())
     }, 1000)
 
+    function handleWSStateChangeEvent(event) {
+      console.log(event.detail)
+      const { online } = event.detail
+      setIsOnline(online)
+    }
+    window.addEventListener("ws_status_change", handleWSStateChangeEvent)
+
     return () => {
       clearInterval(timerId)
+      window.removeEventListener("ws_status_change")
     }
   }, [])
 
@@ -67,16 +75,22 @@ export function TimeSinceLastImageClock(props) {
     const endTime = startTime + exposureTime
     timeElapsed = time - endTime
   }
+  const className = ["clock time-since-clock", isOnline ? "" : "offline"].join(
+    " "
+  )
   return (
-    <div className="clock time-since-clock">
+    <div className={className}>
       <div>
-        <p>
-          <span className="label">{camera.time_since_clock.label}</span>
-          {error && <span>{error}</span>}
-          {timeElapsed && (
-            <span className="timeElapsed">{toTimeString(timeElapsed)}</span>
-          )}
-        </p>
+        {isOnline && (
+          <p>
+            <span className="label">{camera.time_since_clock.label}</span>
+            {error && <span>{error}</span>}
+            {timeElapsed && (
+              <span className="timeElapsed">{toTimeString(timeElapsed)}</span>
+            )}
+          </p>
+        )}
+        {!isOnline && <p>Lost comms with app</p>}
       </div>
     </div>
   )

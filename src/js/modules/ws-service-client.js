@@ -13,7 +13,7 @@ export class WebsocketClient {
     this.ws.onclose = this.handleClose.bind(this)
     this.ws.onopen = this.handleOpen(this)
     this.subscriptions = [] // To store multiple subscriptions
-    this.online = null
+    this.online = false
   }
 
   subscribe(
@@ -61,25 +61,27 @@ export class WebsocketClient {
 
   handleClose(e) {
     console.log("Lost services websocket connection. Retrying")
-    if (this.online) {
-      this.online = false
-      window.dispatchEvent(
-        new CustomEvent("ws_status_change", { online: false })
-      )
-    }
+    this.online = false
+    window.dispatchEvent(
+      new CustomEvent("ws_status_change", { detail: { online: false } })
+    )
   }
 
   handleOpen(e) {
-    if (!this.online) {
-      this.online = true
-      window.dispatchEvent(
-        new CustomEvent("ws_status_change", { online: true })
-      )
-    }
+    this.online = true
+    window.dispatchEvent(
+      new CustomEvent("ws_status_change", { detail: { online: true } })
+    )
   }
 
   handleMessage(messageEvent) {
     console.debug(messageEvent)
+    if (!this.online) {
+      this.online = true
+      window.dispatchEvent(
+        new CustomEvent("ws_status_change", { detail: { online: true } })
+      )
+    }
     if (!this.connectionID) {
       const id = this.setConnectionID(messageEvent.data)
       if (id) {
