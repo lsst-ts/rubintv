@@ -11,7 +11,6 @@
     window.APP_DATA.baseUrl = "{{ home_url }}"
     window.APP_DATA.camera = {{ camera|tojson }}
     window.APP_DATA.date = "{{ date }}"
+    window.APP_DATA.historicalBusy = {{ historical_busy|tojson if historical_busy else "null" }}
   </script>
-  <div id="historicalbusy" data-historicalbusy="{{ historical_busy }}">
-  </div>
 {% endblock further %}

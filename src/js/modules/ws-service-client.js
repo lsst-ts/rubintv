@@ -11,7 +11,9 @@ export class WebsocketClient {
     this.ws = new ReconnectingWebSocket(getWebSockURL("ws/data"))
     this.ws.onmessage = this.handleMessage.bind(this)
     this.ws.onclose = this.handleClose.bind(this)
+    this.ws.onopen = this.handleOpen(this)
     this.subscriptions = [] // To store multiple subscriptions
+    this.online = null
   }
 
   subscribe(
@@ -59,6 +61,21 @@ export class WebsocketClient {
 
   handleClose(e) {
     console.log("Lost services websocket connection. Retrying")
+    if (this.online) {
+      this.online = false
+      window.dispatchEvent(
+        new CustomEvent("ws_status_change", { online: false })
+      )
+    }
+  }
+
+  handleOpen(e) {
+    if (!this.online) {
+      this.online = true
+      window.dispatchEvent(
+        new CustomEvent("ws_status_change", { online: true })
+      )
+    }
   }
 
   handleMessage(messageEvent) {
@@ -107,7 +124,7 @@ export class WebsocketClient {
   }
 
   sendSubscriptionMessages() {
-    this.subscriptions.forEach( subscriptionPayload => {
+    this.subscriptions.forEach((subscriptionPayload) => {
       const message = {
         ...subscriptionPayload,
         clientID: this.connectionID,
