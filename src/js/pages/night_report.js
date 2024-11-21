@@ -7,12 +7,17 @@ import NightReport from "../components/NightReport"
   if (window.APP_DATA.historicalBusy) {
     return
   }
-  const locationName = document.documentElement.dataset.locationname
-  const camera = window.APP_DATA.camera || {}
-  const nightReport = window.APP_DATA.nightReport || {}
-  const date = window.APP_DATA.date || ""
-  const baseUrl = window.APP_DATA.baseUrl || ""
-  if (!window.APP_DATA.isHistorical) {
+
+  const {
+    locationName,
+    camera = {},
+    nightReport = {},
+    date = "",
+    baseUrl = "",
+    isHistorical,
+  } = window.APP_DATA
+
+  if (!isHistorical) {
     // eslint-disable-next-line no-unused-vars
     const ws = new WebsocketClient()
     ws.subscribe("service", "nightreport", locationName, camera.name)

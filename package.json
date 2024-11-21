@@ -48,5 +48,11 @@
     "react-dom": "^18.2.0",
     "reconnecting-websocket": "^4.4.0",
     "uuid": "^9.0.1"
+  },
+  "prettier": {
+    "trailingComma": "es5",
+    "tabWidth": 2,
+    "semi": false,
+    "singleQuote": false
   }
 }

@@ -1,20 +1,20 @@
 import { gunzipSync } from "fflate"
 
 /**
-* @param {string | any[]} arrayA
-* @param {any} arrayB
-*/
-export function intersect (arrayA, arrayB) {
-  return arrayA.filter(el => arrayB.includes(el))
+ * @param {string | any[]} arrayA
+ * @param {any} arrayB
+ */
+export function intersect(arrayA, arrayB) {
+  return arrayA.filter((el) => arrayB.includes(el))
 }
 
 /**
  * @param {RequestInfo | URL} url
  */
-export async function simplePost (url) {
+export async function simplePost(url) {
   const res = await fetch(url, {
-    method: 'POST',
-    body: ''
+    method: "POST",
+    body: "",
   })
   const data = await res.text()
   return data
@@ -23,9 +23,9 @@ export async function simplePost (url) {
 /**
  * @param {RequestInfo | URL} url
  */
-export async function simpleGet (url) {
+export async function simpleGet(url) {
   const res = await fetch(url, {
-    method: 'GET',
+    method: "GET",
   })
   const data = await res.text()
   return data
@@ -35,18 +35,18 @@ export async function simpleGet (url) {
  * @param {string} tagName
  * @param {string} className
  */
-export function _elWithClass (tagName, className) {
+export function _elWithClass(tagName, className) {
   return _elWithAttrs(tagName, { class: className })
 }
 
 /**
  * @param {string} tagName
  */
-export function _elWithAttrs (tagName, attrsObj = {}) {
+export function _elWithAttrs(tagName, attrsObj = {}) {
   const el = document.createElement(tagName)
   Object.entries(attrsObj).forEach(([attr, value]) => {
     switch (attr) {
-      case 'text': {
+      case "text": {
         const tNode = document.createTextNode(value)
         el.appendChild(tNode)
         break
@@ -61,7 +61,7 @@ export function _elWithAttrs (tagName, attrsObj = {}) {
 /**
  * @param {string} idStr
  */
-export function _getById (idStr) {
+export function _getById(idStr) {
   return document.getElementById(idStr)
 }
 
@@ -69,11 +69,11 @@ export function _getById (idStr) {
  * @param {{ [x: string]: string | number }} attributes
  * @param {string} attrToCheck
  */
-export function indicatorForAttr (attributes, attrToCheck) {
+export function indicatorForAttr(attributes, attrToCheck) {
   // indicators are in with the attributes. they share the name of the
   // attribute they belong to, but begin with an underscore
   const indicator = `_${attrToCheck}`
-  let flag = ''
+  let flag = ""
   // is there an indicator for this attribute?
   if (Object.keys(attributes).includes(indicator)) {
     // if so, get its value
@@ -82,29 +82,29 @@ export function indicatorForAttr (attributes, attrToCheck) {
   return flag
 }
 
-export function sanitiseString (str) {
+export function sanitiseString(str) {
   // Substitutes spaces and hyphens are exchanged for underscores.
   // Any non-word characters (any but a-z, A-Z, _) are removed.
   // Capital letters are made small.
-  let sanitised = str.replace('/[\s-]/', '_')
-  sanitised = sanitised.replace('[\W]','')
+  let sanitised = str.replace("/[s-]/", "_")
+  sanitised = sanitised.replace("[W]", "")
   return sanitised.toLowerCase()
 }
 
-export function replaceInString (link, dayObs, seqNum) {
+export function replaceInString(link, dayObs, seqNum) {
   const formattedLink = link
-    .replace('{dayObs}', dayObs)
-    .replace('{seqNum}', seqNum.padStart(6, '0'))
+    .replace("{dayObs}", dayObs)
+    .replace("{seqNum}", seqNum.padStart(6, "0"))
   return formattedLink
 }
 
 // A helper function to mimic Jinja2's groupby
-export function groupBy (array, keyFunction) {
+export function groupBy(array, keyFunction) {
   const obj = {}
   if (!array || array.length === 0) {
     return []
   }
-  array.forEach(item => {
+  array.forEach((item) => {
     const key = keyFunction(item)
     if (!obj[key]) {
       obj[key] = []
@@ -114,24 +114,25 @@ export function groupBy (array, keyFunction) {
   return Object.entries(obj)
 }
 
-export function retrieveSelected (cameraName) {
+export function retrieveSelected(cameraName) {
   const retrieved = localStorage.getItem(cameraName)
-  return (retrieved && JSON.parse(retrieved))
+  return retrieved && JSON.parse(retrieved)
 }
 
-
-export function getWebSockURL (name) {
+export function getWebSockURL(name) {
   const protocol = window.location.protocol
-  const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:'
+  const wsProtocol = protocol === "https:" ? "wss:" : "ws:"
   const hostname = window.location.host
-  const appName = window.location.pathname.split('/')[1]
+  const appName = window.location.pathname.split("/")[1]
   return `${wsProtocol}//${hostname}/${appName}/${name}/`
 }
 
-export function getStrHashCode (str) {
-  var hash = 0, i = 0, len = str.length
-  while ( i < len ) {
-      hash  = ((hash << 5) - hash + str.charCodeAt(i++)) << 0
+export function getStrHashCode(str) {
+  var hash = 0,
+    i = 0,
+    len = str.length
+  while (i < len) {
+    hash = ((hash << 5) - hash + str.charCodeAt(i++)) << 0
   }
   return hash
 }

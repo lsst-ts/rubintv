@@ -39,7 +39,7 @@ export default function AboveTableRow({
 function TableControls({ cameraName, allColNames, selected, setSelected }) {
   const [controlsOpen, setControlsOpen] = useState(false)
 
-  const locationName = document.documentElement.dataset.locationname
+  const locationName = window.APP_DATA.locationName
 
   const handleCheckboxChange = (name) => {
     setSelected((prevSelected) => {

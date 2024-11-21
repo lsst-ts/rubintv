@@ -1,4 +1,4 @@
-import PropTypes from 'prop-types'
+import PropTypes from "prop-types"
 
 // TODO: Convert these defs to use typescript instead.
 // See: DM-46475 (https://rubinobs.atlassian.net/browse/DM-46475)
@@ -7,9 +7,11 @@ import PropTypes from 'prop-types'
  * key-value pairs. In the case of the latter, if one of the keys is
  * 'DISPLAY_VALUE', it's value is a UTF-8 encoded character to display as an
  * icon in a button in the table */
-export const metadatumType = PropTypes.oneOfType(
-  [PropTypes.number, PropTypes.string, PropTypes.object]
-)
+export const metadatumType = PropTypes.oneOfType([
+  PropTypes.number,
+  PropTypes.string,
+  PropTypes.object,
+])
 
 /** metadata is in key-value pairs */
 export const metadataType = PropTypes.objectOf(metadatumType)
@@ -33,7 +35,7 @@ export const eventType = PropTypes.shape({
   channel_name: PropTypes.string,
   seq_num: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   filename: PropTypes.string,
-  ext: PropTypes.string
+  ext: PropTypes.string,
 })
 
 /** A camera takes the shape:
@@ -59,15 +61,13 @@ export const cameraType = PropTypes.shape({
   night_report_label: PropTypes.string,
   metadata_cols: PropTypes.object,
   image_viewer_link: PropTypes.string,
-  copy_row_template: PropTypes.string
+  copy_row_template: PropTypes.string,
 })
 
 /** channel data is formatted for ease of laying out in a table. It's keyed
  * by seq. num
  */
-export const channelDataType = PropTypes.objectOf(
-  PropTypes.objectOf(eventType)
-)
+export const channelDataType = PropTypes.objectOf(PropTypes.objectOf(eventType))
 
 export const nightReportData = PropTypes.shape({
   /**
@@ -87,7 +87,7 @@ export const nightReportData = PropTypes.shape({
   day_obs: PropTypes.string,
   group: PropTypes.string,
   filename: PropTypes.string,
-  ext: PropTypes.string
+  ext: PropTypes.string,
 })
 
 export const mosaicSingleView = PropTypes.shape({

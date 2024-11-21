@@ -5,21 +5,24 @@ import PerDay from "../components/PerDay"
 import Banner from "../components/Banner"
 import { _getById } from "../modules/utils"
 import { WebsocketClient } from "../modules/ws-service-client"
-
 ;(function () {
   if (window.APP_DATA.historicalBusy) {
     return
   }
-  const siteLocation = window.APP_DATA.siteLocation
-  const locationName = document.documentElement.dataset.locationname
-  const camera = window.APP_DATA.camera || {}
-  const channelData = window.APP_DATA.tableChannels || {}
-  const metadata = window.APP_DATA.tableMetadata || {}
-  const perDay = window.APP_DATA.perDay || {}
-  const nightReportLink = window.APP_DATA.nightReportLink || ""
-  const date = window.APP_DATA.date || ""
 
-  if (!window.APP_DATA.isHistorical) {
+  const {
+    siteLocation,
+    locationName,
+    camera = {},
+    tableChannels = {},
+    tableMetadata = {},
+    perDay = {},
+    nightReportLink = "",
+    date = "",
+    isHistorical,
+  } = window.APP_DATA
+
+  if (!isHistorical) {
     const ws = new WebsocketClient()
     ws.subscribe("service", "camera", locationName, camera.name)
   }
@@ -38,8 +41,8 @@ import { WebsocketClient } from "../modules/ws-service-client"
     <TableApp
       camera={camera}
       initialDate={date}
-      initialChannelData={channelData}
-      initialMetadata={metadata}
+      initialChannelData={tableChannels}
+      initialMetadata={tableMetadata}
     />
   )
 

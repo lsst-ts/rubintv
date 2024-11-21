@@ -1,5 +1,5 @@
-import { listenForHistoricalReset } from '../modules/historical-reset.js'
+import { listenForHistoricalReset } from "../modules/historical-reset.js"
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener("DOMContentLoaded", () => {
   listenForHistoricalReset()
 })

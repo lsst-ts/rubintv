@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from "react"
+import React, { useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
-import { eventType } from "./componentPropTypes"
+import { eventType } from './componentPropTypes'
 
-export default function PrevNext ({prevNext}) {
+export default function PrevNext({ prevNext, eventURL }) {
   const left = useRef(null)
   const right = useRef(null)
   useEffect(() => {
@@ -14,47 +14,42 @@ export default function PrevNext ({prevNext}) {
         left.current?.click()
       }
     }
-
-    document.addEventListener('keydown', handleKeyDown);
-
+    document.addEventListener('keydown', handleKeyDown)
     return function cleanup() {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown)
     }
-  }, []);
-  const eventURL = window.APP_DATA.eventURL
+  }, [])
   const prev = prevNext.prev
   const next = prevNext.next
   return (
     <div className="prev-next-buttons">
-      { prev && (
+      {prev && (
         <a
           className="prev prev-next button"
           href={`${eventURL}?key=${prev.key}`}
           ref={left}
         >
-          { prev.seq_num }
+          {prev.seq_num}
         </a>
       )}
-      { next && (
+      {next && (
         <a
           className="next prev-next button"
           href={`${eventURL}?key=${next.key}`}
           ref={right}
-          >
-          { next.seq_num }
+        >
+          {next.seq_num}
         </a>
       )}
     </div>
   )
 }
 PrevNext.propTypes = {
-  prevNext: PropTypes.oneOfType(
-    [
-      PropTypes.shape({
-        next: eventType,
-        prev: PropTypes.oneOfType([eventType, PropTypes.string])
-      }),
-      PropTypes.object
-    ]
-  )
+  prevNext: PropTypes.oneOfType([
+    PropTypes.shape({
+      next: eventType,
+      prev: PropTypes.oneOfType([eventType, PropTypes.string]),
+    }),
+    PropTypes.object,
+  ]),
 }

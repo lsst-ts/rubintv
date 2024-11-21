@@ -16,7 +16,7 @@ export default function TableApp({
   const [metadata, setMetadata] = useState(initialMetadata)
   const [error, setError] = useState(null)
 
-  const locationName = document.documentElement.dataset.locationname
+  const locationName = window.APP_DATA.locationName
 
   // convert metadata_cols into array of objects if they exist
   let defaultCols

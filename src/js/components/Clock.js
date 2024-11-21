@@ -36,6 +36,7 @@ function padZero(num) {
 }
 
 export function TimeSinceLastImageClock(props) {
+  const [offLine, setOffLine] = useState(false)
   const [time, setTime] = useState(new Date())
   const { metadata, camera } = props
 
