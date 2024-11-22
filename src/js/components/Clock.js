@@ -36,9 +36,11 @@ function padZero(num) {
 }
 
 export function TimeSinceLastImageClock(props) {
+  const { metadata: propsMeta, camera } = props
+
   const [isOnline, setIsOnline] = useState(true)
   const [time, setTime] = useState(new Date())
-  const { metadata, camera } = props
+  const [metadata, setMetadata] = useState(propsMeta)
 
   useEffect(() => {
     const timerId = setInterval(() => {
@@ -46,22 +48,33 @@ export function TimeSinceLastImageClock(props) {
     }, 1000)
 
     function handleWSStateChangeEvent(event) {
-      console.log(event.detail)
       const { online } = event.detail
       setIsOnline(online)
     }
     window.addEventListener("ws_status_change", handleWSStateChangeEvent)
 
+    function handleChannelMetadata(event) {
+      const { data, dataType } = event.detail
+      if (dataType === "metadata") {
+        setMetadata(data)
+      }
+    }
+    window.addEventListener("channel", handleChannelMetadata)
+
     return () => {
       clearInterval(timerId)
       window.removeEventListener("ws_status_change")
+      window.removeEventListener("channel")
     }
   }, [])
 
-  const lastSeq = Object.entries(metadata)
-    .map(([seq]) => parseInt(seq))
-    .pop()
-  const row = metadata[lastSeq]
+  let row = {}
+  if (metadata) {
+    const lastSeq = Object.entries(metadata)
+      .map(([seq]) => parseInt(seq))
+      .pop()
+    row = metadata[lastSeq]
+  }
   const toSum = ["Date begin", "Exposure time"]
   let error, timeElapsed
   if (

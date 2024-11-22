@@ -8,7 +8,7 @@ from typing import Any
 
 from lsst.ts.rubintv import __version__
 from lsst.ts.rubintv.config import config, rubintv_logger
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 from pydantic.dataclasses import dataclass
 
 logger = rubintv_logger()
@@ -194,7 +194,6 @@ class Event:
     seq_num: int | str = ""
     filename: str = ""
     ext: str = ""
-    other_data: dict = Field(default_factory=dict)
 
     def __lt__(self, other: Any) -> bool:
         """Used by max()"""

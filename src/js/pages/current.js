@@ -1,3 +1,6 @@
+import React from "react"
+import { createRoot } from "react-dom/client"
+import { TimeSinceLastImageClock } from "../components/Clock"
 import { _getById, _elWithAttrs } from "../modules/utils"
 import { WebsocketClient } from "../modules/ws-service-client"
 ;(function () {
@@ -5,23 +8,27 @@ import { WebsocketClient } from "../modules/ws-service-client"
   if (!initEvent) {
     return
   }
-  const location = window.APP_DATA.locationName
-  const camera = initEvent.camera_name
+  const { locationName, camera = {}, imgURL } = window.APP_DATA
   const channel = initEvent.channel_name
-  let baseImgURL = window.APP_DATA.imgURL.split("/").slice(0, -1).join("/")
+  let baseImgURL = imgURL.split("/").slice(0, -1).join("/")
   if (!baseImgURL.endsWith("/")) {
     baseImgURL += "/"
   }
   // eslint-disable-next-line no-unused-vars
   const ws = new WebsocketClient()
-  ws.subscribe("service", "channel", location, camera, channel)
+  ws.subscribe("service", "channel", locationName, camera.name, channel)
+
+  const timeSinceRoot = createRoot(_getById("time-since-clock"))
+  timeSinceRoot.render(
+    <TimeSinceLastImageClock event={initEvent} camera={camera} />
+  )
 
   window.addEventListener("channel", (message) => {
-    const newEvent = message.detail.data
-    if (!newEvent) {
+    const { data, dataType } = message.detail
+    if (dataType !== "event" || !data) {
       return
     }
-    const { filename, day_obs: dayObs, seq_num: seqNum } = newEvent
+    const { filename, day_obs: dayObs, seq_num: seqNum } = data
     _getById("date").textContent = dayObs
     _getById("seqNum").textContent = seqNum
     _getById("eventName").textContent = filename
