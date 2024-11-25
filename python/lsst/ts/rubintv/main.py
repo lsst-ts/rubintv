@@ -37,7 +37,7 @@ logger = rubintv_logger()
 
 exp_checker_installed = False
 try:
-    from ..exp_checker import app as exp_checker_app
+    from ..exp_checker import app as exp_checker_app  # type: ignore
 
     exp_checker_installed = True
 except ModuleNotFoundError:
