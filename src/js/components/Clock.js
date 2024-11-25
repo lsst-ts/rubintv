@@ -44,7 +44,7 @@ export function TimeSinceLastImageClock(props) {
 
   useEffect(() => {
     const timerId = setInterval(() => {
-      setTime(new Date())
+      setTime(Date.now())
     }, 1000)
 
     function handleWSStateChangeEvent(event) {
@@ -83,7 +83,7 @@ export function TimeSinceLastImageClock(props) {
     console.log(`Can't make Time Since Last Image with:`, row)
     error = "Can't ascertain..."
   } else {
-    const startTime = Date.parse(new Date(row["Date begin"]))
+    const startTime = Date.parse(row["Date begin"])
     const exposureTime = row["Exposure time"] * 1000
     const endTime = startTime + exposureTime
     timeElapsed = time - endTime
