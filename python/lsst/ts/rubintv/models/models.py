@@ -72,6 +72,11 @@ class HasButton(BaseModel):
     text_shadow: bool = False
 
 
+class MediaType(str, Enum):
+    IMAGE: str = "image"
+    VIDEO: str = "video"
+
+
 class MosaicViewMeta(BaseModel):
     """Populated in the models data YAML file, each MosaicViewMeta object pairs
     a channel name with a set of metadata columns to display alongside the
@@ -83,13 +88,13 @@ class MosaicViewMeta(BaseModel):
         The channel name.
     metaColumns : list[str]
         A list of metadata columns.
-    dataType : str
-        Presently, "image" or "video" are only options.
+    dataType : MediaType
+        Presently, IMAGE or VIDEO are the only options.
     """
 
     channel: str
     metaColumns: list[str]
-    dataType: str = "image"
+    mediaType: MediaType = MediaType.IMAGE
 
 
 class ExtraButton(HasButton):

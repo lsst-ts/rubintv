@@ -125,3 +125,11 @@ export function getWebSockURL (name) {
   const appName = window.location.pathname.split('/')[1]
   return `${wsProtocol}//${hostname}/${appName}/${name}/`
 }
+
+export function getStrHashCode (str) {
+  var hash = 0, i = 0, len = str.length
+  while ( i < len ) {
+      hash  = ((hash << 5) - hash + str.charCodeAt(i++)) << 0
+  }
+  return hash
+}
