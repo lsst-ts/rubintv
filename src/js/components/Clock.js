@@ -39,7 +39,7 @@ export function TimeSinceLastImageClock(props) {
   const { metadata: propsMeta, camera } = props
 
   const [isOnline, setIsOnline] = useState(true)
-  const [time, setTime] = useState(new Date())
+  const [time, setTime] = useState(Date.now())
   const [metadata, setMetadata] = useState(propsMeta)
 
   useEffect(() => {
