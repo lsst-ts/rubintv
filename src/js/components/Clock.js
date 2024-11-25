@@ -83,6 +83,10 @@ export function TimeSinceLastImageClock(props) {
     console.log(`Can't make Time Since Last Image with:`, row)
     error = "Can't ascertain..."
   } else {
+    let UTCDateString = row["Date begin"]
+    if (!UTCDateString.endsWith("Z")) {
+      UTCDateString += "Z"
+    }
     const startTime = Date.parse(row["Date begin"])
     const exposureTime = row["Exposure time"] * 1000
     const endTime = startTime + exposureTime
