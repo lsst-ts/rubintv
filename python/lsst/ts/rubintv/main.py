@@ -69,7 +69,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     today_polling = asyncio.create_task(cp.poll_buckets_for_todays_data())
     historical_polling = asyncio.create_task(hp.check_for_new_day())
 
-    yield
+    # Startup phase for the subapp
+    if exp_checker_installed and exp_checker_app.router.lifespan:
+        async with exp_checker_app.router.lifespan_context(exp_checker_app):
+            yield  # Yield to the main app with subapp context active
+
+    # If no lifespan is needed for the subapp, still yield to the main app
+    else:
+        yield
 
     historical_polling.cancel()
     today_polling.cancel()
