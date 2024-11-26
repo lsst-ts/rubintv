@@ -64,9 +64,9 @@ export function TimeSinceLastImageClock(props) {
 
     return () => {
       clearInterval(timerId)
-      window.removeEventListener("ws_status_change")
-      window.removeEventListener("channel")
-      window.removeEventListener("camera")
+      window.removeEventListener("ws_status_change", handleWSStateChangeEvent)
+      window.removeEventListener("channel", handleMetadataChange)
+      window.removeEventListener("camera", handleMetadataChange)
     }
   }, [])
 
@@ -76,6 +76,9 @@ export function TimeSinceLastImageClock(props) {
       .map(([seq]) => parseInt(seq))
       .pop()
     row = metadata[lastSeq]
+  }
+  if (!row) {
+    return
   }
   const toSum = ["Date begin", "Exposure time"]
   let error, timeElapsed
@@ -116,7 +119,6 @@ export function TimeSinceLastImageClock(props) {
 }
 
 const toTimeString = (timestamp) => {
-  const _24HOURS = 8.64e7 // 24 * 60 * 60 * 1000
   const absTimestamp = Math.abs(timestamp) // Absolute value for formatting
 
   // Extract hours, minutes, and seconds from the absolute timestamp
