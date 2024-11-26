@@ -39,6 +39,13 @@ async def notify_clients(
         for client_id in clients_list:
             if client_id in clients:
                 websocket = clients[client_id]
+                # if service is Service.CHANNEL:
+                logger.info(
+                    "Sending to:",
+                    service=service,
+                    message_type=message_type,
+                    client_id=client_id,
+                )
                 task = asyncio.create_task(
                     send_notification(websocket, service, message_type, payload)
                 )
@@ -72,10 +79,12 @@ async def send_notification(
 
 async def get_clients_to_notify(service_cam_id: str) -> list[UUID]:
     async with services_lock:
+        matching_services_clients = {
+            k: v for k, v in services_clients.items() if k.startswith(service_cam_id)
+        }
         to_notify = []
-        if service_cam_id in services_clients:
-            for client_id in services_clients[service_cam_id]:
-                to_notify.append(client_id)
+        for client_id in matching_services_clients.values():
+            to_notify.extend(client_id)
     return to_notify
 
 
