@@ -53,18 +53,20 @@ export function TimeSinceLastImageClock(props) {
     }
     window.addEventListener("ws_status_change", handleWSStateChangeEvent)
 
-    function handleChannelMetadata(event) {
+    function handleMetadataChange(event) {
       const { data, dataType } = event.detail
       if (dataType === "metadata") {
         setMetadata(data)
       }
     }
-    window.addEventListener("channel", handleChannelMetadata)
+    window.addEventListener("channel", handleMetadataChange)
+    window.addEventListener("camera", handleMetadataChange)
 
     return () => {
       clearInterval(timerId)
       window.removeEventListener("ws_status_change")
       window.removeEventListener("channel")
+      window.removeEventListener("camera")
     }
   }, [])
 
@@ -87,7 +89,7 @@ export function TimeSinceLastImageClock(props) {
     if (!UTCDateString.endsWith("Z")) {
       UTCDateString += "Z"
     }
-    const startTime = Date.parse(row["Date begin"])
+    const startTime = Date.parse(UTCDateString)
     const exposureTime = row["Exposure time"] * 1000
     const endTime = startTime + exposureTime
     timeElapsed = time - endTime
@@ -114,16 +116,19 @@ export function TimeSinceLastImageClock(props) {
 }
 
 const toTimeString = (timestamp) => {
-  const _24HOURS = 8.64e7 // 24*60*60*1000
-  const endPos = ~(4 * !!timestamp) // to trim "Z" or ".sssZ"
-  let timeString = new Date(timestamp).toISOString().slice(11, endPos)
+  const _24HOURS = 8.64e7 // 24 * 60 * 60 * 1000
+  const absTimestamp = Math.abs(timestamp) // Absolute value for formatting
 
-  if (timestamp >= _24HOURS) {
-    // to extract ["hh", "mm:ss[.mss]"]
-    var parts = timeString.split(/:(?=\d{2}:)/)
-    parts[0] -= -24 * Math.floor(timestamp / _24HOURS)
-    timeString = parts.join(":")
-  }
+  // Extract hours, minutes, and seconds from the absolute timestamp
+  const hours = Math.floor(absTimestamp / (1000 * 60 * 60))
+  const minutes = Math.floor((absTimestamp % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((absTimestamp % (1000 * 60)) / 1000)
 
-  return timeString
+  // Format time with leading zeros
+  const timeString = `${hours.toString().padStart(2, "0")}:${minutes
+    .toString()
+    .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+
+  // Add "-" prefix for negative timestamps
+  return timestamp < 0 ? `-${timeString}` : timeString
 }

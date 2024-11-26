@@ -18,10 +18,10 @@ import { WebsocketClient } from "../modules/ws-service-client"
   const ws = new WebsocketClient()
   ws.subscribe("service", "channel", locationName, camera.name, channel)
 
-  const timeSinceRoot = createRoot(_getById("time-since-clock"))
-  timeSinceRoot.render(
-    <TimeSinceLastImageClock event={initEvent} camera={camera} />
-  )
+  // const timeSinceRoot = createRoot(_getById("time-since-clock"))
+  // timeSinceRoot.render(
+  //   <TimeSinceLastImageClock event={initEvent} camera={camera} />
+  // )
 
   window.addEventListener("channel", (message) => {
     const { data, dataType } = message.detail
