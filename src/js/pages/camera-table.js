@@ -43,6 +43,7 @@ import { WebsocketClient } from "../modules/ws-service-client"
       initialDate={date}
       initialChannelData={tableChannels}
       initialMetadata={tableMetadata}
+      isHistorical={isHistorical}
     />
   )
 

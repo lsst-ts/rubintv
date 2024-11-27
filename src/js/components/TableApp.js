@@ -10,6 +10,7 @@ export default function TableApp({
   initialDate,
   initialChannelData,
   initialMetadata,
+  isHistorical,
 }) {
   const [date, setDate] = useState(initialDate)
   const [channelData, setChannelData] = useState(initialChannelData)
@@ -110,6 +111,7 @@ export default function TableApp({
           setSelected={setSelected}
           date={date}
           metadata={metadata}
+          isHistorical={isHistorical}
         />
         <div className="table-header row">
           <TableHeader camera={camera} metadataColumns={selectedMetaCols} />
@@ -132,6 +134,8 @@ TableApp.propTypes = {
   /**  */
   initialChannelData: channelDataType,
   initialMetadata: metadataType,
+  /** true if this is a historical page */
+  isHistorical: PropTypes.bool,
 }
 
 function getAllColumnNames(metadataColNames, defaultMetaColNames) {

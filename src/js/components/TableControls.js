@@ -11,6 +11,7 @@ export default function AboveTableRow({
   setSelected,
   date,
   metadata,
+  isHistorical,
 }) {
   return (
     <div className="row">
@@ -29,7 +30,7 @@ export default function AboveTableRow({
         metadata={metadata}
       />
       <Clock />
-      {camera.time_since_clock && (
+      {camera.time_since_clock && !isHistorical && (
         <TimeSinceLastImageClock camera={camera} metadata={metadata} />
       )}
     </div>
@@ -101,6 +102,8 @@ TableControls.propTypes = {
   date: PropTypes.string,
   /** the current metadata for this camera/date */
   metadata: metadataType,
+  /** true if this is a historical page */
+  isHistorical: PropTypes.bool,
 }
 
 function storeSelected(selected, cameraName) {
