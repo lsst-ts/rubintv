@@ -83,7 +83,6 @@ export function TimeSinceLastImageClock(props) {
   if (
     !toSum.reduce((acc, col) => Object.keys(row).includes(col) && acc, true)
   ) {
-    console.log(`Can't make Time Since Last Image with:`, row)
     error = "Can't ascertain..."
   } else {
     let UTCDateString = row["Date begin"]
