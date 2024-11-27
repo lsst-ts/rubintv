@@ -55,7 +55,7 @@ export function TimeSinceLastImageClock(props) {
 
     function handleMetadataChange(event) {
       const { data, dataType } = event.detail
-      if (dataType === "metadata") {
+      if (dataType === "metadata" && Object.entries(data).length > 0) {
         setMetadata(data)
       }
     }
