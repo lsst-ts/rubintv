@@ -59,13 +59,11 @@ export function TimeSinceLastImageClock(props) {
         setMetadata(data)
       }
     }
-    window.addEventListener("channel", handleMetadataChange)
     window.addEventListener("camera", handleMetadataChange)
 
     return () => {
       clearInterval(timerId)
       window.removeEventListener("ws_status_change", handleWSStateChangeEvent)
-      window.removeEventListener("channel", handleMetadataChange)
       window.removeEventListener("camera", handleMetadataChange)
     }
   }, [])

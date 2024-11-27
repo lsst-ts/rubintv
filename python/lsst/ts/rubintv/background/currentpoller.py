@@ -299,9 +299,6 @@ class CurrentPoller:
                 await notify_ws_clients(
                     Service.CAMERA, MessageType.CAMERA_METADATA, loc_cam, data
                 )
-                await notify_ws_clients(
-                    Service.CHANNEL, MessageType.CAMERA_METADATA, loc_cam, data
-                )
 
     async def sieve_out_night_reports(
         self, objects: list[dict[str, str]], location: Location, camera: Camera
@@ -493,9 +490,6 @@ class CurrentPoller:
                     location.name, camera.name, channel_name
                 )
                 yield MessageType.CHANNEL_EVENT, event.__dict__ if event else None
-
-                metadata = await self.get_current_metadata(location.name, camera)
-                yield MessageType.CAMERA_METADATA, metadata
 
             case Service.NIGHTREPORT:
                 night_report = await self.get_current_night_report(
