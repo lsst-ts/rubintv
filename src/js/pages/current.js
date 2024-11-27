@@ -8,7 +8,7 @@ import { WebsocketClient } from "../modules/ws-service-client"
   if (!initEvent) {
     return
   }
-  const { locationName, camera = {}, imgURL } = window.APP_DATA
+  const { locationName, camera = {}, imgURL, metadata } = window.APP_DATA
   const channel = initEvent.channel_name
   let baseImgURL = imgURL.split("/").slice(0, -1).join("/")
   if (!baseImgURL.endsWith("/")) {
@@ -21,7 +21,7 @@ import { WebsocketClient } from "../modules/ws-service-client"
 
   const timeSinceRoot = createRoot(_getById("time-since-clock"))
   timeSinceRoot.render(
-    <TimeSinceLastImageClock event={initEvent} camera={camera} />
+    <TimeSinceLastImageClock metadata={metadata} camera={camera} />
   )
 
   window.addEventListener("channel", (message) => {
