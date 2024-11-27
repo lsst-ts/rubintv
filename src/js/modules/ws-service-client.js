@@ -1,6 +1,6 @@
 import ReconnectingWebSocket from "reconnecting-websocket"
 import { validate } from "uuid"
-import { getWebSockURL } from "./utils"
+import { decodeUnpackWSPayload, getWebSockURL } from "./utils"
 
 // TODO - Simplify this class since subscriptionType is no longer rqrd.
 // See DM-46449
@@ -90,7 +90,7 @@ export class WebsocketClient {
 
     const detail = {
       dataType: data.dataType,
-      data: data.payload,
+      data: decodeUnpackWSPayload(data.payload),
       datestamp: data.datestamp,
     }
     window.dispatchEvent(new CustomEvent(data.service, { detail }))

@@ -9,6 +9,7 @@ export default function TableApp ({ camera, initialDate, initialChannelData, ini
   const [date, setDate] = useState(initialDate)
   const [channelData, setChannelData] = useState(initialChannelData)
   const [metadata, setMetadata] = useState(initialMetadata)
+  const [error, setError] = useState(null)
 
   const locationName = document.documentElement.dataset.locationname
 
@@ -50,6 +51,10 @@ export default function TableApp ({ camera, initialDate, initialChannelData, ini
       return
     }
 
+    if (data.error) {
+      setError(data.error)
+    }
+
     if (datestamp && datestamp !== date) {
       window.APP_DATA.date = datestamp
       _getById('header-date').textContent = datestamp
@@ -78,6 +83,15 @@ export default function TableApp ({ camera, initialDate, initialChannelData, ini
       <h3>There is no data for this day</h3>
     )
   }
+
+  if (error) {
+    return (
+      <div>
+        <h3>Error: {error}</h3>
+      </div>
+    )
+  }
+
   return (
     <div className="table-container">
       <div className="above-table-sticky">

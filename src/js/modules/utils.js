@@ -1,3 +1,5 @@
+import { gunzipSync } from "fflate"
+
 /**
 * @param {string | any[]} arrayA
 * @param {any} arrayB
@@ -132,4 +134,33 @@ export function getStrHashCode (str) {
       hash  = ((hash << 5) - hash + str.charCodeAt(i++)) << 0
   }
   return hash
+}
+
+export const decodeUnpackWSPayload = (compressed) => {
+  const timeNow = Date.now()
+  let data
+  try {
+    // Decode Base64 string to Uint8Array
+    const binaryString = atob(compressed)
+    const len = binaryString.length
+    const bytes = new Uint8Array(len)
+
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i)
+    }
+
+    // Decompress the gzip data
+    const decompressed = gunzipSync(bytes)
+
+    // Convert Uint8Array to a string
+    const textDecoder = new TextDecoder()
+    data = JSON.parse(textDecoder.decode(decompressed))
+  } catch (error) {
+    data = {
+      error: "Couldn't decompress payload",
+    }
+  }
+  const elapsed = Date.now() - timeNow
+  console.log("time taken:", elapsed)
+  return data
 }

@@ -1,4 +1,7 @@
 import asyncio
+import base64
+import gzip
+import json
 from typing import Any, Mapping
 from uuid import UUID
 
@@ -52,11 +55,14 @@ async def send_notification(
         # use the day_obs in the backdated event, rather than today
         datestamp = payload.values()[0].get("day_obs", datestamp)
     try:
+        payload_string = json.dumps(payload)
+        zipped = gzip.compress(bytes(payload_string, "utf-8"))
+        encoded = base64.b64encode(zipped).decode("utf-8")
         await websocket.send_json(
             {
                 "service": service.value,
                 "dataType": messageType.value,
-                "payload": payload,
+                "payload": encoded,
                 "datestamp": datestamp,
             }
         )

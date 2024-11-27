@@ -12,16 +12,6 @@
     <title>{{ title }}</title>
 </head>
 
-<script>
-// function to reload the page if the back button has been used and the page has updated
-// since, so not to show stale data.
-window.onpageshow = function (event) {
-    if (event.persisted || (!!window.performance && window.performance.navigation.type === 2)) {
-        window.location.reload()
-    }
-}
-</script>
-
 {% set body_class = "" %}
 {% if camera %}
     {% set body_class = camera.name %}
