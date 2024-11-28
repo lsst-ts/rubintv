@@ -61,11 +61,6 @@ COPY --chown=rubintv:rubintv . .
 # Install Python dependencies
 RUN pip install -r requirements.txt && \
     python setup.py install
-    
-# Pull in exp_checker
-RUN git clone https://github.com/lsst-sitcom/rubin_exp_checker.git python/lsst/ts/exp_checker && \
-    pip install -r /usr/src/rubintv/python/lsst/ts/exp_checker/requirements.txt && \
-    rm -rf /usr/src/rubintv/python/lsst/ts/exp_checker/.git
 
 # Adjust permissions for executable
 RUN chmod +x start-daemon.sh
