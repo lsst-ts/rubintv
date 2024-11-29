@@ -2,22 +2,28 @@ import React, { useState, useEffect } from "react"
 import PropTypes from "prop-types"
 import { cameraType, eventType } from "./componentPropTypes"
 
-function Button({ clsName, url, bckCol, iconUrl, logoURL, label, date, textColour, textShadow }) {
+function Button({
+  clsName,
+  url,
+  bckCol,
+  iconUrl,
+  logoURL,
+  label,
+  date,
+  textColour,
+  textShadow,
+}) {
   const style = {
     backgroundColor: bckCol,
     color: textColour,
-    backgroundImage: `url(${logoURL})`,
-    backgroundSize: 'contain',
+    backgroundImage: logoURL ? `url(${logoURL})` : "none",
+    backgroundSize: "contain",
   }
   clsName = !!logoURL ? clsName + " button-logo" : clsName
   clsName = textShadow ? clsName + " t-shadow" : clsName
 
   return (
-    <a
-      className={`button button-large ${clsName}`}
-      href={url}
-      style={style}
-    >
+    <a className={`button button-large ${clsName}`} href={url} style={style}>
       {iconUrl && <img src={iconUrl} />}
       {label}
       {date && <span className="date">{date}</span>}
@@ -26,12 +32,14 @@ function Button({ clsName, url, bckCol, iconUrl, logoURL, label, date, textColou
 }
 
 function PerDayChannels({ camera, date, perDay }) {
-  const baseUrl = window.APP_DATA.baseUrl
-  const imageRoot = window.APP_DATA.imagesURL
-  const isHistorical = window.APP_DATA.isHistorical
-  const locationName = document.documentElement.dataset.locationname
+  const {
+    baseUrl,
+    imagesURL: imageRoot,
+    isHistorical,
+    locationName,
+  } = window.APP_DATA
   const channels = camera.channels
-  
+
   const getImageURL = (path) => {
     const [base, queriesMaybe] = imageRoot.split("?")
     const queries = queriesMaybe ? "?" + queriesMaybe : ""
@@ -39,7 +47,8 @@ function PerDayChannels({ camera, date, perDay }) {
   }
 
   return (
-    (perDay && Object.entries(perDay).length > 0) && (
+    perDay &&
+    Object.entries(perDay).length > 0 && (
       <nav id="per-day-menu" className="channel-menu" role="navigation">
         <h3>Per Day Channels</h3>
         <ul className="channels flr">
@@ -65,22 +74,24 @@ function PerDayChannels({ camera, date, perDay }) {
                 </li>
               )
             })}
-          {!isHistorical && camera.extra_buttons.map(({ name, title, linkURL, logo, text_colour, text_shadow }) => {
-            const logoURL = getImageURL(`logos/${logo}`)
-            return (
-              <li className="channel" key={name}>
-                {/* hardcoded for link to mosaic view page */}
-                <Button
-                  clsName={name}
-                  url={new URL(linkURL, location.href + '/')}
-                  logoURL={logoURL}
-                  label={title}
-                  textColour={text_colour}
-                  textShadow={text_shadow}
-                />
-              </li>
-            )
-          })}
+          {!isHistorical &&
+            camera.extra_buttons.map(
+              ({ name, title, linkURL, logo, text_colour, text_shadow }) => {
+                const logoURL = getImageURL(`logos/${logo}`)
+                return (
+                  <li className="channel" key={name}>
+                    <Button
+                      clsName={name}
+                      url={new URL(linkURL, location.href + "/")}
+                      logoURL={logoURL}
+                      label={title}
+                      textColour={text_colour}
+                      textShadow={text_shadow}
+                    />
+                  </li>
+                )
+              }
+            )}
         </ul>
       </nav>
     )
@@ -102,8 +113,7 @@ function NightReportLink({ camera, date, nightReportLink }) {
   if (nightReportLink === "") {
     return null
   }
-  const baseUrl = window.APP_DATA.baseUrl
-  const locationName = document.documentElement.dataset.locationname
+  const { baseUrl, locationName } = window.APP_DATA
 
   let link = `${baseUrl}${locationName}/${camera.name}/night_report/${date}`
   let label = `${camera.night_report_label} for ${date}`
@@ -141,6 +151,9 @@ export default function PerDay({
   useEffect(() => {
     function handleCameraEvent(event) {
       const { datestamp, data, dataType } = event.detail
+      if (dataType !== "perDay") {
+        return
+      }
 
       if (datestamp && datestamp !== date) {
         window.APP_DATA.date = datestamp
@@ -149,9 +162,9 @@ export default function PerDay({
         setNightReportLink("")
       }
 
-      if (dataType === "perDay" && !data.nightReportLink) {
+      if (!data.nightReportLink) {
         setPerDay(data)
-      } else if (dataType === "perDay" && data.nightReportLink) {
+      } else {
         setNightReportLink("current")
       }
     }

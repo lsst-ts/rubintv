@@ -462,6 +462,11 @@ async def get_current_channel_event_page(
         location_name, camera_name, channel_name, request
     )
 
+    metadata = {}
+    result = await get_camera_current_data(location, camera, request)
+    if result:
+        (day_obs, channel_data, per_day, metadata, nr_exists, not_current) = result
+
     channel: Channel = find_first(camera.channels, "name", channel_name)
     if channel is None or channel not in camera.channels:
         raise HTTPException(status_code=404, detail="Channel not found.")
@@ -478,5 +483,6 @@ async def get_current_channel_event_page(
             "channel": to_dict(channel),
             "title": title,
             "event": to_dict(event),
+            "metadata": metadata,
         },
     )

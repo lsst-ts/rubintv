@@ -18,7 +18,7 @@ locations:
     profile_name: rubin-rubintv-data-summit
     bucket_name: rubin-rubintv-data-summit
     camera_groups:
-      Test: [ comcam ]
+      Test: [ comcam, comcam_sim ]
 
   - name: slac
     title: SLAC
@@ -258,6 +258,9 @@ cameras:
         color: "#83eebe"
         icon: movies
 
+    time_since_clock:
+      label: Time since last image
+
     extra_buttons:
       - title: Movies View
         name: moviesView
@@ -322,6 +325,8 @@ cameras:
     online: True
     logo: Donut_watching_grey.jpg
     text_colour: "#fff"
+    time_since_clock:
+      label: Time since last refocus
     channels:
       - name: fp_donut_gallery
         title: Focal Plane Donut Gallery
