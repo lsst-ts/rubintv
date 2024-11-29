@@ -1,3 +1,5 @@
+@use 'filter_colours'
+
 @function map-collect($maps...)
   $collection: ()
   @each $map in $maps
@@ -88,25 +90,18 @@ header
 .button.admin
   background-color: #999
 
+@each $name, $color in filter_colours.$qualitative_filters
+  .grid-cell.#{$name}
+    background-color: $color
 
-$filters: ("u_color": #d9f3fd, "g_color": #e7fdd9, "r_color": #fdd7d7, "i_color": #e2d9fd, "z_color": #fdd9fd, "y_color": #ffeed9)
-
-@each $name, $color in $filters
+@each $name, $color in filter_colours.$colour_filters
   .grid-cell.#{$name}
     background-color: lighten($color, 40%)
 
 .grid-cell
-  &.bad
-    background-color: #ebab93
-  &.warning
-    background-color: #f1f1a7
-  &.ok
-    background-color: #b3f1a7
-  &.measured
-    background-color: #7dc8cf
-
   &.white_color
     background-color: #fefefe
+    
   &.rainbow_color
     background: linear-gradient(270deg, #fec8c9 0%, #f5dece 16%, #f5f8cd 28%, #e0f5d1 50%, #c9d2fe 66%, #dcddfe 83%, #f1dafe 100%)
 
