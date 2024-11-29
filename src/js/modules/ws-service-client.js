@@ -11,7 +11,7 @@ export class WebsocketClient {
     this.ws = new ReconnectingWebSocket(getWebSockURL("ws/data"))
     this.ws.onmessage = this.handleMessage.bind(this)
     this.ws.onclose = this.handleClose.bind(this)
-    this.ws.onopen = this.handleOpen(this)
+    this.ws.onopen = this.handleOpen.bind(this)
     this.subscriptions = [] // To store multiple subscriptions
     this.online = false
   }

@@ -96,12 +96,34 @@ class MosaicViewMeta(BaseModel):
 
 
 class ExtraButton(HasButton):
-    # relative link to related content
+    """Sub-class to provide buttons with the functionality to link to relative
+    URLs.
+
+    Attributes
+    ----------
+    linkURL: str
+        A relative URL. e.g "mosaic" on
+        https://usdf-rsp-dev.slac.stanford.edu/rubintv/summit-usdf/comcam
+        will point to
+        https://usdf-rsp-dev.slac.stanford.edu/rubintv/summit-usdf/comcam/mosaic
+    """
+
     linkURL: str
 
 
 class TimeSinceClock(BaseModel):
-    # label string to display next to clock
+    """The presence of a `TimeSinceClock` in a `Camera` means that the both the
+    table view and individual channels views for that camera will display a
+    clock that shows the time since the last image was taken. This data is
+    derived from the most recent seq_num from the table.
+
+    Attributes
+    ----------
+    label: str
+        The label that appears before the time part of the clock.
+
+    """
+
     label: str
 
 

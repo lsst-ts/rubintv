@@ -221,7 +221,6 @@ export function TableHeader({ camera, metadataColumns }) {
       {columns.map((channel) => (
         <ChannelHeader key={channel.name} channel={channel} />
       ))}
-      {/* ... additional columns such as CCS Image Viewer if necessary ... */}
     </>
   )
 }

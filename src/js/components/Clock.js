@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react"
+import { toTimeString } from "../modules/utils"
 
 export default function Clock() {
   const [time, setTime] = useState(new Date())
@@ -80,9 +81,7 @@ export function TimeSinceLastImageClock(props) {
   }
   const toSum = ["Date begin", "Exposure time"]
   let error, timeElapsed
-  if (
-    !toSum.reduce((acc, col) => Object.keys(row).includes(col) && acc, true)
-  ) {
+  if (!toSum.every((col) => row.hasOwnProperty(col))) {
     error = "Can't ascertain..."
   } else {
     let UTCDateString = row["Date begin"]
@@ -113,21 +112,4 @@ export function TimeSinceLastImageClock(props) {
       </div>
     </div>
   )
-}
-
-const toTimeString = (timestamp) => {
-  const absTimestamp = Math.abs(timestamp) // Absolute value for formatting
-
-  // Extract hours, minutes, and seconds from the absolute timestamp
-  const hours = Math.floor(absTimestamp / (1000 * 60 * 60))
-  const minutes = Math.floor((absTimestamp % (1000 * 60 * 60)) / (1000 * 60))
-  const seconds = Math.floor((absTimestamp % (1000 * 60)) / 1000)
-
-  // Format time with leading zeros
-  const timeString = `${hours.toString().padStart(2, "0")}:${minutes
-    .toString()
-    .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
-
-  // Add "-" prefix for negative timestamps
-  return timestamp < 0 ? `-${timeString}` : timeString
 }

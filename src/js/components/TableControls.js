@@ -1,5 +1,5 @@
-import PropTypes from "prop-types"
 import React, { useState } from "react"
+import PropTypes from "prop-types"
 import Clock, { TimeSinceLastImageClock } from "./Clock"
 import { _getById } from "../modules/utils"
 import { metadataType } from "./componentPropTypes"

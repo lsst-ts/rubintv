@@ -26,7 +26,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const heartbeatWsUrl = getWebSockURL("ws/heartbeats")
     heartbeatWorker.port.postMessage({ heartbeatWsUrl })
 
-    heartbeatWorker.port.onmessage = function (e) {
+    heartbeatWorker.port.onmessage = (e) => {
       console.log("message from worker:", e.data)
     }
   }

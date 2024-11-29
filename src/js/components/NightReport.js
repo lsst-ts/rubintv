@@ -90,8 +90,7 @@ function getTabNames(nightReport) {
   let groups = ["Efficiency"]
   if (
     nightReport.text &&
-    Object.keys(nightReport.text).filter((n) => !n.startsWith("text")).length >
-      0
+    Object.keys(nightReport.text).some((n) => !n.startsWith("text"))
   ) {
     groups = groups.concat("QA Plots")
   }

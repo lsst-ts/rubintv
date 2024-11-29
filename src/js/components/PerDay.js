@@ -80,7 +80,6 @@ function PerDayChannels({ camera, date, perDay }) {
                 const logoURL = getImageURL(`logos/${logo}`)
                 return (
                   <li className="channel" key={name}>
-                    {/* hardcoded for link to mosaic view page */}
                     <Button
                       clsName={name}
                       url={new URL(linkURL, location.href + "/")}

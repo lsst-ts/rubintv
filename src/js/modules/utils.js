@@ -86,8 +86,8 @@ export function sanitiseString(str) {
   // Substitutes spaces and hyphens are exchanged for underscores.
   // Any non-word characters (any but a-z, A-Z, _) are removed.
   // Capital letters are made small.
-  let sanitised = str.replace("/[s-]/", "_")
-  sanitised = sanitised.replace("[W]", "")
+  let sanitised = str.replaceAll(/[\s-]/g, "_")
+  sanitised = sanitised.replaceAll(/[\W]/g, "")
   return sanitised.toLowerCase()
 }
 
@@ -128,7 +128,7 @@ export function getWebSockURL(name) {
 }
 
 export function getStrHashCode(str) {
-  var hash = 0,
+  let hash = 0,
     i = 0,
     len = str.length
   while (i < len) {
@@ -164,4 +164,25 @@ export const decodeUnpackWSPayload = (compressed) => {
   const elapsed = Date.now() - timeNow
   console.log("time taken:", elapsed)
   return data
+}
+
+export const toTimeString = (period) => {
+  /*  Takes a length of time in ms and converts to string `"HH:MM:SS"`.
+      This allows for negative times to compensate for any bug that
+      reckons that past events are yet to happen.
+  */
+  const absPeriod = Math.abs(period) // Absolute value for formatting
+
+  // Extract hours, minutes, and seconds from the absolute period
+  const hours = Math.floor(absPeriod / (1000 * 60 * 60))
+  const minutes = Math.floor((absPeriod % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((absPeriod % (1000 * 60)) / 1000)
+
+  // Format time with leading zeros
+  const timeString = `${hours.toString().padStart(2, "0")}:${minutes
+    .toString()
+    .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+
+  // Add "-" prefix for negative periods
+  return period < 0 ? `-${timeString}` : timeString
 }
