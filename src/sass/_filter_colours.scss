@@ -1,15 +1,14 @@
-$colour_filters: (
-    "u_color": #0c71ff,
-    "g_color": #49be61,
-    "r_color": #c61c00,
-    "i_color": #ffc200,
-    "z_color": #f341a2,
-    "y_color": #5d0000,
+$colors: (
+    "bad":      #c64f50,
+    "warning":  #e9e962,
+    "ok":       #65e54c,
+    "measured": #64ced9,
+
+    "u_color": #85b7ff,
+    "g_color": #a4dfaf,
+    "r_color": #e28d7e,
+    "i_color": #ffe07e,
+    "z_color": #f89fd0,
+    "y_color": #ad7f7f,
     );
 
-$qualitative_filters: (
-    "bad":      #c03d3d,
-    "warning":  #e7e752,
-    "ok":       #56e23a,
-    "measured": #53cad5,
-);

@@ -90,13 +90,9 @@ header
 .button.admin
   background-color: #999
 
-@each $name, $color in filter_colours.$qualitative_filters
+@each $name, $color in filter_colours.$colors
   .grid-cell.#{$name}
-    background-color: rgba($color, 0.9)
-
-@each $name, $color in filter_colours.$colour_filters
-  .grid-cell.#{$name}
-    background-color: rgba($color, 0.5)
+    background-color: $color
 
 .grid-cell
   &.bad
