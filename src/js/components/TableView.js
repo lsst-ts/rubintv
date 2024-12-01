@@ -60,7 +60,7 @@ MetadataCell.propTypes = {
 }
 
 // Component for individual channel cell
-function ChannelCell({ event, chanName, chanColour }) {
+function ChannelCell({ event, chanName, chanColour, noEventReplacement }) {
   const eventURL = window.APP_DATA.eventURL
   return (
     <td className="grid-cell">
@@ -71,6 +71,9 @@ function ChannelCell({ event, chanName, chanColour }) {
           href={`${eventURL}?key=${event.key}`}
         />
       )}
+      {!event && noEventReplacement && (
+        <p className="center-text cell-emoji">{noEventReplacement}</p>
+      )}
     </td>
   )
 }
@@ -79,6 +82,7 @@ ChannelCell.propTypes = {
   eventURL: PropTypes.string,
   chanName: PropTypes.string,
   chanColour: PropTypes.string,
+  noEventReplacement: PropTypes.string,
 }
 
 // Component for individual table row
@@ -91,6 +95,14 @@ function TableRow({
   metadataRow,
 }) {
   const dayObs = window.APP_DATA.date.replaceAll("-", "")
+
+  const noEventReplacements = channels.reduce((obj, chan) => {
+    const chanReplace = metadataRow.hasOwnProperty("@" + chan.name)
+      ? metadataRow["@" + chan.name]
+      : null
+    return { ...obj, [chan.name]: chanReplace }
+  }, {})
+
   const metadataCells = metadataColumns.map((md) => {
     const indicator = indicatorForAttr(metadataRow, md.name)
     return {
@@ -100,6 +112,7 @@ function TableRow({
       indicator,
     }
   })
+
   return (
     <tr>
       <td className="grid-cell seq" id={`seqNum-${seqNum}`}>
@@ -130,6 +143,7 @@ function TableRow({
           event={channelRow[chan.name]}
           chanName={chan.name}
           chanColour={chan.colour}
+          noEventReplacement={noEventReplacements[chan.name]}
         />
       ))}
       {metadataCells.map((md) => (
