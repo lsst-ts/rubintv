@@ -96,6 +96,8 @@ function TableRow({
 }) {
   const dayObs = window.APP_DATA.date.replaceAll("-", "")
 
+  // Entries in metadata keyed `"@{channel_name}"` will have their
+  // values show up in the table instead of a blank space.
   const noEventReplacements = channels.reduce((obj, chan) => {
     const chanReplace = metadataRow.hasOwnProperty("@" + chan.name)
       ? metadataRow["@" + chan.name]
