@@ -336,7 +336,7 @@ async def get_current_night_report_page(
         location, camera, request
     )
 
-    title = build_title(location.title, camera.title, "Current Night Report")
+    title = build_title(location.title, camera.title, "Current Night's Evolution")
 
     return templates.TemplateResponse(
         request=request,
@@ -381,7 +381,7 @@ async def get_historical_night_report_page(
     title = build_title(
         location.title,
         camera.title,
-        f"Night Report for {date_str}",
+        f"Night`s evolution for {date_str}",
     )
 
     return templates.TemplateResponse(

@@ -147,7 +147,7 @@ class Camera(HasButton):
         A list of channels (either images or movies) associated with the
         camera. Defaults to an empty list.
     night_report_label : str, optional
-        Label for the night report. Defaults to "Night Report".
+        Label for the night report. Defaults to "Night's Evolution".
     metadata_cols : dict[str, str] | None, optional
         A dictionary defining metadata columns. Defaults to
         None.
@@ -180,7 +180,7 @@ class Camera(HasButton):
     online: bool
     metadata_from: str = ""
     channels: list[Channel] = []
-    night_report_label: str = "Night Report"
+    night_report_label: str = "Night's Evolution"
     metadata_cols: dict[str, str] | None = None
     image_viewer_link: str = ""
     copy_row_template: str = ""

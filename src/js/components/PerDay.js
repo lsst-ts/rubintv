@@ -124,7 +124,7 @@ function NightReportLink({ camera, date, nightReportLink }) {
 
   return (
     <div id="night_report_link">
-      <h3>Night Report</h3>
+      <h3>Night&#39;s Evolution</h3>
       <a className="button button-large night-report" href={link}>
         <img src={`${baseUrl}static/images/crescent-moon.svg`} />
         {label}
