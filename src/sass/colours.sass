@@ -1,3 +1,5 @@
+@use 'filter_colours'
+
 @function map-collect($maps...)
   $collection: ()
   @each $map in $maps
@@ -67,7 +69,7 @@ header
     background-color: $dark
 
 .grid-cell
-  background-color: #f0f0f0
+  background-color: #fefefe
   color: #000
 
 .table-spacer
@@ -88,30 +90,19 @@ header
 .button.admin
   background-color: #999
 
-
-$filters: ("u_color": #d9f3fd, "g_color": #e7fdd9, "r_color": #fdd7d7, "i_color": #e2d9fd, "z_color": #fdd9fd, "y_color": #ffeed9)
-
-@each $name, $color in $filters
+@each $name, $color in filter_colours.$colors
   .grid-cell.#{$name}
-    background-color: lighten($color, 40%)
+    background-color: $color
 
 .grid-cell
   &.bad
-    background-color: #ebab93
-  &.warning
-    background-color: #f1f1a7
-  &.ok
-    background-color: #b3f1a7
-  &.measured
-    background-color: #7dc8cf
+    color: #fff
 
   &.white_color
     background-color: #fefefe
   &.rainbow_color
     background: linear-gradient(270deg, #fec8c9 0%, #f5dece 16%, #f5f8cd 28%, #e0f5d1 50%, #c9d2fe 66%, #dcddfe 83%, #f1dafe 100%)
-
   &.r_stripes
-    background: linear-gradient(27deg, #f77171 0%, #f77171 14%, #f0f0f0 14%, #f0f0f0 29%, #f77171 29%, #f77171 43%, #f0f0f0 43%, #f0f0f0 57%,  #f77171 57%, #f77171 71%, #f0f0f0 71%, #f0f0f0 84%, #f77171 84%, #f77171 100%)
-
+    background: linear-gradient(27deg, #f9bcbc 0%, #f9bcbc 14%, #fefefe 14%, #fefefe 29%, #f9bcbc 29%, #f9bcbc 43%, #fefefe 43%, #fefefe 57%,  #f9bcbc 57%, #f9bcbc 71%, #fefefe 71%, #fefefe 84%, #f9bcbc 84%, #f9bcbc 100%)
   &.b_stripes
-    background: linear-gradient(27deg, #71abf7 0%, #71abf7 14%, #f0f0f0 14%, #f0f0f0 29%, #71abf7 29%, #71abf7 43%, #f0f0f0 43%, #f0f0f0 57%,  #71abf7 57%, #71abf7 71%, #f0f0f0 71%, #f0f0f0 84%, #71abf7 84%, #71abf7 100%)
+    background: linear-gradient(27deg, #a2c6f6 0%, #a2c6f6 14%, #fefefe 14%, #fefefe 29%, #a2c6f6 29%, #a2c6f6 43%, #fefefe 43%, #fefefe 57%,  #a2c6f6 57%, #a2c6f6 71%, #fefefe 71%, #fefefe 84%, #a2c6f6 84%, #a2c6f6 100%)
