@@ -99,9 +99,7 @@ function TableRow({
   // Entries in metadata keyed `"@{channel_name}"` will have their
   // values show up in the table instead of a blank space.
   const noEventReplacements = channels.reduce((obj, chan) => {
-    const chanReplace = metadataRow.hasOwnProperty("@" + chan.name)
-      ? metadataRow["@" + chan.name]
-      : null
+    const chanReplace = metadataRow["@" + chan.name] ?? null
     return { ...obj, [chan.name]: chanReplace }
   }, {})
 
