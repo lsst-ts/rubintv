@@ -6,12 +6,10 @@ from datetime import date, datetime, timedelta, timezone
 from enum import Enum
 from typing import Any
 
-from lsst.ts.rubintv.config import rubintv_logger
+from lsst.ts.rubintv import __version__
+from lsst.ts.rubintv.config import config, rubintv_logger
 from pydantic import BaseModel, ConfigDict
 from pydantic.dataclasses import dataclass
-
-from .. import __version__
-from ..config import config
 
 logger = rubintv_logger()
 
@@ -98,7 +96,35 @@ class MosaicViewMeta(BaseModel):
 
 
 class ExtraButton(HasButton):
+    """Sub-class to provide buttons with the functionality to link to relative
+    URLs.
+
+    Attributes
+    ----------
     linkURL: str
+        A relative URL. e.g "mosaic" on
+        https://usdf-rsp-dev.slac.stanford.edu/rubintv/summit-usdf/comcam
+        will point to
+        https://usdf-rsp-dev.slac.stanford.edu/rubintv/summit-usdf/comcam/mosaic
+    """
+
+    linkURL: str
+
+
+class TimeSinceClock(BaseModel):
+    """The presence of a `TimeSinceClock` in a `Camera` means that the both the
+    table view and individual channels views for that camera will display a
+    clock that shows the time since the last image was taken. This data is
+    derived from the most recent seq_num from the table.
+
+    Attributes
+    ----------
+    label: str
+        The label that appears before the time part of the clock.
+
+    """
+
+    label: str
 
 
 class Camera(HasButton):
@@ -121,7 +147,7 @@ class Camera(HasButton):
         A list of channels (either images or movies) associated with the
         camera. Defaults to an empty list.
     night_report_label : str, optional
-        Label for the night report. Defaults to "Night Report".
+        Label for the night report. Defaults to "Night's Evolution".
     metadata_cols : dict[str, str] | None, optional
         A dictionary defining metadata columns. Defaults to
         None.
@@ -129,9 +155,14 @@ class Camera(HasButton):
         A link to the image viewer. Defaults to an empty string.
     copy_row_template : str, optional
         Template string for copying a row. Defaults to an empty string.
-    mosaic_view_meta: list[MosaicViewMeta], optional
+    mosaic_view_meta : list[MosaicViewMeta], optional
         List of channels and associated metadata columns for a mosaic view of
         current images and plots.
+    extra_buttons : list[ExtraButton], optional
+        Any extra buttons to link to other parts of the website.
+    time_since_clock : TimeSinceClock
+        Label to display next to the time since (for e.g. last image) clock.
+
 
     Methods
     -------
@@ -149,12 +180,13 @@ class Camera(HasButton):
     online: bool
     metadata_from: str = ""
     channels: list[Channel] = []
-    night_report_label: str = "Night Report"
+    night_report_label: str = "Night's Evolution"
     metadata_cols: dict[str, str] | None = None
     image_viewer_link: str = ""
     copy_row_template: str = ""
     mosaic_view_meta: list[MosaicViewMeta] = []
     extra_buttons: list[ExtraButton] = []
+    time_since_clock: TimeSinceClock | None = None
 
     def seq_channels(self) -> list[Channel]:
         return [c for c in self.channels if not c.per_day]

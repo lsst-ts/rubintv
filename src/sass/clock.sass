@@ -1,4 +1,4 @@
-#clock
+.clock
   height: 42px
   font-size: 0.8em
   padding: 8px
@@ -19,3 +19,18 @@
       color: #000
       content: "UTC"
       margin-left: 0.2em
+
+  &.time-since-clock
+    background: #bfd2bd
+  &.offline
+    background: #f00
+    opacity: 0.5
+
+  .label
+    &::after
+      content: ":"
+      margin-right: 0.5em
+
+  .timeElapsed
+    font-size: 1.4em
+  

@@ -21,18 +21,18 @@ function attachWsListeners(ws) {
   }
 
   function sendToPorts(message) {
-    ports.forEach(port => {
+    ports.forEach((port) => {
       port.postMessage(message)
     })
   }
 }
 
-onconnect = function(e) {
+onconnect = function (e) {
   const port = e.ports[0]
   ports.push(port)
 
-  port.onmessage = function(e) {
-    if (typeof e.data == 'object' && 'heartbeatWsUrl' in e.data && !rws) {
+  port.onmessage = function (e) {
+    if (typeof e.data == "object" && "heartbeatWsUrl" in e.data && !rws) {
       const url = e.data.heartbeatWsUrl
       rws = new ReconnectingWebSocket(url, undefined, { maxRetries: 3 })
       attachWsListeners(rws)

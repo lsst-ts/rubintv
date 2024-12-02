@@ -1,14 +1,16 @@
 {% extends "single_event.jinja" %}
 
 {% block undertitle %}
-Current
+Latest
 {% endblock undertitle %}
 
 {% block further %}
  {{ super() }}
-  {% if event %}
-    <script>window.APP_DATA.initEvent = {{event|tojson}}</script>
-  {% endif %}
+    <script>
+      window.APP_DATA.initEvent = {{event|tojson if event else "null"}}
+      window.APP_DATA.metadata = {{metadata|tojson if metadata else "null"}}
+    </script>
+
 {% endblock further %}
 
 {% block footer_scripts %}

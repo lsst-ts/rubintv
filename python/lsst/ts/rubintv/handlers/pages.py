@@ -336,7 +336,7 @@ async def get_current_night_report_page(
         location, camera, request
     )
 
-    title = build_title(location.title, camera.title, "Current Night Report")
+    title = build_title(location.title, camera.title, "Current Night's Evolution")
 
     return templates.TemplateResponse(
         request=request,
@@ -381,7 +381,7 @@ async def get_historical_night_report_page(
     title = build_title(
         location.title,
         camera.title,
-        f"Night Report for {date_str}",
+        f"Night`s evolution for {date_str}",
     )
 
     return templates.TemplateResponse(
@@ -462,6 +462,11 @@ async def get_current_channel_event_page(
         location_name, camera_name, channel_name, request
     )
 
+    metadata = {}
+    result = await get_camera_current_data(location, camera, request)
+    if result:
+        (day_obs, channel_data, per_day, metadata, nr_exists, not_current) = result
+
     channel: Channel = find_first(camera.channels, "name", channel_name)
     if channel is None or channel not in camera.channels:
         raise HTTPException(status_code=404, detail="Channel not found.")
@@ -478,5 +483,6 @@ async def get_current_channel_event_page(
             "channel": to_dict(channel),
             "title": title,
             "event": to_dict(event),
+            "metadata": metadata,
         },
     )

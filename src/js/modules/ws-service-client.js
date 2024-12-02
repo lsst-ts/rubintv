@@ -1,6 +1,6 @@
 import ReconnectingWebSocket from "reconnecting-websocket"
 import { validate } from "uuid"
-import { getWebSockURL } from "./utils"
+import { decodeUnpackWSPayload, getWebSockURL } from "./utils"
 
 // TODO - Simplify this class since subscriptionType is no longer rqrd.
 // See DM-46449
@@ -11,7 +11,9 @@ export class WebsocketClient {
     this.ws = new ReconnectingWebSocket(getWebSockURL("ws/data"))
     this.ws.onmessage = this.handleMessage.bind(this)
     this.ws.onclose = this.handleClose.bind(this)
+    this.ws.onopen = this.handleOpen.bind(this)
     this.subscriptions = [] // To store multiple subscriptions
+    this.online = false
   }
 
   subscribe(
@@ -59,10 +61,27 @@ export class WebsocketClient {
 
   handleClose(e) {
     console.log("Lost services websocket connection. Retrying")
+    this.online = false
+    window.dispatchEvent(
+      new CustomEvent("ws_status_change", { detail: { online: false } })
+    )
+  }
+
+  handleOpen(e) {
+    this.online = true
+    window.dispatchEvent(
+      new CustomEvent("ws_status_change", { detail: { online: true } })
+    )
   }
 
   handleMessage(messageEvent) {
     console.debug(messageEvent)
+    if (!this.online) {
+      this.online = true
+      window.dispatchEvent(
+        new CustomEvent("ws_status_change", { detail: { online: true } })
+      )
+    }
     if (!this.connectionID) {
       const id = this.setConnectionID(messageEvent.data)
       if (id) {
@@ -90,7 +109,7 @@ export class WebsocketClient {
 
     const detail = {
       dataType: data.dataType,
-      data: data.payload,
+      data: decodeUnpackWSPayload(data.payload),
       datestamp: data.datestamp,
     }
     window.dispatchEvent(new CustomEvent(data.service, { detail }))
@@ -107,7 +126,7 @@ export class WebsocketClient {
   }
 
   sendSubscriptionMessages() {
-    this.subscriptions.forEach( subscriptionPayload => {
+    this.subscriptions.forEach((subscriptionPayload) => {
       const message = {
         ...subscriptionPayload,
         clientID: this.connectionID,

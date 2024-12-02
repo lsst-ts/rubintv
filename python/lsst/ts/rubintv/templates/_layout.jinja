@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-version="{{ version }}" data-locationname="{{ location.name if location }}">
+<html lang="en" data-version="{{ version }}">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -11,16 +11,6 @@
     <link rel="icon" href="{{ url_for('static', path='images/favicon.png') }}">
     <title>{{ title }}</title>
 </head>
-
-<script>
-// function to reload the page if the back button has been used and the page has updated
-// since, so not to show stale data.
-window.onpageshow = function (event) {
-    if (event.persisted || (!!window.performance && window.performance.navigation.type === 2)) {
-        window.location.reload()
-    }
-}
-</script>
 
 {% set body_class = "" %}
 {% if camera %}
