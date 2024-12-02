@@ -27,7 +27,7 @@
         window.APP_DATA.imagesURL = "{{ url_for('static', path='images')}}"
         window.APP_DATA.pathPrefix = {{ path_prefix|tojson if path_prefix else "null" }}
     </script>
-    
+
     {% block header %}
         <header>
             <div class="header-wrap">
