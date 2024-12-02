@@ -19,7 +19,7 @@ function Button({
     backgroundImage: logoURL ? `url(${logoURL})` : "none",
     backgroundSize: "contain",
   }
-  clsName = !!logoURL ? clsName + " button-logo" : clsName
+  clsName = logoURL ? clsName + " button-logo" : clsName
   clsName = textShadow ? clsName + " t-shadow" : clsName
 
   return (
@@ -29,6 +29,17 @@ function Button({
       {date && <span className="date">{date}</span>}
     </a>
   )
+}
+Button.propTypes = {
+  clsName: PropTypes.string,
+  url: PropTypes.string,
+  bckCol: PropTypes.string,
+  iconUrl: PropTypes.object,
+  logoURL: PropTypes.object,
+  label: PropTypes.string,
+  date: PropTypes.string,
+  textColour: PropTypes.string,
+  textShadow: PropTypes.string,
 }
 
 function PerDayChannels({ camera, date, perDay }) {
@@ -124,7 +135,7 @@ function NightReportLink({ camera, date, nightReportLink }) {
 
   return (
     <div id="night_report_link">
-      <h3>Night Report</h3>
+      <h3>Night&#39;s Evolution</h3>
       <a className="button button-large night-report" href={link}>
         <img src={`${baseUrl}static/images/crescent-moon.svg`} />
         {label}
@@ -192,5 +203,5 @@ PerDay.propTypes = {
   initialPerDay: PropTypes.objectOf(eventType),
   initialDate: PropTypes.string,
   /** True if a night report event exists for this date. */
-  nightReportLink: PropTypes.string,
+  initialNRLink: PropTypes.string,
 }

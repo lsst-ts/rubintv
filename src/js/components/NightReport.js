@@ -65,8 +65,8 @@ function NightReportText({ nightReport, selected }) {
         <ul>
           {Object.entries(qaPlots).map(([title, link]) => {
             return (
-              <li>
-                <a href={link} target="_blank">
+              <li key={link}>
+                <a href={link} target="_blank" rel="noreferrer">
                   {title}
                 </a>
               </li>
@@ -84,6 +84,7 @@ NightReportText.propTypes = {
    * link/title pair.
    */
   nightReport: PropTypes.object,
+  selected: PropTypes.string,
 }
 
 function getTabNames(nightReport) {
@@ -101,7 +102,7 @@ function getTabNames(nightReport) {
   return groups
 }
 
-function NightReportTabs({ nightReport, tabNames, selected, setSelected }) {
+function NightReportTabs({ tabNames, selected, setSelected }) {
   const [hiddenTabs, setHiddenTabs] = useState(["elana"])
   const [typed, setTyped] = useState("")
 
@@ -145,7 +146,6 @@ function NightReportTabs({ nightReport, tabNames, selected, setSelected }) {
       return selected
     })
   }
-  const plots = nightReport.plots
 
   return (
     <div className="tab-titles">
@@ -227,6 +227,7 @@ NightReportPlots.propTypes = {
     plots: PropTypes.arrayOf(nightReportData),
     text: PropTypes.object,
   }),
+  selected: PropTypes.string,
   camera: PropTypes.object,
   locationName: PropTypes.string,
   baseUrl: PropTypes.string,
