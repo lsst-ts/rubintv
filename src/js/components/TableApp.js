@@ -148,7 +148,9 @@ function getAllColumnNamesFromMetadata(metadata) {
     .map((obj) => Object.keys(obj))
     .flat()
   // filter out the indicators (first char is '_')
-  return allCols.filter((el) => el[0] !== "_")
+  // and the replacement strings for empty channels
+  // (first char is '@')
+  return allCols.filter((el) => el[0] !== "_" || el[0] !== "@")
 }
 
 function getTableColumnWidths() {

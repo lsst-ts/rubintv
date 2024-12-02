@@ -138,7 +138,6 @@ export function getStrHashCode(str) {
 }
 
 export const decodeUnpackWSPayload = (compressed) => {
-  const timeNow = Date.now()
   let data
   try {
     // Decode Base64 string to Uint8Array
@@ -161,8 +160,6 @@ export const decodeUnpackWSPayload = (compressed) => {
       error: "Couldn't decompress payload",
     }
   }
-  const elapsed = Date.now() - timeNow
-  console.log("time taken:", elapsed)
   return data
 }
 
