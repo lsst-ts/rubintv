@@ -1,5 +1,7 @@
+/* eslint-disable no-prototype-builtins */
 import React, { useState, useEffect } from "react"
 import { toTimeString } from "../modules/utils"
+import { cameraType, metadataType } from "./componentPropTypes"
 
 export default function Clock() {
   const [time, setTime] = useState(new Date())
@@ -42,6 +44,9 @@ export function TimeSinceLastImageClock(props) {
   const [isOnline, setIsOnline] = useState(true)
   const [time, setTime] = useState(Date.now())
   const [metadata, setMetadata] = useState(propsMeta)
+
+  // TAI and UTF are out by ~37s
+  const TAIDIFF = 37 * 1000
 
   useEffect(() => {
     const timerId = setInterval(() => {
@@ -91,7 +96,7 @@ export function TimeSinceLastImageClock(props) {
     const startTime = Date.parse(UTCDateString)
     const exposureTime = row["Exposure time"] * 1000
     const endTime = startTime + exposureTime
-    timeElapsed = time - endTime
+    timeElapsed = time - endTime + TAIDIFF
   }
   const className = ["clock time-since-clock", isOnline ? "" : "offline"].join(
     " "
@@ -112,4 +117,8 @@ export function TimeSinceLastImageClock(props) {
       </div>
     </div>
   )
+}
+TimeSinceLastImageClock.propTypes = {
+  metadata: metadataType,
+  camera: cameraType,
 }
