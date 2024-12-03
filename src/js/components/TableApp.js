@@ -29,8 +29,7 @@ export default function TableApp({
     defaultCols = []
   }
   const defaultColNames = defaultCols.map((col) => col.name)
-  const metaColNames = getAllColumnNamesFromMetadata(metadata)
-  const allColNames = getAllColumnNames(metaColNames, defaultColNames)
+  const allColNames = getAllColumnNames(metadata, defaultColNames)
 
   const [selected, setSelected] = useState(() => {
     const savedColumns = retrieveSelected(`${locationName}/${camera.name}`)
@@ -138,19 +137,26 @@ TableApp.propTypes = {
   isHistorical: PropTypes.bool,
 }
 
-function getAllColumnNames(metadataColNames, defaultMetaColNames) {
-  return Array.from(new Set(defaultMetaColNames.concat(metadataColNames)))
-}
+// function getAllColumnNames(colNames, defaultColNames) {
+//   return Array.from(new Set(defaultColNames.concat(colNames)))
+// }
 
-function getAllColumnNamesFromMetadata(metadata) {
+function getAllColumnNames(metadata, defaultColNames) {
   // get the set of all data for list of all available attrs
-  const allCols = Object.values(metadata)
+  const allColNames = Object.values(metadata)
     .map((obj) => Object.keys(obj))
     .flat()
+  const uniqueColNames = Array.from(
+    new Set(defaultColNames.concat(allColNames))
+  )
   // filter out the indicators (first char is '_')
   // and the replacement strings for empty channels
   // (first char is '@')
-  return allCols.filter((el) => el[0] !== "_" || el[0] !== "@")
+  const filtered = uniqueColNames.filter(
+    (el) => !(el[0] === "_" || el[0] === "@")
+  )
+  console.log("Filtered:", filtered)
+  return filtered
 }
 
 function getTableColumnWidths() {
