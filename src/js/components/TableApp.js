@@ -137,10 +137,6 @@ TableApp.propTypes = {
   isHistorical: PropTypes.bool,
 }
 
-// function getAllColumnNames(colNames, defaultColNames) {
-//   return Array.from(new Set(defaultColNames.concat(colNames)))
-// }
-
 function getAllColumnNames(metadata, defaultColNames) {
   // get the set of all data for list of all available attrs
   const allColNames = Object.values(metadata)
@@ -155,7 +151,6 @@ function getAllColumnNames(metadata, defaultColNames) {
   const filtered = uniqueColNames.filter(
     (el) => !(el[0] === "_" || el[0] === "@")
   )
-  console.log("Filtered:", filtered)
   return filtered
 }
 
