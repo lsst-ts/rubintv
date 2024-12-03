@@ -37,10 +37,9 @@ logger = rubintv_logger()
 
 exp_checker_installed = False
 try:
-    from ..exp_checker.python.lsst.ts.exp_checker import (
-        app as exp_checker_app,  # type: ignore
-    )
+    from lsst.ts.exp_checker import app as exp_checker_app
 
+    logger.info("exp_checker is mounted")
     exp_checker_installed = True
 except (ModuleNotFoundError, ImportError):
     logger.warn("exp-checker not found. Not mounting.")
