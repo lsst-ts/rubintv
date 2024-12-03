@@ -2,7 +2,7 @@ import React, { useState } from "react"
 import PropTypes from "prop-types"
 import Clock, { TimeSinceLastImageClock } from "./Clock"
 import { _getById } from "../modules/utils"
-import { metadataType } from "./componentPropTypes"
+import { cameraType, metadataType } from "./componentPropTypes"
 
 export default function AboveTableRow({
   camera,
@@ -35,6 +35,22 @@ export default function AboveTableRow({
       )}
     </div>
   )
+}
+AboveTableRow.propTypes = {
+  /** the names of all metadata columns */
+  allColNames: PropTypes.arrayOf(PropTypes.string),
+  /** the current camera */
+  camera: cameraType,
+  /** the names of the currently selected columns to display */
+  selected: PropTypes.arrayOf(PropTypes.string),
+  /** callback function from the parent component TableApp */
+  setSelected: PropTypes.func,
+  /** the given date */
+  date: PropTypes.string,
+  /** the current metadata for this camera/date */
+  metadata: metadataType,
+  /** true if this is a historical page */
+  isHistorical: PropTypes.bool,
 }
 
 function TableControls({ cameraName, allColNames, selected, setSelected }) {
