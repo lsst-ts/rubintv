@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, timedelta
 from typing import Any, Iterator
 from unittest.mock import AsyncMock, patch
 
@@ -32,45 +32,32 @@ def current_poller(rubin_data_mocker: RubinDataMocker) -> CurrentPoller:
     return CurrentPoller(m.locations, test_mode=True)
 
 
-@pytest.mark.asyncio
-async def test_poll_buckets_for_todays_data(
-    current_poller: CurrentPoller, rubin_data_mocker: RubinDataMocker
-) -> None:
-    # Mocking external functions
-    with (
-        patch(
-            "lsst.ts.rubintv.models.models.get_current_day_obs",
-            return_value="2024-03-28",
-        ) as mock_day_obs,
-        patch(
-            "lsst.ts.rubintv.background.currentpoller.CurrentPoller.clear_todays_data",
-            new_callable=AsyncMock,
-        ),
-        patch(
-            "lsst.ts.rubintv.background.currentpoller.CurrentPoller.sieve_out_metadata",
-            new_callable=AsyncMock,
-        ) as mock_metadata,
-        patch(
-            (
-                "lsst.ts.rubintv.background.currentpoller.CurrentPoller."
-                "sieve_out_night_reports"
-            ),
-            new_callable=AsyncMock,
-        ) as mock_night_reports,
-        patch(
-            "lsst.ts.rubintv.background.currentpoller.CurrentPoller."
-            "process_channel_objects",
-            new_callable=AsyncMock,
-        ) as mock_process_objects,
-    ):
-        # Execute test
-        await current_poller.poll_buckets_for_todays_data()
+rtv_root = "lsst.ts.rubintv"
+cp_path = f"${rtv_root}.background.currentpoller.CurrentPoller"
 
-        assert mock_day_obs
-        mock_metadata.assert_called()
-        mock_night_reports.assert_called()
-        mock_process_objects.assert_called()
-        assert current_poller.completed_first_poll is True
+
+@pytest.mark.asyncio
+@patch(f"{rtv_root}.models.models.get_current_day_obs", return_value="2024-03-28")
+@patch(f"{cp_path}.clear_todays_data", new_callable=AsyncMock)
+@patch(f"{cp_path}.sieve_out_metadata", new_callable=AsyncMock)
+@patch(f"{cp_path}.sieve_out_night_reports", new_callable=AsyncMock)
+@patch(f"{cp_path}.process_channel_objects", new_callable=AsyncMock)
+async def test_poll_buckets_for_todays_data(
+    mock_process_objects: AsyncMock,
+    mock_night_reports: AsyncMock,
+    mock_metadata: AsyncMock,
+    mock_get_current_day_obs: AsyncMock,
+    current_poller: CurrentPoller,
+) -> None:
+    # Execute test
+    await current_poller.poll_buckets_for_todays_data()
+
+    # Assertions
+    assert mock_get_current_day_obs.called
+    mock_metadata.assert_called()
+    mock_night_reports.assert_called()
+    mock_process_objects.assert_called()
+    assert current_poller.completed_first_poll is True
 
 
 @pytest.mark.asyncio
@@ -291,3 +278,17 @@ def get_test_camera_and_location() -> tuple[Camera, Location]:
     # fake_auxtel has both 'streaming' and per-day channels
     camera: Camera = find_first(location.cameras, "name", "fake_auxtel")
     return (camera, location)
+
+
+async def perform_poll_and_assert_completed(
+    poller: CurrentPoller, day_obs: date
+) -> AsyncMock:
+    """Perform a poll and assert that the first poll is completed."""
+    with patch(
+        "lsst.ts.rubintv.background.currentpoller.get_current_day_obs",
+        return_value=day_obs,
+    ) as mock_day_obs:
+        assert mock_day_obs
+        await poller.poll_buckets_for_todays_data()
+        assert poller.completed_first_poll is True
+        return mock_day_obs
