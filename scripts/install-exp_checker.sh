@@ -6,7 +6,7 @@ set -e
 set -x
 
 cd /usr/src/rubintv
-git clone --single-branch --branch package https://github.com/lsst-sitcom/rubin_exp_checker.git exp_checker
+git clone https://github.com/lsst-sitcom/rubin_exp_checker.git exp_checker
 cd exp_checker
 pip install -e .
 pip install -r requirements.txt
