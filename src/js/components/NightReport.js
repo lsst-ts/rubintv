@@ -88,12 +88,14 @@ NightReportText.propTypes = {
 }
 
 function getTabNames(nightReport) {
-  let groups = ["Efficiency"]
+  let groups = []
   if (
     nightReport.text &&
     Object.keys(nightReport.text).some((n) => !n.startsWith("text"))
   ) {
     groups = groups.concat("QA Plots")
+  } else if (nightReport.text) {
+    groups = groups.concat("Efficiency")
   }
   const plots = nightReport.plots
   if (plots) {
