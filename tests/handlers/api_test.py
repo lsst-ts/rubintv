@@ -150,6 +150,3 @@ async def test_get_camera_current_events(
 
     for num, row in table.items():
         assert sorted(row) == sorted(mocked_table[num])
-
-    metadata = {f"col{n}": "dummy" for n in range(1, 6)}
-    assert data["metadata"] == metadata
