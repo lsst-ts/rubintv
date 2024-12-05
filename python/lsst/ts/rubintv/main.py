@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from . import __version__
 from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
-from .config import config
+from .config import config, rubintv_logger
 from .handlers.api import api_router
 from .handlers.ddv_routes_handler import ddv_router
 from .handlers.ddv_websocket_handler import ddv_client_ws_router, internal_ws_router
@@ -32,6 +32,17 @@ from .handlers.websockets_clients import clients
 from .middleware.x_forwarded import XForwardedMiddleware
 from .models.models_init import ModelsInitiator
 from .s3client import S3Client
+
+logger = rubintv_logger()
+
+exp_checker_installed = False
+try:
+    from lsst.ts.exp_checker import app as exp_checker_app
+
+    logger.info("exp_checker is mounted")
+    exp_checker_installed = True
+except (ModuleNotFoundError, ImportError):
+    logger.warn("exp-checker not found. Not mounting.")
 
 __all__ = ["app", "config"]
 
@@ -59,7 +70,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     today_polling = asyncio.create_task(cp.poll_buckets_for_todays_data())
     historical_polling = asyncio.create_task(hp.check_for_new_day())
 
-    yield
+    # Startup phase for the subapp
+    if exp_checker_installed and exp_checker_app.router.lifespan:
+        async with exp_checker_app.router.lifespan_context(exp_checker_app):
+            yield  # Yield to the main app with subapp context active
+
+    # If no lifespan is needed for the subapp, still yield to the main app
+    else:
+        yield
 
     historical_polling.cancel()
     today_polling.cancel()
@@ -113,6 +131,10 @@ def create_app() -> FastAPI:
         )
         # Provide router that hooks up ddv/index.html
         app.include_router(ddv_router, prefix=f"{config.path_prefix}/ddv")
+
+    # Mount exp_checker FastAPI app.
+    if exp_checker_installed:
+        app.mount(f"{config.path_prefix}/exp_checker", exp_checker_app)
 
     # Attach the routers.
 
