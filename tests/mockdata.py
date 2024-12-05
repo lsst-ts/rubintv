@@ -31,14 +31,16 @@ class RubinDataMocker:
 
         Parameters
         ----------
-        locations : list[Location]
+        locations : `list[`Location`]`
             A list of Location objects representing various observation
             locations.
-        day_obs : date, optional
+        day_obs : `date`, `optional`
             The observation day, defaults to today.
-        s3_required : bool, optional
-            Boolean flag to indicate if S3 operations are required, defaults
+        s3_required : `bool`, `optional`
+            Set to True if S3 operations are required, otherwise defaults
             to False.
+        populate: `bool`, `optional`
+            Set to False if an empty mocker is requires. Defaults to True.
         """
         self.last_seq: dict[str, int] = {}
         self._locations = locations
@@ -175,20 +177,41 @@ class RubinDataMocker:
     def get_mocked_events(
         self, location: Location, camera: Camera, channel: Channel
     ) -> list[Event]:
+        """
+        Retrieve events for a given location.
+
+        Parameters
+        ----------
+        location : Location
+            The location for which to retrieve the sequence events.
+
+        Returns
+        -------
+        list[Event]
+            A list of Event objects representing sequence events.
+        """
         loc_cam = f"{location.name}/{camera.name}"
         return [
             e for e in self.events.get(loc_cam, []) if e.channel_name == channel.name
         ]
 
-    def get_mocked_events_as_dicts(
-        self, location: Location, camera: Camera
-    ) -> list[dict]:
-        loc_cam = f"{location.name}/{camera.name}"
-        return [e.__dict__ for e in self.events.get(loc_cam, [])]
-
     def mock_night_report_plot(
         self, location: Location, camera: Camera
     ) -> dict[str, str]:
+        """Generate a mock night report for a camera.
+
+        Parameters
+        ----------
+        location : `Location`
+            The location of the camera.
+        camera : `Camera`
+            The given camera.
+
+        Returns
+        -------
+        night_report_object: `dict`[`str`, `str`]
+            A simple dict that a `NightReport` instance can be made using.
+        """
         key = f"{camera.name}/{today}/night_report/Test/filename.test"
         content = "".join([chr(random.randint(32, 126)) for _ in range(20)])
         hash: None | str = None
@@ -201,6 +224,22 @@ class RubinDataMocker:
         return {"key": key, "hash": hash}
 
     def upload_file(self, file_name: Path | str, bucket_name: str, key: str) -> bool:
+        """Upload a file to an S3 bucket.
+
+        Parameters
+        ----------
+        file_name: `Path` | `str`
+            Name/path of file to upload.
+        bucket: `str`
+            Name of bucket to upload to.
+        key: `str`
+            Name for the file in the bucket.
+
+        Returns
+        -------
+        uploaded: `bool`
+            True if file was uploaded, else False.
+        """
         try:
             self.s3_client.upload_file(file_name, bucket_name, key)
         except ClientError as e:
@@ -209,6 +248,22 @@ class RubinDataMocker:
         return True
 
     def upload_fileobj(self, obj: Any, bucket_name: str, key: str) -> bool:
+        """Upload a file-like object to an S3 bucket.
+
+        Parameters
+        ----------
+        obj: `Any`
+            An object to upload.
+        bucket: `str`
+            Name of bucket to upload to.
+        key: `str`
+            Name for the file in the bucket.
+
+        Returns
+        -------
+        uploaded: `bool`
+            True if object was uploaded, else False.
+        """
         try:
             json_str = json.dumps(obj)
             self.s3_client.put_object(Bucket=bucket_name, Body=json_str, Key=key)
@@ -218,11 +273,26 @@ class RubinDataMocker:
         return True
 
     def get_obj_hash(self, bucket_name: str, key: str) -> str:
+        """Retrieve the hash (ETag) of an object stored in an S3 bucket.
+
+        Parameters
+        ----------
+        bucket_name : `str`
+            Name of the S3 bucket.
+        key : `str`
+            S3 key of the object.
+
+        Returns
+        -------
+        etag: `str`
+            The hash (ETag) of the object if retrievable, empty string
+            otherwise.
+        """
         try:
-            response = self.s3_client.list_objects(Bucket=bucket_name, Prefix=key)
-            for obj in response.get("Contents", []):
-                if obj["Key"] == key:
-                    return obj["ETag"].strip('"')
+            res = self.s3_client.get_object_attributes(
+                Bucket=bucket_name, Key=key, ObjectAttributes=["ETag"]
+            )
         except ClientError as e:
             logging.error(e)
-        return ""
+            return ""
+        return res["ETag"]
