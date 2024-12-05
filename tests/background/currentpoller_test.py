@@ -55,38 +55,32 @@ cp_path = f"{rtv_root}.background.currentpoller.CurrentPoller"
 
 
 @pytest.mark.asyncio
-@patch(
-    f"{rtv_root}.background.currentpoller.get_current_day_obs",
-    return_value="2024-12-04",
-)
-@patch(f"{cp_path}.clear_todays_data", new_callable=AsyncMock)
 @patch(f"{cp_path}.sieve_out_metadata", new_callable=AsyncMock)
 @patch(f"{cp_path}.sieve_out_night_reports", new_callable=AsyncMock)
 @patch(f"{cp_path}.process_channel_objects", new_callable=AsyncMock)
+@patch(f"{cp_path}.poll_for_yesterdays_per_day", new_callable=AsyncMock)
 async def test_poll_buckets_for_todays_data(
+    mock_poll_for_yesterdays_per_day: AsyncMock,
     mock_process_objects: AsyncMock,
     mock_night_reports: AsyncMock,
-    mock_metadata: AsyncMock,
-    mock_clear_todays_data: AsyncMock,
-    mock_get_current_day_obs: AsyncMock,
+    mock_sieve_out_metadata: AsyncMock,
     current_poller: CurrentPoller,
 ) -> None:
-
     # Configure AsyncMock to behave as awaited coroutines
-    mock_clear_todays_data.return_value = None
-    mock_metadata.return_value = None
+    mock_sieve_out_metadata.return_value = None
     mock_night_reports.return_value = None
     mock_process_objects.return_value = None
+    mock_poll_for_yesterdays_per_day.return_value = None
 
     # Execute test
 
     await current_poller.poll_buckets_for_todays_data()
 
     # Assertions
-    mock_get_current_day_obs.assert_called()
-    mock_metadata.assert_called()
+    mock_sieve_out_metadata.assert_called()
     mock_night_reports.assert_called()
     mock_process_objects.assert_called()
+    mock_poll_for_yesterdays_per_day.assert_called()
     assert current_poller.completed_first_poll is True
 
 
