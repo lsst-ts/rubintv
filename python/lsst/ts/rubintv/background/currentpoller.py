@@ -311,9 +311,9 @@ class CurrentPoller:
                     Service.CAMERA,
                     MessageType.CAMERA_PER_DAY,
                     loc_cam,
-                    {"nightReportExists": True},
+                    {"nightReportLink": "current"},
                 )
-                await self.process_night_report_objects(report_objs, location, camera)
+            await self.process_night_report_objects(report_objs, location, camera)
         return objects
 
     async def filter_night_report_objects(

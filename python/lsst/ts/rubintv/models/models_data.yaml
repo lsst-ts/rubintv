@@ -246,7 +246,10 @@ cameras:
       - name: imexam
         title: Image Analysis
         colour: "#e7587b"
-        
+      - name: event_timeline
+        title: Event timeline
+        colour: "#e79459"
+
       - name: day_movie
         title: Whole Day Movie
         per_day: True
