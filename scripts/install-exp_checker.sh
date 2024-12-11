@@ -6,7 +6,7 @@ set -e
 set -x
 
 # exp_checker only runs at USDF
-if [ -n "${!RAPID_ANALYSIS_LOCATION}" ] && [ "${!RAPID_ANALYSIS_LOCATION}" == "USDF" ]; then
+if [ -n "${RAPID_ANALYSIS_LOCATION}" ] && [ "${RAPID_ANALYSIS_LOCATION}" = "USDF" ]; then
     cd /usr/src/rubintv
     git clone https://github.com/lsst-sitcom/rubin_exp_checker.git exp_checker
     cd exp_checker
