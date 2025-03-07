@@ -61,7 +61,7 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ auxtel, comcam, comcam_aos, lsstcam ]
+      Telescope Mounted: [ auxtel, comcam, comcam_aos, lsstcam, lsstcam_aos ]
       Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
@@ -96,7 +96,7 @@ locations:
     bucket_name: rubintv
 
     camera_groups:
-      Telescope Mounted: [ auxtel, comcam, comcam_aos, lsstcam ]
+      Telescope Mounted: [ auxtel, comcam, comcam_aos, lsstcam, lsstcam_aos ]
       Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
@@ -375,6 +375,30 @@ cameras:
       ?image=MC_C_{dayObs}_{seqNum}&raft=all&color=grey\
       &bias=Simple+Overscan+Correction&scale=Per-Segment&source=raw"
 
+  - name: lsstcam_aos
+    title: LSSTCamAOS
+    online: True
+    logo: LSSTCamAOS.jpg
+    text_colour: "#fff"
+    time_since_clock:
+      label: Time since last refocus
+    channels:
+      - name: fp_donut_gallery
+        title: Focal Plane Donut Gallery
+        colour: "#c7e692"
+      - name: zk_residual_pyramid
+        title: Zernike Residual Pyramid
+        colour: "#e2d36b"
+      - name: zk_measurement_pyramid
+        title: Zernike Measurement Pyramid
+        colour: "#876f45"
+      - name: focus_sweep
+        title: Focus Sweep
+        colour: "#965d82"
+      - name: psf_zk_panel
+        title: AOS residual FWHM
+        colour: "#d27549"
+
   - name: slac_lsstcam
     title: LSSTCam
     icon: Slac LSSTCam.jpg
@@ -510,6 +534,7 @@ metadata_cols:
       The TAI of the observation
     DIMM Seeing:
       The seeing, as measured by the DIMM, if available
+
   slac_lsstcam:
     Run number:
       The run number, as taken from the exposure record's science_program field
@@ -533,6 +558,10 @@ metadata_cols:
       The image type, e.g. bias, dark, flat etc
     Test type:
       The type of test being run, e.g. superflats
+
+  lsstcam_aos:
+    Exposure time:
+      The image dark time
 
   ts8:
     Run number:
