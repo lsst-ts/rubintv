@@ -378,7 +378,7 @@ cameras:
   - name: lsstcam_aos
     title: LSSTCamAOS
     online: True
-    logo: LSSTCamAOS.jpg
+    logo: LSSTSummitDonuts.jpg
     text_colour: "#fff"
     time_since_clock:
       label: Time since last refocus
