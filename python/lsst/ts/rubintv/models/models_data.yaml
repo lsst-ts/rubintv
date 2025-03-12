@@ -61,10 +61,12 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ auxtel, comcam, comcam_aos, lsstcam, lsstcam_aos ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos ]
       Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
+      Deprecated Cameras: [ comcam, comcam_aos ]
+
 
   - name: base
     title: Base
@@ -94,12 +96,12 @@ locations:
     text_shadow: True
     profile_name: summit-data-summit
     bucket_name: rubintv
-
     camera_groups:
-      Telescope Mounted: [ auxtel, comcam, comcam_aos, lsstcam, lsstcam_aos ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos ]
       Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
+      Deprecated Cameras: [ comcam, comcam_aos ]
 
 cameras:
   - name: tma
