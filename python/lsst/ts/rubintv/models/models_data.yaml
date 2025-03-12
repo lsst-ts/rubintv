@@ -39,7 +39,7 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ lsstcam ]
+      Telescope Mounted: [ lsstcam, lsstcam_aos ]
       Cameras: [ auxtel, fake_auxtel ]
       Telescopes: [ tma ]
     services: [ auxtel, tma ]
@@ -74,7 +74,7 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ lsstcam ]
+      Telescope Mounted: [ lsstcam, lsstcam_aos ]
       Cameras: [ auxtel, fake_auxtel ]
       Telescopes: [ tma ]
 
