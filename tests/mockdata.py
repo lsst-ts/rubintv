@@ -59,6 +59,12 @@ class RubinDataMocker:
     def create_buckets(self) -> None:
         for location in self._locations:
             bucket_name = location.bucket_name
+            # TODO: Remove the below line once the issue is fixed in boto3
+            # See DM-49439 for more details
+            # Below function call raises "DeprecationWarning:
+            # datetime.datetime.utcnow() is deprecated"
+            # This is a known issue and will be fixed in the next release
+            # of boto3.
             self.s3_client.create_bucket(Bucket=bucket_name)
 
     def mock_up_data(self) -> None:
