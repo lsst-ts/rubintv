@@ -371,8 +371,46 @@ cameras:
     text_colour: "#fff"
     channels:
       - name: focal_plane_mosaic
-        title: Focal Plane mosaic
-        colour: "#61cca2"
+        title: Post-ISR mosaic
+        colour: "#85e986"
+      - name: calexp_mosaic
+        title: Calexp mosaic
+        colour: "#E76FD8"
+      - name: psf_shape_azel
+        title: PSF shape AzEl
+        colour: "#6F58E7"
+      - name: mount
+        title: Mount torques
+        colour: "#58b4e7"
+      - name: imexam
+        title: Image Analysis
+        colour: "#e7587b"
+      - name: event_timeline
+        title: Event timeline
+        colour: "#e79459"
+
+      - name: day_movie
+        title: Whole Day Movie
+        per_day: True
+        color: "#83daee"
+        icon: movies
+
+    time_since_clock:
+      label: Time since last image
+
+    extra_buttons:
+      - title: Movies View
+        name: moviesView
+        # relative url
+        linkURL: mosaic
+        logo: AI-astral-movie.jpg
+        text_colour: "#fff"
+
+    mosaic_view_meta:
+      - channel: day_movie
+        mediaType: video
+        metaColumns: []
+
     image_viewer_link: "http://lsstcam-mcm.cp.lsst.org/FITSInfo/view.html\
       ?image=MC_C_{dayObs}_{seqNum}&raft=all&color=grey\
       &bias=Simple+Overscan+Correction&scale=Per-Segment&source=raw"
