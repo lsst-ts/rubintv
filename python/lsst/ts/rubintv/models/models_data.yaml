@@ -154,6 +154,8 @@ cameras:
         label: "Movie for "
         colour: "#83daee"
 
+    time_since_clock:
+      label: Time since last image
     mosaic_view_meta:
       - channel: monitor
         metaColumns:

@@ -1,36 +1,32 @@
-{% set year_to_display = calendar|last %}
+{% if request.route.name == "camera_for_date" %}
+  {% set year_to_display = date.year %}
+{% else %}
+  {% set year_to_display = calendar|sort|last %}
+{% endif %}
+
 {% set camera_url = url_for('camera', location_name=location.name, camera_name=camera.name) %}
 {% if camera.name == "allsky" %}
   {% set no_total_seq = True %}
 {% endif %}
+
 <div class="year-titles">
   <div class="year-button year-more"></div>
     <div class="year-title-viewbox">
-      {% for year in calendar|reverse %}
-        {% if year == year_to_display %}
-          <p class="year-title current" data-year="{{ year }}">
-            {{ year }}
-          </p>
-        {% else %}
-          <p class="year-title" data-year="{{ year }}">
-            {{ year }}
-          </p>
-        {% endif %}
+      {% for year in calendar|sort|reverse %}
+        <p  class="year-title {{ 'current' if year == year_to_display }}"
+            data-year="{{ year }}">
+          {{ year }}
+        </p>
       {% endfor %}
     </div>
   <div class="year-button year-less"></div>
 </div>
 
 <div class="years">
-{% for year in calendar %}
-  {% if year == year_to_display %}
-    <div class="year current" id="year-{{ year }}">
-  {% else %}
-    <div class="year" id="year-{{ year }}">
-  {% endif %}
-
+{% for year in calendar|sort|reverse %}
+    <div class="year {{ 'current' if year == year_to_display }}" id="year-{{ year }}">
     {% for month in calendar[year]|sort|reverse %}
-      <div class="month">
+      <div class="month {{ 'current' if year == year_to_display and month == date.month }}">
         <h5 class="month-title">
           {{ month_names[month - 1] }}
         </h5>
@@ -63,3 +59,14 @@
   </div>
 {% endfor %}
 </div>
+
+<script>
+  window.addEventListener("DOMContentLoaded", function() {
+    var year = document.querySelector(".year.current");
+    var month = document.querySelector(".month.current");
+    if (month) {
+      year.scrollLeft = month.offsetLeft - year.offsetLeft;
+    }
+  }
+  );
+</script>
