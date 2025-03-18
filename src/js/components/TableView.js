@@ -1,5 +1,6 @@
 import React from "react"
 import PropTypes from "prop-types"
+import { ColumnFilterInput } from "./TableFilter"
 import {
   indicatorForAttr,
   _elWithClass,
@@ -207,12 +208,20 @@ TableBody.propTypes = {
 
 // Component for individual channel header
 function ChannelHeader({ channel }) {
-  const thProps = { className: "grid-title gt-channel sideways" }
+  const handleColumnClick = () => {
+    const colName = channel.name
+    console.log(`Filtering by ${colName}`)
+    ColumnFilterInput({ column: colName })
+  }
+  const elProps = {
+    className: "grid-title gt-channel sideways",
+    onClick: handleColumnClick,
+  }
   if (channel.desc) {
-    thProps.title = channel.desc
+    elProps.title = channel.desc
   }
   return (
-    <div {...thProps}>{channel.label || channel.title || channel.name}</div>
+    <div {...elProps}>{channel.label || channel.title || channel.name}</div>
   )
 }
 ChannelHeader.propTypes = {
