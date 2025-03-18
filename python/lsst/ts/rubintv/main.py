@@ -46,6 +46,8 @@ except (ModuleNotFoundError, ImportError):
 
 __all__ = ["app", "config"]
 
+logger.info("redis host:", redis_host=config.ra_redis_host)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
