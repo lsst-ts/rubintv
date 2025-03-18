@@ -1,0 +1,24 @@
+#admin-panel
+
+.dropdown
+    .dropdown-content
+        position: absolute
+        margin-top: 2px
+        background: #333
+        display: flex
+        flex-direction: column
+        width: min-content
+        .dropdown-item
+            list-style: none
+            padding: 0.5em
+            cursor: pointer
+            &:hover
+                background: rgba(255,255,255,0.1)
+                a
+                    text-decoration: underline
+            a
+                color: #fff
+                text-decoration: none
+                    
+        &.hidden
+            display: none
