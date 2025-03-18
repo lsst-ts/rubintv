@@ -35,6 +35,12 @@ async def historical_reset(request: Request) -> None:
     await current.clear_todays_data()
 
 
+@api_router.post("/test_send")
+async def test_send(message: dict) -> bool:
+    logger.info("Received test message", message=message)
+    return True
+
+
 @api_router.get("/{location_name}", response_model=Location)
 async def get_location(location_name: str, request: Request) -> Location:
     locations = request.app.state.models.locations

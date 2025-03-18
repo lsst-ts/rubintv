@@ -10,11 +10,15 @@ export function intersect(arrayA, arrayB) {
 
 /**
  * @param {RequestInfo | URL} url
+ * @param {Object} message
  */
-export async function simplePost(url) {
+export async function simplePost(url, message = {}) {
   const res = await fetch(url, {
     method: "POST",
-    body: "",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(message),
   })
   const data = await res.text()
   return data
