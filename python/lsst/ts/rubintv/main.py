@@ -15,6 +15,7 @@ from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from redis import Redis  # type: ignore
 
 from . import __version__
 from .background.currentpoller import CurrentPoller
@@ -63,6 +64,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     app.state.current_poller = cp
     app.state.historical = hp
     app.state.s3_clients = {}
+    if config.ra_redis_host:
+        app.state.redis = _makeRedis()
     for location in models.locations:
         app.state.s3_clients[location.name] = S3Client(
             location.profile_name, location.bucket_name
@@ -85,6 +88,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     today_polling.cancel()
     for c in clients.values():
         await c.close()
+
+
+def _makeRedis() -> Redis:
+    """Create a redis connection.
+
+    Returns
+    -------
+    Redis:
+        The redis connection.
+    """
+    host: str = config.ra_redis_host
+    password = config.ra_redis_password
+    port: int = config.ra_redis_port
+    return Redis(host=host, password=password, port=port)
 
 
 def create_app() -> FastAPI:

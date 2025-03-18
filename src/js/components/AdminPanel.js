@@ -4,9 +4,8 @@ import { simplePost } from "../modules/utils"
 export default function DropDownMenu() {
   const [isOpen, setIsOpen] = useState(false)
   const menuItems = [
-    { title: "Apple", value: "apple" },
-    { title: "Banana", value: "banana" },
-    { title: "Cherry", value: "cherry" },
+    { title: "Send apple", value: "apple" },
+    { title: "Send 123", value: "123" },
   ]
   const toggleMenu = () => {
     setIsOpen(!isOpen)
