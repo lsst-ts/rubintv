@@ -13,9 +13,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
 
+import redis.asyncio as redis
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from redis import Redis  # type: ignore
 
 from . import __version__
 from .background.currentpoller import CurrentPoller
@@ -65,7 +65,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     app.state.historical = hp
     app.state.s3_clients = {}
     if config.ra_redis_host:
-        app.state.redis = _makeRedis()
+        redis_client = _makeRedis()
+        app.state.redis_client = redis_client
     for location in models.locations:
         app.state.s3_clients[location.name] = S3Client(
             location.profile_name, location.bucket_name
@@ -86,11 +87,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 
     historical_polling.cancel()
     today_polling.cancel()
+
+    await redis_client.close()
+
     for c in clients.values():
         await c.close()
 
 
-def _makeRedis() -> Redis:
+def _makeRedis() -> redis.Redis:
     """Create a redis connection.
 
     Returns
@@ -101,7 +105,7 @@ def _makeRedis() -> Redis:
     host: str = config.ra_redis_host
     password = config.ra_redis_password
     port: int = config.ra_redis_port
-    return Redis(host=host, password=password, port=port)
+    return redis.Redis(host=host, password=password, port=port)
 
 
 def create_app() -> FastAPI:

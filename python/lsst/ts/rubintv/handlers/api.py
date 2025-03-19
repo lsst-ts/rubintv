@@ -2,6 +2,7 @@
 
 from typing import Annotated, Any
 
+import redis.asyncio as redis
 from fastapi import APIRouter, HTTPException, Query, Request
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
@@ -14,7 +15,6 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
 )
 from lsst.ts.rubintv.models.models import Camera, Event, Location, NightReport
 from lsst.ts.rubintv.models.models_helpers import find_first
-from redis import Redis
 
 api_router = APIRouter()
 """FastAPI router for all external handlers."""
@@ -37,17 +37,15 @@ async def historical_reset(request: Request) -> None:
 
 
 @api_router.post("/test_send")
-# Potentially blocking redis operations so use non-async function
-# and FastAPI will run it in a thread pool
-def test_send(request: Request, message: dict) -> Any:
+async def test_send(request: Request, message: dict) -> Any:
     logger.info("Received test message", message=message)
-    redis: Redis = request.app.state.redis
-    if not redis:
+    redis_client: redis.Redis = request.app.state.redis_client
+    if not redis_client:
         raise HTTPException(500, "Redis not connected")
     if "value" not in message:
         raise HTTPException(400, "Message must contain a 'value' key")
-    redis.ping()
-    res = redis.set("RUBINTV_TEST", message["value"])
+    await redis_client.ping()
+    res = await redis_client.set("RUBINTV_TEST", message["value"])
     return res
 
 
