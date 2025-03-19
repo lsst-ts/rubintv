@@ -2,7 +2,11 @@ import React, { useState, useEffect } from "react"
 import PropTypes from "prop-types"
 import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
-import { _getById, intersect, retrieveSelected } from "../modules/utils"
+import {
+  _getById,
+  intersect,
+  retrieveSelected as retrieveStoredSelection,
+} from "../modules/utils"
 import { cameraType, channelDataType, metadataType } from "./componentPropTypes"
 
 export default function TableApp({
@@ -19,32 +23,33 @@ export default function TableApp({
 
   const locationName = window.APP_DATA.locationName
 
-  // convert metadata_cols into array of objects if they exist
-  let defaultCols
+  // if they exist, convert metadata_cols into array of objects
+  // from name: description to {name, desc}
+  let defaultColumns
   if (camera.metadata_cols) {
-    defaultCols = Object.entries(camera.metadata_cols).map(([name, desc]) => {
-      return { name, desc }
-    })
+    defaultColumns = Object.entries(camera.metadata_cols).map(
+      ([name, desc]) => ({ name, desc })
+    )
   } else {
-    defaultCols = []
+    defaultColumns = []
   }
-  const defaultColNames = defaultCols.map((col) => col.name)
+  const defaultColNames = defaultColumns.map((col) => col.name)
   const allColNames = getAllColumnNames(metadata, defaultColNames)
 
   const [selected, setSelected] = useState(() => {
-    const savedColumns = retrieveSelected(`${locationName}/${camera.name}`)
-    if (savedColumns) {
-      const intersectedColumns = intersect(savedColumns, allColNames)
-      return intersectedColumns
+    const storedColNames = retrieveStoredSelection(
+      `${locationName}/${camera.name}`
+    )
+    if (storedColNames) {
+      const intersectingColNames = intersect(storedColNames, allColNames)
+      return intersectingColNames
     }
     return defaultColNames
   })
 
-  const selectedObjs = selected.map((c) => {
-    return { name: c }
-  })
-  const selectedMetaCols = defaultCols
-    .filter((c) => selected.includes(c.name))
+  const selectedObjs = selected.map((c) => ({ name: c }))
+  const selectedMetaCols = defaultColumns
+    .filter((col) => selected.includes(col.name))
     .concat(selectedObjs.filter((o) => !defaultColNames.includes(o.name)))
 
   useEffect(() => {
