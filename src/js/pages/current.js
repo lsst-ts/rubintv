@@ -30,9 +30,6 @@ import { WebsocketClient } from "../modules/ws-service-client"
       return
     }
     const { filename, day_obs: dayObs, seq_num: seqNum } = data
-    _getById("date").textContent = dayObs
-    _getById("seqNum").textContent = seqNum
-    _getById("eventName").textContent = filename
     const oldImg = _getById("eventImage")
     // create new responsive <img> element
     const imgSrc = new URL(filename, baseImgURL)
@@ -42,6 +39,9 @@ import { WebsocketClient } from "../modules/ws-service-client"
       src: imgSrc,
     })
     newImg.addEventListener("load", () => {
+      _getById("date").textContent = dayObs
+      _getById("seqNum").textContent = seqNum
+      _getById("eventName").textContent = filename
       oldImg.replaceWith(newImg)
       _getById("eventLink").href = imgSrc
     })
