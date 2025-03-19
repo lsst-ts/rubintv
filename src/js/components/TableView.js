@@ -1,6 +1,7 @@
 import React from "react"
 import PropTypes from "prop-types"
-import { ColumnFilterInput } from "./TableFilter"
+import { FilterDialog } from "./TableFilter"
+import { useModal } from "./Modal"
 import {
   indicatorForAttr,
   _elWithClass,
@@ -207,14 +208,16 @@ TableBody.propTypes = {
 }
 
 // Component for individual channel header
-function ChannelHeader({ channel }) {
+function ChannelHeader({ channel, filterOn, setFilterOn }) {
+  const { showModal } = useModal()
+  const filterClass =
+    channel.name === filterOn.column && filterOn.value !== "" ? "filtering" : ""
+
   const handleColumnClick = () => {
-    const colName = channel.name
-    console.log(`Filtering by ${colName}`)
-    ColumnFilterInput({ column: colName })
+    showModal(<FilterDialog column={channel.name} setFilterOn={setFilterOn} />)
   }
   const elProps = {
-    className: "grid-title gt-channel sideways",
+    className: `grid-title gt-channel sideways ${filterClass}`,
     onClick: handleColumnClick,
   }
   if (channel.desc) {
@@ -226,10 +229,17 @@ function ChannelHeader({ channel }) {
 }
 ChannelHeader.propTypes = {
   channel: PropTypes.object,
+  filterOn: PropTypes.object,
+  setFilterOn: PropTypes.func,
 }
 
 // Header component for rendering column titles
-export function TableHeader({ camera, metadataColumns }) {
+export function TableHeader({
+  camera,
+  metadataColumns,
+  filterOn,
+  setFilterOn,
+}) {
   const channelColumns = seqChannels(camera)
   const columns = channelColumns.concat(metadataColumns)
   return (
@@ -241,16 +251,24 @@ export function TableHeader({ camera, metadataColumns }) {
       {camera.image_viewer_link && (
         <div className="grid-title sideways">CCS Image Viewer</div>
       )}
-      {columns.map((channel) => (
-        <ChannelHeader key={channel.name} channel={channel} />
-      ))}
+      {columns.map((channel) => {
+        return (
+          <ChannelHeader
+            key={channel.name}
+            channel={channel}
+            filterOn={filterOn}
+            setFilterOn={setFilterOn}
+          />
+        )
+      })}
     </>
   )
 }
 TableHeader.propTypes = {
   camera: PropTypes.object,
   metadataColumns: PropTypes.array,
-  selected: PropTypes.array,
+  filterOn: PropTypes.object,
+  setFilterOn: PropTypes.func,
 }
 
 export default function TableView({
@@ -258,7 +276,19 @@ export default function TableView({
   channelData,
   metadata,
   metadataColumns,
+  filterOn,
 }) {
+  const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
+  if (
+    filterColumnSet &&
+    Object.entries(metadata).length + Object.entries(channelData).length == 0
+  ) {
+    return (
+      <h3 className="center-text" style={{ marginTop: "1em" }}>
+        There are no rows for &quot;{filterOn.value}&quot; in {filterOn.column}
+      </h3>
+    )
+  }
   return (
     <table className="camera-table">
       <TableBody
@@ -277,6 +307,7 @@ TableView.propTypes = {
   channelData: PropTypes.object,
   metadata: PropTypes.object,
   eventURL: PropTypes.string,
+  filterOn: PropTypes.object,
 }
 
 function seqChannels(camera) {

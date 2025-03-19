@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react"
+import React, { createContext, useContext, useState } from "react"
 import PropTypes from "prop-types"
 
 // Create a Context for the modal
@@ -27,14 +27,18 @@ const Modal = ({ children }) => {
   const { closeModal } = useModal()
 
   const handleKeyDown = (e) => {
-    console.log(e.key)
     if (e.key === "Escape") {
       closeModal()
     }
   }
   return (
-    <div className="modal-overlay" onKeyDown={handleKeyDown} tabIndex="0">
-      <div className="modal-content">
+    <div
+      className="modal-overlay"
+      onKeyDown={handleKeyDown}
+      onClick={closeModal}
+      tabIndex="0"
+    >
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         {children}
         <button onClick={closeModal}>Cancel</button>
       </div>

@@ -8,6 +8,7 @@ import {
   retrieveSelected as retrieveStoredSelection,
 } from "../modules/utils"
 import { cameraType, channelDataType, metadataType } from "./componentPropTypes"
+import { ModalProvider } from "./Modal"
 
 export default function TableApp({
   camera,
@@ -19,6 +20,10 @@ export default function TableApp({
   const [date, setDate] = useState(initialDate)
   const [channelData, setChannelData] = useState(initialChannelData)
   const [metadata, setMetadata] = useState(initialMetadata)
+  const [filterOn, setFilterOn] = useState({
+    column: "",
+    value: "",
+  })
   const [error, setError] = useState(null)
 
   const locationName = window.APP_DATA.locationName
@@ -51,6 +56,32 @@ export default function TableApp({
   const selectedMetaCols = defaultColumns
     .filter((col) => selected.includes(col.name))
     .concat(selectedObjs.filter((o) => !defaultColNames.includes(o.name)))
+
+  // convenience var for showing filterColumn has been set
+  const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
+
+  // filter from metadata the rows that have the filterRowsOn value
+  // in the filterRowsOn column.
+  let filteredMetadata = metadata
+  let filteredChannelData = channelData
+  if (filterColumnSet) {
+    filteredMetadata = Object.entries(metadata).reduce((acc, [key, val]) => {
+      if (String(val[filterOn.column]) === filterOn.value) {
+        acc[key] = val
+      }
+      return acc
+    }, {})
+    // reduce the channelData to only the rows that are in the filteredMetadata
+    filteredChannelData = Object.entries(channelData).reduce(
+      (acc, [key, val]) => {
+        if (filteredMetadata[key]) {
+          acc[key] = val
+        }
+        return acc
+      },
+      {}
+    )
+  }
 
   useEffect(() => {
     redrawHeaderWidths()
@@ -107,27 +138,36 @@ export default function TableApp({
 
   return (
     <div className="table-container">
-      <div className="above-table-sticky">
-        <AboveTableRow
-          camera={camera}
-          allColNames={allColNames}
-          selected={selected}
-          setSelected={setSelected}
-          date={date}
-          metadata={metadata}
-          isHistorical={isHistorical}
-        />
-        <div className="table-header row">
-          <TableHeader camera={camera} metadataColumns={selectedMetaCols} />
+      <ModalProvider>
+        <div className="above-table-sticky">
+          <AboveTableRow
+            camera={camera}
+            allColNames={allColNames}
+            selected={selected}
+            setSelected={setSelected}
+            date={date}
+            metadata={metadata}
+            isHistorical={isHistorical}
+            filterOn={filterOn}
+          />
+          <div className="table-header row">
+            <TableHeader
+              camera={camera}
+              metadataColumns={selectedMetaCols}
+              filterOn={filterOn}
+              setFilterOn={setFilterOn}
+            />
+          </div>
+          <JumpButtons></JumpButtons>
         </div>
-        <JumpButtons></JumpButtons>
-      </div>
-      <TableView
-        camera={camera}
-        channelData={channelData}
-        metadata={metadata}
-        metadataColumns={selectedMetaCols}
-      />
+        <TableView
+          camera={camera}
+          channelData={filteredChannelData}
+          metadata={filteredMetadata}
+          metadataColumns={selectedMetaCols}
+          filterOn={filterOn}
+        />
+      </ModalProvider>
     </div>
   )
 }

@@ -73,7 +73,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         )
 
     # start polling buckets for data
-    today_polling = asyncio.create_task(cp.poll_buckets_for_todays_data())
+    today_polling = asyncio.create_task(
+        cp.poll_buckets_for_todays_data(test_day="2025-03-18")
+    )
     historical_polling = asyncio.create_task(hp.check_for_new_day())
 
     # Startup phase for the subapp
