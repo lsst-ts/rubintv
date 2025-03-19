@@ -3,6 +3,7 @@
 @import "colours"
 @import "calendar"
 @import "clock"
+@import "modal"
 @import "admin"
 
 .flr
@@ -284,6 +285,11 @@ section
 		transform: rotate(330deg)
 		transform-origin: 0 0
 		white-space: nowrap
+	&.filtering
+		background:#ff0
+		color: #000
+		border-radius: 5px
+		padding: 2px
 
 .grid-cell
 	min-width: 40px
