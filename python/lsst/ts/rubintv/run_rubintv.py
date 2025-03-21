@@ -10,7 +10,7 @@ def run_rubintv() -> None:
         app,
         host="0.0.0.0",
         port=8080,
-        log_level="debug",
+        log_level="info",
     )
 
 
