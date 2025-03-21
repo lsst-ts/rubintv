@@ -6,6 +6,13 @@ import { simpleGet } from "../modules/utils.js"
 ;(function () {
   window.addEventListener("DOMContentLoaded", () => {
     listenForHistoricalReset()
+
+    // Only show the admin redis panel on the summit and base sites
+    const siteLocation = window.APP_DATA
+    if (siteLocation !== "summit" || siteLocation !== "base") {
+      return
+    }
+
     const menus = [
       {
         title: "AOS Pipeline",
