@@ -27,8 +27,12 @@ export async function simplePost(url, message = {}) {
 /**
  * @param {RequestInfo | URL} url
  */
-export async function simpleGet(url) {
-  const res = await fetch(url, {
+export async function simpleGet(url, params = {}) {
+  const urlObj = new URL(url)
+  Object.entries(params).forEach(([key, value]) => {
+    urlObj.searchParams.append(key, value)
+  })
+  const res = await fetch(urlObj, {
     method: "GET",
   })
   const data = await res.text()
