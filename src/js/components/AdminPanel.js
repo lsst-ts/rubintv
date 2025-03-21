@@ -83,7 +83,7 @@ export function DropDownMenu({ menu }) {
               className="dropdown-item"
               onClick={() => handleItemSelect(item)}
             >
-              <a href="#">{item.title}</a>
+              {item.title}
             </li>
           ))}
         </div>
