@@ -1,6 +1,6 @@
 """Handlers for the app's api root, ``/rubintv/api/``."""
 
-from typing import Annotated, Any
+from typing import Annotated
 
 import redis.asyncio as redis
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -36,17 +36,40 @@ async def historical_reset(request: Request) -> None:
     await current.clear_todays_data()
 
 
-@api_router.post("/test_send")
-async def test_send(request: Request, message: dict) -> Any:
-    logger.info("Received test message", message=message)
-    redis_client: redis.Redis = request.app.state.redis_client
+@api_router.post("/redis_post")
+async def redis_post(request: Request, message: dict) -> dict:
+    logger.info(f"Received message: {message}")
+    try:
+        redis_client: redis.Redis = request.app.state.redis_client
+    except AttributeError:
+        raise HTTPException(500, "Redis not connected")
     if not redis_client:
         raise HTTPException(500, "Redis not connected")
+    if "key" not in message:
+        raise HTTPException(400, "Message must contain a 'key' key")
     if "value" not in message:
         raise HTTPException(400, "Message must contain a 'value' key")
     await redis_client.ping()
-    res = await redis_client.set("RUBINTV_TEST", message["value"])
-    return res
+    success = await redis_client.set(message["key"], message["value"])
+    return {"success": success}
+
+
+@api_router.get("/redis_get", response_model=dict)
+async def redis_get(request: Request, keysStr: str) -> dict:
+    if not keysStr:
+        raise HTTPException(400, "No keys provided")
+    keys: list[str] = keysStr.split(",")
+    try:
+        redis_client: redis.Redis = request.app.state.redis_client
+    except AttributeError:
+        raise HTTPException(500, "Redis not connected")
+    if not redis_client:
+        raise HTTPException(500, "Redis not connected")
+    await redis_client.ping()
+    values = {}
+    for key in keys:
+        values[key] = await redis_client.get(key)
+    return values
 
 
 @api_router.get("/{location_name}", response_model=Location)

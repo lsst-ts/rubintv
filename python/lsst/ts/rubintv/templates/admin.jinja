@@ -24,4 +24,7 @@
 {% endblock content %}
 {% block footer_scripts %}
 <script src="{{ url_for('static', path='assets/admin.js') }}"></script>
+<script>
+    window.APP_DATA.redisGetURL = "{{ url_for('redis_get')}}"
+</script>
 {% endblock footer_scripts %}

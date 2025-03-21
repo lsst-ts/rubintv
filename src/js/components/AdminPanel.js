@@ -1,45 +1,96 @@
-import React, { useState } from "react"
+import React, { useState, useEffect, StrictMode } from "react"
 import { simplePost } from "../modules/utils"
+import PropTypes from "prop-types"
 
-export default function DropDownMenu() {
+export default function AdminPanel({ menus }) {
+  return (
+    <StrictMode>
+      {menus.map((menu, index) => (
+        <DropDownMenu key={index} menu={menu} />
+      ))}
+    </StrictMode>
+  )
+}
+AdminPanel.propTypes = {
+  menus: PropTypes.array,
+}
+
+export function DropDownMenu({ menu }) {
   const [isOpen, setIsOpen] = useState(false)
-  const menuItems = [
-    { title: "Send apple", value: "apple" },
-    { title: "Send 123", value: "123" },
-  ]
+  const [selectedItem, setSelectedItem] = useState(menu.selectedItem)
+  const [redisChanged, setRedisChanged] = useState(null)
   const toggleMenu = () => {
     setIsOpen(!isOpen)
-    if (!isOpen) {
-      const handleClickOutside = (event) => {
-        if (!event.target.closest(".dropdown")) {
-          setIsOpen(false)
-          window.removeEventListener("click", handleClickOutside)
-        }
-      }
-      window.addEventListener("click", handleClickOutside)
-    }
   }
-  const handleItemClick = (value) => {
-    simplePost("api/test_send", { value }).then((data) => {
-      console.log(data)
+
+  useEffect(() => {
+    setSelectedItem(menu.selectedItem)
+  }, [menu.selectedItem])
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest(".dropdown-menu")) {
+        setIsOpen(false)
+      }
+    }
+
+    if (isOpen) {
+      window.addEventListener("click", handleClickOutside)
+    } else {
+      window.removeEventListener("click", handleClickOutside)
+    }
+
+    // Cleanup the event listener on component unmount or when `isOpen` changes
+    return () => {
+      window.removeEventListener("click", handleClickOutside)
+    }
+  }, [isOpen])
+
+  const handleItemSelect = (item) => {
+    const value = item.value
+    simplePost("api/redis_post", { key: menu.key, value }).then((data) => {
+      setRedisChanged(data)
     })
+    setSelectedItem(item)
     setIsOpen(false)
   }
-  const contentClass = isOpen ? "dropdown-content" : "dropdown-content hidden"
+  const menuClass = isOpen ? "dropdown-menu" : "dropdown-menu hidden"
+  const selectedTitle = selectedItem ? selectedItem.title : "- Select -"
+  const selectedClass = selectedItem
+    ? "dropdown-button"
+    : "dropdown-button greyed-out"
+  let successClass = ""
+  if (redisChanged !== null) {
+    successClass = redisChanged ? "success" : "fail"
+    setTimeout(() => {
+      setRedisChanged(null)
+    }, 2000)
+  }
   return (
-    <div className="dropdown">
-      <button onClick={toggleMenu}>Test Item</button>
-      <div className={contentClass}>
-        {menuItems.map((item, index) => (
-          <li
-            key={index}
-            className="dropdown-item"
-            onClick={() => handleItemClick(item.value)}
-          >
-            <a href="#">{item.title}</a>
-          </li>
-        ))}
+    <div className="menu">
+      <div className="menu-header">
+        <h4 className="menu-title">{menu.title}</h4>
+        <span className={successClass}></span>
+      </div>
+      <div className={menuClass}>
+        <button className={selectedClass} onClick={toggleMenu}>
+          {selectedTitle}
+        </button>
+        <div className="dropdown-content">
+          {menu.items.map((item, index) => (
+            <li
+              key={index}
+              className="dropdown-item"
+              onClick={() => handleItemSelect(item)}
+            >
+              <a href="#">{item.title}</a>
+            </li>
+          ))}
+        </div>
       </div>
     </div>
   )
+}
+DropDownMenu.propTypes = {
+  menu: PropTypes.object,
 }
