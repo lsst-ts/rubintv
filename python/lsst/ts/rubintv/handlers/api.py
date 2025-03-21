@@ -55,10 +55,10 @@ async def redis_post(request: Request, message: dict) -> dict:
 
 
 @api_router.get("/redis_get", response_model=dict)
-async def redis_get(request: Request, keysStr: str) -> dict:
-    if not keysStr:
+async def redis_get(request: Request, keys: str) -> dict:
+    if not keys:
         raise HTTPException(400, "No keys provided")
-    keys: list[str] = keysStr.split(",")
+    key_list: list[str] = keys.split(",")
     try:
         redis_client: redis.Redis = request.app.state.redis_client
     except AttributeError:
@@ -67,7 +67,7 @@ async def redis_get(request: Request, keysStr: str) -> dict:
         raise HTTPException(500, "Redis not connected")
     await redis_client.ping()
     values = {}
-    for key in keys:
+    for key in key_list:
         values[key] = await redis_client.get(key)
     return values
 
