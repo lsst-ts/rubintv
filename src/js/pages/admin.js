@@ -9,7 +9,7 @@ import { simpleGet } from "../modules/utils.js"
 
     // Only show the admin redis panel on the summit and base sites
     const siteLocation = window.APP_DATA
-    if (siteLocation !== "summit" || siteLocation !== "base") {
+    if (siteLocation !== "summit" && siteLocation !== "base") {
       return
     }
 
