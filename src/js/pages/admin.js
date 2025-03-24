@@ -8,7 +8,7 @@ import { simpleGet } from "../modules/utils.js"
     listenForHistoricalReset()
 
     // Only show the admin redis panel on the summit and base sites
-    const siteLocation = window.APP_DATA
+    const { siteLocation } = window.APP_DATA
     if (siteLocation !== "summit" && siteLocation !== "base") {
       return
     }
