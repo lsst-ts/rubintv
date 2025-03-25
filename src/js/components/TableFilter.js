@@ -2,15 +2,13 @@ import React, { useEffect, useRef } from "react"
 import PropTypes from "prop-types"
 import { useModal } from "./Modal"
 
-export default function TableFilter() {
-  return (
-    <div>
-      <h2>Table Filter</h2>
-    </div>
-  )
-}
-
-export function FilterDialog({ column, setFilterOn }) {
+export function FilterDialog({
+  column,
+  setFilterOn,
+  filterOn,
+  filteredRowsCount,
+  unfilteredRowsCount,
+}) {
   const placeholder = `Enter ${column}...`
   const inputRef = useRef(null)
   useEffect(() => {
@@ -20,8 +18,8 @@ export function FilterDialog({ column, setFilterOn }) {
   const { closeModal } = useModal()
 
   const handleApply = () => {
-    const value = inputRef.current.value
-    setFilterOn({ column, value: value })
+    const value = inputRef.current.value.trim()
+    setFilterOn({ column, value })
     closeModal()
   }
 
@@ -39,7 +37,15 @@ export function FilterDialog({ column, setFilterOn }) {
 
   return (
     <>
-      <h2>Filter by {column}</h2>
+      <h2>filter on {column}</h2>
+      {!!filterOn.value && (
+        <div className="filter-info">
+          <p>Currently filtering by: {filterOn.value}</p>
+          <p>
+            {filteredRowsCount} of {unfilteredRowsCount} total rows
+          </p>
+        </div>
+      )}
       <input
         ref={inputRef}
         name="value"
@@ -55,4 +61,7 @@ export function FilterDialog({ column, setFilterOn }) {
 FilterDialog.propTypes = {
   column: PropTypes.string,
   setFilterOn: PropTypes.func,
+  filterOn: PropTypes.object,
+  filteredRowsCount: PropTypes.number,
+  unfilteredRowsCount: PropTypes.number,
 }

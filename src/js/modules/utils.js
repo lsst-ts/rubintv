@@ -9,6 +9,14 @@ export function intersect(arrayA, arrayB) {
 }
 
 /**
+ * @param {string | any[]} arrayA
+ * @param {any} arrayB
+ */
+export function union(arrayA, arrayB) {
+  return arrayA.concat(arrayB.filter((el) => !arrayA.includes(el)))
+}
+
+/**
  * @param {RequestInfo | URL} url
  * @param {Object} message
  */

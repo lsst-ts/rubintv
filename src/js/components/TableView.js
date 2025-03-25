@@ -208,13 +208,27 @@ TableBody.propTypes = {
 }
 
 // Component for individual channel header
-function ChannelHeader({ channel, filterOn, setFilterOn }) {
+function ChannelHeader({
+  channel,
+  filterOn,
+  setFilterOn,
+  filteredRowsCount,
+  unfilteredRowsCount,
+}) {
   const { showModal } = useModal()
   const filterClass =
     channel.name === filterOn.column && filterOn.value !== "" ? "filtering" : ""
 
   const handleColumnClick = () => {
-    showModal(<FilterDialog column={channel.name} setFilterOn={setFilterOn} />)
+    showModal(
+      <FilterDialog
+        column={channel.name}
+        setFilterOn={setFilterOn}
+        filterOn={filterOn}
+        filteredRowsCount={filteredRowsCount}
+        unfilteredRowsCount={unfilteredRowsCount}
+      />
+    )
   }
   const elProps = {
     className: `grid-title gt-channel sideways ${filterClass}`,
@@ -231,6 +245,8 @@ ChannelHeader.propTypes = {
   channel: PropTypes.object,
   filterOn: PropTypes.object,
   setFilterOn: PropTypes.func,
+  filteredRowsCount: PropTypes.number,
+  unfilteredRowsCount: PropTypes.number,
 }
 
 // Header component for rendering column titles
@@ -239,6 +255,8 @@ export function TableHeader({
   metadataColumns,
   filterOn,
   setFilterOn,
+  filteredRowsCount,
+  unfilteredRowsCount,
 }) {
   const channelColumns = seqChannels(camera)
   const columns = channelColumns.concat(metadataColumns)
@@ -258,6 +276,8 @@ export function TableHeader({
             channel={channel}
             filterOn={filterOn}
             setFilterOn={setFilterOn}
+            filteredRowsCount={filteredRowsCount}
+            unfilteredRowsCount={unfilteredRowsCount}
           />
         )
       })}
@@ -269,6 +289,8 @@ TableHeader.propTypes = {
   metadataColumns: PropTypes.array,
   filterOn: PropTypes.object,
   setFilterOn: PropTypes.func,
+  filteredRowsCount: PropTypes.number,
+  unfilteredRowsCount: PropTypes.number,
 }
 
 export default function TableView({
@@ -277,12 +299,10 @@ export default function TableView({
   metadata,
   metadataColumns,
   filterOn,
+  filteredRowsCount,
 }) {
   const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
-  if (
-    filterColumnSet &&
-    Object.entries(metadata).length + Object.entries(channelData).length == 0
-  ) {
+  if (filterColumnSet && filteredRowsCount == 0) {
     return (
       <h3 className="center-text" style={{ marginTop: "1em" }}>
         There are no rows for &quot;{filterOn.value}&quot; in {filterOn.column}
@@ -308,6 +328,7 @@ TableView.propTypes = {
   metadata: PropTypes.object,
   eventURL: PropTypes.string,
   filterOn: PropTypes.object,
+  filteredRowsCount: PropTypes.number,
 }
 
 function seqChannels(camera) {

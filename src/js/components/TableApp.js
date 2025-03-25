@@ -5,6 +5,7 @@ import AboveTableRow, { JumpButtons } from "./TableControls"
 import {
   _getById,
   intersect,
+  union,
   retrieveSelected as retrieveStoredSelection,
 } from "../modules/utils"
 import { cameraType, channelDataType, metadataType } from "./componentPropTypes"
@@ -83,6 +84,15 @@ export default function TableApp({
     )
   }
 
+  const unfilteredRowsCount = union(
+    Object.keys(metadata),
+    Object.keys(channelData)
+  ).length
+  const filteredRowsCount = union(
+    Object.keys(filteredMetadata),
+    Object.keys(filteredChannelData)
+  ).length
+
   useEffect(() => {
     redrawHeaderWidths()
   })
@@ -121,10 +131,7 @@ export default function TableApp({
     }
   }, [date]) // Only reattach the event listener if the date changes
 
-  if (
-    Object.entries(metadata).length + Object.entries(channelData).length ==
-    0
-  ) {
+  if (unfilteredRowsCount == 0) {
     return <h3>There is no data for this day</h3>
   }
 
@@ -156,6 +163,8 @@ export default function TableApp({
               metadataColumns={selectedMetaCols}
               filterOn={filterOn}
               setFilterOn={setFilterOn}
+              filteredRowsCount={filteredRowsCount}
+              unfilteredRowsCount={unfilteredRowsCount}
             />
           </div>
           <JumpButtons></JumpButtons>
@@ -166,6 +175,7 @@ export default function TableApp({
           metadata={filteredMetadata}
           metadataColumns={selectedMetaCols}
           filterOn={filterOn}
+          filteredRowsCount={filteredRowsCount}
         />
       </ModalProvider>
     </div>

@@ -40,7 +40,7 @@ const Modal = ({ children }) => {
     >
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         {children}
-        <button onClick={closeModal}>Cancel</button>
+        <button className="modal-close" onClick={closeModal} />
       </div>
     </div>
   )
