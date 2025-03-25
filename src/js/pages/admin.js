@@ -7,8 +7,9 @@ import { simpleGet } from "../modules/utils.js"
   window.addEventListener("DOMContentLoaded", () => {
     listenForHistoricalReset()
 
+    const { siteLocation, redisGetURL } = window.APP_DATA
+
     // Only show the admin redis panel on the summit and base sites
-    const { siteLocation } = window.APP_DATA
     if (siteLocation !== "summit" && siteLocation !== "base") {
       return
     }
@@ -42,8 +43,7 @@ import { simpleGet } from "../modules/utils.js"
       },
     ]
 
-    const redisGetURL = window.APP_DATA.redisGetURL
-    console.log("redisGetURL", redisGetURL)
+    // get already selected values if set
     simpleGet(redisGetURL, { keys: menus.map((menu) => menu.key) }).then(
       (dataStr) => {
         const data = JSON.parse(dataStr)

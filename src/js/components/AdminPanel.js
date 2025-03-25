@@ -47,7 +47,7 @@ export function DropDownMenu({ menu }) {
   }, [isOpen])
 
   const handleItemSelect = (item) => {
-    const value = item.value
+    const { value } = item
     simplePost("api/redis_post", { key: menu.key, value })
       .then((data) => {
         setRedisChanged(data)
