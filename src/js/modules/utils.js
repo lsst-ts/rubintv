@@ -1,3 +1,4 @@
+import { error } from "console"
 import { gunzipSync } from "fflate"
 
 /**
@@ -32,11 +33,16 @@ export async function simpleGet(url, params = {}) {
   Object.entries(params).forEach(([key, value]) => {
     urlObj.searchParams.append(key, value)
   })
-  const res = await fetch(urlObj, {
-    method: "GET",
-  })
-  const data = await res.text()
-  return data
+  try {
+    const res = await fetch(urlObj)
+    if (!res.ok) {
+      throw new Error(`Response status: ${res.error}`)
+    }
+    const data = await res.text()
+    return data
+  } catch {
+    console.error(error.message)
+  }
 }
 
 /**

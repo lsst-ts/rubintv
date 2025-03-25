@@ -48,9 +48,14 @@ export function DropDownMenu({ menu }) {
 
   const handleItemSelect = (item) => {
     const value = item.value
-    simplePost("api/redis_post", { key: menu.key, value }).then((data) => {
-      setRedisChanged(data)
-    })
+    simplePost("api/redis_post", { key: menu.key, value })
+      .then((data) => {
+        setRedisChanged(data)
+      })
+      .catch((error) => {
+        setRedisChanged(false)
+        console.error("Error posting to redis:", error)
+      })
     setSelectedItem(item)
     setIsOpen(false)
   }
