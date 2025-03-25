@@ -4,9 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rubintv"
+requires-python = ">=3.12"
 description = "rubinTV is a Web app to display Butler-served data sets"
 license = { text = "MIT" }
-classifiers = [ "Programming Language :: Python :: 3.11" ]
+classifiers = [ "Programming Language :: Python :: 3.12" ]
 dependencies = [
   "fastapi",
   "starlette",
@@ -66,4 +67,5 @@ dev = [
   "types-PyYAML",
   "beautifulsoup4",
   "types-python-dateutil",
+  "types-redis",
   ]

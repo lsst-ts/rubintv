@@ -13,3 +13,4 @@ beautifulsoup4
 py-spy
 locust
 locust_plugins
+redis

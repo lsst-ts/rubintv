@@ -41,6 +41,24 @@ class Configuration(BaseSettings):
         json_schema_extra={"title": "URL prefix for application"},
     )
 
+    ra_redis_host: str = Field(
+        default="localhost",
+        validation_alias="RA_REDIS_HOST",
+        json_schema_extra={"title": "Redis host for RA data"},
+    )
+
+    ra_redis_password: str = Field(
+        default="",
+        validation_alias="RA_REDIS_PASSWORD",
+        json_schema_extra={"title": "Redis password for RA data"},
+    )
+
+    ra_redis_port: int = Field(
+        default=6379,
+        validation_alias="RA_REDIS_PORT",
+        json_schema_extra={"title": "Redis port for RA data"},
+    )
+
     site_location: str = where_am_i()
 
     s3_endpoint_url: str = Field(default="testing", alias="S3_ENDPOINT_URL")
