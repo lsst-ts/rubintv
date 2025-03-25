@@ -2,7 +2,6 @@
 
 from typing import Annotated
 
-import redis.asyncio as redis
 from fastapi import APIRouter, HTTPException, Query, Request
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
@@ -12,6 +11,7 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
     get_camera_current_data,
     get_camera_events_for_date,
     get_current_night_report_payload,
+    validate_redis_connection,
 )
 from lsst.ts.rubintv.models.models import Camera, Event, Location, NightReport
 from lsst.ts.rubintv.models.models_helpers import find_first
@@ -38,18 +38,11 @@ async def historical_reset(request: Request) -> None:
 
 @api_router.post("/redis_post")
 async def redis_post(request: Request, message: dict) -> dict:
-    logger.info(f"Received message: {message}")
-    try:
-        redis_client: redis.Redis = request.app.state.redis_client
-    except AttributeError:
-        raise HTTPException(500, "Redis not connected")
-    if not redis_client:
-        raise HTTPException(500, "Redis not connected")
+    redis_client = await validate_redis_connection(request.app.state)
     if "key" not in message:
         raise HTTPException(400, "Message must contain a 'key' key")
     if "value" not in message:
         raise HTTPException(400, "Message must contain a 'value' key")
-    await redis_client.ping()
     success = await redis_client.set(message["key"], message["value"])
     return {"success": success}
 
@@ -59,13 +52,7 @@ async def redis_get(request: Request, keys: str) -> dict:
     if not keys:
         raise HTTPException(400, "No keys provided")
     key_list: list[str] = keys.split(",")
-    try:
-        redis_client: redis.Redis = request.app.state.redis_client
-    except AttributeError:
-        raise HTTPException(500, "Redis not connected")
-    if not redis_client:
-        raise HTTPException(500, "Redis not connected")
-    await redis_client.ping()
+    redis_client = await validate_redis_connection(request.app.state)
     values = {}
     for key in key_list:
         values[key] = await redis_client.get(key)
