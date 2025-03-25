@@ -1,4 +1,3 @@
-import { error } from "console"
 import { gunzipSync } from "fflate"
 
 /**
@@ -40,7 +39,7 @@ export async function simpleGet(url, params = {}) {
     }
     const data = await res.text()
     return data
-  } catch {
+  } catch (error) {
     console.error(error.message)
   }
 }
