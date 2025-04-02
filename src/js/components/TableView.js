@@ -1,5 +1,7 @@
 import React from "react"
 import PropTypes from "prop-types"
+import { FilterDialog } from "./TableFilter"
+import { useModal } from "./Modal"
 import {
   indicatorForAttr,
   _elWithClass,
@@ -206,21 +208,56 @@ TableBody.propTypes = {
 }
 
 // Component for individual channel header
-function ChannelHeader({ channel }) {
-  const thProps = { className: "grid-title gt-channel sideways" }
+function ChannelHeader({
+  channel,
+  filterOn,
+  setFilterOn,
+  filteredRowsCount,
+  unfilteredRowsCount,
+}) {
+  const { showModal } = useModal()
+  const filterClass =
+    channel.name === filterOn.column && filterOn.value !== "" ? "filtering" : ""
+
+  const handleColumnClick = () => {
+    showModal(
+      <FilterDialog
+        column={channel.name}
+        setFilterOn={setFilterOn}
+        filterOn={filterOn}
+        filteredRowsCount={filteredRowsCount}
+        unfilteredRowsCount={unfilteredRowsCount}
+      />
+    )
+  }
+  const elProps = {
+    className: `grid-title gt-channel sideways ${filterClass}`,
+    onClick: handleColumnClick,
+  }
   if (channel.desc) {
-    thProps.title = channel.desc
+    elProps.title = channel.desc
   }
   return (
-    <div {...thProps}>{channel.label || channel.title || channel.name}</div>
+    <div {...elProps}>{channel.label || channel.title || channel.name}</div>
   )
 }
 ChannelHeader.propTypes = {
   channel: PropTypes.object,
+  filterOn: PropTypes.object,
+  setFilterOn: PropTypes.func,
+  filteredRowsCount: PropTypes.number,
+  unfilteredRowsCount: PropTypes.number,
 }
 
 // Header component for rendering column titles
-export function TableHeader({ camera, metadataColumns }) {
+export function TableHeader({
+  camera,
+  metadataColumns,
+  filterOn,
+  setFilterOn,
+  filteredRowsCount,
+  unfilteredRowsCount,
+}) {
   const channelColumns = seqChannels(camera)
   const columns = channelColumns.concat(metadataColumns)
   return (
@@ -232,16 +269,28 @@ export function TableHeader({ camera, metadataColumns }) {
       {camera.image_viewer_link && (
         <div className="grid-title sideways">CCS Image Viewer</div>
       )}
-      {columns.map((channel) => (
-        <ChannelHeader key={channel.name} channel={channel} />
-      ))}
+      {columns.map((channel) => {
+        return (
+          <ChannelHeader
+            key={channel.name}
+            channel={channel}
+            filterOn={filterOn}
+            setFilterOn={setFilterOn}
+            filteredRowsCount={filteredRowsCount}
+            unfilteredRowsCount={unfilteredRowsCount}
+          />
+        )
+      })}
     </>
   )
 }
 TableHeader.propTypes = {
   camera: PropTypes.object,
   metadataColumns: PropTypes.array,
-  selected: PropTypes.array,
+  filterOn: PropTypes.object,
+  setFilterOn: PropTypes.func,
+  filteredRowsCount: PropTypes.number,
+  unfilteredRowsCount: PropTypes.number,
 }
 
 export default function TableView({
@@ -249,7 +298,17 @@ export default function TableView({
   channelData,
   metadata,
   metadataColumns,
+  filterOn,
+  filteredRowsCount,
 }) {
+  const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
+  if (filterColumnSet && filteredRowsCount == 0) {
+    return (
+      <h3 className="center-text" style={{ marginTop: "1em" }}>
+        There are no rows for &quot;{filterOn.value}&quot; in {filterOn.column}
+      </h3>
+    )
+  }
   return (
     <table className="camera-table">
       <TableBody
@@ -267,7 +326,8 @@ TableView.propTypes = {
   metadataColumns: PropTypes.array,
   channelData: PropTypes.object,
   metadata: PropTypes.object,
-  eventURL: PropTypes.string,
+  filterOn: PropTypes.object,
+  filteredRowsCount: PropTypes.number,
 }
 
 function seqChannels(camera) {

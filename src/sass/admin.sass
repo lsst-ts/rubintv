@@ -1,0 +1,85 @@
+#admin-panel
+    display: flex
+    margin-bottom: 2em
+    gap: 1.5em
+.menu
+    display: flex
+    flex-direction: column
+    padding: 1em
+    background: #656565
+    border-radius: 6px
+    box-shadow: 3px 3px 10px rgba(0,0,0,0.2)
+    .menu-header
+        display: flex
+        justify-content: space-between
+        align-items: center
+        margin-bottom: 0.5em
+        .menu-title
+            color: #fff
+            font-size: 1.1em
+            padding-left: 3px
+        span
+            font-size: 0.6em
+            &::after
+                display: flex
+                justify-content: center
+                align-items: center
+                content: "●"
+                width: 1.7em
+                height: 1.7em
+                border-radius: 50%
+                color: #555
+                transition: 0.3s
+            &.success::after
+                content: "✓"
+                background-color: #0f0
+            &.fail::after
+                content: "✗"
+                background-color: #f00
+.dropdown-menu
+    color: #fff
+    min-width: 200px
+    .dropdown-button
+        background: #333
+        color: inherit
+        padding: 0.5em
+        cursor: pointer
+        border: none
+        border-radius: 6px 6px 0 0
+        width: 100%
+        display: flex
+        justify-content: space-between
+        align-items: center
+        &:hover
+            background: #444
+        &::after
+            content: "∆"
+            margin-left: 3em
+            transform-origin: 50% 50%
+            transform: rotate(180deg)
+            display: inline-block
+            width: 0.7em
+            transition: 0.3s
+        &.greyed-out
+            color: #aaa
+
+    .dropdown-content
+        margin-top: 2px
+        background: inherit
+        display: flex
+        flex-direction: column
+        .dropdown-item
+            background: #333
+            list-style: none
+            padding: 0.5em
+            cursor: pointer
+            &:hover
+                background: rgba(255,255,255,0.1)
+                
+.dropdown-menu.hidden
+    .dropdown-button
+            border-radius: 6px
+            &::after
+                transform: rotate(90deg)
+    .dropdown-content
+            visibility: hidden

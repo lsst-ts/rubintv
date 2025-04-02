@@ -16,7 +16,7 @@ export default function AboveTableRow({
   return (
     <div className="row">
       <h3 id="the-date">
-        Data for day: <span className="date">{date}</span>
+        <span className="date">{date}</span>
       </h3>
       <TableControls
         cameraName={camera.name}

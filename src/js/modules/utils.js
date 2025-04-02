@@ -1,20 +1,32 @@
 import { gunzipSync } from "fflate"
 
 /**
- * @param {string | any[]} arrayA
- * @param {any} arrayB
+ * @param {any[]} arrayA
+ * @param {any[]} arrayB
  */
 export function intersect(arrayA, arrayB) {
   return arrayA.filter((el) => arrayB.includes(el))
 }
 
 /**
- * @param {RequestInfo | URL} url
+ * @param {any[]} arrayA
+ * @param {any[]} arrayB
  */
-export async function simplePost(url) {
+export function union(arrayA, arrayB) {
+  return arrayA.concat(arrayB.filter((el) => !arrayA.includes(el)))
+}
+
+/**
+ * @param {RequestInfo | URL} url
+ * @param {Object} message
+ */
+export async function simplePost(url, message = {}) {
   const res = await fetch(url, {
     method: "POST",
-    body: "",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(message),
   })
   const data = await res.text()
   return data
@@ -23,12 +35,21 @@ export async function simplePost(url) {
 /**
  * @param {RequestInfo | URL} url
  */
-export async function simpleGet(url) {
-  const res = await fetch(url, {
-    method: "GET",
+export async function simpleGet(url, params = {}) {
+  const urlObj = new URL(url)
+  Object.entries(params).forEach(([key, value]) => {
+    urlObj.searchParams.append(key, value)
   })
-  const data = await res.text()
-  return data
+  try {
+    const res = await fetch(urlObj)
+    if (!res.ok) {
+      throw new Error(`Response status: ${res.error}`)
+    }
+    const data = await res.text()
+    return data
+  } catch (error) {
+    console.error(error.message)
+  }
 }
 
 /**
