@@ -2,8 +2,14 @@ import React, { useState, useEffect } from "react"
 import PropTypes from "prop-types"
 import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
-import { _getById, intersect, retrieveSelected } from "../modules/utils"
+import {
+  _getById,
+  intersect,
+  union,
+  retrieveSelected as retrieveStoredSelection,
+} from "../modules/utils"
 import { cameraType, channelDataType, metadataType } from "./componentPropTypes"
+import { ModalProvider } from "./Modal"
 
 export default function TableApp({
   camera,
@@ -15,37 +21,77 @@ export default function TableApp({
   const [date, setDate] = useState(initialDate)
   const [channelData, setChannelData] = useState(initialChannelData)
   const [metadata, setMetadata] = useState(initialMetadata)
+  const [filterOn, setFilterOn] = useState({
+    column: "",
+    value: "",
+  })
   const [error, setError] = useState(null)
 
   const locationName = window.APP_DATA.locationName
 
-  // convert metadata_cols into array of objects if they exist
-  let defaultCols
+  // if they exist, convert metadata_cols into array of objects
+  // from name: description to {name, desc}
+  let defaultColumns
   if (camera.metadata_cols) {
-    defaultCols = Object.entries(camera.metadata_cols).map(([name, desc]) => {
-      return { name, desc }
-    })
+    defaultColumns = Object.entries(camera.metadata_cols).map(
+      ([name, desc]) => ({ name, desc })
+    )
   } else {
-    defaultCols = []
+    defaultColumns = []
   }
-  const defaultColNames = defaultCols.map((col) => col.name)
+  const defaultColNames = defaultColumns.map((col) => col.name)
   const allColNames = getAllColumnNames(metadata, defaultColNames)
 
   const [selected, setSelected] = useState(() => {
-    const savedColumns = retrieveSelected(`${locationName}/${camera.name}`)
-    if (savedColumns) {
-      const intersectedColumns = intersect(savedColumns, allColNames)
-      return intersectedColumns
+    const storedColNames = retrieveStoredSelection(
+      `${locationName}/${camera.name}`
+    )
+    if (storedColNames) {
+      const intersectingColNames = intersect(storedColNames, allColNames)
+      return intersectingColNames
     }
     return defaultColNames
   })
 
-  const selectedObjs = selected.map((c) => {
-    return { name: c }
-  })
-  const selectedMetaCols = defaultCols
-    .filter((c) => selected.includes(c.name))
+  const selectedObjs = selected.map((c) => ({ name: c }))
+  const selectedMetaCols = defaultColumns
+    .filter((col) => selected.includes(col.name))
     .concat(selectedObjs.filter((o) => !defaultColNames.includes(o.name)))
+
+  // convenience var for showing filterColumn has been set
+  const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
+
+  // filter from metadata the rows that have the filterRowsOn value
+  // in the filterRowsOn column.
+  let filteredMetadata = metadata
+  let filteredChannelData = channelData
+  if (filterColumnSet) {
+    filteredMetadata = Object.entries(metadata).reduce((acc, [key, val]) => {
+      if (String(val[filterOn.column]) === filterOn.value) {
+        acc[key] = val
+      }
+      return acc
+    }, {})
+    // reduce the channelData to only the rows that are in the filteredMetadata
+    filteredChannelData = Object.entries(channelData).reduce(
+      (acc, [key, val]) => {
+        if (filteredMetadata[key]) {
+          acc[key] = val
+        }
+        return acc
+      },
+      {}
+    )
+  }
+
+  const unfilteredRowsCount = union(
+    Object.keys(metadata),
+    Object.keys(channelData)
+  ).length
+  const filteredRowsCount = union(
+    Object.keys(filteredMetadata),
+    Object.keys(filteredChannelData)
+  ).length
 
   useEffect(() => {
     redrawHeaderWidths()
@@ -85,10 +131,7 @@ export default function TableApp({
     }
   }, [date]) // Only reattach the event listener if the date changes
 
-  if (
-    Object.entries(metadata).length + Object.entries(channelData).length ==
-    0
-  ) {
+  if (unfilteredRowsCount == 0) {
     return <h3>There is no data for this day</h3>
   }
 
@@ -102,27 +145,39 @@ export default function TableApp({
 
   return (
     <div className="table-container">
-      <div className="above-table-sticky">
-        <AboveTableRow
-          camera={camera}
-          allColNames={allColNames}
-          selected={selected}
-          setSelected={setSelected}
-          date={date}
-          metadata={metadata}
-          isHistorical={isHistorical}
-        />
-        <div className="table-header row">
-          <TableHeader camera={camera} metadataColumns={selectedMetaCols} />
+      <ModalProvider>
+        <div className="above-table-sticky">
+          <AboveTableRow
+            camera={camera}
+            allColNames={allColNames}
+            selected={selected}
+            setSelected={setSelected}
+            date={date}
+            metadata={metadata}
+            isHistorical={isHistorical}
+            filterOn={filterOn}
+          />
+          <div className="table-header row">
+            <TableHeader
+              camera={camera}
+              metadataColumns={selectedMetaCols}
+              filterOn={filterOn}
+              setFilterOn={setFilterOn}
+              filteredRowsCount={filteredRowsCount}
+              unfilteredRowsCount={unfilteredRowsCount}
+            />
+          </div>
+          <JumpButtons></JumpButtons>
         </div>
-        <JumpButtons></JumpButtons>
-      </div>
-      <TableView
-        camera={camera}
-        channelData={channelData}
-        metadata={metadata}
-        metadataColumns={selectedMetaCols}
-      />
+        <TableView
+          camera={camera}
+          channelData={filteredChannelData}
+          metadata={filteredMetadata}
+          metadataColumns={selectedMetaCols}
+          filterOn={filterOn}
+          filteredRowsCount={filteredRowsCount}
+        />
+      </ModalProvider>
     </div>
   )
 }

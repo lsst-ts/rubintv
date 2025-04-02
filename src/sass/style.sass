@@ -3,6 +3,7 @@
 @import "colours"
 @import "calendar"
 @import "clock"
+@import "modal"
 @import "admin"
 
 .flr
@@ -237,11 +238,11 @@ section
 	display: flex
 	align-items: center
 
-.download-metadata
-	height: 42px
-
 #channel-day-data
 	width: max-content
+
+#the-date
+	font-size: 2.2em
 
 .above-table-sticky
 	min-width: 100%
@@ -272,9 +273,6 @@ section
 	border-spacing: 2px
 	margin-top: -2px
 	border-collapse: separate
-	thead
-		position: sticky
-		top: 3.7em
 
 .grid-title
 	position: absolute
@@ -284,6 +282,11 @@ section
 		transform: rotate(330deg)
 		transform-origin: 0 0
 		white-space: nowrap
+	&.filtering
+		background:#ff0
+		color: #000
+		border-radius: 5px
+		padding: 2px
 
 .grid-cell
 	min-width: 40px
@@ -364,6 +367,7 @@ section
 		transform: rotate(180deg)
 
 .table-control-button
+	display: flex
 	border: none
 	background: inherit
 
