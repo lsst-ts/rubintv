@@ -3,7 +3,7 @@
 from datetime import date
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, Response
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.api import (
     get_current_channel_event,
@@ -55,16 +55,20 @@ async def get_home(
 ) -> Response:
     """GET ``/rubintv/`` (the app's external root)."""
     locations: list[Location] = request.app.state.models.locations
-    if len(locations) < 2:
-        location = locations[0]
-        return RedirectResponse(
-            url=request.url_for("location", location_name=location.name)
-        )
+    try:
+        ddv_installed = request.app.state.ddv_path is not None
+    except AttributeError:  # pragma: no cover
+        ddv_installed = False
     title = build_title()
     return templates.TemplateResponse(
         request=request,
         name="home.jinja",
-        context={"request": request, "locations": locations, "title": title},
+        context={
+            "request": request,
+            "locations": locations,
+            "title": title,
+            "ddv_installed": ddv_installed,
+        },
     )
 
 

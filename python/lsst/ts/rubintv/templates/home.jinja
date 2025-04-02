@@ -25,4 +25,23 @@ Locations
       </ul>
     </nav>
 </section>
+{% if ddv_installed %}
+  <section class="apps">
+    <h2>Apps</h2>
+      <nav class="apps-menu">
+        <ul class="apps flr">
+            <li>
+              {% set button = {
+                  "title": "",
+                  "logo": "ddv.jpg",
+                  "text_colour": "#ffffff",
+                  "text_shadow": true
+              } %}
+              {% set button_url = "ddv" %}
+              {% include "logo-button.jinja" %}
+            </li>
+        </ul>
+      </nav>
+  </section>
+{% endif %}
 {% endblock content %}
