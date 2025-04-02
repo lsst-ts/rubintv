@@ -55,7 +55,10 @@ async def get_home(
 ) -> Response:
     """GET ``/rubintv/`` (the app's external root)."""
     locations: list[Location] = request.app.state.models.locations
-    ddv_installed = request.app.state.ddv_path is not None
+    try:
+        ddv_installed = request.app.state.ddv_path is not None
+    except AttributeError:  # pragma: no cover
+        ddv_installed = False
     title = build_title()
     return templates.TemplateResponse(
         request=request,
