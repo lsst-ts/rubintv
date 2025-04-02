@@ -24,7 +24,6 @@ export function FilterDialog({
   }
 
   const handleKeyDown = (e) => {
-    console.log(e.key)
     if (e.key === "Enter") {
       handleApply()
     }

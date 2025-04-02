@@ -326,7 +326,6 @@ TableView.propTypes = {
   metadataColumns: PropTypes.array,
   channelData: PropTypes.object,
   metadata: PropTypes.object,
-  eventURL: PropTypes.string,
   filterOn: PropTypes.object,
   filteredRowsCount: PropTypes.number,
 }

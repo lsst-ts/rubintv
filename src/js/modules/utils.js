@@ -1,16 +1,16 @@
 import { gunzipSync } from "fflate"
 
 /**
- * @param {string | any[]} arrayA
- * @param {any} arrayB
+ * @param {any[]} arrayA
+ * @param {any[]} arrayB
  */
 export function intersect(arrayA, arrayB) {
   return arrayA.filter((el) => arrayB.includes(el))
 }
 
 /**
- * @param {string | any[]} arrayA
- * @param {any} arrayB
+ * @param {any[]} arrayA
+ * @param {any[]} arrayB
  */
 export function union(arrayA, arrayB) {
   return arrayA.concat(arrayB.filter((el) => !arrayA.includes(el)))
