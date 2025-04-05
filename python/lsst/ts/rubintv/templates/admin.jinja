@@ -26,5 +26,6 @@
 <script src="{{ url_for('static', path='assets/admin.js') }}"></script>
 <script>
     window.APP_DATA.redisGetURL = "{{ url_for('redis_get')}}"
+    window.APP_DATA.isAdmin = {{ admin|tojson }};
 </script>
 {% endblock footer_scripts %}

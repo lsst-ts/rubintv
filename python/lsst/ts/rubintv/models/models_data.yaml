@@ -810,3 +810,27 @@ metadata_cols:
         The total net azimuth move, in degrees.
     Largest azimuth torque:
         The largest azimuth torque during the event, in Nm, including its sign. So, if the largest toque magnitude is a negative one, it will be a large negative value, if the largest toque seen was positive, it will be large and positive.
+
+
+users:
+  USDF:
+    mfl
+    cslater
+    saranda
+    guymw
+
+  Summit:
+    mfl
+    cslater
+    saranda
+    yusra
+    gmegias
+    jmeyers
+    bkalmbach
+    csuberlak
+
+  BTS:
+    <allow all>
+
+  TTS:
+    <allow all>

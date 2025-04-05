@@ -2,16 +2,24 @@ import React, { useState, useEffect, StrictMode } from "react"
 import { simplePost } from "../modules/utils"
 import PropTypes from "prop-types"
 
-export default function AdminPanel({ menus }) {
+export default function AdminPanel({ menus, isAdmin }) {
   return (
     <StrictMode>
-      {menus.map((menu, index) => (
-        <DropDownMenu key={index} menu={menu} />
-      ))}
+      {isAdmin && (
+        <div className="admin-indicator">
+          <h3 className="admin-text">Hello Merlin</h3>
+        </div>
+      )}
+      <div className="admin-panel">
+        {menus.map((menu, index) => (
+          <DropDownMenu key={index} menu={menu} />
+        ))}
+      </div>
     </StrictMode>
   )
 }
 AdminPanel.propTypes = {
+  isAdmin: PropTypes.bool,
   menus: PropTypes.array,
 }
 

@@ -74,12 +74,23 @@ async def get_home(
 
 @pages_router.get("/admin", response_class=HTMLResponse, name="admin")
 async def get_admin_page(request: Request) -> Response:
+    admin = await is_admin(request)
     title = build_title("Admin")
     return templates.TemplateResponse(
         request=request,
         name="admin.jinja",
-        context={"request": request, "title": title},
+        context={"request": request, "title": title, "admin": admin},
     )
+
+
+async def is_admin(request: Request) -> bool:
+    """Check if the user is admin."""
+    username = request.headers.get("X-Auth-Request-User")
+    email = request.headers.get("X-Auth-Request-Email")
+    if username == "mfl":
+        logger.info("Admin page accessed", username=username, email=email)
+        return True
+    return False
 
 
 @pages_router.get("/{location_name}", response_class=HTMLResponse, name="location")

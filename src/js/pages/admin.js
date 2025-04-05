@@ -7,10 +7,13 @@ import { simpleGet } from "../modules/utils.js"
   window.addEventListener("DOMContentLoaded", () => {
     listenForHistoricalReset()
 
-    const { siteLocation, redisGetURL } = window.APP_DATA
-
+    const { siteLocation, redisGetURL, isAdmin } = window.APP_DATA
     // Only show the admin redis panel on the summit and base sites
-    if (siteLocation !== "summit" && siteLocation !== "base") {
+    if (
+      siteLocation !== "summit" &&
+      siteLocation !== "base" &&
+      siteLocation !== "usdf-k8s"
+    ) {
       return
     }
 
@@ -55,12 +58,12 @@ import { simpleGet } from "../modules/utils.js"
           }
         })
 
-        adminPanelRoot.render(<AdminPanel menus={menus} />)
+        adminPanelRoot.render(<AdminPanel menus={menus} isAdmin={isAdmin} />)
       }
     )
 
     const adminPanel = document.getElementById("admin-panel")
     const adminPanelRoot = createRoot(adminPanel)
-    adminPanelRoot.render(<AdminPanel menus={menus} />)
+    adminPanelRoot.render(<AdminPanel menus={menus} isAdmin={isAdmin} />)
   })
 })()
