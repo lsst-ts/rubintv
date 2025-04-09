@@ -2,12 +2,13 @@ import React, { useState, useEffect, StrictMode } from "react"
 import { simplePost } from "../modules/utils"
 import PropTypes from "prop-types"
 
-export default function AdminPanel({ menus, isAdmin }) {
+export default function AdminPanel({ menus, admin }) {
+  const { name } = admin
   return (
     <StrictMode>
-      {isAdmin && (
+      {name && (
         <div className="admin-indicator">
-          <h3 className="admin-text">Hello Merlin</h3>
+          <h3 className="admin-text">Hello {name}</h3>
         </div>
       )}
       <div className="admin-panel">
@@ -19,8 +20,12 @@ export default function AdminPanel({ menus, isAdmin }) {
   )
 }
 AdminPanel.propTypes = {
-  isAdmin: PropTypes.bool,
   menus: PropTypes.array,
+  admin: PropTypes.shape({
+    username: PropTypes.string,
+    name: PropTypes.string,
+    email: PropTypes.string,
+  }),
 }
 
 export function DropDownMenu({ menu }) {

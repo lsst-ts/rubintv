@@ -3,12 +3,14 @@ from pathlib import Path
 from typing import Any, Type
 
 import yaml
-from lsst.ts.rubintv.config import config
+from lsst.ts.rubintv.config import config, rubintv_logger
 from lsst.ts.rubintv.models.models import Camera, Channel, Location
 from lsst.ts.rubintv.models.models_helpers import find_first
 from pydantic import BaseModel
 
 __all__ = ["ModelsInitiator"]
+
+logger = rubintv_logger()
 
 
 class ModelsInitiator:
@@ -32,8 +34,13 @@ class ModelsInitiator:
         i_can_see = data["bucket_configurations"][current_location]
         all_locations = self._populate_model(Location, data["locations"])
         locations = [loc for loc in all_locations if loc.name in i_can_see]
+        # sort locations to satisfy the order in which they are listed in
+        # bucket_configurations
+        locations.sort(key=lambda loc: i_can_see.index(loc.name))
         self.locations = self._attach_cameras_to_locations(self.cameras, locations)
         self.services = self._init_services(cameras, data["services"])
+        self.admin_list = data["admin"][current_location]
+        self.users = data["users"]
 
     def _attach_cameras_to_locations(
         self, cameras: list[Camera], locations: list[Location]

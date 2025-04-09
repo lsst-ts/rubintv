@@ -6,13 +6,15 @@ RubinTV
 Locations
 {% endblock pagesubtitle %}
 {% block headerbuttons %}
+{% if admin is not none %}
   <a href="{{ url_for('admin')}}" class="button admin">
     Admin Page
   </a>
+{% endif %}
 {% endblock headerbuttons %}
 {% block content %}
 <section class="locations">
-  <h2>Locations</h2>
+  <h2>Processing locations</h2>
     <nav class="location-menu">
       <ul class="locations flr">
         {% for location in locations %}

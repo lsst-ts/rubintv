@@ -25,6 +25,7 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
 from lsst.ts.rubintv.handlers.pages_helpers import (
     build_title,
     calendar_factory,
+    get_admin,
     month_names,
     to_dict,
 )
@@ -59,6 +60,7 @@ async def get_home(
         ddv_installed = request.app.state.ddv_path is not None
     except AttributeError:  # pragma: no cover
         ddv_installed = False
+    admin = await get_admin(request)
     title = build_title()
     return templates.TemplateResponse(
         request=request,
@@ -68,29 +70,22 @@ async def get_home(
             "locations": locations,
             "title": title,
             "ddv_installed": ddv_installed,
+            "admin": admin,
         },
     )
 
 
 @pages_router.get("/admin", response_class=HTMLResponse, name="admin")
 async def get_admin_page(request: Request) -> Response:
-    admin = await is_admin(request)
+    admin = await get_admin(request)
+    if admin is None:
+        raise HTTPException(status_code=403, detail="Access forbidden.")
     title = build_title("Admin")
     return templates.TemplateResponse(
         request=request,
         name="admin.jinja",
         context={"request": request, "title": title, "admin": admin},
     )
-
-
-async def is_admin(request: Request) -> bool:
-    """Check if the user is admin."""
-    username = request.headers.get("X-Auth-Request-User")
-    email = request.headers.get("X-Auth-Request-Email")
-    if username == "mfl":
-        logger.info("Admin page accessed", username=username, email=email)
-        return True
-    return False
 
 
 @pages_router.get("/{location_name}", response_class=HTMLResponse, name="location")

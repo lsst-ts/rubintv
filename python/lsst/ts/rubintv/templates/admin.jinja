@@ -1,6 +1,6 @@
 {% extends "_layout.jinja" %}
 {% block pagetitle %}
-  Admin
+  Admin - {{ site_location }}
 {% endblock pagetitle %}
 {% block pagesubtitle %}
   Channel and service status
@@ -26,6 +26,6 @@
 <script src="{{ url_for('static', path='assets/admin.js') }}"></script>
 <script>
     window.APP_DATA.redisGetURL = "{{ url_for('redis_get')}}"
-    window.APP_DATA.isAdmin = {{ admin|tojson }};
+    window.APP_DATA.admin = {{ admin|tojson }};
 </script>
 {% endblock footer_scripts %}

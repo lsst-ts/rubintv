@@ -1,6 +1,6 @@
 bucket_configurations:
   usdf-k8s:
-    [ slac, base-usdf, tucson-usdf, summit-usdf ]
+    [ summit-usdf, slac, base-usdf, tucson-usdf ]
   base:
     [ base ]
   tucson:
@@ -8,9 +8,9 @@ bucket_configurations:
   summit:
     [ summit ]
   gha:
-    [ slac, base-usdf, tucson-usdf, summit-usdf ]
+    [ summit-usdf, slac, base-usdf, tucson-usdf ]
   local:
-    [ slac, base-usdf, tucson-usdf, summit-usdf ]
+    [ summit-usdf, slac, base-usdf, tucson-usdf ]
 
 locations:
   - name: test
@@ -66,7 +66,6 @@ locations:
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
       Deprecated Cameras: [ comcam, comcam_aos ]
-
 
   - name: base
     title: Base
@@ -813,24 +812,37 @@ metadata_cols:
 
 
 users:
-  USDF:
-    mfl
-    cslater
-    saranda
-    guymw
+  mfl: Merlin
+  cslater: Colin
+  saranda: Sebastian
+  guymw: Guy
+  yusra: Yusra
+  gmegias: Guillem
+  jmeyers: Josh
+  bkalmbach: Bryce
+  csuberlak: Chris
 
-  Summit:
-    mfl
-    cslater
-    saranda
-    yusra
-    gmegias
-    jmeyers
-    bkalmbach
-    csuberlak
+admin:
+  usdf-k8s:
+    - mfl
+    - cslater
+    - saranda
+    - guymw
 
-  BTS:
-    <allow all>
+  summit:
+    - mfl
+    - cslater
+    - saranda
+    - yusra
+    - gmegias
+    - jmeyers
+    - bkalmbach
+    - csuberlak
 
-  TTS:
-    <allow all>
+  base: ["*"]
+
+  tucson: ["*"]
+
+  local: [guymw, mfl, saranda]
+  test: ["*"]
+  gha: ["*"]

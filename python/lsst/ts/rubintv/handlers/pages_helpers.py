@@ -2,7 +2,11 @@ from calendar import Calendar
 from datetime import date
 from typing import Any
 
+from fastapi import Request
+from lsst.ts.rubintv.config import config, rubintv_logger
+
 __all__ = ["month_names", "calendar_factory", "build_title", "to_dict"]
+logger = rubintv_logger()
 
 
 def month_names() -> list[str]:
@@ -34,3 +38,36 @@ def to_dict(object: Any | None) -> dict | None:
     if object is None:
         return None
     return object.__dict__
+
+
+async def get_admin(request: Request) -> dict | None:
+    """Retrieve the admin user details based on the request headers and
+    application state.
+
+    Parameters
+    ----------
+    request : `Request`
+        The request object containing headers and application state.
+
+    Returns
+    -------
+    user: `dict` | `None`
+        A dictionary containing user details if the user is an admin,
+        otherwise `None`.
+    """
+    if config.site_location in ["local", "test"]:
+        return {}
+
+    username = request.headers.get("X-Auth-Request-User")
+    email = request.headers.get("X-Auth-Request-Email")
+    admin_list = request.app.state.models.admin_list
+
+    if username in admin_list or admin_list == ["*"]:
+        logger.info("Admin page accessed", username=username, email=email)
+        users = request.app.state.models.users
+        if username in users:
+            name = users[username]
+            return {"name": name, "username": username, "email": email}
+        else:
+            return {}
+    return None
