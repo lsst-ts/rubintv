@@ -39,7 +39,10 @@ class ModelsInitiator:
         locations.sort(key=lambda loc: i_can_see.index(loc.name))
         self.locations = self._attach_cameras_to_locations(self.cameras, locations)
         self.services = self._init_services(cameras, data["services"])
+        # This is a list of user handles with admin access at the current
+        # Location.
         self.admin_list = data["admin"][current_location]
+        # This is a dictionary of user handles and their names.
         self.users = data["users"]
 
     def _attach_cameras_to_locations(

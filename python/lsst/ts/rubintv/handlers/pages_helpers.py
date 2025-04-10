@@ -44,6 +44,7 @@ async def get_admin(request: Request) -> dict | None:
     """Retrieve the admin user details based on the request headers and
     application state.
 
+
     Parameters
     ----------
     request : `Request`
@@ -53,7 +54,9 @@ async def get_admin(request: Request) -> dict | None:
     -------
     user: `dict` | `None`
         A dictionary containing user details if the user is an admin,
-        otherwise `None`.
+        otherwise `None`. An empty dictionary is returned if the user
+        is anonymous (i.e., they are not a named user but have access
+        to the admin page, as this location has no admin restrictions).
     """
     if config.site_location in ["local", "test"]:
         return {}
