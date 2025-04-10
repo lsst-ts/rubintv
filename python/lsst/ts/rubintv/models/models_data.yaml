@@ -811,7 +811,7 @@ metadata_cols:
         The largest azimuth torque during the event, in Nm, including its sign. So, if the largest toque magnitude is a negative one, it will be a large negative value, if the largest toque seen was positive, it will be large and positive.
 
 
-users:
+users_names:
   mfl: Merlin
   cslater: Colin
   saranda: Sebastian
@@ -822,7 +822,7 @@ users:
   bkalmbach: Bryce
   csuberlak: Chris
 
-admin:
+admin_for:
   usdf-k8s:
     - mfl
     - cslater

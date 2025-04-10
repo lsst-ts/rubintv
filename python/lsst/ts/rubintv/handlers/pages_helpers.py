@@ -67,9 +67,9 @@ async def get_admin(request: Request) -> dict | None:
 
     if username in admin_list or admin_list == ["*"]:
         logger.info("Admin page accessed", username=username, email=email)
-        users = request.app.state.models.users
-        if username in users:
-            name = users[username]
+        users_names = request.app.state.models.users_names
+        if username in users_names:
+            name = users_names[username]
             return {"name": name, "username": username, "email": email}
         else:
             return {}

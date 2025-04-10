@@ -41,9 +41,9 @@ class ModelsInitiator:
         self.services = self._init_services(cameras, data["services"])
         # This is a list of user handles with admin access at the current
         # Location.
-        self.admin_list = data["admin"][current_location]
+        self.admin_list = data["admin_for"][current_location]
         # This is a dictionary of user handles and their names.
-        self.users = data["users"]
+        self.users_names = data["users_names"]
 
     def _attach_cameras_to_locations(
         self, cameras: list[Camera], locations: list[Location]
