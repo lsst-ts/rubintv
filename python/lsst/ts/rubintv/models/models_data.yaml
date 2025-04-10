@@ -842,7 +842,3 @@ admin_for:
   base: ["*"]
 
   tucson: ["*"]
-
-  local: [guymw, mfl, saranda]
-  test: ["*"]
-  gha: ["*"]

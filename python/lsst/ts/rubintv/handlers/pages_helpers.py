@@ -53,12 +53,23 @@ async def get_admin(request: Request) -> dict | None:
     Returns
     -------
     user: `dict` | `None`
-        A dictionary containing user details if the user is an admin,
-        otherwise `None`. An empty dictionary is returned if the user
-        is anonymous (i.e., they are not a named user but have access
-        to the admin page, as this location has no admin restrictions).
+        A dictionary containing user details if the user is in the list for
+        having admin privileges. If the user not in the admin list for the
+        current location, `None` is returned to indicate restricted access.
+
+        If the user is not in the admin list but the location admin does not
+        enforce access restrictions (i.e. open admin access), an empty
+        dictionary is returned.
+        This represents a generic, unnamed user who is allowed to view the
+        page but has no identity and is not greeted by name.
+
+        This distinction allows downstream code to handle three cases:
+        - Admin user: full access, user info available in the dict.
+        - Non-admin user: access denied, `None` returned.
+        - Anonymous access allowed: limited access permitted, empty dict
+        returned.
     """
-    if config.site_location in ["local", "test"]:
+    if config.site_location in ["local", "test", "gha"]:
         return {}
 
     username = request.headers.get("X-Auth-Request-User")
