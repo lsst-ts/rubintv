@@ -45,6 +45,8 @@ Locations
         </ul>
       </nav>
   </section>
+{% endif %}
+{% if locations | selectattr('is_teststand') | list %}
   <section class="test-stands">
   <h2>Teststand locations</h2>
     <nav class="location-menu">
