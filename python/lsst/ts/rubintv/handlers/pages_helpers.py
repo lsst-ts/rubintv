@@ -1,7 +1,9 @@
 from calendar import Calendar
 from datetime import date
 from typing import Any
+from urllib.parse import urljoin
 
+import httpx
 from fastapi import Request
 from lsst.ts.rubintv.config import config, rubintv_logger
 
@@ -72,16 +74,21 @@ async def get_admin(request: Request) -> dict | None:
     if config.site_location in ["local", "test", "gha"]:
         return {}
 
-    username = request.headers.get("X-Auth-Request-User")
-    email = request.headers.get("X-Auth-Request-Email")
-    admin_list = request.app.state.models.admin_list
+    base_url = str(request.base_url)
+    api_url = urljoin(base_url, config.path_prefix + config.auth_api_url)
+    username: str | None = None
+    async with httpx.AsyncClient() as client:
+        logger.info("Requesting user data", api_url=api_url)
+        response = await client.get(api_url)
+        user_data = response.json()
+        logger.info("Received user data", user_data=user_data)
+        username = user_data.get("username")
+        if username is None:
+            logger.warning("No username found in user data", user_data=user_data)
+            return None
 
+    admin_list = request.app.state.models.admin_list
     if username in admin_list or admin_list == ["*"]:
-        logger.info("Admin page accessed", username=username, email=email)
-        users_names = request.app.state.models.users_names
-        if username in users_names:
-            name = users_names[username]
-            return {"name": name, "username": username, "email": email}
-        else:
-            return {}
+        return user_data
+
     return None
