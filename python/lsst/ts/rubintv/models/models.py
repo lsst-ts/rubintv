@@ -71,8 +71,8 @@ class HasButton(BaseModel):
 
 
 class MediaType(str, Enum):
-    IMAGE: str = "image"
-    VIDEO: str = "video"
+    IMAGE = "image"
+    VIDEO = "video"
 
 
 class MosaicViewMeta(BaseModel):
@@ -421,17 +421,17 @@ class Heartbeat:
 
 
 class ServiceTypes(Enum):
-    CAMERA: str = "camera"
-    CHANNEL: str = "channel"
-    NIGHTREPORT: str = "nightreport"
-    HISTORICALSTATUS = str = "historicalStatus"
+    CAMERA = "camera"
+    CHANNEL = "channel"
+    NIGHTREPORT = "nightreport"
+    HISTORICALSTATUS = "historicalStatus"
 
 
 class ServiceMessageTypes(Enum):
-    CHANNEL_EVENT: str = "event"
-    CAMERA_TABLE: str = "channelData"
-    CAMERA_METADATA: str = "metadata"
-    CAMERA_PER_DAY: str = "perDay"
-    CAMERA_PD_BACKDATED: str = "perDayBackdated"
-    NIGHT_REPORT: str = "nightReport"
-    HISTORICAL_STATUS: str = "historicalStatus"
+    CHANNEL_EVENT = "event"
+    CAMERA_TABLE = "channelData"
+    CAMERA_METADATA = "metadata"
+    CAMERA_PER_DAY = "perDay"
+    CAMERA_PD_BACKDATED = "perDayBackdated"
+    NIGHT_REPORT = "nightReport"
+    HISTORICAL_STATUS = "historicalStatus"

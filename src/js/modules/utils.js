@@ -43,7 +43,9 @@ export async function simpleGet(url, params = {}) {
   try {
     const res = await fetch(urlObj)
     if (!res.ok) {
-      throw new Error(`Response status: ${res.error}`)
+      throw new Error(
+        `Error fetching ${urlObj}\nResponse status: ${res.statusText}`
+      )
     }
     const data = await res.text()
     return data
