@@ -2,7 +2,6 @@ import { listenForHistoricalReset } from "../modules/historical-reset.js"
 import React from "react"
 import { createRoot } from "react-dom/client"
 import AdminPanel from "../components/AdminPanel"
-import { simpleGet } from "../modules/utils.js"
 ;(function () {
   window.addEventListener("DOMContentLoaded", () => {
     listenForHistoricalReset()
@@ -46,43 +45,17 @@ import { simpleGet } from "../modules/utils.js"
       })
     })
 
-    // get already selected values if set
-    simpleGet(redisGetURL, { keys: menus.map((menu) => menu.key) }).then(
-      (dataStr) => {
-        const data = JSON.parse(dataStr)
-        menus.forEach((menu) => {
-          const value = data[menu.key]
-          const item = menu.items.find((item) => item.value === value)
-          if (item) {
-            menu.selectedItem = item
-          }
-        })
-
-        adminPanelRoot.render(<AdminPanel menus={menus} admin={admin} />)
-      }
-    )
-
-    const auth_api_url = new URL("/auth/api/v1/user-info", baseURL)
-    simpleGet(auth_api_url).then((dataStr) => {
-      try {
-        // check if the response is a valid JSON
-        JSON.parse(dataStr)
-      } catch (e) {
-        console.error("Error parsing auth api JSON response:", e)
-        return
-      }
-      const data = JSON.parse(dataStr)
-      // check if the username is the same as the admin username
-      if (data.username !== admin) {
-        console.error(`User ${data.username} is not the admin user ${admin}.`)
-      }
-      admin.email = data.email
-      admin.name = data.name
-      adminPanelRoot.render(<AdminPanel menus={menus} admin={admin} />)
-    })
+    const authAPIURL = new URL("/auth/api/v1/user-info", baseURL).toString()
 
     const adminPanel = document.getElementById("admin-panel")
     const adminPanelRoot = createRoot(adminPanel)
-    adminPanelRoot.render(<AdminPanel menus={menus} admin={admin} />)
+    adminPanelRoot.render(
+      <AdminPanel
+        initMenus={menus}
+        initAdmin={admin}
+        redisGetURL={redisGetURL}
+        authAPIURL={authAPIURL}
+      />
+    )
   })
 })()

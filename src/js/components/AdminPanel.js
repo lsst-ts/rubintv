@@ -1,8 +1,59 @@
 import React, { useState, useEffect, StrictMode } from "react"
-import { simplePost } from "../modules/utils"
+import { simplePost, simpleGet } from "../modules/utils"
 import PropTypes from "prop-types"
 
-export default function AdminPanel({ menus, admin }) {
+export default function AdminPanel({
+  initMenus,
+  initAdmin,
+  redisGetURL,
+  authAPIURL,
+}) {
+  const [admin, setAdmin] = useState(initAdmin)
+  const [menus, setMenus] = useState(initMenus)
+
+  useEffect(() => {
+    // Fetch the admin user info
+    simpleGet(authAPIURL).then((dataStr) => {
+      try {
+        // check that the response is valid JSON
+        JSON.parse(dataStr)
+      } catch (e) {
+        console.error("Error parsing auth api JSON response:", e)
+        return
+      }
+      const data = JSON.parse(dataStr)
+      // check that the username is the same as the admin username
+      if (data.username !== admin.username) {
+        console.error(
+          `User ${data.username} is not the admin user ${admin.username}.`
+        )
+      }
+      setAdmin((prevAdmin) => ({
+        ...prevAdmin,
+        email: data.email,
+        name: data.name,
+      }))
+    })
+  }, [])
+
+  useEffect(() => {
+    // Fetch the redis data for menus
+    simpleGet(redisGetURL, { keys: menus.map((menu) => menu.key) }).then(
+      (dataStr) => {
+        const data = JSON.parse(dataStr)
+        const updatedMenus = menus.map((menu) => {
+          const value = data[menu.key]
+          const selectedItem = menu.items.find((item) => item.value === value)
+          return {
+            ...menu,
+            selectedItem,
+          }
+        })
+        setMenus(updatedMenus)
+      }
+    )
+  }, [])
+
   const { name } = admin
   const firstName = name ? name.split(" ")[0] : ""
   return (
@@ -21,12 +72,13 @@ export default function AdminPanel({ menus, admin }) {
   )
 }
 AdminPanel.propTypes = {
-  menus: PropTypes.array,
-  admin: PropTypes.shape({
+  initMenus: PropTypes.array,
+  initAdmin: PropTypes.shape({
     username: PropTypes.string,
-    name: PropTypes.string,
     email: PropTypes.string,
   }),
+  redisGetURL: PropTypes.string,
+  authAPIURL: PropTypes.string,
 }
 
 export function DropDownMenu({ menu }) {
