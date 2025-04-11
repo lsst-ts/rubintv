@@ -1,6 +1,6 @@
 bucket_configurations:
   usdf-k8s:
-    [ slac, base-usdf, tucson-usdf, summit-usdf ]
+    [ summit-usdf, slac, base-usdf, tucson-usdf ]
   base:
     [ base ]
   tucson:
@@ -8,9 +8,9 @@ bucket_configurations:
   summit:
     [ summit ]
   gha:
-    [ slac, base-usdf, tucson-usdf, summit-usdf ]
+    [ summit-usdf, slac, base-usdf, tucson-usdf ]
   local:
-    [ slac, base-usdf, tucson-usdf, summit-usdf ]
+    [ summit-usdf, slac, base-usdf, tucson-usdf ]
 
 locations:
   - name: test
@@ -66,7 +66,6 @@ locations:
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
       Deprecated Cameras: [ comcam, comcam_aos ]
-
 
   - name: base
     title: Base
@@ -810,3 +809,28 @@ metadata_cols:
         The total net azimuth move, in degrees.
     Largest azimuth torque:
         The largest azimuth torque during the event, in Nm, including its sign. So, if the largest toque magnitude is a negative one, it will be a large negative value, if the largest toque seen was positive, it will be large and positive.
+
+
+admin_for:
+  usdf-k8s:
+    - mfl
+    - cslater
+    - saranda
+    - guymw
+
+  summit:
+    - mfl
+    - cslater
+    - saranda
+    - yusra
+    - gmegias
+    - jmeyers
+    - bkalmbach
+    - csuberlak
+
+  base: ["*"]
+  tucson: ["*"]
+
+  local: ["*"]
+  test: ["*"]
+  gha: ["*"]

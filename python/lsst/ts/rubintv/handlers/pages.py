@@ -3,7 +3,7 @@
 from datetime import date
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, Response
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.api import (
     get_current_channel_event,
@@ -25,6 +25,7 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
 from lsst.ts.rubintv.handlers.pages_helpers import (
     build_title,
     calendar_factory,
+    get_admin,
     month_names,
     to_dict,
 )
@@ -55,26 +56,35 @@ async def get_home(
 ) -> Response:
     """GET ``/rubintv/`` (the app's external root)."""
     locations: list[Location] = request.app.state.models.locations
-    if len(locations) < 2:
-        location = locations[0]
-        return RedirectResponse(
-            url=request.url_for("location", location_name=location.name)
-        )
+    try:
+        ddv_installed = request.app.state.ddv_path is not None
+    except AttributeError:  # pragma: no cover
+        ddv_installed = False
+    admin = await get_admin(request)
     title = build_title()
     return templates.TemplateResponse(
         request=request,
         name="home.jinja",
-        context={"request": request, "locations": locations, "title": title},
+        context={
+            "request": request,
+            "locations": locations,
+            "title": title,
+            "ddv_installed": ddv_installed,
+            "admin": admin,
+        },
     )
 
 
 @pages_router.get("/admin", response_class=HTMLResponse, name="admin")
 async def get_admin_page(request: Request) -> Response:
+    admin = await get_admin(request)
+    if admin is None:
+        raise HTTPException(status_code=403, detail="Access forbidden.")
     title = build_title("Admin")
     return templates.TemplateResponse(
         request=request,
         name="admin.jinja",
-        context={"request": request, "title": title},
+        context={"request": request, "title": title, "admin": admin},
     )
 
 

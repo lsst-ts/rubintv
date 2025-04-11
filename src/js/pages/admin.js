@@ -2,65 +2,60 @@ import { listenForHistoricalReset } from "../modules/historical-reset.js"
 import React from "react"
 import { createRoot } from "react-dom/client"
 import AdminPanel from "../components/AdminPanel"
-import { simpleGet } from "../modules/utils.js"
 ;(function () {
   window.addEventListener("DOMContentLoaded", () => {
     listenForHistoricalReset()
 
-    const { siteLocation, redisGetURL } = window.APP_DATA
-
-    // Only show the admin redis panel on the summit and base sites
-    if (siteLocation !== "summit" && siteLocation !== "base") {
-      return
-    }
+    const { redisGetURL, admin, baseURL } = window.APP_DATA
 
     const menus = [
       {
         title: "AOS Pipeline",
         key: "RUBINTV_CONTROL_AOS_PIPELINE",
-        items: [
-          { title: "Danish", value: "danish" },
-          { title: "TIE", value: "tie" },
-        ],
+        items: [{ title: "Danish" }, { title: "TIE" }],
       },
       {
         title: "Chip selection",
         key: "RUBINTV_CONTROL_CHIP_SELECTION",
         items: [
-          { title: "All", value: "all" },
-          { title: "Raft checkerboard", value: "raft_checkerboard" },
-          { title: "CCD checkerboard", value: "ccd_checkerboard" },
+          { title: "All" },
+          { title: "Raft checkerboard" },
+          { title: "CCD checkerboard" },
+          { title: "5-on-a-die" },
+          { title: "Minimal" },
+          { title: "Ultra-minimal" },
         ],
       },
       {
         title: "Selection strategy",
         key: "RUBINTV_CONTROL_VISIT_PROCESSING_MODE",
         items: [
-          { title: "Constant", value: "constant" },
-          { title: "Alternating", value: "alternating" },
-          { title: "Alternating in twos", value: "alternating_in_twos" },
+          { title: "Constant" },
+          { title: "Alternating" },
+          { title: "Alternating in twos" },
         ],
       },
     ]
 
-    // get already selected values if set
-    simpleGet(redisGetURL, { keys: menus.map((menu) => menu.key) }).then(
-      (dataStr) => {
-        const data = JSON.parse(dataStr)
-        menus.forEach((menu) => {
-          const value = data[menu.key]
-          const item = menu.items.find((item) => item.value === value)
-          if (item) {
-            menu.selectedItem = item
-          }
-        })
+    // add a value to each menu item
+    // which is the title in lowercase and with spaces replaced by underscores
+    menus.forEach((menu) => {
+      menu.items.forEach((item) => {
+        item.value = item.title.toLowerCase().replace(/ /g, "_")
+      })
+    })
 
-        adminPanelRoot.render(<AdminPanel menus={menus} />)
-      }
-    )
+    const authAPIURL = new URL("/auth/api/v1/user-info", baseURL).toString()
 
     const adminPanel = document.getElementById("admin-panel")
     const adminPanelRoot = createRoot(adminPanel)
-    adminPanelRoot.render(<AdminPanel menus={menus} />)
+    adminPanelRoot.render(
+      <AdminPanel
+        initMenus={menus}
+        initAdmin={admin}
+        redisGetURL={redisGetURL}
+        authAPIURL={authAPIURL}
+      />
+    )
   })
 })()
