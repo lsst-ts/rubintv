@@ -28,8 +28,10 @@ class ModelsInitiator:
         models_file_path = Path(__file__).parent / "models_data.yaml"
         with open(models_file_path, "r") as file:
             data = yaml.safe_load(file)
+
         cameras = self._populate_model(Camera, data["cameras"])
         self.cameras = self._attach_metadata_cols(cameras, data)
+
         current_location = config.site_location
         i_can_see = data["bucket_configurations"][current_location]
         all_locations = self._populate_model(Location, data["locations"])
@@ -37,8 +39,11 @@ class ModelsInitiator:
         # sort locations to satisfy the order in which they are listed in
         # bucket_configurations
         locations.sort(key=lambda loc: i_can_see.index(loc.name))
+
         self.locations = self._attach_cameras_to_locations(self.cameras, locations)
+
         self.services = self._init_services(cameras, data["services"])
+
         # This is a list of usernames to authorize for admin access at the
         # current Location.
         self.admin_list = data["admin_for"][current_location]

@@ -26,13 +26,14 @@ locations:
     bucket_name: rubin-rubintv-data-usdf
     logo: SLAC_Logo.svg
     camera_groups:
-      Nightly Validation: [ comcam_sim, comcam ]
-      Cleanroom Testing: [ slac_lsstcam, slac_ts8 ]
-      Simulated Cameras: [ comcam_sim_prep ]
+      Nightly Validation: [ lsstcam, lsstcam_aos ]
+      # Telescopes: [ tma ]
+      # Cleanroom Testing: [ slac_lsstcam, slac_ts8 ]
     services: [ slac_lsstcam, slac_ts8, comcam_sim_prep ]
 
   - name: base-usdf
     title: Base
+    is_teststand: True
     profile_name: rubin-rubintv-data-bts
     bucket_name: rubin-rubintv-data-bts
     logo: bts_720.jpg
@@ -46,6 +47,7 @@ locations:
 
   - name: tucson-usdf
     title: Tucson
+    is_teststand: True
     profile_name: rubin-rubintv-data-tts
     bucket_name: rubin-rubintv-data-tts
     logo: cactus.svg
