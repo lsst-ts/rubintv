@@ -25,7 +25,7 @@ day_obs = get_current_day_obs().isoformat()
 
 @pytest.mark.asyncio
 async def test_get_home(
-    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
     """Test that home page has links to every location"""
     client, app, mocker = mocked_client
@@ -33,7 +33,7 @@ async def test_get_home(
     html = await response.aread()
     parsed = BeautifulSoup(html, "html.parser")
     locations = m.locations
-    location_names = [loc.name for loc in locations]
+    location_names = [loc.name for loc in locations if loc.is_teststand is False]
     # find all nav links - there should be one for each location
     # (in the same order as defined in models_data.yaml)
     navs = parsed.nav
@@ -45,7 +45,7 @@ async def test_get_home(
 
 @pytest.mark.asyncio
 async def test_get_location(
-    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
     """Test that location page has links to cameras"""
     client, app, mocker = mocked_client
@@ -68,7 +68,7 @@ async def test_get_location(
 
 @pytest.mark.asyncio
 async def test_current_channels(
-    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
     client, app, mocker = mocked_client
 
@@ -102,7 +102,7 @@ async def test_current_channels(
 
 @pytest.mark.asyncio
 async def test_all_endpoints(
-    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
 
     client, app, mocker = mocked_client
@@ -150,7 +150,7 @@ async def test_all_endpoints(
 
 @pytest.mark.asyncio
 async def test_request_invalid_dates(
-    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
 
     client, app, mocker = mocked_client
