@@ -4,11 +4,12 @@ import PropTypes from "prop-types"
 
 export default function AdminPanel({ menus, admin }) {
   const { name } = admin
+  const firstName = name ? name.split(" ")[0] : ""
   return (
     <StrictMode>
       {name && (
         <div className="admin-indicator">
-          <h3 className="admin-text">Hello {name}</h3>
+          <h3 className="admin-text">Hello {firstName}</h3>
         </div>
       )}
       <div className="admin-panel">
