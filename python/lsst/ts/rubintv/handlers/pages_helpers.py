@@ -75,7 +75,7 @@ async def get_admin(request: Request) -> dict | None:
         return {}
 
     base_url = str(request.base_url)
-    api_url = urljoin(base_url, config.path_prefix + config.auth_api_url)
+    api_url = urljoin(base_url, config.auth_api_url)
     username: str | None = None
     async with httpx.AsyncClient() as client:
         logger.info("Requesting user data", api_url=api_url)
