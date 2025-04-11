@@ -13,30 +13,38 @@ import { simpleGet } from "../modules/utils.js"
       {
         title: "AOS Pipeline",
         key: "RUBINTV_CONTROL_AOS_PIPELINE",
-        items: [
-          { title: "Danish", value: "danish" },
-          { title: "TIE", value: "tie" },
-        ],
+        items: [{ title: "Danish" }, { title: "TIE" }],
       },
       {
         title: "Chip selection",
         key: "RUBINTV_CONTROL_CHIP_SELECTION",
         items: [
-          { title: "All", value: "all" },
-          { title: "Raft checkerboard", value: "raft_checkerboard" },
-          { title: "CCD checkerboard", value: "ccd_checkerboard" },
+          { title: "All" },
+          { title: "Raft checkerboard" },
+          { title: "CCD checkerboard" },
+          { title: "5-on-a-die" },
+          { title: "Minimal" },
+          { title: "Ultra-minimal" },
         ],
       },
       {
         title: "Selection strategy",
         key: "RUBINTV_CONTROL_VISIT_PROCESSING_MODE",
         items: [
-          { title: "Constant", value: "constant" },
-          { title: "Alternating", value: "alternating" },
-          { title: "Alternating in twos", value: "alternating_in_twos" },
+          { title: "Constant" },
+          { title: "Alternating" },
+          { title: "Alternating in twos" },
         ],
       },
     ]
+
+    // add a value to each menu item
+    // which is the title in lowercase and with spaces replaced by underscores
+    menus.forEach((menu) => {
+      menu.items.forEach((item) => {
+        item.value = item.title.toLowerCase().replace(/ /g, "_")
+      })
+    })
 
     // get already selected values if set
     simpleGet(redisGetURL, { keys: menus.map((menu) => menu.key) }).then(
