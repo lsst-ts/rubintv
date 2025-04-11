@@ -426,7 +426,7 @@ cameras:
       label: Time since last refocus
     channels:
       - name: fp_donut_gallery
-        title: Focal Plane Donut Gallery
+        title: Donut Gallery
         colour: "#c7e692"
       - name: zk_residual_pyramid
         title: Zernike Residual Pyramid
