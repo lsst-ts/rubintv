@@ -29,7 +29,6 @@ locations:
       Nightly Validation: [ lsstcam, lsstcam_aos ]
       # Telescopes: [ tma ]
       # Cleanroom Testing: [ slac_lsstcam, slac_ts8 ]
-    services: [ slac_lsstcam, slac_ts8, comcam_sim_prep ]
 
   - name: base-usdf
     title: Base
