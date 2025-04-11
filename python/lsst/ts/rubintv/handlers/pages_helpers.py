@@ -1,14 +1,10 @@
 from calendar import Calendar
 from datetime import date
 from typing import Any
-from urllib.parse import urljoin
 
-import httpx
 from fastapi import Request
-from lsst.ts.rubintv.config import config, rubintv_logger
 
 __all__ = ["month_names", "calendar_factory", "build_title", "to_dict"]
-logger = rubintv_logger()
 
 
 def month_names() -> list[str]:
@@ -71,24 +67,13 @@ async def get_admin(request: Request) -> dict | None:
         - Anonymous access allowed: limited access permitted, empty dict
         returned.
     """
-    if config.site_location in ["local", "test", "gha"]:
+    admin_list = request.app.state.models.admin_list
+    if admin_list == ["*"]:
         return {}
 
-    base_url = str(request.base_url)
-    api_url = urljoin(base_url, config.auth_api_url)
-    username: str | None = None
-    async with httpx.AsyncClient() as client:
-        logger.info("Requesting user data", api_url=api_url)
-        response = await client.get(api_url)
-        user_data = response.json()
-        logger.info("Received user data", user_data=user_data)
-        username = user_data.get("username")
-        if username is None:
-            logger.warning("No username found in user data", user_data=user_data)
-            return None
-
-    admin_list = request.app.state.models.admin_list
-    if username in admin_list or admin_list == ["*"]:
-        return user_data
+    username = request.headers.get("X-Auth-Request-User")
+    email = request.headers.get("X-Auth-Request-Email")
+    if username in admin_list:
+        return {"username": username, "email": email}
 
     return None

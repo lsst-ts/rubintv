@@ -41,12 +41,6 @@ class Configuration(BaseSettings):
         json_schema_extra={"title": "URL prefix for application"},
     )
 
-    auth_api_url: str = Field(
-        default="/auth/api/v1/user-info",
-        validation_alias="AUTH_API_URL",
-        json_schema_extra={"title": "URL suffix for authentication API"},
-    )
-
     ra_redis_host: str = Field(
         default="localhost",
         validation_alias="RA_REDIS_HOST",
