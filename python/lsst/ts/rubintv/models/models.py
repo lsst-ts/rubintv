@@ -203,6 +203,7 @@ class Location(HasButton):
     camera_groups: dict[str, list[str]]
     cameras: list[Camera] = []
     services: list[str] = []
+    is_teststand: bool = False
 
 
 @dataclass

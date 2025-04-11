@@ -15,7 +15,7 @@ m = ModelsInitiator()
 
 @pytest.mark.asyncio
 async def test_get_api_locations(
-    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
     client, app, mocker = mocked_client
     """Test that root api gives data for every location"""
@@ -26,7 +26,7 @@ async def test_get_api_locations(
 
 @pytest.mark.asyncio
 async def test_get_api_location(
-    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
     """Test that api location gives data for a particular location"""
     client, app, mocker = mocked_client
@@ -40,7 +40,7 @@ async def test_get_api_location(
 
 @pytest.mark.asyncio
 async def test_get_invalid_api_location(
-    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
     """Test that api location returns 404 for a non-existent location"""
     client, app, mocker = mocked_client
@@ -51,7 +51,7 @@ async def test_get_invalid_api_location(
 
 @pytest.mark.asyncio
 async def test_get_api_location_camera(
-    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
     """Test that api location camera gives data for a particular camera"""
     client, app, mocker = mocked_client
@@ -69,7 +69,7 @@ async def test_get_api_location_camera(
 
 @pytest.mark.asyncio
 async def test_get_invalid_api_location_camera(
-    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
     """Test that api location returns 404 for a camera not at an existing
     location"""
@@ -102,7 +102,7 @@ async def test_get_api_location_camera_current_for_offline(
 
 @pytest.mark.asyncio
 async def test_get_api_camera_for_today(
-    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
     """Test that api location/camera/current day obs yields a result"""
     client, app, mocker = mocked_client
@@ -112,7 +112,7 @@ async def test_get_api_camera_for_today(
         await asyncio.sleep(0.1)
 
     today = get_current_day_obs()
-    response = await client.get(f"/rubintv/api/slac/slac_ts8/date/{today}")
+    response = await client.get(f"/rubintv/api/slac/lsstcam/date/{today}")
     data = response.json()
     assert "channelData" in data
     assert data["channelData"] != {}
@@ -120,15 +120,15 @@ async def test_get_api_camera_for_today(
 
 @pytest.mark.asyncio
 async def test_get_camera_current_events(
-    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
     """Test that today's data is picked up"""
     client, app, mocker = mocked_client
     today = get_current_day_obs()
-    camera: Camera | None = find_first(m.cameras, "name", "slac_lsstcam")
+    camera: Camera | None = find_first(m.cameras, "name", "lsstcam_aos")
     assert camera is not None
 
-    response = await client.get("/rubintv/api/slac/slac_lsstcam/current")
+    response = await client.get("/rubintv/api/slac/lsstcam_aos/current")
     data = response.json()
 
     assert data["date"] == today.isoformat()
@@ -139,7 +139,7 @@ async def test_get_camera_current_events(
         table.keys(), key=lambda x: int(x), reverse=True
     )
 
-    mocked: list[Event] | None = mocker.events.get("slac/slac_lsstcam")
+    mocked: list[Event] | None = mocker.events.get("slac/lsstcam_aos")
     assert mocked
     mocked_table: dict[str, dict[str, dict]] = {}
     for event in mocked:
