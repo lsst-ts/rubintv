@@ -1,12 +1,12 @@
-#admin-panel
+#admin-panels
+    width: min-content
+.admin-panel
     display: flex
     flex-direction: column
     padding: 2em
     background: rgba(0,0,0,0.2)
-    margin-bottom: 2em
     gap: 2em
-    width: max-content
-.admin-panel
+.admin-panel-part
     display: flex
     gap: 1.5em
 .box
@@ -16,6 +16,7 @@
     background: #656565
     border-radius: 6px
     box-shadow: 3px 3px 10px rgba(0,0,0,0.2)
+    min-width: 250px
     .box-header
         display: flex
         justify-content: space-between
@@ -91,6 +92,18 @@
     .dropdown-content
             visibility: hidden
 
+.box button
+    background: #555
+    color: #fff
+    border: none
+    padding: 0.5em 1em
+    border-radius: 6px
+    cursor: pointer
+    &:hover
+        background: #222
+    &:active
+        background: #777
+
 
 .box form
     display: flex
@@ -115,15 +128,6 @@
             box-shadow: 0 0 5px rgba(255,255,255,0.3)
         &::placeholder
             color: #aaa
-    button[type="submit"]
-        background: #555
-        color: #fff
-        border: none
-        padding: 0.5em 1em
-        border-radius: 6px
-        cursor: pointer
-        &:hover
-            background: #222
-        &:active
-            background: #777
-   
+
+.danger
+    background: #933

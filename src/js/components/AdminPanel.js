@@ -1,43 +1,91 @@
 import React, { useState, useEffect, StrictMode } from "react"
+// Change the import to use the default export if Modal is the default export
+import { useModal, ConfirmationModal, ModalProvider } from "./Modal"
 import { simplePost, simpleGet } from "../modules/utils"
 import PropTypes from "prop-types"
 
-export default function AdminPanel({
+// Custom hook to handle Redis post success/failure
+function useRedisStatus() {
+  const [redisChanged, setRedisChanged] = useState(null)
+
+  const updateRedisStatus = (status) => {
+    setRedisChanged(status)
+    setTimeout(() => {
+      setRedisChanged(null)
+    }, 2000)
+  }
+
+  return [redisChanged, updateRedisStatus]
+}
+
+export default function AdminPanels({
   initMenus,
   initAdmin,
   redisGetURL,
   authAPIURL,
 }) {
   const [admin, setAdmin] = useState(initAdmin)
+
+  useEffect(() => {
+    simpleGet(authAPIURL)
+      .then((dataStr) => {
+        try {
+          JSON.parse(dataStr)
+        } catch (e) {
+          console.error("Error parsing auth api JSON response:", e)
+          return
+        }
+        const data = JSON.parse(dataStr)
+        if (data.username !== admin.username) {
+          console.error(
+            `User ${data.username} is not the admin user ${admin.username}.`
+          )
+        }
+        setAdmin((prevAdmin) => ({
+          ...prevAdmin,
+          email: data.email,
+          name: data.name,
+        }))
+      })
+      .catch((error) => {
+        console.warn("Error loading auth API:", error.message)
+      })
+  }, [])
+
+  const { name } = admin
+  const firstName = name ? name.split(" ")[0] : ""
+
+  return (
+    <>
+      {name && (
+        <div className="admin-panels-header">
+          <h3 className="admin-greeting">Hello {firstName}</h3>
+        </div>
+      )}
+      <h2>Settings</h2>
+      <RedisPanel initMenus={initMenus} redisGetURL={redisGetURL} />
+      <ModalProvider>
+        <AdminDangerPanel />
+      </ModalProvider>
+    </>
+  )
+}
+
+AdminPanels.propTypes = {
+  initMenus: PropTypes.array,
+  initAdmin: PropTypes.shape({
+    username: PropTypes.string,
+    email: PropTypes.string,
+    name: PropTypes.string,
+  }),
+  redisGetURL: PropTypes.string,
+  authAPIURL: PropTypes.string,
+}
+
+export function RedisPanel({ initMenus, redisGetURL }) {
   const [menus, setMenus] = useState(initMenus)
 
   useEffect(() => {
-    // Fetch the admin user info
-    simpleGet(authAPIURL).then((dataStr) => {
-      try {
-        // check that the response is valid JSON
-        JSON.parse(dataStr)
-      } catch (e) {
-        console.error("Error parsing auth api JSON response:", e)
-        return
-      }
-      const data = JSON.parse(dataStr)
-      // check that the username is the same as the admin username
-      if (data.username !== admin.username) {
-        console.error(
-          `User ${data.username} is not the admin user ${admin.username}.`
-        )
-      }
-      setAdmin((prevAdmin) => ({
-        ...prevAdmin,
-        email: data.email,
-        name: data.name,
-      }))
-    })
-  }, [])
-
-  useEffect(() => {
-    // Fetch the redis data for menus
     simpleGet(redisGetURL, { keys: menus.map((menu) => menu.key) }).then(
       (dataStr) => {
         const data = JSON.parse(dataStr)
@@ -54,40 +102,32 @@ export default function AdminPanel({
     )
   }, [])
 
-  const { name } = admin
-  const firstName = name ? name.split(" ")[0] : ""
   return (
     <StrictMode>
-      {name && (
-        <div className="admin-indicator">
-          <h3 className="admin-text">Hello {firstName}</h3>
+      <div className="admin-panel">
+        <div className="admin-panel-part">
+          {menus.map((menu, index) => (
+            <DropDownMenu key={index} menu={menu} />
+          ))}
         </div>
-      )}
-      <div className="admin-panel">
-        {menus.map((menu, index) => (
-          <DropDownMenu key={index} menu={menu} />
-        ))}
-      </div>
-      <div className="admin-panel">
-        <AdminSendRedisPair />
+        <div className="admin-panel-part">
+          <AdminSendRedisPair />
+        </div>
       </div>
     </StrictMode>
   )
 }
-AdminPanel.propTypes = {
+
+RedisPanel.propTypes = {
   initMenus: PropTypes.array,
-  initAdmin: PropTypes.shape({
-    username: PropTypes.string,
-    email: PropTypes.string,
-  }),
   redisGetURL: PropTypes.string,
-  authAPIURL: PropTypes.string,
 }
 
 export function DropDownMenu({ menu }) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(menu.selectedItem)
-  const [redisChanged, setRedisChanged] = useState(null)
+  const [redisChanged, updateRedisStatus] = useRedisStatus()
+
   const toggleMenu = () => {
     setIsOpen(!isOpen)
   }
@@ -109,7 +149,6 @@ export function DropDownMenu({ menu }) {
       window.removeEventListener("click", handleClickOutside)
     }
 
-    // Cleanup the event listener on component unmount or when `isOpen` changes
     return () => {
       window.removeEventListener("click", handleClickOutside)
     }
@@ -118,28 +157,25 @@ export function DropDownMenu({ menu }) {
   const handleItemSelect = (item) => {
     const { value } = item
     simplePost("api/redis_post", { key: menu.key, value })
-      .then((data) => {
-        setRedisChanged(data)
+      .then(() => {
+        updateRedisStatus(true)
       })
       .catch((error) => {
-        setRedisChanged(false)
         console.error("Error posting to redis:", error)
+        updateRedisStatus(false)
       })
     setSelectedItem(item)
     setIsOpen(false)
   }
+
   const menuClass = isOpen ? "dropdown-menu" : "dropdown-menu hidden"
   const selectedTitle = selectedItem ? selectedItem.title : "- Select -"
   const selectedClass = selectedItem
     ? "dropdown-button"
     : "dropdown-button greyed-out"
-  let successClass = ""
-  if (redisChanged !== null) {
-    successClass = redisChanged ? "success" : "fail"
-    setTimeout(() => {
-      setRedisChanged(null)
-    }, 2000)
-  }
+  const successClass =
+    redisChanged !== null ? (redisChanged ? "success" : "fail") : ""
+
   return (
     <div className="menu box">
       <div className="menu-header box-header">
@@ -165,19 +201,17 @@ export function DropDownMenu({ menu }) {
     </div>
   )
 }
+
 DropDownMenu.propTypes = {
   menu: PropTypes.object,
 }
 
 export function AdminSendRedisPair() {
-  const [redisChanged, setRedisChanged] = useState(null)
-  let successClass = ""
-  if (redisChanged !== null) {
-    successClass = redisChanged ? "success" : "fail"
-    setTimeout(() => {
-      setRedisChanged(null)
-    }, 2000)
-  }
+  const [redisChanged, updateRedisStatus] = useRedisStatus()
+
+  const successClass =
+    redisChanged !== null ? (redisChanged ? "success" : "fail") : ""
+
   return (
     <div className="redis-command-panel box">
       <div className="redis-command-header box-header">
@@ -190,11 +224,11 @@ export function AdminSendRedisPair() {
           const key = e.target.elements.key.value
           const value = e.target.elements.value.value
           simplePost("api/redis_post", { key, value })
-            .then((data) => {
-              setRedisChanged(data)
+            .then(() => {
+              updateRedisStatus(true)
             })
             .catch((error) => {
-              setRedisChanged(false)
+              updateRedisStatus(false)
               console.error("Error posting to redis:", error)
             })
         }}
@@ -217,4 +251,65 @@ export function AdminSendRedisPair() {
       </form>
     </div>
   )
+}
+
+export function AdminDangerPanel() {
+  const [redisChanged, updateRedisStatus] = useRedisStatus()
+  const { showModal, closeModal } = useModal()
+  const successClass =
+    redisChanged !== null ? (redisChanged ? "success" : "fail") : ""
+
+  const clearRedis = () => {
+    simplePost("api/redis_post", { key: "clear_redis", value: true })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`)
+        }
+        updateRedisStatus(true)
+      })
+      .catch((error) => {
+        updateRedisStatus(false)
+        console.error("Error posting to redis:", error.message)
+      })
+  }
+
+  const handleClick = (e) => {
+    e.preventDefault()
+
+    showModal(
+      <ConfirmationModal
+        title="Clear Redis"
+        message="Are you sure you want to clear Redis?"
+        onConfirm={() => {
+          clearRedis()
+          closeModal()
+        }}
+        onCancel={() => closeModal()}
+      />
+    )
+  }
+
+  return (
+    <div className="admin-panel danger">
+      <div className="admin-panel-part">
+        <div className="admin-header box">
+          <div className="admin-header box-header">
+            <h4 className="admin-title box-title">Clear Redis</h4>
+            <span className={successClass}></span>
+          </div>
+
+          <button className="danger-button" onClick={handleClick}>
+            Clear Redis
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+AdminDangerPanel.propTypes = {
+  redisChanged: PropTypes.bool,
+}
+AdminDangerPanel.defaultProps = {
+  redisChanged: null,
 }

@@ -4,7 +4,6 @@ import { FilterDialog } from "./TableFilter"
 import { useModal } from "./Modal"
 import {
   indicatorForAttr,
-  _elWithClass,
   _elWithAttrs,
   replaceInString,
   _getById,
@@ -12,23 +11,10 @@ import {
 import { metadatumType } from "./componentPropTypes"
 
 function DictMetadata({ data, seqNum, columnName }) {
-  let buttonIcon
-  if ("DISPLAY_VALUE" in data) {
-    buttonIcon = data.DISPLAY_VALUE
-  } else {
-    buttonIcon = "❓"
+  if (typeof data !== "object" || data === null) {
+    return null
   }
-  return (
-    <button
-      onClick={() => _foldoutCell(seqNum, columnName, data)}
-      className="button button-table"
-      data-seq={seqNum}
-      data-column={columnName}
-      data-dict={JSON.stringify(data)}
-    >
-      {buttonIcon}
-    </button>
-  )
+  return <FoldoutCell seqNum={seqNum} columnName={columnName} data={data} />
 }
 DictMetadata.propTypes = {
   data: PropTypes.object,
@@ -341,46 +327,42 @@ function seqChannels(camera) {
  * the table is clicked.
  */
 
-function _foldoutCell(seqNum, columnName, data) {
-  const overlay = _elWithClass("div", "full-overlay")
-  overlay.id = "overlay"
-  const modal = _elWithClass("div", "cell-dict-modal")
-  const closeButton = _elWithClass("div", "close-button")
-  closeButton.textContent = "x"
-  closeButton.id = "modal-close"
-  const heading = _elWithAttrs("h3")
-  heading.textContent = `Seq Num: ${seqNum} - ${columnName}`
-  modal.appendChild(closeButton)
-  modal.appendChild(heading)
-
-  const table = _elWithClass("table", "cell-dict")
-  for (const [k, v] of Object.entries(data)) {
-    if (k === "DISPLAY_VALUE") {
-      continue
-    }
-    const tRow = _elWithAttrs("tr")
-    const head = _elWithAttrs("th", { class: "key", text: k })
-    const datum = _elWithAttrs("td", { class: "value", text: v })
-    tRow.appendChild(head)
-    tRow.appendChild(datum)
-    table.appendChild(tRow)
+function FoldoutCell({ seqNum, columnName, data }) {
+  const { showModal } = useModal()
+  const toDisplay = data.DISPLAY_VALUE
+  const handleClick = () => {
+    const content = (
+      <div className="cell-dict-modal">
+        <div className="modal-header">
+          <h3>{`Seq Num: ${seqNum} - ${columnName}`}</h3>
+        </div>
+        <table className="cell-dict">
+          <tbody>
+            {Object.entries(data).map(
+              ([key, value]) =>
+                key !== "DISPLAY_VALUE" && (
+                  <tr key={key}>
+                    <th className="key">{key}</th>
+                    <td className="value">{value}</td>
+                  </tr>
+                )
+            )}
+          </tbody>
+        </table>
+      </div>
+    )
+    showModal(content)
   }
-  modal.appendChild(table)
-  overlay.appendChild(modal)
-  document.querySelector("main").appendChild(overlay)
-  document.activeElement.blur()
-  overlay.addEventListener("click", (e) => {
-    if (e.target.id === "overlay" || e.target.id === "modal-close") {
-      modal.remove()
-      overlay.remove()
-    }
-  })
-  document.body.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      modal.remove()
-      overlay.remove()
-    }
-  })
+  return (
+    <button onClick={handleClick} className="button button-table">
+      {toDisplay}
+    </button>
+  )
+}
+FoldoutCell.propTypes = {
+  seqNum: PropTypes.string,
+  columnName: PropTypes.string,
+  data: PropTypes.object,
 }
 
 function handleCopyButton(date, seqNum, template) {

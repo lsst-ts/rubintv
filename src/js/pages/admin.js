@@ -1,7 +1,7 @@
 import { listenForHistoricalReset } from "../modules/historical-reset.js"
 import React from "react"
 import { createRoot } from "react-dom/client"
-import AdminPanel from "../components/AdminPanel"
+import AdminPanels from "../components/AdminPanel"
 ;(function () {
   window.addEventListener("DOMContentLoaded", () => {
     listenForHistoricalReset()
@@ -47,10 +47,10 @@ import AdminPanel from "../components/AdminPanel"
 
     const authAPIURL = new URL("/auth/api/v1/user-info", baseURL).toString()
 
-    const adminPanel = document.getElementById("admin-panel")
-    const adminPanelRoot = createRoot(adminPanel)
-    adminPanelRoot.render(
-      <AdminPanel
+    const adminPanels = document.getElementById("admin-panels")
+    const adminPanelsRoot = createRoot(adminPanels)
+    adminPanelsRoot.render(
+      <AdminPanels
         initMenus={menus}
         initAdmin={admin}
         redisGetURL={redisGetURL}
