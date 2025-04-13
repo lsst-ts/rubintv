@@ -43,6 +43,8 @@ function MetadataCell({ data, indicator, seqNum, columnName }) {
   if (typeof data === "number" && data % 1 !== 0) {
     toDisplay = data.toFixed(2)
     title = data
+  } else if (typeof data === "boolean") {
+    toDisplay = data ? "True" : "False"
   } else if (data && typeof data === "object") {
     toDisplay = (
       <DictMetadata data={data} seqNum={seqNum} columnName={columnName} />
