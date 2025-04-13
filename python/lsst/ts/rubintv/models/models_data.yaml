@@ -27,8 +27,6 @@ locations:
     logo: SLAC_Logo.svg
     camera_groups:
       Nightly Validation: [ lsstcam, lsstcam_aos ]
-      # Telescopes: [ tma ]
-      # Cleanroom Testing: [ slac_lsstcam, slac_ts8 ]
 
   - name: base-usdf
     title: Base
@@ -39,8 +37,8 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ lsstcam, lsstcam_aos ]
-      Cameras: [ auxtel, fake_auxtel ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos ]
+      Cameras: [ fake_auxtel ]
       Telescopes: [ tma ]
     services: [ auxtel, tma ]
 
@@ -51,7 +49,8 @@ locations:
     bucket_name: rubin-rubintv-data-tts
     logo: cactus.svg
     camera_groups:
-      Cameras: [ auxtel, fake_auxtel, comcam, comcam_aos ]
+      Telescope Mounted: [ auxtel ]
+      Cameras: [ fake_auxtel, comcam, comcam_aos ]
       Telescopes: [ tma ]
 
   - name: summit-usdf
@@ -76,8 +75,8 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ lsstcam, lsstcam_aos ]
-      Cameras: [ auxtel, fake_auxtel ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos ]
+      Cameras: [ fake_auxtel ]
       Telescopes: [ tma ]
 
   - name: tucson
