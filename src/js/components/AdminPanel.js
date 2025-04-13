@@ -25,6 +25,27 @@ export default function AdminPanels({
   authAPIURL,
 }) {
   const [admin, setAdmin] = useState(initAdmin)
+  const [menus, setMenus] = useState(initMenus)
+
+  const refreshMenus = () => {
+    simpleGet(redisGetURL, { keys: menus.map((menu) => menu.key) }).then(
+      (dataStr) => {
+        const data = JSON.parse(dataStr)
+        const updatedMenus = menus.map((menu) => {
+          const value = data[menu.key]
+          const selectedItem =
+            menu.items.find((item) => item.value === value) || null // Ensure null is reflected
+          const updatedMenu = {
+            ...menu,
+            selectedItem,
+          }
+          console.log("Updated menu:", updatedMenu)
+          return updatedMenu
+        })
+        setMenus(updatedMenus)
+      }
+    )
+  }
 
   useEffect(() => {
     simpleGet(authAPIURL)
@@ -63,9 +84,9 @@ export default function AdminPanels({
         </div>
       )}
       <h2>Settings</h2>
-      <RedisPanel initMenus={initMenus} redisGetURL={redisGetURL} />
+      <RedisPanel initMenus={menus} redisGetURL={redisGetURL} />
       <ModalProvider>
-        <AdminDangerPanel />
+        <AdminDangerPanel refreshMenus={refreshMenus} />
       </ModalProvider>
     </>
   )
@@ -253,23 +274,23 @@ export function AdminSendRedisPair() {
   )
 }
 
-export function AdminDangerPanel() {
+export function AdminDangerPanel({ refreshMenus }) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
-  const { showModal, closeModal } = useModal()
+  const { showModal } = useModal()
   const successClass =
     redisChanged !== null ? (redisChanged ? "success" : "fail") : ""
 
   const clearRedis = () => {
-    simplePost("api/redis_post", { key: "clear_redis", value: true })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Server error: ${response.status}`)
-        }
+    simplePost("api/redis_post", { key: "clear_redis", value: "true" })
+      .then(() => {
         updateRedisStatus(true)
+        if (refreshMenus) {
+          refreshMenus()
+        }
       })
       .catch((error) => {
         updateRedisStatus(false)
-        console.error("Error posting to redis:", error.message)
+        console.error("Error posting to redis:", error)
       })
   }
 
@@ -282,9 +303,11 @@ export function AdminDangerPanel() {
         message="Are you sure you want to clear Redis?"
         onConfirm={() => {
           clearRedis()
-          closeModal()
+          showModal(null) // Close the modal after confirmation
         }}
-        onCancel={() => closeModal()}
+        onCancel={() => {
+          showModal(null) // Close the modal after cancellation
+        }}
       />
     )
   }
@@ -309,7 +332,9 @@ export function AdminDangerPanel() {
 
 AdminDangerPanel.propTypes = {
   redisChanged: PropTypes.bool,
+  refreshMenus: PropTypes.func,
 }
 AdminDangerPanel.defaultProps = {
   redisChanged: null,
+  refreshMenus: null,
 }

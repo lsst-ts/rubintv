@@ -43,6 +43,18 @@ async def redis_post(request: Request, message: dict) -> dict:
         raise HTTPException(400, "Message must contain a 'key' key")
     if "value" not in message:
         raise HTTPException(400, "Message must contain a 'value' key")
+    key = message["key"]
+    value = message["value"]
+    if key == "clear_redis" and value == "true":
+        success = False
+        try:
+            success = await redis_client.flushdb()
+            logger.info("Redis database cleared", extra={"success": success})
+        except Exception as e:
+            logger.error(f"Failed to clear Redis database: {e}")
+            raise HTTPException(500, "Failed to clear Redis database")
+        return {"success": success}
+
     success = await redis_client.set(message["key"], message["value"])
     return {"success": success}
 
