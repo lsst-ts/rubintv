@@ -40,18 +40,12 @@ export async function simpleGet(url, params = {}) {
   Object.entries(params).forEach(([key, value]) => {
     urlObj.searchParams.append(key, value)
   })
-  try {
-    const res = await fetch(urlObj)
-    if (!res.ok) {
-      throw new Error(
-        `Error fetching ${urlObj}\nResponse status: ${res.statusText}`
-      )
-    }
-    const data = await res.text()
-    return data
-  } catch (error) {
-    console.error(error.message)
+  const res = await fetch(urlObj)
+  if (!res.ok) {
+    throw new Error(`HTTP error for ${url}: ${res.status}`)
   }
+  const data = await res.text()
+  return data
 }
 
 /**
