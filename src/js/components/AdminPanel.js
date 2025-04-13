@@ -68,6 +68,9 @@ export default function AdminPanel({
           <DropDownMenu key={index} menu={menu} />
         ))}
       </div>
+      <div className="admin-panel">
+        <AdminSendRedisPair />
+      </div>
     </StrictMode>
   )
 }
@@ -138,9 +141,9 @@ export function DropDownMenu({ menu }) {
     }, 2000)
   }
   return (
-    <div className="menu">
-      <div className="menu-header">
-        <h4 className="menu-title">{menu.title}</h4>
+    <div className="menu box">
+      <div className="menu-header box-header">
+        <h4 className="menu-title box-title">{menu.title}</h4>
         <span className={successClass}></span>
       </div>
       <div className={menuClass}>
@@ -164,4 +167,54 @@ export function DropDownMenu({ menu }) {
 }
 DropDownMenu.propTypes = {
   menu: PropTypes.object,
+}
+
+export function AdminSendRedisPair() {
+  const [redisChanged, setRedisChanged] = useState(null)
+  let successClass = ""
+  if (redisChanged !== null) {
+    successClass = redisChanged ? "success" : "fail"
+    setTimeout(() => {
+      setRedisChanged(null)
+    }, 2000)
+  }
+  return (
+    <div className="redis-command-panel box">
+      <div className="redis-command-header box-header">
+        <h4 className="redis-command-title box-title">Redis Command</h4>
+        <span className={successClass}></span>
+      </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          const key = e.target.elements.key.value
+          const value = e.target.elements.value.value
+          simplePost("api/redis_post", { key, value })
+            .then((data) => {
+              setRedisChanged(data)
+            })
+            .catch((error) => {
+              setRedisChanged(false)
+              console.error("Error posting to redis:", error)
+            })
+        }}
+      >
+        <div className="form-group">
+          <label htmlFor="key">Key:</label>
+          <input type="text" id="key" name="key" placeholder="Key" required />
+        </div>
+        <div className="form-group">
+          <label htmlFor="value">Value:</label>
+          <input
+            type="text"
+            id="value"
+            name="value"
+            placeholder="Value"
+            required
+          />
+        </div>
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  )
 }

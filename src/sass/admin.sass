@@ -1,20 +1,27 @@
+#admin-panel
+    display: flex
+    flex-direction: column
+    padding: 2em
+    background: rgba(0,0,0,0.2)
+    margin-bottom: 2em
+    gap: 2em
+    width: max-content
 .admin-panel
     display: flex
-    margin-bottom: 2em
     gap: 1.5em
-.menu
+.box
     display: flex
     flex-direction: column
     padding: 1em
     background: #656565
     border-radius: 6px
     box-shadow: 3px 3px 10px rgba(0,0,0,0.2)
-    .menu-header
+    .box-header
         display: flex
         justify-content: space-between
         align-items: center
         margin-bottom: 0.5em
-        .menu-title
+        .menu-title, .box-title
             color: #fff
             font-size: 1.1em
             padding-left: 3px
@@ -83,3 +90,40 @@
                 transform: rotate(90deg)
     .dropdown-content
             visibility: hidden
+
+
+.box form
+    display: flex
+    flex-direction: row
+    justify-content: space-between
+    align-items: flex-end
+    gap: 1em
+    label
+        display: none
+        margin-left: 3px
+        color: #fff
+    input[type="text"]
+        background: #333
+        color: #fff
+        border: none
+        padding: 0.5em
+        border-radius: 6px
+        width: 100%
+        margin-top: 0.5em
+        &:focus
+            outline: none
+            box-shadow: 0 0 5px rgba(255,255,255,0.3)
+        &::placeholder
+            color: #aaa
+    button[type="submit"]
+        background: #555
+        color: #fff
+        border: none
+        padding: 0.5em 1em
+        border-radius: 6px
+        cursor: pointer
+        &:hover
+            background: #222
+        &:active
+            background: #777
+   
