@@ -64,7 +64,7 @@ export default function AdminPanels({
   const firstName = admin.name ? admin.name.split(" ")[0] : ""
 
   return (
-    <>
+    <ModalProvider>
       {admin.name && <h3 className="admin-greeting">Hello {firstName}</h3>}
       <div className="admin-panels-container">
         <div className="admin-panels-header">
@@ -76,11 +76,17 @@ export default function AdminPanels({
           redisEndpointUrl={redisEndpointUrl}
           redisKeyPrefix={redisKeyPrefix}
         />
-        <ModalProvider>
-          <AdminDangerPanel refreshMenus={refreshMenus} />
-        </ModalProvider>
+        <div className="danger-panel">
+          <div className="danger-panel-border">
+            <h4 className="danger-panel-title">Danger Zone</h4>
+            <AdminDangerPanel
+              refreshMenus={refreshMenus}
+              redisEndpointUrl={redisEndpointUrl}
+            />
+          </div>
+        </div>
       </div>
-    </>
+    </ModalProvider>
   )
 }
 
@@ -237,12 +243,12 @@ AdminSendRedisCommand.propTypes = {
   redisKeyPrefix: PropTypes.func.isRequired,
 }
 
-export function AdminDangerPanel({ refreshMenus }) {
+export function AdminDangerPanel({ refreshMenus, redisEndpointUrl }) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
   const { showModal } = useModal()
 
   const clearRedis = () => {
-    simplePost("api/redis_post", { key: "clear_redis", value: "true" })
+    simplePost(redisEndpointUrl, { key: "clear_redis", value: "true" })
       .then(() => {
         updateRedisStatus(true)
         if (refreshMenus) refreshMenus()
@@ -269,26 +275,25 @@ export function AdminDangerPanel({ refreshMenus }) {
   }
 
   return (
-    <div className="admin-panel danger">
-      <div className="admin-panel-part">
-        <div className="admin-header box">
-          <div className="admin-header box-header">
-            <h4 className="admin-title box-title">Clear Redis</h4>
-            <span
-              className={
-                redisChanged !== null ? (redisChanged ? "success" : "fail") : ""
-              }
-            ></span>
-          </div>
-          <button className="danger-button" onClick={handleClick}>
-            Clear Redis
-          </button>
+    <div className="admin-panel-part">
+      <div className="admin-header box">
+        <div className="admin-header box-header">
+          <h4 className="admin-title box-title">Clear Redis</h4>
+          <span
+            className={
+              redisChanged !== null ? (redisChanged ? "success" : "fail") : ""
+            }
+          ></span>
         </div>
+        <button className="danger-button" onClick={handleClick}>
+          Clear Redis
+        </button>
       </div>
     </div>
   )
 }
 
 AdminDangerPanel.propTypes = {
+  redisEndpointUrl: PropTypes.string.isRequired,
   refreshMenus: PropTypes.func,
 }
