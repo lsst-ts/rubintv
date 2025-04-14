@@ -1,12 +1,19 @@
 import { listenForHistoricalReset } from "../modules/historical-reset.js"
 import React from "react"
 import { createRoot } from "react-dom/client"
-import AdminPanels from "../components/AdminPanel"
+import AdminPanels from "../components/AdminPanels"
 ;(function () {
   window.addEventListener("DOMContentLoaded", () => {
     listenForHistoricalReset()
 
-    const { redisGetURL, admin, baseURL } = window.APP_DATA
+    const { admin, homeUrl, baseUrl } = window.APP_DATA
+
+    const redisPrefix = (value) => {
+      const escapedValue = value.replace(/[^a-zA-Z0-9_]/g, "_")
+      const prefix = escapedValue.toUpperCase()
+      return `RUBINTV_CONTROL_${prefix}`
+    }
+    const redisEndpointUrl = new URL("api/redis", homeUrl).toString()
 
     const menus = [
       {
@@ -45,7 +52,10 @@ import AdminPanels from "../components/AdminPanel"
       })
     })
 
-    const authAPIURL = new URL("/auth/api/v1/user-info", baseURL).toString()
+    const authEndpointUrl = new URL(
+      "/auth/api/v1/user-info",
+      baseUrl
+    ).toString()
 
     const adminPanels = document.getElementById("admin-panels")
     const adminPanelsRoot = createRoot(adminPanels)
@@ -53,8 +63,9 @@ import AdminPanels from "../components/AdminPanel"
       <AdminPanels
         initMenus={menus}
         initAdmin={admin}
-        redisGetURL={redisGetURL}
-        authAPIURL={authAPIURL}
+        redisEndpointUrl={redisEndpointUrl}
+        redisPrefix={redisPrefix}
+        authEndpointUrl={authEndpointUrl}
       />
     )
   })

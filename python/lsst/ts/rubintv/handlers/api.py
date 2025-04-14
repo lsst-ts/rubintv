@@ -36,7 +36,7 @@ async def historical_reset(request: Request) -> None:
     await current.clear_todays_data()
 
 
-@api_router.post("/redis_post")
+@api_router.post("/redis")
 async def redis_post(request: Request, message: dict) -> dict:
     redis_client = await validate_redis_connection(request.app.state)
     if "key" not in message:
@@ -59,7 +59,7 @@ async def redis_post(request: Request, message: dict) -> dict:
     return {"success": success}
 
 
-@api_router.get("/redis_get", response_model=dict)
+@api_router.get("/redis", response_model=dict)
 async def redis_get(request: Request, keys: str) -> dict:
     if not keys:
         raise HTTPException(400, "No keys provided")
