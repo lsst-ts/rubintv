@@ -1,4 +1,4 @@
-import React, { useState, useEffect, StrictMode } from "react"
+import React, { useState, useEffect } from "react"
 // Change the import to use the default export if Modal is the default export
 import { useModal, ConfirmationModal, ModalProvider } from "./Modal"
 import { simplePost, simpleGet } from "../modules/utils"
@@ -40,7 +40,6 @@ export default function AdminPanels({
           }
           return updatedMenu
         })
-        console.log("AdminPanels - updated menus:", updatedMenus)
         setMenus(updatedMenus)
       }
     )
@@ -117,7 +116,6 @@ export function RedisPanel({ menus, setMenus, redisGetURL }) {
             selectedItem,
           }
         })
-        console.log("RedisPanel - updated menus:", updatedMenus)
         setMenus(updatedMenus)
       }
     )
@@ -129,19 +127,32 @@ export function RedisPanel({ menus, setMenus, redisGetURL }) {
 
   const triggerRefresh = () => setRefresh((prev) => !prev)
 
+  const handleItemSelect = (menuKey, item) => {
+    const { value } = item
+    simplePost("api/redis_post", { key: menuKey, value })
+      .then(() => {
+        console.log("Redis updated successfully")
+      })
+      .catch((error) => {
+        console.error("Error posting to redis:", error)
+      })
+  }
+
   return (
-    <StrictMode>
-      <div className="admin-panel">
-        <div className="admin-panel-part">
-          {menus.map((menu, index) => (
-            <DropDownMenu key={index} menu={menu} />
-          ))}
-        </div>
-        <div className="admin-panel-part">
-          <AdminSendRedisCommand triggerRefresh={triggerRefresh} />
-        </div>
+    <div className="admin-panel">
+      <div className="admin-panel-part">
+        {menus.map((menu, index) => (
+          <DropDownMenu
+            key={index}
+            menu={menu}
+            onItemSelect={(item) => handleItemSelect(menu.key, item)}
+          />
+        ))}
       </div>
-    </StrictMode>
+      <div className="admin-panel-part">
+        <AdminSendRedisCommand triggerRefresh={triggerRefresh} />
+      </div>
+    </div>
   )
 }
 
@@ -151,10 +162,9 @@ RedisPanel.propTypes = {
   redisGetURL: PropTypes.string.isRequired,
 }
 
-export function DropDownMenu({ menu }) {
+export function DropDownMenu({ menu, onItemSelect }) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(menu.selectedItem)
-  const [redisChanged, updateRedisStatus] = useRedisStatus()
 
   const toggleMenu = () => {
     setIsOpen(!isOpen)
@@ -183,17 +193,11 @@ export function DropDownMenu({ menu }) {
   }, [isOpen])
 
   const handleItemSelect = (item) => {
-    const { value } = item
-    simplePost("api/redis_post", { key: menu.key, value })
-      .then(() => {
-        updateRedisStatus(true)
-      })
-      .catch((error) => {
-        console.error("Error posting to redis:", error)
-        updateRedisStatus(false)
-      })
     setSelectedItem(item)
     setIsOpen(false)
+    if (onItemSelect) {
+      onItemSelect(item) // Notify parent about the selected item
+    }
   }
 
   const menuClass = isOpen ? "dropdown-menu" : "dropdown-menu hidden"
@@ -201,14 +205,11 @@ export function DropDownMenu({ menu }) {
   const selectedClass = selectedItem
     ? "dropdown-button"
     : "dropdown-button greyed-out"
-  const successClass =
-    redisChanged !== null ? (redisChanged ? "success" : "fail") : ""
 
   return (
     <div className="menu box">
       <div className="menu-header box-header">
         <h4 className="menu-title box-title">{menu.title}</h4>
-        <span className={successClass}></span>
       </div>
       <div className={menuClass}>
         <button className={selectedClass} onClick={toggleMenu}>
@@ -231,7 +232,8 @@ export function DropDownMenu({ menu }) {
 }
 
 DropDownMenu.propTypes = {
-  menu: PropTypes.object,
+  menu: PropTypes.object.isRequired,
+  onItemSelect: PropTypes.func, // Callback for item selection
 }
 
 export function AdminSendRedisCommand({ triggerRefresh }) {
