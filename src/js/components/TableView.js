@@ -10,6 +10,16 @@ import {
 } from "../modules/utils"
 import { metadatumType } from "./componentPropTypes"
 
+// get the site location from the global APP_DATA object
+// which is set in the template
+const siteLoc = window.APP_DATA.siteLocation
+// TODO: this should be set in the backend
+// See DM-50192
+const hasCCS = (siteLoc) => {
+  return ["summit", "base"].includes(siteLoc)
+}
+const siteLocHasCCS = hasCCS(siteLoc)
+
 function DictMetadata({ data, seqNum, columnName }) {
   if (typeof data !== "object" || data === null) {
     return null
@@ -119,10 +129,15 @@ function TableRow({
           ></button>
         </td>
       )}
-      {camera.image_viewer_link && (
+      {camera.image_viewer_link && siteLocHasCCS && (
         <td className="grid-cell">
           <a
-            href={replaceInString(camera.image_viewer_link, dayObs, seqNum)}
+            href={replaceInString(
+              camera.image_viewer_link,
+              siteLoc,
+              dayObs,
+              seqNum
+            )}
             className="button button-table image-viewer-link"
           />
         </td>
@@ -254,7 +269,7 @@ export function TableHeader({
       {camera.copy_row_template && (
         <div className="grid-title" id="ctbEmpty"></div>
       )}
-      {camera.image_viewer_link && (
+      {camera.image_viewer_link && siteLocHasCCS && (
         <div className="grid-title sideways">CCS Image Viewer</div>
       )}
       {columns.map((channel) => {
@@ -367,7 +382,7 @@ FoldoutCell.propTypes = {
 
 function handleCopyButton(date, seqNum, template) {
   const dayObs = date.replaceAll("-", "")
-  const dataStr = replaceInString(template, dayObs, seqNum)
+  const dataStr = replaceInString(template, "", dayObs, seqNum)
   navigator.clipboard.writeText(dataStr)
   const responseMsg = _elWithAttrs("div", {
     class: "copied",
