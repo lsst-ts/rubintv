@@ -33,15 +33,14 @@ export default function AdminPanels({
         const data = JSON.parse(dataStr)
         const updatedMenus = menus.map((menu) => {
           const value = data[menu.key]
-          const selectedItem =
-            menu.items.find((item) => item.value === value) || null // Ensure null is reflected
+          const selectedItem = menu.items.find((item) => item.value === value)
           const updatedMenu = {
             ...menu,
             selectedItem,
           }
-          console.log("Updated menu:", updatedMenu)
           return updatedMenu
         })
+        console.log("AdminPanels - updated menus:", updatedMenus)
         setMenus(updatedMenus)
       }
     )
@@ -84,7 +83,7 @@ export default function AdminPanels({
         </div>
       )}
       <h2>Settings</h2>
-      <RedisPanel initMenus={menus} redisGetURL={redisGetURL} />
+      <RedisPanel menus={menus} setMenus={setMenus} redisGetURL={redisGetURL} />
       <ModalProvider>
         <AdminDangerPanel refreshMenus={refreshMenus} />
       </ModalProvider>
@@ -103,10 +102,10 @@ AdminPanels.propTypes = {
   authAPIURL: PropTypes.string,
 }
 
-export function RedisPanel({ initMenus, redisGetURL }) {
-  const [menus, setMenus] = useState(initMenus)
+export function RedisPanel({ menus, setMenus, redisGetURL }) {
+  const [refresh, setRefresh] = useState(false)
 
-  useEffect(() => {
+  const fetchMenus = () => {
     simpleGet(redisGetURL, { keys: menus.map((menu) => menu.key) }).then(
       (dataStr) => {
         const data = JSON.parse(dataStr)
@@ -118,10 +117,17 @@ export function RedisPanel({ initMenus, redisGetURL }) {
             selectedItem,
           }
         })
+        console.log("RedisPanel - updated menus:", updatedMenus)
         setMenus(updatedMenus)
       }
     )
-  }, [])
+  }
+
+  useEffect(() => {
+    fetchMenus()
+  }, [refresh, redisGetURL]) // Trigger fetch only when `refresh` changes
+
+  const triggerRefresh = () => setRefresh((prev) => !prev)
 
   return (
     <StrictMode>
@@ -132,7 +138,7 @@ export function RedisPanel({ initMenus, redisGetURL }) {
           ))}
         </div>
         <div className="admin-panel-part">
-          <AdminSendRedisPair />
+          <AdminSendRedisCommand triggerRefresh={triggerRefresh} />
         </div>
       </div>
     </StrictMode>
@@ -140,8 +146,9 @@ export function RedisPanel({ initMenus, redisGetURL }) {
 }
 
 RedisPanel.propTypes = {
-  initMenus: PropTypes.array,
-  redisGetURL: PropTypes.string,
+  menus: PropTypes.array.isRequired,
+  setMenus: PropTypes.func.isRequired,
+  redisGetURL: PropTypes.string.isRequired,
 }
 
 export function DropDownMenu({ menu }) {
@@ -227,7 +234,7 @@ DropDownMenu.propTypes = {
   menu: PropTypes.object,
 }
 
-export function AdminSendRedisPair() {
+export function AdminSendRedisCommand({ triggerRefresh }) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
 
   const successClass =
@@ -247,6 +254,9 @@ export function AdminSendRedisPair() {
           simplePost("api/redis_post", { key, value })
             .then(() => {
               updateRedisStatus(true)
+              if (triggerRefresh) {
+                triggerRefresh()
+              }
             })
             .catch((error) => {
               updateRedisStatus(false)
@@ -272,6 +282,10 @@ export function AdminSendRedisPair() {
       </form>
     </div>
   )
+}
+
+AdminSendRedisCommand.propTypes = {
+  triggerRefresh: PropTypes.func,
 }
 
 export function AdminDangerPanel({ refreshMenus }) {
