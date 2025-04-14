@@ -35,7 +35,7 @@ export default function AdminPanels({
   initMenus,
   initAdmin,
   redisEndpointUrl,
-  redisPrefix,
+  redisKeyPrefix,
   authEndpointUrl,
 }) {
   const [admin, setAdmin] = useState(initAdmin)
@@ -75,7 +75,7 @@ export default function AdminPanels({
         menus={menus}
         setMenus={setMenus}
         redisEndpointUrl={redisEndpointUrl}
-        redisPrefix={redisPrefix}
+        redisKeyPrefix={redisKeyPrefix}
       />
       <ModalProvider>
         <AdminDangerPanel refreshMenus={refreshMenus} />
@@ -92,11 +92,16 @@ AdminPanels.propTypes = {
     name: PropTypes.string,
   }),
   redisEndpointUrl: PropTypes.string,
-  redisPrefix: PropTypes.func,
+  redisKeyPrefix: PropTypes.func,
   authEndpointUrl: PropTypes.string,
 }
 
-export function RedisPanel({ menus, setMenus, redisEndpointUrl, redisPrefix }) {
+export function RedisPanel({
+  menus,
+  setMenus,
+  redisEndpointUrl,
+  redisKeyPrefix,
+}) {
   const [refresh, setRefresh] = useState(false)
 
   useEffect(() => {
@@ -126,7 +131,7 @@ export function RedisPanel({ menus, setMenus, redisEndpointUrl, redisPrefix }) {
         <AdminSendRedisCommand
           triggerRefresh={triggerRefresh}
           redisEndpointUrl={redisEndpointUrl}
-          redisPrefix={redisPrefix}
+          redisKeyPrefix={redisKeyPrefix}
         />
       </div>
     </div>
@@ -170,19 +175,19 @@ RedisPanel.propTypes = {
   menus: PropTypes.array.isRequired,
   setMenus: PropTypes.func.isRequired,
   redisEndpointUrl: PropTypes.string.isRequired,
-  redisPrefix: PropTypes.func.isRequired,
+  redisKeyPrefix: PropTypes.func.isRequired,
 }
 
 export function AdminSendRedisCommand({
   triggerRefresh,
   redisEndpointUrl,
-  redisPrefix,
+  redisKeyPrefix,
 }) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const key = redisPrefix(e.target.elements.key.value)
+    const key = redisKeyPrefix(e.target.elements.key.value)
     const value = e.target.elements.value.value
     simplePost(redisEndpointUrl, { key, value })
       .then(() => {
@@ -229,7 +234,7 @@ export function AdminSendRedisCommand({
 AdminSendRedisCommand.propTypes = {
   triggerRefresh: PropTypes.func,
   redisEndpointUrl: PropTypes.string.isRequired,
-  redisPrefix: PropTypes.func.isRequired,
+  redisKeyPrefix: PropTypes.func.isRequired,
 }
 
 export function AdminDangerPanel({ refreshMenus }) {

@@ -8,10 +8,9 @@ import AdminPanels from "../components/AdminPanels"
 
     const { admin, homeUrl, baseUrl } = window.APP_DATA
 
-    const redisPrefix = (value) => {
-      const escapedValue = value.replace(/[^a-zA-Z0-9_]/g, "_")
-      const prefix = escapedValue.toUpperCase()
-      return `RUBINTV_CONTROL_${prefix}`
+    const redisKeyPrefix = (key) => {
+      const suffix = key.replace(/[^a-zA-Z0-9_]/g, "_").toUpperCase()
+      return `RUBINTV_CONTROL_${suffix}`
     }
     const redisEndpointUrl = new URL("api/redis", homeUrl).toString()
 
@@ -64,7 +63,7 @@ import AdminPanels from "../components/AdminPanels"
         initMenus={menus}
         initAdmin={admin}
         redisEndpointUrl={redisEndpointUrl}
-        redisPrefix={redisPrefix}
+        redisKeyPrefix={redisKeyPrefix}
         authEndpointUrl={authEndpointUrl}
       />
     )
