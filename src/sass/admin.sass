@@ -77,13 +77,18 @@
         background: inherit
         display: flex
         flex-direction: column
+        position: absolute
+        width: 218px
         .dropdown-item
             background: #333
             list-style: none
             padding: 0.5em
             cursor: pointer
+            white-space: nowrap
+            text-overflow: ellipsis
+            overflow: hidden
             &:hover
-                background: rgba(255,255,255,0.1)
+                background: #555
                 
 .dropdown-menu.hidden
     .dropdown-button
