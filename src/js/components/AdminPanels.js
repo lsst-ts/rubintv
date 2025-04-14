@@ -115,7 +115,7 @@ export function RedisPanel({ menus, setMenus, redisEndpointUrl, redisPrefix }) {
     <div className="admin-panel">
       <div className="admin-panel-part">
         {menus.map((menu, index) => (
-          <DropDownMenu
+          <DropDownMenuContainer
             key={index}
             menu={menu}
             onItemSelect={(item) => handleItemSelect(menu.key, item)}
@@ -131,6 +131,39 @@ export function RedisPanel({ menus, setMenus, redisEndpointUrl, redisPrefix }) {
       </div>
     </div>
   )
+}
+
+export function DropDownMenuContainer({ menu, onItemSelect }) {
+  const [status, setStatus] = useState(null)
+
+  const handleSelect = (item) => {
+    try {
+      onItemSelect(item)
+      setStatus(true)
+      setTimeout(() => setStatus(null), 2000)
+    } catch (error) {
+      console.error("Error selecting item:", error)
+      setStatus(false)
+      setTimeout(() => setStatus(null), 2000)
+    }
+  }
+
+  return (
+    <div className="dropdown-menu-container box">
+      <div className="dropdown-menu-header box-header">
+        <h4 className="dropdown-menu-title box-title">{menu.title}</h4>
+        <span
+          className={status !== null ? (status ? "success" : "fail") : ""}
+        ></span>
+      </div>
+      <DropDownMenu menu={menu} onItemSelect={handleSelect} />
+    </div>
+  )
+}
+
+DropDownMenuContainer.propTypes = {
+  menu: PropTypes.object.isRequired,
+  onItemSelect: PropTypes.func.isRequired,
 }
 
 RedisPanel.propTypes = {

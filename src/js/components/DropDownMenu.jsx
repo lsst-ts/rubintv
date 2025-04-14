@@ -6,6 +6,41 @@ export default function DropDownMenu({ menu, onItemSelect }) {
   const [selectedItem, setSelectedItem] = useState(menu.selectedItem)
 
   useEffect(() => setSelectedItem(menu.selectedItem), [menu.selectedItem])
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest(".dropdown-menu")) {
+        setIsOpen(false)
+      }
+    }
+
+    if (isOpen) {
+      window.addEventListener("click", handleClickOutside)
+    } else {
+      window.removeEventListener("click", handleClickOutside)
+    }
+
+    return () => {
+      window.removeEventListener("click", handleClickOutside)
+    }
+  }
+  , [isOpen])
+  const handleKeyDown = (event) => {
+    if (event.key === "Escape") {
+      setIsOpen(false)
+    }
+  }
+  useEffect(() => {
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown)
+    } else {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }
+  , [isOpen])
 
   const toggleMenu = () => setIsOpen(!isOpen)
 
@@ -16,10 +51,6 @@ export default function DropDownMenu({ menu, onItemSelect }) {
   }
 
   return (
-    <div className="menu box">
-      <div className="menu-header box-header">
-        <h4 className="menu-title box-title">{menu.title}</h4>
-      </div>
       <div className={isOpen ? "dropdown-menu" : "dropdown-menu hidden"}>
         <button
           className={
@@ -41,7 +72,6 @@ export default function DropDownMenu({ menu, onItemSelect }) {
           ))}
         </div>
       </div>
-    </div>
   )
 }
 
