@@ -1,11 +1,13 @@
-#admin-panels
+.admin-panels-container
     width: min-content
     margin-bottom: 2em
+    background: rgba(0,0,0,0.2)
+.admin-panels-header
+    padding: 1.5em 0em 0.2em 2em
 .admin-panel
     display: flex
     flex-direction: column
-    padding: 2em
-    background: rgba(0,0,0,0.2)
+    padding: 0 1.5em 0 1.7em
     gap: 2em
 .admin-panel-part
     display: flex
@@ -136,4 +138,8 @@
             color: #aaa
 
 .danger
-    background: #933
+    padding: 1.4em 0.9em
+    .admin-panel-part
+        padding: 0.9em 0.7em
+        border: 2px red dashed
+        border-radius: 6px

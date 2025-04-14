@@ -65,21 +65,21 @@ export default function AdminPanels({
 
   return (
     <>
-      {admin.name && (
+      {admin.name && <h3 className="admin-greeting">Hello {firstName}</h3>}
+      <div className="admin-panels-container">
         <div className="admin-panels-header">
-          <h3 className="admin-greeting">Hello {firstName}</h3>
+          <h3 className="admin-panels-title">Redis Controls</h3>
         </div>
-      )}
-      <h2>Settings</h2>
-      <RedisPanel
-        menus={menus}
-        setMenus={setMenus}
-        redisEndpointUrl={redisEndpointUrl}
-        redisKeyPrefix={redisKeyPrefix}
-      />
-      <ModalProvider>
-        <AdminDangerPanel refreshMenus={refreshMenus} />
-      </ModalProvider>
+        <RedisPanel
+          menus={menus}
+          setMenus={setMenus}
+          redisEndpointUrl={redisEndpointUrl}
+          redisKeyPrefix={redisKeyPrefix}
+        />
+        <ModalProvider>
+          <AdminDangerPanel refreshMenus={refreshMenus} />
+        </ModalProvider>
+      </div>
     </>
   )
 }
