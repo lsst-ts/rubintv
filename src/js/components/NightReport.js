@@ -190,7 +190,7 @@ function NightReportPlots({
   selected,
   camera,
   locationName,
-  baseUrl,
+  homeUrl,
 }) {
   const plots = nightReport.plots
   return (
@@ -208,7 +208,7 @@ function NightReportPlots({
             className={`tab-content plots-grid ${isSelected}`}
           >
             {groupedPlots.map((plot) => {
-              const imgUrl = `${baseUrl}plot_image/${locationName}/${camera.name}/${group}/${plot.filename}`
+              const imgUrl = `${homeUrl}plot_image/${locationName}/${camera.name}/${group}/${plot.filename}`
               return (
                 <figure key={plot.hash} className="plot">
                   <a href={imgUrl}>
@@ -232,7 +232,7 @@ NightReportPlots.propTypes = {
   selected: PropTypes.string,
   camera: PropTypes.object,
   locationName: PropTypes.string,
-  baseUrl: PropTypes.string,
+  homeUrl: PropTypes.string,
 }
 
 function NightReport({
@@ -240,7 +240,7 @@ function NightReport({
   initialDate,
   camera,
   locationName,
-  baseUrl,
+  homeUrl,
 }) {
   const [date, setDate] = useState(initialDate)
   const [nightReport, setNightReport] = useState(initialNightReport)
@@ -298,7 +298,7 @@ function NightReport({
           selected={selected}
           camera={camera}
           locationName={locationName}
-          baseUrl={baseUrl}
+          homeUrl={homeUrl}
         />
       </div>
     </>
@@ -334,6 +334,6 @@ NightReport.propTypes = {
    * avoid using js string wrangling to find it. Used to construct plot paths
    * for linking to.
    */
-  baseUrl: PropTypes.string,
+  homeUrl: PropTypes.string,
 }
 export default NightReport
