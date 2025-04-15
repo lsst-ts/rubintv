@@ -69,7 +69,10 @@ function ChannelCell({ event, chanName, chanColour, noEventReplacement }) {
           className={`button button-table ${chanName}`}
           style={{ backgroundColor: chanColour }}
           href={`${eventURL}?key=${event.key}`}
-        />
+          aria-label={chanName} // Add accessible name
+        >
+          {chanName} {/* Add text content for accessibility */}
+        </a>
       )}
       {!event && noEventReplacement && (
         <p className="center-text cell-emoji">{noEventReplacement}</p>
@@ -113,6 +116,12 @@ function TableRow({
     }
   })
 
+  // If this row of metadata contains a value for the
+  // channel name "controller", then extract that value
+  const controller = metadataRow["controller"]
+    ? metadataRow["controller"]
+    : null
+
   return (
     <tr>
       <td className="grid-cell seq" id={`seqNum-${seqNum}`}>
@@ -132,12 +141,10 @@ function TableRow({
       {camera.image_viewer_link && siteLocHasCCS && (
         <td className="grid-cell">
           <a
-            href={replaceInString(
-              camera.image_viewer_link,
-              siteLoc,
-              dayObs,
-              seqNum
-            )}
+            href={replaceInString(camera.image_viewer_link, dayObs, seqNum, {
+              siteLoc: siteLoc,
+              controller: controller,
+            })}
             className="button button-table image-viewer-link"
           />
         </td>
@@ -382,7 +389,7 @@ FoldoutCell.propTypes = {
 
 function handleCopyButton(date, seqNum, template) {
   const dayObs = date.replaceAll("-", "")
-  const dataStr = replaceInString(template, "", dayObs, seqNum)
+  const dataStr = replaceInString(template, dayObs, seqNum)
   navigator.clipboard.writeText(dataStr)
   const responseMsg = _elWithAttrs("div", {
     class: "copied",
@@ -398,3 +405,5 @@ function handleCopyButton(date, seqNum, template) {
   })
   document.body.append(responseMsg)
 }
+
+export { TableRow }

@@ -413,7 +413,7 @@ cameras:
         metaColumns: []
 
     image_viewer_link: "http://lsstcam-mcm.{siteLoc}.lsst.org/FITSInfo/view.html\
-      ?image=MC_O_{dayObs}_{seqNum}&raft=all&color=grey\
+      ?image=MC_{controller:default=O}_{dayObs}_{seqNum}&raft=all&color=grey\
       &bias=Simple+Overscan+Correction&scale=Per-Segment&source=raw"
 
   - name: lsstcam_aos

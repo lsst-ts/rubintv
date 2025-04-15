@@ -108,7 +108,12 @@ export function sanitiseString(str) {
   return sanitised.toLowerCase()
 }
 
-export function replaceInString(link, siteLoc, dayObs, seqNum) {
+export function replaceInString(
+  link,
+  dayObs,
+  seqNum,
+  { siteLoc = "", controller = "" } = {}
+) {
   const siteLocToDomain = (siteLoc) => {
     const siteLocMap = {
       summit: "cp",
@@ -118,6 +123,10 @@ export function replaceInString(link, siteLoc, dayObs, seqNum) {
   }
   const formattedLink = link
     .replace("{siteLoc}", siteLocToDomain(siteLoc))
+    .replace(
+      /{controller(:default=(\w+))?}/,
+      (_, __, defaultValue) => controller || defaultValue || ""
+    )
     .replace("{dayObs}", dayObs)
     .replace("{seqNum}", seqNum.padStart(6, "0"))
   return formattedLink
