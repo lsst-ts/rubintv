@@ -22,7 +22,7 @@ locations:
 
   - name: slac
     title: SLAC
-    profile_name: rubin-rubintv-data-usdf
+    profile_name: rubin-rubintv-data-usdf-embargo
     bucket_name: rubin-rubintv-data-usdf
     logo: SLAC_Logo.svg
     camera_groups:
