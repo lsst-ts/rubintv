@@ -70,9 +70,7 @@ function ChannelCell({ event, chanName, chanColour, noEventReplacement }) {
           style={{ backgroundColor: chanColour }}
           href={`${eventURL}?key=${event.key}`}
           aria-label={chanName} // Add accessible name
-        >
-          {chanName} {/* Add text content for accessibility */}
-        </a>
+        ></a>
       )}
       {!event && noEventReplacement && (
         <p className="center-text cell-emoji">{noEventReplacement}</p>
