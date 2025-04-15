@@ -55,7 +55,7 @@ locations:
 
   - name: summit-usdf
     title: Summit
-    profile_name: rubin-rubintv-data-summit
+    profile_name: rubin-rubintv-data-summit-embargo
     bucket_name: rubin-rubintv-data-summit
     logo: Summit.jpg
     text_colour: "#fff"
