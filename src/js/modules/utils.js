@@ -115,11 +115,13 @@ export function replaceInString(
   { siteLoc = "", controller = "" } = {}
 ) {
   const siteLocToDomain = (siteLoc) => {
+    // Maps site location to domain
+    // can only be summit or base
     const siteLocMap = {
       summit: "cp",
       base: "ls",
     }
-    return siteLocMap[siteLoc] || siteLoc
+    return siteLocMap[siteLoc] || ""
   }
   const formattedLink = link
     .replace("{siteLoc}", siteLocToDomain(siteLoc))
