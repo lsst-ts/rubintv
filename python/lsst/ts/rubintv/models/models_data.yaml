@@ -1,6 +1,6 @@
 bucket_configurations:
   usdf-k8s:
-    [ summit-usdf, slac, base-usdf, tucson-usdf ]
+    [ summit-usdf, slac ]
   base:
     [ base ]
   tucson:
@@ -22,13 +22,11 @@ locations:
 
   - name: slac
     title: SLAC
-    profile_name: rubin-rubintv-data-usdf
+    profile_name: rubin-rubintv-data-usdf-embargo
     bucket_name: rubin-rubintv-data-usdf
     logo: SLAC_Logo.svg
     camera_groups:
       Nightly Validation: [ lsstcam, lsstcam_aos ]
-      # Telescopes: [ tma ]
-      # Cleanroom Testing: [ slac_lsstcam, slac_ts8 ]
 
   - name: base-usdf
     title: Base
@@ -39,8 +37,8 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ lsstcam, lsstcam_aos ]
-      Cameras: [ auxtel, fake_auxtel ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos ]
+      Cameras: [ fake_auxtel ]
       Telescopes: [ tma ]
     services: [ auxtel, tma ]
 
@@ -51,12 +49,13 @@ locations:
     bucket_name: rubin-rubintv-data-tts
     logo: cactus.svg
     camera_groups:
-      Cameras: [ auxtel, fake_auxtel, comcam, comcam_aos ]
+      Telescope Mounted: [ auxtel ]
+      Cameras: [ fake_auxtel, comcam, comcam_aos ]
       Telescopes: [ tma ]
 
   - name: summit-usdf
     title: Summit
-    profile_name: rubin-rubintv-data-summit
+    profile_name: rubin-rubintv-data-summit-embargo
     bucket_name: rubin-rubintv-data-summit
     logo: Summit.jpg
     text_colour: "#fff"
@@ -76,8 +75,8 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ lsstcam, lsstcam_aos ]
-      Cameras: [ auxtel, fake_auxtel ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos ]
+      Cameras: [ fake_auxtel ]
       Telescopes: [ tma ]
 
   - name: tucson
@@ -413,8 +412,8 @@ cameras:
         mediaType: video
         metaColumns: []
 
-    image_viewer_link: "http://lsstcam-mcm.cp.lsst.org/FITSInfo/view.html\
-      ?image=MC_C_{dayObs}_{seqNum}&raft=all&color=grey\
+    image_viewer_link: "http://lsstcam-mcm.{siteLoc}.lsst.org/FITSInfo/view.html\
+      ?image=MC_{controller:default=O}_{dayObs}_{seqNum}&raft=all&color=grey\
       &bias=Simple+Overscan+Correction&scale=Per-Segment&source=raw"
 
   - name: lsstcam_aos
@@ -426,7 +425,7 @@ cameras:
       label: Time since last refocus
     channels:
       - name: fp_donut_gallery
-        title: Focal Plane Donut Gallery
+        title: Donut Gallery
         colour: "#c7e692"
       - name: zk_residual_pyramid
         title: Zernike Residual Pyramid
@@ -590,20 +589,16 @@ metadata_cols:
       The type of test being run, e.g. superflats
 
   lsstcam:
-    Run number:
-      The run number, as taken from the exposure record's science_program field
     Exposure time:
       The image exposure time
-    Dark time:
-      The image dark time
     Image type:
       The image type, e.g. bias, dark, flat etc
-    Test type:
-      The type of test being run, e.g. superflats
 
   lsstcam_aos:
     Exposure time:
-      The image dark time
+      The image exposure time
+    Image type:
+      The image type, e.g. bias, dark, flat etc
 
   ts8:
     Run number:

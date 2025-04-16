@@ -1,41 +1,54 @@
+.admin-panels-container
+    width: min-content
+    margin-bottom: 2em
+    background: rgba(0,0,0,0.2)
+.admin-panels-header
+    padding: 1.5em 0em 0.2em 2em
 .admin-panel
     display: flex
-    margin-bottom: 2em
+    flex-direction: column
+    padding: 0 1.5em 0 1.7em
+    gap: 2em
+.admin-panel-part
+    display: flex
     gap: 1.5em
-.menu
+.box
     display: flex
     flex-direction: column
     padding: 1em
     background: #656565
     border-radius: 6px
     box-shadow: 3px 3px 10px rgba(0,0,0,0.2)
-    .menu-header
+    min-width: 250px
+    .box-header
         display: flex
         justify-content: space-between
         align-items: center
         margin-bottom: 0.5em
-        .menu-title
+        .menu-title, .box-title
             color: #fff
             font-size: 1.1em
             padding-left: 3px
-        span
+        .indicator
             font-size: 0.6em
-            &::after
+            .status-icon
                 display: flex
                 justify-content: center
                 align-items: center
-                content: "●"
                 width: 1.7em
                 height: 1.7em
                 border-radius: 50%
                 color: #555
-                transition: 0.3s
-            &.success::after
-                content: "✓"
+                background-color: transparent
+                transition: all 0.3s ease
+            &.success .status-icon
                 background-color: #0f0
-            &.fail::after
-                content: "✗"
+            &.fail .status-icon
                 background-color: #f00
+            &.transition .status-icon
+                transform: scale(1.2)
+                opacity: 0.8
+
 .dropdown-menu
     color: #fff
     min-width: 200px
@@ -68,13 +81,18 @@
         background: inherit
         display: flex
         flex-direction: column
+        position: absolute
+        width: 218px
         .dropdown-item
             background: #333
             list-style: none
             padding: 0.5em
             cursor: pointer
+            white-space: nowrap
+            text-overflow: ellipsis
+            overflow: hidden
             &:hover
-                background: rgba(255,255,255,0.1)
+                background: #555
                 
 .dropdown-menu.hidden
     .dropdown-button
@@ -83,3 +101,51 @@
                 transform: rotate(90deg)
     .dropdown-content
             visibility: hidden
+
+.box button
+    background: #555
+    color: #fff
+    border: none
+    padding: 0.5em 1em
+    border-radius: 6px
+    cursor: pointer
+    &:hover
+        background: #222
+    &:active
+        background: #777
+
+
+.box form
+    display: flex
+    flex-direction: row
+    justify-content: space-between
+    align-items: flex-end
+    gap: 1em
+    label
+        display: none
+        margin-left: 3px
+        color: #fff
+    input[type="text"]
+        background: #333
+        color: #fff
+        border: none
+        padding: 0.5em
+        border-radius: 6px
+        width: 100%
+        margin-top: 0.5em
+        &:focus
+            outline: none
+            box-shadow: 0 0 5px rgba(255,255,255,0.3)
+        &::placeholder
+            color: #aaa
+
+.danger-panel
+    padding: 1.5em 0.9em 0.9em
+    .danger-panel-border
+        padding: 0.9em 0.7em
+        border: 2px red dashed
+        border-radius: 6px
+    .danger-panel-title
+        color: #f00
+        font-size: 1.2em
+        padding: 0em 0em 0.6em 0.2em

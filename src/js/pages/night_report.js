@@ -13,7 +13,7 @@ import NightReport from "../components/NightReport"
     camera = {},
     nightReport = {},
     date = "",
-    baseUrl = "",
+    homeUrl = "",
     isHistorical,
   } = window.APP_DATA
 
@@ -29,7 +29,7 @@ import NightReport from "../components/NightReport"
       camera={camera}
       locationName={locationName}
       initialDate={date}
-      baseUrl={baseUrl}
+      homeUrl={homeUrl}
     />
   )
 })()

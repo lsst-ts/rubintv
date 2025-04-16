@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react'
-import PropTypes from 'prop-types'
-import { eventType } from './componentPropTypes'
+import React, { useEffect, useRef } from "react"
+import PropTypes from "prop-types"
+import { eventType } from "./componentPropTypes"
 
 export default function PrevNext({ prevNext, eventURL }) {
   const left = useRef(null)
@@ -14,9 +14,9 @@ export default function PrevNext({ prevNext, eventURL }) {
         left.current?.click()
       }
     }
-    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener("keydown", handleKeyDown)
     return function cleanup() {
-      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener("keydown", handleKeyDown)
     }
   }, [])
   const prev = prevNext.prev
@@ -52,4 +52,5 @@ PrevNext.propTypes = {
     }),
     PropTypes.object,
   ]),
+  eventURL: PropTypes.string,
 }

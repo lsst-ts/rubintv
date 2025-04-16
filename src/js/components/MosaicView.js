@@ -212,7 +212,7 @@ ChannelMedia.propTypes = {
 }
 
 function ChannelImage({ mediaURL }) {
-  const imgSrc = new URL(`event_image/${mediaURL}`, APP_DATA.baseUrl)
+  const imgSrc = new URL(`event_image/${mediaURL}`, window.APP_DATA.homeUrl)
   return (
     <div className="viewImage">
       <a href={imgSrc}>
@@ -227,7 +227,7 @@ ChannelImage.propTypes = {
 
 function ChannelVideo({ mediaURL }) {
   const [isLoaded, setIsLoaded] = useState(false)
-  const videoSrc = new URL(`event_video/${mediaURL}`, APP_DATA.baseUrl)
+  const videoSrc = new URL(`event_video/${mediaURL}`, window.APP_DATA.homeUrl)
   const vidID = `v_${getStrHashCode(mediaURL)}`
   return (
     <div className="viewVideo">

@@ -36,18 +36,30 @@ async def historical_reset(request: Request) -> None:
     await current.clear_todays_data()
 
 
-@api_router.post("/redis_post")
+@api_router.post("/redis")
 async def redis_post(request: Request, message: dict) -> dict:
     redis_client = await validate_redis_connection(request.app.state)
     if "key" not in message:
         raise HTTPException(400, "Message must contain a 'key' key")
     if "value" not in message:
         raise HTTPException(400, "Message must contain a 'value' key")
+    key = message["key"]
+    value = message["value"]
+    if key == "clear_redis" and value == "true":
+        success = False
+        try:
+            success = await redis_client.flushdb()
+            logger.info("Redis database cleared", extra={"success": success})
+        except Exception as e:
+            logger.error(f"Failed to clear Redis database: {e}")
+            raise HTTPException(500, "Failed to clear Redis database")
+        return {"success": success}
+
     success = await redis_client.set(message["key"], message["value"])
     return {"success": success}
 
 
-@api_router.get("/redis_get", response_model=dict)
+@api_router.get("/redis", response_model=dict)
 async def redis_get(request: Request, keys: str) -> dict:
     if not keys:
         raise HTTPException(400, "No keys provided")

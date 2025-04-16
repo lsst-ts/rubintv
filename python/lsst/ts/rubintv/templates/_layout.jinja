@@ -24,7 +24,8 @@
         window.APP_DATA = {}
         window.APP_DATA.locationName = {{ location.name|tojson if location else "" }}
         window.APP_DATA.siteLocation = {{ site_location|tojson if site_location else "null" }}
-        window.APP_DATA.imagesURL = "{{ url_for('static', path='images')}}"
+        window.APP_DATA.homeUrl = "{{ url_for('home') }}"
+        window.APP_DATA.imagesUrl = "{{ url_for('static', path='images')}}"
         window.APP_DATA.pathPrefix = {{ path_prefix|tojson if path_prefix else "null" }}
     </script>
 

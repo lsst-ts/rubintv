@@ -4,31 +4,27 @@ import { FilterDialog } from "./TableFilter"
 import { useModal } from "./Modal"
 import {
   indicatorForAttr,
-  _elWithClass,
   _elWithAttrs,
   replaceInString,
   _getById,
 } from "../modules/utils"
 import { metadatumType } from "./componentPropTypes"
 
+// get the site location from the global APP_DATA object
+// which is set in the template
+const siteLoc = window.APP_DATA.siteLocation
+// TODO: this should be set in the backend
+// See DM-50192
+const hasCCS = (siteLoc) => {
+  return ["summit", "base"].includes(siteLoc)
+}
+const siteLocHasCCS = hasCCS(siteLoc)
+
 function DictMetadata({ data, seqNum, columnName }) {
-  let buttonIcon
-  if ("DISPLAY_VALUE" in data) {
-    buttonIcon = data.DISPLAY_VALUE
-  } else {
-    buttonIcon = "❓"
+  if (typeof data !== "object" || data === null) {
+    return null
   }
-  return (
-    <button
-      onClick={() => _foldoutCell(seqNum, columnName, data)}
-      className="button button-table"
-      data-seq={seqNum}
-      data-column={columnName}
-      data-dict={JSON.stringify(data)}
-    >
-      {buttonIcon}
-    </button>
-  )
+  return <FoldoutCell seqNum={seqNum} columnName={columnName} data={data} />
 }
 DictMetadata.propTypes = {
   data: PropTypes.object,
@@ -43,6 +39,8 @@ function MetadataCell({ data, indicator, seqNum, columnName }) {
   if (typeof data === "number" && data % 1 !== 0) {
     toDisplay = data.toFixed(2)
     title = data
+  } else if (typeof data === "boolean") {
+    toDisplay = data ? "True" : "False"
   } else if (data && typeof data === "object") {
     toDisplay = (
       <DictMetadata data={data} seqNum={seqNum} columnName={columnName} />
@@ -71,7 +69,8 @@ function ChannelCell({ event, chanName, chanColour, noEventReplacement }) {
           className={`button button-table ${chanName}`}
           style={{ backgroundColor: chanColour }}
           href={`${eventURL}?key=${event.key}`}
-        />
+          aria-label={chanName} // Add accessible name
+        ></a>
       )}
       {!event && noEventReplacement && (
         <p className="center-text cell-emoji">{noEventReplacement}</p>
@@ -115,6 +114,12 @@ function TableRow({
     }
   })
 
+  // If this row of metadata contains a value for the
+  // channel name "controller", then extract that value
+  const controller = metadataRow["controller"]
+    ? metadataRow["controller"]
+    : null
+
   return (
     <tr>
       <td className="grid-cell seq" id={`seqNum-${seqNum}`}>
@@ -131,10 +136,13 @@ function TableRow({
           ></button>
         </td>
       )}
-      {camera.image_viewer_link && (
+      {camera.image_viewer_link && siteLocHasCCS && (
         <td className="grid-cell">
           <a
-            href={replaceInString(camera.image_viewer_link, dayObs, seqNum)}
+            href={replaceInString(camera.image_viewer_link, dayObs, seqNum, {
+              siteLoc: siteLoc,
+              controller: controller,
+            })}
             className="button button-table image-viewer-link"
           />
         </td>
@@ -266,7 +274,7 @@ export function TableHeader({
       {camera.copy_row_template && (
         <div className="grid-title" id="ctbEmpty"></div>
       )}
-      {camera.image_viewer_link && (
+      {camera.image_viewer_link && siteLocHasCCS && (
         <div className="grid-title sideways">CCS Image Viewer</div>
       )}
       {columns.map((channel) => {
@@ -339,46 +347,42 @@ function seqChannels(camera) {
  * the table is clicked.
  */
 
-function _foldoutCell(seqNum, columnName, data) {
-  const overlay = _elWithClass("div", "full-overlay")
-  overlay.id = "overlay"
-  const modal = _elWithClass("div", "cell-dict-modal")
-  const closeButton = _elWithClass("div", "close-button")
-  closeButton.textContent = "x"
-  closeButton.id = "modal-close"
-  const heading = _elWithAttrs("h3")
-  heading.textContent = `Seq Num: ${seqNum} - ${columnName}`
-  modal.appendChild(closeButton)
-  modal.appendChild(heading)
-
-  const table = _elWithClass("table", "cell-dict")
-  for (const [k, v] of Object.entries(data)) {
-    if (k === "DISPLAY_VALUE") {
-      continue
-    }
-    const tRow = _elWithAttrs("tr")
-    const head = _elWithAttrs("th", { class: "key", text: k })
-    const datum = _elWithAttrs("td", { class: "value", text: v })
-    tRow.appendChild(head)
-    tRow.appendChild(datum)
-    table.appendChild(tRow)
+function FoldoutCell({ seqNum, columnName, data }) {
+  const { showModal } = useModal()
+  const toDisplay = data.DISPLAY_VALUE
+  const handleClick = () => {
+    const content = (
+      <div className="cell-dict-modal">
+        <div className="modal-header">
+          <h3>{`Seq Num: ${seqNum} - ${columnName}`}</h3>
+        </div>
+        <table className="cell-dict">
+          <tbody>
+            {Object.entries(data).map(
+              ([key, value]) =>
+                key !== "DISPLAY_VALUE" && (
+                  <tr key={key}>
+                    <th className="key">{key}</th>
+                    <td className="value">{value}</td>
+                  </tr>
+                )
+            )}
+          </tbody>
+        </table>
+      </div>
+    )
+    showModal(content)
   }
-  modal.appendChild(table)
-  overlay.appendChild(modal)
-  document.querySelector("main").appendChild(overlay)
-  document.activeElement.blur()
-  overlay.addEventListener("click", (e) => {
-    if (e.target.id === "overlay" || e.target.id === "modal-close") {
-      modal.remove()
-      overlay.remove()
-    }
-  })
-  document.body.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      modal.remove()
-      overlay.remove()
-    }
-  })
+  return (
+    <button onClick={handleClick} className="button button-table">
+      {toDisplay}
+    </button>
+  )
+}
+FoldoutCell.propTypes = {
+  seqNum: PropTypes.string,
+  columnName: PropTypes.string,
+  data: PropTypes.object,
 }
 
 function handleCopyButton(date, seqNum, template) {
@@ -399,3 +403,5 @@ function handleCopyButton(date, seqNum, template) {
   })
   document.body.append(responseMsg)
 }
+
+export { TableRow }
