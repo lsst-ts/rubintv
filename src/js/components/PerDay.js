@@ -45,7 +45,7 @@ Button.propTypes = {
 function PerDayChannels({ camera, date, perDay }) {
   const {
     homeUrl,
-    imagesURL: imageRoot,
+    imagesUrl: imageRoot,
     isHistorical,
     locationName,
   } = window.APP_DATA
