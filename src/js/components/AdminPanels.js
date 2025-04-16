@@ -89,7 +89,6 @@ export default function AdminPanels({
     </ModalProvider>
   )
 }
-
 AdminPanels.propTypes = {
   initMenus: PropTypes.array,
   initAdmin: PropTypes.shape({
@@ -108,16 +107,16 @@ export function RedisPanel({
   redisEndpointUrl,
   redisKeyPrefix,
 }) {
-  const [refresh, setRefresh] = useState(false)
+  const handleRefresh = () => {
+    fetchAndUpdateMenus(redisEndpointUrl, menus, setMenus)
+  }
 
   useEffect(() => {
-    fetchAndUpdateMenus(redisEndpointUrl, menus, setMenus)
-  }, [refresh, redisEndpointUrl])
-
-  const triggerRefresh = () => setRefresh((prev) => !prev)
+    handleRefresh()
+  }, [redisEndpointUrl])
 
   const handleItemSelect = (menuKey, item) => {
-    simplePost(redisEndpointUrl, { key: menuKey, value: item.value })
+    return simplePost(redisEndpointUrl, { key: menuKey, value: item.value })
       .then(() => console.log("Redis updated successfully"))
       .catch((error) => console.error("Error posting to redis:", error))
   }
@@ -130,12 +129,13 @@ export function RedisPanel({
             key={index}
             menu={menu}
             onItemSelect={(item) => handleItemSelect(menu.key, item)}
+            redisEndpointUrl={redisEndpointUrl}
           />
         ))}
       </div>
       <div className="admin-panel-part">
         <AdminSendRedisCommand
-          triggerRefresh={triggerRefresh}
+          onRefresh={handleRefresh}
           redisEndpointUrl={redisEndpointUrl}
           redisKeyPrefix={redisKeyPrefix}
         />
@@ -143,40 +143,6 @@ export function RedisPanel({
     </div>
   )
 }
-
-export function DropDownMenuContainer({ menu, onItemSelect }) {
-  const [status, setStatus] = useState(null)
-
-  const handleSelect = (item) => {
-    try {
-      onItemSelect(item)
-      setStatus(true)
-      setTimeout(() => setStatus(null), 2000)
-    } catch (error) {
-      console.error("Error selecting item:", error)
-      setStatus(false)
-      setTimeout(() => setStatus(null), 2000)
-    }
-  }
-
-  return (
-    <div className="dropdown-menu-container box">
-      <div className="dropdown-menu-header box-header">
-        <h4 className="dropdown-menu-title box-title">{menu.title}</h4>
-        <span
-          className={status !== null ? (status ? "success" : "fail") : ""}
-        ></span>
-      </div>
-      <DropDownMenu menu={menu} onItemSelect={handleSelect} />
-    </div>
-  )
-}
-
-DropDownMenuContainer.propTypes = {
-  menu: PropTypes.object.isRequired,
-  onItemSelect: PropTypes.func.isRequired,
-}
-
 RedisPanel.propTypes = {
   menus: PropTypes.array.isRequired,
   setMenus: PropTypes.func.isRequired,
@@ -184,8 +150,37 @@ RedisPanel.propTypes = {
   redisKeyPrefix: PropTypes.func.isRequired,
 }
 
+export function DropDownMenuContainer({ menu, onItemSelect }) {
+  const [redisChanged, updateRedisStatus] = useRedisStatus()
+
+  const handleSelect = (item) => {
+    onItemSelect(item)
+      .then(() => {
+        updateRedisStatus(true)
+      })
+      .catch((error) => {
+        console.error("Error selecting item:", error)
+        updateRedisStatus(false)
+      })
+  }
+
+  return (
+    <div className="dropdown-menu-container box">
+      <div className="dropdown-menu-header box-header">
+        <h4 className="dropdown-menu-title box-title">{menu.title}</h4>
+        <StatusIndicator status={redisChanged} />
+      </div>
+      <DropDownMenu menu={menu} onItemSelect={handleSelect} />
+    </div>
+  )
+}
+DropDownMenuContainer.propTypes = {
+  menu: PropTypes.object.isRequired,
+  onItemSelect: PropTypes.func.isRequired,
+}
+
 export function AdminSendRedisCommand({
-  triggerRefresh,
+  onRefresh,
   redisEndpointUrl,
   redisKeyPrefix,
 }) {
@@ -198,7 +193,7 @@ export function AdminSendRedisCommand({
     simplePost(redisEndpointUrl, { key, value })
       .then(() => {
         updateRedisStatus(true)
-        if (triggerRefresh) triggerRefresh()
+        if (onRefresh) onRefresh()
       })
       .catch((error) => {
         updateRedisStatus(false)
@@ -210,11 +205,7 @@ export function AdminSendRedisCommand({
     <div className="redis-command-panel box">
       <div className="redis-command-header box-header">
         <h4 className="redis-command-title box-title">Redis Command</h4>
-        <span
-          className={
-            redisChanged !== null ? (redisChanged ? "success" : "fail") : ""
-          }
-        ></span>
+        <StatusIndicator status={redisChanged} />
       </div>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
@@ -236,9 +227,8 @@ export function AdminSendRedisCommand({
     </div>
   )
 }
-
 AdminSendRedisCommand.propTypes = {
-  triggerRefresh: PropTypes.func,
+  onRefresh: PropTypes.func,
   redisEndpointUrl: PropTypes.string.isRequired,
   redisKeyPrefix: PropTypes.func.isRequired,
 }
@@ -279,11 +269,7 @@ export function AdminDangerPanel({ refreshMenus, redisEndpointUrl }) {
       <div className="admin-header box">
         <div className="admin-header box-header">
           <h4 className="admin-title box-title">Clear Redis</h4>
-          <span
-            className={
-              redisChanged !== null ? (redisChanged ? "success" : "fail") : ""
-            }
-          ></span>
+          <StatusIndicator status={redisChanged} />
         </div>
         <button className="danger-button" onClick={handleClick}>
           Clear Redis
@@ -292,8 +278,26 @@ export function AdminDangerPanel({ refreshMenus, redisEndpointUrl }) {
     </div>
   )
 }
-
 AdminDangerPanel.propTypes = {
   redisEndpointUrl: PropTypes.string.isRequired,
   refreshMenus: PropTypes.func,
+}
+
+export function StatusIndicator({ status }) {
+  return (
+    <div
+      className={
+        status !== null
+          ? status
+            ? "success indicator"
+            : "fail indicator"
+          : "indicator"
+      }
+    >
+      <span className="status-icon">●</span>
+    </div>
+  )
+}
+StatusIndicator.propTypes = {
+  status: PropTypes.bool,
 }

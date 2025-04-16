@@ -29,24 +29,26 @@
             color: #fff
             font-size: 1.1em
             padding-left: 3px
-        span
+        .indicator
             font-size: 0.6em
-            &::after
+            .status-icon
                 display: flex
                 justify-content: center
                 align-items: center
-                content: "●"
                 width: 1.7em
                 height: 1.7em
                 border-radius: 50%
                 color: #555
-                transition: 0.3s
-            &.success::after
-                content: "✓"
+                background-color: transparent
+                transition: all 0.3s ease
+            &.success .status-icon
                 background-color: #0f0
-            &.fail::after
-                content: "✗"
+            &.fail .status-icon
                 background-color: #f00
+            &.transition .status-icon
+                transform: scale(1.2)
+                opacity: 0.8
+
 .dropdown-menu
     color: #fff
     min-width: 200px
