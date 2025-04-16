@@ -68,7 +68,12 @@ export function useModal() {
   return { modalContent, showModal, closeModal }
 }
 
-export const ConfirmationModal = ({ title, message, onConfirm, onCancel }) => {
+export const ConfirmationModal = ({
+  title = "Confirmation",
+  message = "Are you sure?",
+  onConfirm = () => {},
+  onCancel = () => {},
+}) => {
   return (
     <div>
       <div className="modal-header">
@@ -85,10 +90,4 @@ ConfirmationModal.propTypes = {
   message: PropTypes.string.isRequired,
   onConfirm: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
-}
-ConfirmationModal.defaultProps = {
-  title: "Confirmation",
-  message: "Are you sure?",
-  onConfirm: () => {},
-  onCancel: () => {},
 }
