@@ -2,17 +2,16 @@ import { simplePost, _getById, _elWithAttrs } from "./utils"
 import { WebsocketClient } from "./ws-service-client"
 
 export function listenForHistoricalReset() {
-  const form = _getById("historicalReset")
-  form.addEventListener("click", function (e) {
+  const historyResetButton = _getById("historicalReset")
+  historyResetButton.addEventListener("click", function (e) {
     e.preventDefault()
     simplePost("api/historical_reset")
-      .then((data) => {
-        const resetForm = _getById("historicalReset")
-        resetForm.children[0].disabled = true
+      .then(() => {
+        historyResetButton.disabled = true
         const notice = _elWithAttrs("h3", {
           text: "Historical data reloading...",
         })
-        resetForm.after(notice)
+        historyResetButton.after(notice)
         const ws = new WebsocketClient()
         ws.subscribe("historicalStatus")
         window.addEventListener("historicalStatus", (message) => {

@@ -44,8 +44,8 @@ Button.propTypes = {
 
 function PerDayChannels({ camera, date, perDay }) {
   const {
-    baseUrl,
-    imagesURL: imageRoot,
+    homeUrl,
+    imagesUrl: imageRoot,
     isHistorical,
     locationName,
   } = window.APP_DATA
@@ -69,7 +69,7 @@ function PerDayChannels({ camera, date, perDay }) {
                 channels[channels.map((chan) => chan.name).indexOf(channelName)]
               const label = channel.label ? channel.label : channel.title
               const filename = event.filename
-              const url = `${baseUrl}event_video/${locationName}/${camera.name}/${channelName}/${filename}`
+              const url = `${homeUrl}event_video/${locationName}/${camera.name}/${channelName}/${filename}`
               const icon = channel.icon === "" ? channelName : channel.icon
               const iconUrl = getImageURL(`${icon}.svg`)
               return (
@@ -124,12 +124,12 @@ function NightReportLink({ camera, date, nightReportLink }) {
   if (nightReportLink === "") {
     return null
   }
-  const { baseUrl, locationName } = window.APP_DATA
+  const { homeUrl, locationName } = window.APP_DATA
 
-  let link = `${baseUrl}${locationName}/${camera.name}/night_report/${date}`
+  let link = `${homeUrl}${locationName}/${camera.name}/night_report/${date}`
   let label = `${camera.night_report_label} for ${date}`
   if (nightReportLink === "current") {
-    link = `${baseUrl}${locationName}/${camera.name}/night_report`
+    link = `${homeUrl}${locationName}/${camera.name}/night_report`
     label = camera.night_report_label
   }
 
@@ -137,7 +137,7 @@ function NightReportLink({ camera, date, nightReportLink }) {
     <div id="night_report_link">
       <h3>Night&#39;s Evolution</h3>
       <a className="button button-large night-report" href={link}>
-        <img src={`${baseUrl}static/images/crescent-moon.svg`} />
+        <img src={`${homeUrl}static/images/crescent-moon.svg`} />
         {label}
       </a>
     </div>

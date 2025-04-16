@@ -40,18 +40,12 @@ export async function simpleGet(url, params = {}) {
   Object.entries(params).forEach(([key, value]) => {
     urlObj.searchParams.append(key, value)
   })
-  try {
-    const res = await fetch(urlObj)
-    if (!res.ok) {
-      throw new Error(
-        `Error fetching ${urlObj}\nResponse status: ${res.statusText}`
-      )
-    }
-    const data = await res.text()
-    return data
-  } catch (error) {
-    console.error(error.message)
+  const res = await fetch(urlObj)
+  if (!res.ok) {
+    throw new Error(`HTTP error for ${url}: ${res.status}`)
   }
+  const data = await res.text()
+  return data
 }
 
 /**
@@ -114,8 +108,27 @@ export function sanitiseString(str) {
   return sanitised.toLowerCase()
 }
 
-export function replaceInString(link, dayObs, seqNum) {
+export function replaceInString(
+  link,
+  dayObs,
+  seqNum,
+  { siteLoc = "", controller = "" } = {}
+) {
+  const siteLocToDomain = (siteLoc) => {
+    // Maps site location to domain
+    // can only be summit or base
+    const siteLocMap = {
+      summit: "cp",
+      base: "ls",
+    }
+    return siteLocMap[siteLoc] || ""
+  }
   const formattedLink = link
+    .replace("{siteLoc}", siteLocToDomain(siteLoc))
+    .replace(
+      /{controller(:default=(\w+))?}/,
+      (_, __, defaultValue) => controller || defaultValue || ""
+    )
     .replace("{dayObs}", dayObs)
     .replace("{seqNum}", seqNum.padStart(6, "0"))
   return formattedLink

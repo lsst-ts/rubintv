@@ -15,18 +15,15 @@
 {% endblock breadcrumb  %}
 
 {% block content %}
-  <div id="admin-panel">
-  {# root for AdminPanel #}
+  <div id="admin-panels">
+  {# root for admin panels #}
   </div>
-  <form action="reload_historical" method="POST" id="historicalReset">
-    <button>Reload All Historical Data</button>
-  </form>
+  <button id="historicalReset">Reload All Historical Data</button>
 {% endblock content %}
 {% block footer_scripts %}
 <script src="{{ url_for('static', path='assets/admin.js') }}"></script>
 <script>
-    window.APP_DATA.redisGetURL = "{{ url_for('redis_get')}}"
     window.APP_DATA.admin = {{ admin|tojson }};
-    window.APP_DATA.baseURL = "{{ request.base_url }}";
+    window.APP_DATA.baseUrl = "{{ request.base_url }}";
 </script>
 {% endblock footer_scripts %}

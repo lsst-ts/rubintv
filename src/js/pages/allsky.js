@@ -1,9 +1,8 @@
 import { WebsocketClient } from "../modules/ws-service-client.js"
 import { _getById } from "../modules/utils.js"
 ;(function () {
-  const locationName = window.APP_DATA.locationName
-  const camera = window.APP_DATA.camera
-  const baseUrl = window.APP_DATA.baseUrl
+  const { locationName, camera, homeUrl } = window.APP_DATA
+
   if (!window.APP_DATA.is_historical) {
     const ws = new WebsocketClient()
     ws.subscribe("service", "camera", locationName, camera.name)
@@ -26,7 +25,7 @@ import { _getById } from "../modules/utils.js"
       const seqNum = evnt.seq_num
       const date = evnt.day_obs
       if (chan === "stills") {
-        url = `${baseUrl}event_image/${locationName}/${camera.name}/stills/${filename}`
+        url = `${homeUrl}event_image/${locationName}/${camera.name}/stills/${filename}`
         currentImage.querySelector("img").setAttribute("src", url)
         currentImage.querySelector("a").setAttribute("href", url)
         currentImage.querySelector(
@@ -35,7 +34,7 @@ import { _getById } from "../modules/utils.js"
         currentImage.querySelector(".desc").textContent = filename
       }
       if (chan === "movies") {
-        url = `${baseUrl}event_video/${locationName}/${camera.name}/movies/${filename}`
+        url = `${homeUrl}event_video/${locationName}/${camera.name}/movies/${filename}`
         const video = currentMovie.querySelector("video")
         const source = video.querySelector("source")
         source.setAttribute("src", url)

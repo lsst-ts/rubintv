@@ -386,27 +386,16 @@ section
 		transform: rotate(180deg)
 
 .cell-dict-modal
-	position: relative
-	background: #000
-	padding: 2.5em 4.5em 2em
-	overflow: scroll
-	max-height: calc(100% - 1.6em)
-	.close-button
-		position: absolute
-		top: 1em
-		right: 1em
-		width: 20px
-		height: 20px
-		display: flex
-		justify-content: center
-		align-items: center
-		cursor: pointer
-		font-size: 12px
+	max-height: calc(100vh - 1.6em)
+	padding: 0 2em
+	overflow-y: scroll
+	
 	.key
 		text-align: left
 	.key::after
 		content: ":"
 		padding-right: 2em
+
 
 .cell-emoji
 	font-size: 2.2em
