@@ -1,49 +1,44 @@
 import React from "react"
 import { createRoot } from "react-dom/client"
-import { TimeSinceLastImageClock } from "../components/Clock"
-import { _getById, _elWithAttrs } from "../modules/utils"
+import { _getById } from "../modules/utils"
 import { WebsocketClient } from "../modules/ws-service-client"
+import MediaDisplay from "../components/MediaDisplay"
 ;(function () {
   const initEvent = window.APP_DATA.initEvent || null
   if (!initEvent) {
     return
   }
-  const { locationName, camera = {}, imgURL, metadata } = window.APP_DATA
+  const {
+    locationName,
+    camera = {},
+    metadata,
+    imgUrl,
+    videoUrl,
+    isCurrent,
+    eventUrl,
+    prevNext,
+  } = window.APP_DATA
   const channel = initEvent.channel_name
-  let baseImgURL = imgURL.split("/").slice(0, -1).join("/")
-  if (!baseImgURL.endsWith("/")) {
-    baseImgURL += "/"
-  }
+
   // eslint-disable-next-line no-unused-vars
-  const ws = new WebsocketClient()
-  ws.subscribe("service", "channel", locationName, camera.name, channel)
-  ws.subscribe("service", "camera", locationName, camera.name)
+  if (isCurrent) {
+    const ws = new WebsocketClient()
+    ws.subscribe("service", "channel", locationName, camera.name, channel)
+    ws.subscribe("service", "camera", locationName, camera.name)
+  }
 
-  const timeSinceRoot = createRoot(_getById("time-since-clock"))
-  timeSinceRoot.render(
-    <TimeSinceLastImageClock metadata={metadata} camera={camera} />
+  // Render the MediaDisplay component instead of manually handling DOM updates
+  const mediaDisplayRoot = createRoot(_getById("event-display"))
+  mediaDisplayRoot.render(
+    <MediaDisplay
+      initialEvent={initEvent}
+      imgUrl={imgUrl}
+      videoUrl={videoUrl}
+      camera={camera}
+      metadata={metadata}
+      eventUrl={eventUrl}
+      prevNext={prevNext}
+      isCurrent={isCurrent}
+    />
   )
-
-  window.addEventListener("channel", (message) => {
-    const { data, dataType } = message.detail
-    if (dataType !== "event" || !data) {
-      return
-    }
-    const { filename, day_obs: dayObs, seq_num: seqNum } = data
-    const oldImg = _getById("eventImage")
-    // create new responsive <img> element
-    const imgSrc = new URL(filename, baseImgURL)
-    const newImg = _elWithAttrs("img", {
-      class: "resp",
-      id: oldImg.id,
-      src: imgSrc,
-    })
-    newImg.addEventListener("load", () => {
-      _getById("date").textContent = dayObs
-      _getById("seqNum").textContent = seqNum
-      _getById("eventName").textContent = filename
-      oldImg.replaceWith(newImg)
-      _getById("eventLink").href = imgSrc
-    })
-  })
 })()
