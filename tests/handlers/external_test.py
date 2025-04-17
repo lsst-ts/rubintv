@@ -92,12 +92,14 @@ async def test_current_channels(
 
                 html = await response.aread()
                 parsed = BeautifulSoup(html, "html.parser")
+                print(parsed.prettify())
                 if mocker.empty_channel.get(loc_cam) == seq_chan.name:
                     assert parsed.select(".event-error")
                     assert not parsed.select(".event-info")
-                else:
-                    assert parsed.select(".event-info")
-                    assert not parsed.select(".event-error")
+                # TODO: check for event-info (it's rendered via React- so
+                # need to use a testing library that can handle React, like
+                # Playwright or Selenium)
+                # See DM-50301
 
 
 @pytest.mark.asyncio
