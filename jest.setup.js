@@ -4,5 +4,5 @@ import "@testing-library/jest-dom"
 window.APP_DATA = {
   date: "2023-10-01",
   siteLocation: "summit",
-  eventURL: "http://example.com", // Add eventURL mock
+  eventUrl: "http://example.com", // Add eventUrl mock
 }

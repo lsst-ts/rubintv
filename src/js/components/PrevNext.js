@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react"
 import PropTypes from "prop-types"
 import { eventType } from "./componentPropTypes"
 
-export default function PrevNext({ prevNext, eventURL }) {
+export default function PrevNext({ prevNext, eventUrl }) {
   const left = useRef(null)
   const right = useRef(null)
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function PrevNext({ prevNext, eventURL }) {
       {prev && (
         <a
           className="prev prev-next button"
-          href={`${eventURL}?key=${prev.key}`}
+          href={`${eventUrl}?key=${prev.key}`}
           ref={left}
         >
           {prev.seq_num}
@@ -35,7 +35,7 @@ export default function PrevNext({ prevNext, eventURL }) {
       {next && (
         <a
           className="next prev-next button"
-          href={`${eventURL}?key=${next.key}`}
+          href={`${eventUrl}?key=${next.key}`}
           ref={right}
         >
           {next.seq_num}
@@ -52,5 +52,5 @@ PrevNext.propTypes = {
     }),
     PropTypes.object,
   ]),
-  eventURL: PropTypes.string,
+  eventUrl: PropTypes.string,
 }

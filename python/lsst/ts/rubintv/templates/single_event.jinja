@@ -5,7 +5,7 @@
 {% endblock pagesubtitle %}
 
 {% block undertitle %}
- {{ event.day_obs }}
+ {{ event.day_obs if not event.is_current else "Latest" }}
 {% endblock undertitle %}
 
 {% block breadcrumb %}
@@ -23,43 +23,41 @@
 
 {% block content %}
 {% if event %}
-  <div class="event-info">
-    <h2>
-      <span id="date">{{ event.day_obs }}</span>: Sequence
-      <span id="seqNum">{{ event.seq_num }}</span>
-    </h2>
-    <nav id="prev-next-nav">
-    </nav>
-    <div id="time-since-clock"></div>
+  <div id="event-display">
+    {# root of React MediaDisplay #}
   </div>
-    {% set img_url = url_for('event_image',
-                    location_name=location.name,
-                    camera_name=camera.name,
-                    channel_name=channel.name,
-                    filename=event.filename) %}
-    <a href="{{ img_url }}" class="event-link" id="eventLink">
-      <img id="eventImage" src="{{ img_url }}" class="resp">
-      <p id="eventName" class="desc">{{ event.filename }}</p>
-    </a>
   {% else %}
     <h2 class="error event-error">There are no events for this channel</h2>
   {% endif %}
 {% endblock content %}
+
 {% block further %}
 {{ super() }}
 {% if event %}
   {% set img_url = url_for('event_image',
-                    location_name=location.name,
-                    camera_name=camera.name,
-                    channel_name=channel.name,
-                    filename=event.filename) %}
+                  location_name=location.name,
+                  camera_name=camera.name,
+                  channel_name=channel.name,
+                  filename=event.filename) %}
+  {% set video_url = url_for('event_video',
+                  location_name=location.name,
+                  camera_name=camera.name,
+                  channel_name=channel.name,
+                  filename=event.filename) %}
+  {% set metadata = event.metadata %}
+  {% set prevnext = event.prevnext %}
   <script>
-    window.APP_DATA.imgURL = "{{ img_url }}"
-    window.APP_DATA.prevNext = {{ prevnext|tojson if prevnext }}
-    window.APP_DATA.eventURL = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}"
+    window.APP_DATA.isCurrent = {{isCurrent|tojson if isCurrent else "false"}};
+    window.APP_DATA.initEvent = {{event|tojson if event else "null"}};
+    window.APP_DATA.metadata = {{metadata|tojson if metadata else "null"}};
+    window.APP_DATA.imgUrl = "{{ img_url }}";
+    window.APP_DATA.videoUrl = "{{ video_url }}";
+    window.APP_DATA.prevNext = {{ prevNext|tojson if prevNext else "null"}};
+    window.APP_DATA.eventUrl = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}";
   </script>
 {% endif %}
 {% endblock further %}
+
 {% block footer_scripts %}
-    <script src='{{ url_for("static", path="assets/single.js") }}'></script>
+    <script src='{{ url_for("static", path="assets/current.js") }}'></script>
 {% endblock footer_scripts %}
