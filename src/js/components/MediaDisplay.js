@@ -35,7 +35,6 @@ export default function MediaDisplay({
       window.removeEventListener("channel", handleChannelEvent)
     }
   }, [imgUrl, videoUrl])
-  console.log("prevNext in MediaDisplay", prevNext)
   return (
     <>
       <div className="event-info">

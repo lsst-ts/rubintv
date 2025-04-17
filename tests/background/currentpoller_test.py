@@ -145,7 +145,7 @@ async def test_process_channel_objects(
 
     # Assertions
     mock_update_channel_events.assert_called_once_with(
-        expected_events, "base-usdf/fake_auxtel", camera
+        expected_events, "summit-usdf/auxtel", camera
     )
     mock_make_per_day_data.assert_called()
     mock_notify_ws_clients.assert_called()
@@ -338,7 +338,7 @@ async def test_notify_new_night_report_plot(
 
 
 def get_test_camera_and_location() -> tuple[Camera, Location]:
-    location: Location = find_first(m.locations, "name", "base-usdf")
+    location: Location = find_first(m.locations, "name", "summit-usdf")
     # fake_auxtel has both 'streaming' and per-day channels
-    camera: Camera = find_first(location.cameras, "name", "fake_auxtel")
+    camera: Camera = find_first(location.cameras, "name", "auxtel")
     return (camera, location)
