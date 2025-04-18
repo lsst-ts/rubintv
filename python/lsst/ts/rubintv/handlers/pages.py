@@ -452,7 +452,7 @@ async def get_specific_channel_event_page(
             "camera": camera.model_dump(),
             "channel": to_dict(channel),
             "event": to_dict(event),
-            "prevnext": next_prev,
+            "prevNext": next_prev,
             "historical_busy": historical_busy,
             "title": title,
         },
@@ -481,11 +481,18 @@ async def get_current_channel_event_page(
     if channel is None or channel not in camera.channels:
         raise HTTPException(status_code=404, detail="Channel not found.")
 
+    # get the last metadata item for 'time since most recent event' clock
+    # to prevent embedding all metadata in page.
+    latest_metadata = {}
+    if metadata:
+        last_metadatum_key = str(max(int(k) for k in metadata.keys()))
+        latest_metadata = {last_metadatum_key: metadata[last_metadatum_key]}
+
     title = build_title(location.title, camera.title, channel.title, "Current")
 
     return templates.TemplateResponse(
         request=request,
-        name="current_event.jinja",
+        name="single_event.jinja",
         context={
             "request": request,
             "location": location,
@@ -493,6 +500,7 @@ async def get_current_channel_event_page(
             "channel": to_dict(channel),
             "title": title,
             "event": to_dict(event),
-            "metadata": metadata,
+            "metadata": latest_metadata,
+            "isCurrent": True,
         },
     )
