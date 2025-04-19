@@ -36,19 +36,27 @@ class S3Client:
 
     def list_objects(self, prefix: str) -> list[dict[str, str]]:
         objects = []
-        response = self._client.list_objects_v2(Bucket=self._bucket_name, Prefix=prefix)
-        while True:
-            for content in response.get("Contents", []):
-                object = {}
-                object["key"] = content["Key"]
-                object["hash"] = content["ETag"].strip('"')
-                objects.append(object)
-            if "NextContinuationToken" not in response:
-                break
+        try:
             response = self._client.list_objects_v2(
-                Bucket=self._bucket_name,
-                Prefix=prefix,
-                ContinuationToken=response["NextContinuationToken"],
+                Bucket=self._bucket_name, Prefix=prefix
+            )
+            while True:
+                for content in response.get("Contents", []):
+                    object = {}
+                    object["key"] = content["Key"]
+                    object["hash"] = content["ETag"].strip('"')
+                    objects.append(object)
+                if "NextContinuationToken" not in response:
+                    break
+                response = self._client.list_objects_v2(
+                    Bucket=self._bucket_name,
+                    Prefix=prefix,
+                    ContinuationToken=response["NextContinuationToken"],
+                )
+        except ClientError as e:
+            logger.error(
+                f"Error listing objects in bucket: {self._bucket_name} with prefix: {prefix}",
+                error=e,
             )
         return objects
 
