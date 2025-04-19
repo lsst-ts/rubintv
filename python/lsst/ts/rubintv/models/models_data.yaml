@@ -392,6 +392,9 @@ cameras:
       - name: event_timeline
         title: Event timeline
         colour: "#e79459"
+      - name: witness_detector
+        title: Witness Detector
+        colour: "#64ced9"
 
       - name: day_movie
         title: Whole Day Movie
@@ -816,6 +819,9 @@ admin_for:
     - cslater
     - saranda
     - guymw
+    - kbechtol
+    - bechtol
+    - ktl
 
   summit:
     - mfl
@@ -826,6 +832,9 @@ admin_for:
     - jmeyers
     - bkalmbach
     - csuberlak
+    - kbechtol
+    - bechtol
+    - ktl
 
   base: ["*"]
   tucson: ["*"]
