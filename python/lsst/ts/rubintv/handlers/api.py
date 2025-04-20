@@ -55,6 +55,13 @@ async def redis_post(request: Request, message: dict) -> dict:
             raise HTTPException(500, "Failed to clear Redis database")
         return {"success": success}
 
+    logger.info(
+        "Setting Redis key",
+        extra={
+            "key": key,
+            "value": value,
+        },
+    )
     success = await redis_client.set(message["key"], message["value"])
     return {"success": success}
 

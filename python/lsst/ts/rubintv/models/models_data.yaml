@@ -835,6 +835,7 @@ admin_for:
     - kbechtol
     - bechtol
     - ktl
+    - tribeiro
 
   base: ["*"]
   tucson: ["*"]
