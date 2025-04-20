@@ -13,13 +13,6 @@ bucket_configurations:
     [ summit-usdf, slac, base-usdf, tucson-usdf ]
 
 locations:
-  - name: test
-    title: TEST
-    profile_name: rubin-rubintv-data-summit
-    bucket_name: rubin-rubintv-data-summit
-    camera_groups:
-      Test: [ comcam, comcam_sim ]
-
   - name: slac
     title: SLAC
     profile_name: rubin-rubintv-data-usdf-embargo
@@ -27,7 +20,7 @@ locations:
     endpoint_url: https://sdfembs3.sdf.slac.stanford.edu
     logo: SLAC_Logo.svg
     camera_groups:
-      Nightly Validation: [ lsstcam, lsstcam_aos ]
+      Nightly Validation: [ lsstcam, lsstcam_aos, ra_performance ]
 
   - name: base-usdf
     title: Base
@@ -39,7 +32,7 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, ra_performance ]
       Cameras: [ fake_auxtel ]
       Telescopes: [ tma ]
     services: [ auxtel, tma ]
@@ -65,7 +58,7 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, ra_performance ]
       Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
@@ -79,7 +72,7 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, ra_performance]
       Cameras: [ fake_auxtel ]
       Telescopes: [ tma ]
 
@@ -100,7 +93,7 @@ locations:
     profile_name: summit-data-summit
     bucket_name: rubintv
     camera_groups:
-      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, ra_performance ]
       Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
@@ -191,6 +184,20 @@ cameras:
       - name: psf_zk_panel
         title: AOS residual FWHM
         colour: "#d27549"
+
+
+  - name: ra_performance
+    title: Rapid Analysis Performance
+    online: True
+    text_colour: "rbga(0,0,0,0)"
+    logo: RA_Performance.jpg
+    channels:
+      - name: timimg_diagram
+        title: Timing Diagram
+        colour: "#85e986"
+
+    copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
+      {seqNum}}, \"detector\": 0}"
 
 
   - name: tma
@@ -829,6 +836,12 @@ metadata_cols:
         The total net azimuth move, in degrees.
     Largest azimuth torque:
         The largest azimuth torque during the event, in Nm, including its sign. So, if the largest toque magnitude is a negative one, it will be a large negative value, if the largest toque seen was positive, it will be large and positive.
+
+  ra_performance:
+    Exposure time:
+      The image exposure time
+    Image type:
+      The image type, e.g. bias, dark, flat etc
 
 
 admin_for:
