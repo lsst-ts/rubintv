@@ -1,6 +1,6 @@
 bucket_configurations:
   usdf-k8s:
-    [ summit-usdf, slac ]
+    [ summit-usdf, slac, base-usdf, tucson-usdf ]
   base:
     [ base ]
   tucson:
