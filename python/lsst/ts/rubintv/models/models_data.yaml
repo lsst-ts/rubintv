@@ -173,6 +173,9 @@ cameras:
     time_since_clock:
       label: Time since last refocus
     channels:
+      - name: focal_plane_mosaic_aos
+        title: Post-ISR mosaic
+        colour: "#6fe9ba"
       - name: fp_donut_gallery
         title: Donut Gallery
         colour: "#c7e692"
