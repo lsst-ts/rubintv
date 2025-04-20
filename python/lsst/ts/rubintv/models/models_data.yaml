@@ -189,7 +189,7 @@ cameras:
   - name: ra_performance
     title: Rapid Analysis Performance
     online: True
-    text_colour: "rbga(0,0,0,0)"
+    text_colour: "rgba(0,0,0,0)"
     logo: RA_Performance.jpg
     channels:
       - name: timimg_diagram
