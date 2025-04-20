@@ -21,17 +21,17 @@ class S3Client:
     def __init__(
         self, profile_name: str, bucket_name: str, endpoint_url: str | None = None
     ) -> None:
-        if endpoint_url is None:
-            # Use the default endpoint URL from the config if not provided
-            # in the Location.
-            endpoint_url = app_config.s3_endpoint_url
         session = boto3.Session(region_name="us-east-1", profile_name=profile_name)
-        if endpoint_url is not None and endpoint_url != "testing":
+        if app_config.s3_endpoint_url == "testing":
+            self._client = session.client("s3")
+        else:
+            if endpoint_url is None:
+                # Use the default endpoint URL from the config if not provided
+                # in the Location.
+                endpoint_url = app_config.s3_endpoint_url
             self._client = session.client(
                 "s3", endpoint_url=endpoint_url, config=config
             )
-        else:
-            self._client = session.client("s3")
         self._bucket_name = bucket_name
         self._endpoint_url = endpoint_url
 
