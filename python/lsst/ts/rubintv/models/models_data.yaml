@@ -24,6 +24,7 @@ locations:
     title: SLAC
     profile_name: rubin-rubintv-data-usdf-embargo
     bucket_name: rubin-rubintv-data-usdf
+    endpoint_url: https://sdfembs3.sdf.slac.stanford.edu
     logo: SLAC_Logo.svg
     camera_groups:
       Nightly Validation: [ lsstcam, lsstcam_aos ]
@@ -33,6 +34,7 @@ locations:
     is_teststand: True
     profile_name: rubin-rubintv-data-bts
     bucket_name: rubin-rubintv-data-bts
+    endpoint_url: https://s3dfrgw.slac.stanford.edu
     logo: bts_720.jpg
     text_colour: "#fff"
     text_shadow: True
@@ -47,6 +49,7 @@ locations:
     is_teststand: True
     profile_name: rubin-rubintv-data-tts
     bucket_name: rubin-rubintv-data-tts
+    endpoint_url: https://s3dfrgw.slac.stanford.edu
     logo: cactus.svg
     camera_groups:
       Telescope Mounted: [ auxtel ]
@@ -57,6 +60,7 @@ locations:
     title: Summit
     profile_name: rubin-rubintv-data-summit-embargo
     bucket_name: rubin-rubintv-data-summit
+    endpoint_url: https://sdfembs3.sdf.slac.stanford.edu
     logo: Summit.jpg
     text_colour: "#fff"
     text_shadow: True

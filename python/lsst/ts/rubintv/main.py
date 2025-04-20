@@ -69,7 +69,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         app.state.redis_client = redis_client
     for location in models.locations:
         app.state.s3_clients[location.name] = S3Client(
-            location.profile_name, location.bucket_name
+            location.profile_name, location.bucket_name, location.endpoint_url
         )
 
     # start polling buckets for data

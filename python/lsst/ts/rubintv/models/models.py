@@ -200,6 +200,7 @@ class Location(HasButton):
 
     bucket_name: str
     profile_name: str
+    endpoint_url: str | None = None
     camera_groups: dict[str, list[str]]
     cameras: list[Camera] = []
     services: list[str] = []

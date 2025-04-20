@@ -18,16 +18,22 @@ __all__ = ["S3Client"]
 
 
 class S3Client:
-    def __init__(self, profile_name: str, bucket_name: str) -> None:
-        endpoint_url = app_config.s3_endpoint_url
+    def __init__(
+        self, profile_name: str, bucket_name: str, endpoint_url: str | None = None
+    ) -> None:
+        if endpoint_url is None:
+            # Use the default endpoint URL from the config if not provided
+            # in the Location.
+            endpoint_url = app_config.s3_endpoint_url
         session = boto3.Session(region_name="us-east-1", profile_name=profile_name)
-        if endpoint_url is not None and not endpoint_url == "testing":
+        if endpoint_url is not None and endpoint_url != "testing":
             self._client = session.client(
                 "s3", endpoint_url=endpoint_url, config=config
             )
         else:
             self._client = session.client("s3")
         self._bucket_name = bucket_name
+        self._endpoint_url = endpoint_url
 
     async def async_list_objects(self, prefix: str) -> list[dict[str, str]]:
         loop = asyncio.get_event_loop()
@@ -55,7 +61,8 @@ class S3Client:
                 )
         except ClientError as e:
             logger.error(
-                f"Error listing objects in bucket: {self._bucket_name} with prefix: {prefix}",
+                f"Error listing objects in bucket: {self._bucket_name} at "
+                "{self._endpoint_url} with prefix: {prefix}",
                 error=e,
             )
         return objects
