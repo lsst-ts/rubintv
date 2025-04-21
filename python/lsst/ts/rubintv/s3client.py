@@ -23,6 +23,7 @@ class S3Client:
     ) -> None:
         session = boto3.Session(region_name="us-east-1", profile_name=profile_name)
         if app_config.s3_endpoint_url == "testing":
+            endpoint_url = "testing"
             self._client = session.client("s3")
         else:
             if endpoint_url is None:
@@ -62,7 +63,7 @@ class S3Client:
         except ClientError as e:
             logger.error(
                 f"Error listing objects in bucket: {self._bucket_name} at "
-                "{self._endpoint_url} with prefix: {prefix}",
+                f"{self._endpoint_url} with prefix: {prefix}",
                 error=e,
             )
         return objects
