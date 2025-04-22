@@ -41,6 +41,22 @@ async def get_camera_current_data(
     return (channel_data, per_day, metadata, nr_exists)
 
 
+async def get_latest_metadata(
+    location: Location,
+    camera: Camera,
+    connection: HTTPConnection,
+) -> dict | None:
+    if not camera.online:
+        return None
+    current_poller: CurrentPoller = connection.app.state.current_poller
+    while not current_poller.completed_first_poll:
+        await asyncio.sleep(0.3)
+    metadata = await current_poller.get_latest_metadata(location.name, camera)
+    if not metadata:
+        return None
+    return metadata
+
+
 async def get_most_recent_historical_day(
     location: Location, camera: Camera, connection: HTTPConnection
 ) -> date | None:

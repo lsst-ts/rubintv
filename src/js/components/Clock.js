@@ -67,10 +67,22 @@ export function TimeSinceLastImageClock(props) {
     }
     window.addEventListener("camera", handleMetadataChange)
 
+    // Listen for the latest metadata change event
+    // This is just one seq_num, not the whole metadata
+    // that is sent via a "channel" ws event
+    function handleLatestMetadataChange(event) {
+      const { data, dataType } = event.detail
+      if (dataType === "latestMetadata") {
+        setMetadata(data)
+      }
+    }
+    window.addEventListener("channel", handleLatestMetadataChange)
+
     return () => {
       clearInterval(timerId)
       window.removeEventListener("ws_status_change", handleWSStateChangeEvent)
       window.removeEventListener("camera", handleMetadataChange)
+      window.removeEventListener("channel", handleLatestMetadataChange)
     }
   }, [])
 

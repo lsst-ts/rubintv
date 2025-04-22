@@ -209,7 +209,6 @@ async def notify_new_client(
     channel_name: str,
     service: Service,
 ) -> None:
-
     current_poller: CurrentPoller = websocket.app.state.current_poller
     async for message_type, data in current_poller.get_latest_data(
         location, camera, channel_name, service

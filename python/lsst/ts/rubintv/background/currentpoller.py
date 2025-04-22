@@ -419,8 +419,10 @@ class CurrentPoller:
         if not md:
             return {}
         # get the most recent metadatum
-        last_seq = max(iter(int(k) for k in md.keys()))
-        return md[last_seq]
+        last_seq = str(max(iter(int(k) for k in md.keys())))
+        # metadata is keyed by string of sequence number
+        latest_metadata = {last_seq: md[last_seq]}
+        return latest_metadata
 
     async def get_current_channel_event(
         self, location_name: str, camera_name: str, channel_name: str

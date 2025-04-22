@@ -18,6 +18,7 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
     get_camera_current_data,
     get_camera_events_for_date,
     get_current_night_report_payload,
+    get_latest_metadata,
     get_most_recent_historical_day,
     get_prev_next_event,
     try_historical_call,
@@ -404,21 +405,11 @@ async def get_current_channel_event_page(
         location_name, camera_name, channel_name, request
     )
 
-    metadata = {}
-    result = await get_camera_current_data(location, camera, request)
-    if result:
-        (_, _, metadata, _) = result
+    metadata = await get_latest_metadata(location, camera, request)
 
     channel: Channel = find_first(camera.channels, "name", channel_name)
     if channel is None or channel not in camera.channels:
         raise HTTPException(status_code=404, detail="Channel not found.")
-
-    # get the last metadata item for 'time since most recent event' clock
-    # to prevent embedding all metadata in page.
-    latest_metadata = {}
-    if metadata:
-        last_metadatum_key = str(max(int(k) for k in metadata.keys()))
-        latest_metadata = {last_metadatum_key: metadata[last_metadatum_key]}
 
     title = build_title(location.title, camera.title, channel.title, "Current")
 
@@ -432,7 +423,7 @@ async def get_current_channel_event_page(
             "channel": to_dict(channel),
             "title": title,
             "event": to_dict(event),
-            "metadata": latest_metadata,
+            "metadata": metadata,
             "isCurrent": True,
         },
     )
