@@ -10,9 +10,16 @@ bucket_configurations:
   gha:
     [ summit-usdf, slac, base-usdf, tucson-usdf ]
   local:
-    [ summit-usdf, slac, base-usdf, tucson-usdf ]
+    [ test ]
 
 locations:
+  - name: test
+    title: TEST
+    profile_name: rubin-rubintv-data-summit-embargo
+    bucket_name: rubin-rubintv-data-summit
+    camera_groups:
+      Test: [ lsstcam, allsky ]
+
   - name: slac
     title: SLAC
     profile_name: rubin-rubintv-data-usdf-embargo

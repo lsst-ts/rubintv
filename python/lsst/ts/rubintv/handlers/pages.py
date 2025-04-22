@@ -3,7 +3,7 @@
 from datetime import date
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.api import (
     get_current_channel_event,
@@ -18,7 +18,7 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
     get_camera_current_data,
     get_camera_events_for_date,
     get_current_night_report_payload,
-    get_most_recent_historical_data,
+    get_most_recent_historical_day,
     get_prev_next_event,
     try_historical_call,
 )
@@ -104,7 +104,7 @@ async def get_location_page(
 
 @pages_router.get(
     "/{location_name}/{camera_name}",
-    response_class=HTMLResponse,
+    response_class=Response,
     name="camera",
 )
 async def get_camera_page(
@@ -112,55 +112,12 @@ async def get_camera_page(
     camera_name: str,
     request: Request,
 ) -> Response:
-    location, camera = await get_location_camera(location_name, camera_name, request)
-    nr_link = ""
-    historical_busy = not_current = nr_exists = False
-    day_obs: date | None = None
-    metadata: dict = {}
-    per_day: dict[str, Event] = {}
-    channel_data: dict[int, dict[str, dict]] = {}
-    try:
-        result = await get_camera_current_data(location, camera, request)
-        if result:
-            (day_obs, channel_data, per_day, metadata, nr_exists, not_current) = result
-    except HTTPException as e:
-        if e.status_code == 423:
-            historical_busy = True
-        else:
-            raise e
-
-    if nr_exists:
-        if not_current:
-            nr_link = "historical"
-        else:
-            nr_link = "current"
-
-    template = "camera"
-    if not camera.online:
-        template = "not_online"
-    else:
-        if camera.name == "allsky":
-            template = "allsky"
-        if not day_obs and not historical_busy:
-            template = "camera_empty"
-
-    title = build_title(location.title, camera.title, "Current")
-
-    return templates.TemplateResponse(
+    day_obs = get_current_day_obs()
+    return await get_camera_for_date_page(
+        location_name=location_name,
+        camera_name=camera_name,
+        date_str=day_obs.isoformat(),
         request=request,
-        name=f"{template}.jinja",
-        context={
-            "request": request,
-            "date": day_obs,
-            "location": location,
-            "camera": camera.model_dump(),
-            "channelData": channel_data,
-            "per_day": per_day,
-            "metadata": metadata,
-            "historical_busy": historical_busy,
-            "nr_link": nr_link,
-            "title": title,
-        },
     )
 
 
@@ -209,22 +166,38 @@ async def get_camera_for_date_page(
     request: Request,
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
+
+    if date_str != "historical":
+        day_obs = date_validation(date_str)
+    else:
+        day_obs = None
     if not camera.online:
         raise HTTPException(404, "Camera not online.")
 
-    day_obs = date_validation(date_str)
-
     historical_busy = False
     nr_exists = False
+    is_historical = True
     metadata: dict = {}
     per_day: dict[str, Event] = {}
     channel_data: dict[int, dict[str, dict]] = {}
     calendar: dict[int, dict[int, dict[int, int]]] = {}
+    result = None
+
+    current_day_obs = get_current_day_obs()
+    if day_obs == current_day_obs:
+        result = await get_camera_current_data(location, camera, request)
+        if result:
+            (channel_data, per_day, metadata, nr_exists) = result
+            is_historical = False
     try:
-        data = await get_camera_events_for_date(location, camera, day_obs, request)
-        if data:
-            channel_data, per_day, metadata, nr_exists = data
-            calendar = await get_camera_calendar(location, camera, request)
+        if (day_obs == current_day_obs and result is None) or date_str == "historical":
+            day_obs = await get_most_recent_historical_day(location, camera, request)
+        if day_obs is not None and result is None:
+            result = await get_camera_events_for_date(
+                location, camera, day_obs, request
+            )
+            if result:
+                (channel_data, per_day, metadata, nr_exists) = result
 
     except HTTPException as http_error:
         # status 423 is raised if the historical data resource is locked
@@ -233,14 +206,17 @@ async def get_camera_for_date_page(
         else:
             raise http_error
 
+    if is_historical:
+        calendar = await get_camera_calendar(location, camera, request)
+
     nr_link = ""
     if nr_exists:
         nr_link = "historical"
 
-    template = "historical"
+    template = "camera"
     if camera.name == "allsky":
-        template = "allsky-historical"
-    if not calendar and not historical_busy:
+        template = "allsky"
+    if result is None and not historical_busy:
         template = "camera_empty"
 
     title = build_title(location.title, camera.title, date_str)
@@ -251,6 +227,7 @@ async def get_camera_for_date_page(
         context={
             "request": request,
             "date": day_obs,
+            "isHistorical": is_historical,
             "location": location,
             "camera": camera.model_dump(),
             "channelData": channel_data,
@@ -276,58 +253,13 @@ async def get_historical_camera_page(
     camera_name: str,
     request: Request,
 ) -> Response:
-    location, camera = await get_location_camera(location_name, camera_name, request)
-    if not camera.online:
-        raise HTTPException(404, "Camera not online.")
-    historical_busy = False
-    nr_exists = False
-    day_obs: date | None = None
-    metadata: dict = {}
-    per_day: dict[str, Event] = {}
-    channel_data: dict[int, dict[str, dict]] = {}
-    calendar: dict[int, dict[int, dict[int, int]]] = {}
-    try:
-        data = await get_most_recent_historical_data(location, camera, request)
-        if data:
-            day_obs, channel_data, per_day, metadata, nr_exists = data
-            calendar = await get_camera_calendar(location, camera, request)
-    except HTTPException as e:
-        if e.status_code == 423:
-            historical_busy = True
-        else:
-            raise e
-
-    nr_link = ""
-    if nr_exists:
-        nr_link = "historical"
-
-    template = "historical"
-    if camera.name == "allsky":
-        template = "allsky-historical"
-    if not calendar and not historical_busy:
-        template = "camera_empty"
-
-    title = build_title(location.title, camera.title, "Historical")
-
-    return templates.TemplateResponse(
-        request=request,
-        name=f"{template}.jinja",
-        context={
-            "request": request,
-            "date": day_obs,
-            "location": location,
-            "camera": camera.model_dump(),
-            "channelData": channel_data,
-            "per_day": per_day,
-            "metadata": metadata,
-            "historical_busy": historical_busy,
-            "nr_link": nr_link,
-            "calendar": calendar,
-            "calendar_frame": calendar_factory(),
-            "month_names": month_names(),
-            "title": title,
-        },
+    redirect_url = request.url_for(
+        "camera_for_date",
+        location_name=location_name,
+        camera_name=camera_name,
+        date_str="historical",
     )
+    return RedirectResponse(redirect_url)
 
 
 @pages_router.get(

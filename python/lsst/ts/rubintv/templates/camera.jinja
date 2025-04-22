@@ -1,7 +1,11 @@
 {% extends "_camera.jinja" %}
 
 {% block pagesubtitle %}
+  {% if isHistorical %}
+  Historical
+  {% else %}
   Latest
+  {% endif %}
 {% endblock pagesubtitle  %}
 
 {% block undertitle %}
@@ -11,11 +15,13 @@
 {% endblock undertitle %}
 
 {% block headerbuttons %}
+  {% if not isHistorical %}
     <a
       class="button historical"
       href="{{ url_for('historical', location_name=location.name, camera_name=camera.name) }}">
       Historical<img src="{{ url_for('static', path='images/history-line.svg') }}">
     </a>
+  {% endif %}
 {% endblock headerbuttons %}
 
 {% block breadcrumb %}
@@ -33,6 +39,13 @@
   {% if historical_busy %}
     {% include "camera_parts/historical-busy-message.jinja" %}
   {% else %}
+
+  {% if isHistorical %}
+    <section class="calendar">
+    {% include "camera_parts/calendar.jinja" %}
+    </section>
+  {% endif %}
+
     <div id="per-day" class="columns">
     {# React PerDay root here #}
     </div>
