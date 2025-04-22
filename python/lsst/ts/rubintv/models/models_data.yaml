@@ -17,6 +17,7 @@ locations:
     title: TEST
     profile_name: rubin-rubintv-data-summit-embargo
     bucket_name: rubin-rubintv-data-summit
+    endpoint_url: https://sdfembs3.sdf.slac.stanford.edu
     camera_groups:
       Test: [ lsstcam, allsky ]
 

@@ -14,8 +14,8 @@ import { WebsocketClient } from "../modules/ws-service-client"
     siteLocation,
     locationName,
     camera = {},
-    tableChannels = {},
-    tableMetadata = {},
+    channelData = {},
+    metadata = {},
     perDay = {},
     nightReportLink = "",
     date = "",
@@ -41,8 +41,8 @@ import { WebsocketClient } from "../modules/ws-service-client"
     <TableApp
       camera={camera}
       initialDate={date}
-      initialChannelData={tableChannels}
-      initialMetadata={tableMetadata}
+      initialChannelData={channelData}
+      initialMetadata={metadata}
       isHistorical={isHistorical}
     />
   )
