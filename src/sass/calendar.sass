@@ -55,14 +55,13 @@
 
 .month
   box-sizing: border-box
-  flex-basis: calc(25% - 0.5em)
 
 .days
   display: grid
   grid-template-columns: repeat(7, 1fr)
   gap: 2px
   & > *
-    min-width: 2.4em
+    width: 2.7em
     height: 2.2em
     box-sizing: content-box
 
@@ -70,7 +69,6 @@
   padding: 0.4em
   user-select: none
   font-size: 0.8em
-  width: 36px
   border-radius: 0.2em
   &.obs
     cursor: pointer
