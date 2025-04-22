@@ -38,7 +38,9 @@ class HistoricalPoller:
     # polling period in seconds
     CHECK_NEW_DAY_PERIOD = 5
 
-    def __init__(self, locations: list[Location], test_mode: bool = False) -> None:
+    def __init__(
+        self, locations: list[Location], test_mode: bool = False, prefix_extra: str = ""
+    ) -> None:
         self._clients: dict[str, S3Client] = {}
         self._metadata: dict[str, bytes] = {}
         self._temp_events: dict[str, list[Event]] = {}
@@ -59,6 +61,7 @@ class HistoricalPoller:
         self.cam_year_rgx = re.compile(r"(\w+)\/([\d]{4})-[\d]{2}-[\d]{2}")
 
         self.test_mode = test_mode
+        self.prefix_extra = prefix_extra
 
     async def clear_all_data(self) -> None:
         self._have_downloaded = False
@@ -118,7 +121,7 @@ class HistoricalPoller:
         objects = []
         for cam in location.cameras:
             if cam.online:
-                prefix = cam.name
+                prefix = cam.name + "/" + self.prefix_extra
                 logger.info(
                     "Listing objects for:",
                     location=location.name,

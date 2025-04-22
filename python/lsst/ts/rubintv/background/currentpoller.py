@@ -130,7 +130,7 @@ class CurrentPoller:
                         break
 
                 elapsed = time() - timer_start
-                logger.info("Current - time taken:", elapsed=elapsed)
+                logger.debug("Current - time taken:", elapsed=elapsed)
                 if elapsed < self.MIN_INTERVAL:
                     await sleep(self.MIN_INTERVAL - elapsed)
 
