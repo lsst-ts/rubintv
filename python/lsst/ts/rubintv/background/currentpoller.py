@@ -414,6 +414,14 @@ class CurrentPoller:
         loc_cam = f"{location_name}/{name}"
         return self._metadata.get(loc_cam, {})
 
+    async def get_latest_metadata(self, location_name: str, camera: Camera) -> dict:
+        md = await self.get_current_metadata(location_name, camera)
+        if not md:
+            return {}
+        # get the most recent metadatum
+        last_seq = max(iter(int(k) for k in md.keys()))
+        return md[last_seq]
+
     async def get_current_channel_event(
         self, location_name: str, camera_name: str, channel_name: str
     ) -> Event | None:
@@ -491,6 +499,11 @@ class CurrentPoller:
                 )
                 yield MessageType.CHANNEL_EVENT, event.__dict__ if event else None
 
+                if latest_metadata := await self.get_latest_metadata(
+                    location.name, camera
+                ):
+                    yield MessageType.LATEST_METADATA, (latest_metadata)
+
             case Service.NIGHTREPORT:
                 night_report = await self.get_current_night_report(
                     location.name, camera.name
@@ -499,3 +512,9 @@ class CurrentPoller:
                 # pydantic.BaseModel)
                 if night_report != NightReport():
                     yield MessageType.NIGHT_REPORT, night_report.model_dump()
+
+            case Service.CALENDAR:
+                if latest_metadata := await self.get_latest_metadata(
+                    location.name, camera
+                ):
+                    yield MessageType.LATEST_METADATA, (latest_metadata)

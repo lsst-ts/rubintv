@@ -21,7 +21,7 @@ from lsst.ts.rubintv.models.models_helpers import find_first
 data_ws_router = APIRouter()
 logger = rubintv_logger()
 
-valid_services = ["camera", "channel", "nightreport"]
+valid_services = [Service.value for Service in Service]
 
 
 @data_ws_router.websocket("/")

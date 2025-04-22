@@ -407,7 +407,7 @@ async def get_current_channel_event_page(
     metadata = {}
     result = await get_camera_current_data(location, camera, request)
     if result:
-        (day_obs, channel_data, per_day, metadata, nr_exists, not_current) = result
+        (_, _, metadata, _) = result
 
     channel: Channel = find_first(camera.channels, "name", channel_name)
     if channel is None or channel not in camera.channels:

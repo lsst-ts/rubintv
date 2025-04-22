@@ -427,12 +427,14 @@ class ServiceTypes(Enum):
     CHANNEL = "channel"
     NIGHTREPORT = "nightreport"
     HISTORICALSTATUS = "historicalStatus"
+    CALENDAR = "calendar"
 
 
 class ServiceMessageTypes(Enum):
     CHANNEL_EVENT = "event"
     CAMERA_TABLE = "channelData"
     CAMERA_METADATA = "metadata"
+    LATEST_METADATA = "latestMetadata"
     CAMERA_PER_DAY = "perDay"
     CAMERA_PD_BACKDATED = "perDayBackdated"
     NIGHT_REPORT = "nightReport"
