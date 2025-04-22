@@ -8,7 +8,6 @@ from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.handlers_helpers import (
     date_validation,
-    get_camera_current_data,
     get_camera_events_for_date,
     get_current_night_report_payload,
     validate_redis_connection,
@@ -98,51 +97,6 @@ async def get_location_camera(
     if not (camera := find_first(cameras, "name", camera_name)):
         raise HTTPException(status_code=404, detail="Camera not found.")
     return (location, camera)
-
-
-@api_router.get(
-    "/{location_name}/{camera_name}/current",
-    response_model=dict,
-)
-async def get_camera_current_events_api(
-    location_name: str, camera_name: str, request: Request
-) -> dict:
-    """Returns current channel and meta-data from the requested camera.
-
-    The function looks for results from today first. If it finds none from
-    today, it looks for the most recent results from the historical data.
-
-    Parameters
-    ----------
-    location_name : `str`
-        The name of the camera location.
-    camera_name : `str`
-        The name of the camera.
-    request : `Request`
-        The http request object.
-
-    Returns
-    -------
-    response: `dict`
-        The returning dict contains the current day obs date and either a list
-        of events or none if there are no channel events and a dict which
-        contains any current metadata for the given camera.
-
-    """
-    location, camera = await get_location_camera(location_name, camera_name, request)
-    data = await get_camera_current_data(location, camera, request)
-    if data:
-        day_obs, channel_data, per_day, metadata, nr_exists, not_current = data
-        return {
-            "date": day_obs,
-            "channelData": channel_data,
-            "metadata": metadata,
-            "perDay": per_day,
-            "nightReportExists": nr_exists,
-            "isHistorical": not_current,
-        }
-    else:
-        return {}
 
 
 @api_router.get(

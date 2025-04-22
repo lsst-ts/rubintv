@@ -88,7 +88,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     historical_polling.cancel()
     today_polling.cancel()
 
-    await redis_client.close()
+    # types-redis doesn't include aclose but mypy complains if I don't
+    # ignore it
+    await redis_client.aclose()  # type: ignore [attr-defined]
 
     for c in clients.values():
         await c.close()
