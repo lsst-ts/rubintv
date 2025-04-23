@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client"
 import TableApp from "../components/TableApp"
 import PerDay from "../components/PerDay"
 import Banner from "../components/Banner"
+import RubinCalendar from "../components/RubinCalendar"
 import { _getById } from "../modules/utils"
 import { WebsocketClient } from "../modules/ws-service-client"
 ;(function () {
@@ -20,6 +21,7 @@ import { WebsocketClient } from "../modules/ws-service-client"
     nightReportLink = "",
     date = "",
     isHistorical,
+    calendar,
   } = window.APP_DATA
 
   if (!isHistorical) {
@@ -28,6 +30,16 @@ import { WebsocketClient } from "../modules/ws-service-client"
   } else {
     const ws = new WebsocketClient()
     ws.subscribe("service", "calendar", locationName, camera.name)
+
+    const calendarRoot = createRoot(_getById("calendar"))
+    calendarRoot.render(
+      <RubinCalendar
+        date={date}
+        calendar={calendar}
+        camera={camera}
+        locationName={locationName}
+      />
+    )
   }
 
   const bannerRoot = createRoot(_getById("header-banner"))

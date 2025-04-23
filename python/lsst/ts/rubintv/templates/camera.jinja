@@ -38,11 +38,10 @@
     {% include "camera_parts/historical-busy-message.jinja" %}
   {% else %}
 
-  {% if isHistorical %}
-    <section class="calendar">
-      {% include "camera_parts/calendar.jinja" %}
-    </section>
-  {% endif %}
+
+  <section id="calendar" class="calendar">
+   {# React Calendar root here #}
+  </section>
 
   <div id="per-day" class="columns">
     {# React PerDay root here #}
@@ -80,6 +79,7 @@
     window.APP_DATA.perDay = {{ per_day | tojson }}
     window.APP_DATA.eventUrl = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}"
     window.APP_DATA.nightReportLink = {{ nr_link | tojson }}
+    window.APP_DATA.calendar = {{ calendar | tojson }}
   </script>
   <script src='{{ url_for("static", path="assets/camera-table.js") }}'></script>
   {{ super() }}

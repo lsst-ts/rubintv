@@ -23,13 +23,7 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
     get_prev_next_event,
     try_historical_call,
 )
-from lsst.ts.rubintv.handlers.pages_helpers import (
-    build_title,
-    calendar_factory,
-    get_admin,
-    month_names,
-    to_dict,
-)
+from lsst.ts.rubintv.handlers.pages_helpers import build_title, get_admin, to_dict
 from lsst.ts.rubintv.models.models import (
     Channel,
     Event,
@@ -237,8 +231,6 @@ async def get_camera_for_date_page(
             "historical_busy": historical_busy,
             "nr_link": nr_link,
             "calendar": calendar,
-            "calendar_frame": calendar_factory(),
-            "month_names": month_names(),
             "title": title,
         },
     )
