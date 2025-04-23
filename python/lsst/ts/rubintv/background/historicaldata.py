@@ -350,7 +350,15 @@ class HistoricalPoller:
         year = max(calendar.keys())
         month = max(calendar[year].keys())
         day = max(calendar[year][month].keys())
-        return date(year, month, day)
+        most_recent = date(year, month, day)
+        if most_recent == get_current_day_obs():
+            # return the second most recent day
+            if len(calendar[year][month]) > 1:
+                day = max(
+                    d for d in calendar[year][month].keys() if d != most_recent.day
+                )
+                most_recent = date(year, month, day)
+        return most_recent
 
     async def get_most_recent_events(
         self, location: Location, camera: Camera
