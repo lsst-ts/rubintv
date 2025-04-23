@@ -5,8 +5,22 @@ import { monthNames, ymdToDateStr } from "../modules/utils"
 const homeUrl = window.APP_DATA.homeUrl
 
 // Day component renders an individual day
-const Day = ({ day, dateStr, cameraUrl, noSeqNum, calendarData, dayObs }) => {
-  const currentDayClass = dayObs === dateStr ? "day obs today" : "day obs"
+const Day = ({
+  day,
+  dateStr,
+  cameraUrl,
+  noSeqNum,
+  calendarData,
+  date,
+  dayObs,
+}) => {
+  let currentDayClassList = ["day obs"]
+  if (dayObs === dateStr) {
+    currentDayClassList.push("today")
+  }
+  if (dateStr == date) currentDayClassList.push("selected")
+  const currentDayClass = currentDayClassList.join(" ")
+
   if (day === 0) {
     return <p className="no-day"></p>
   }
@@ -36,6 +50,7 @@ const Month = ({
   cameraUrl,
   noSeqNum,
   calendarFrame,
+  date,
   dayObs,
 }) => {
   return (
@@ -53,6 +68,7 @@ const Month = ({
                 cameraUrl={cameraUrl}
                 noSeqNum={noSeqNum}
                 calendarData={calendar[year][month]}
+                date={date}
                 dayObs={dayObs}
               />
             )
@@ -83,7 +99,7 @@ const Year = ({
         .sort((a, b) => a - b)
         .reverse()
         .map((monthStr) => {
-          const month = parseInt(monthStr, 10)
+          const month = parseInt(monthStr)
           const isSelected = year == yearToDisplay && month == date.month
           return (
             <Month
@@ -95,6 +111,7 @@ const Year = ({
               cameraUrl={cameraUrl}
               noSeqNum={noSeqNum}
               calendarFrame={calendarFrame}
+              date={date}
               dayObs={dayObs}
             />
           )
@@ -149,7 +166,9 @@ const RubinCalendar = ({ date, initialCalendar, camera, locationName }) => {
       window.removeEventListener("calendar", handleCalendarEvent)
     }
   })
-
+  const yearClass = (year) => {
+    return year == yearToDisplay ? "selected" : ""
+  }
   return (
     <StrictMode>
       <div>
@@ -157,13 +176,7 @@ const RubinCalendar = ({ date, initialCalendar, camera, locationName }) => {
           <div className="year-button year-more"></div>
           <div className="year-title-viewbox">
             {[...sortedYears].reverse().map((yr) => (
-              <p
-                key={yr}
-                className={`year-title ${
-                  yr == yearToDisplay ? "selected" : ""
-                }`}
-                data-year={yr}
-              >
+              <p key={yr} className={yearClass(yr)} data-year={yr}>
                 {yr}
               </p>
             ))}
