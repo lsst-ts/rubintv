@@ -3,9 +3,6 @@ import argparse
 import uvicorn
 from lsst.ts.rubintv.main import app
 
-# TODO: Change-out this method for starting app in production:
-# See DM-43635
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run RubinTV application.")
