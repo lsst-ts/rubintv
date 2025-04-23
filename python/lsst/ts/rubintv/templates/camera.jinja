@@ -1,19 +1,5 @@
 {% extends "_camera.jinja" %}
 
-{% block pagesubtitle %}
-  {% if isHistorical %}
-    Historical
-  {% else %}
-    Latest
-  {% endif %}
-{% endblock pagesubtitle %}
-
-{% block undertitle %}
-  {% if date %}
-    <div id="header-date">{{ date }}</div>
-  {% endif %}
-{% endblock undertitle %}
-
 {% block headerbuttons %}
   {% if not isHistorical %}
     <a class="button historical" href="{{ url_for('historical', location_name=location.name, camera_name=camera.name) }}">
@@ -73,13 +59,11 @@
 
 {% block footer_scripts %}
   <script>
-    window.APP_DATA.isHistorical = {{ isHistorical | tojson }}
     window.APP_DATA.metadata = {{ metadata | tojson }}
     window.APP_DATA.channelData = {{ channelData | tojson }}
     window.APP_DATA.perDay = {{ per_day | tojson }}
     window.APP_DATA.eventUrl = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}"
     window.APP_DATA.nightReportLink = {{ nr_link | tojson }}
-    window.APP_DATA.calendar = {{ calendar | tojson }}
   </script>
   <script src='{{ url_for("static", path="assets/camera-table.js") }}'></script>
   {{ super() }}

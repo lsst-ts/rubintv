@@ -1,39 +1,36 @@
 {% extends "camera.jinja" %}
-{% block pagesubtitle %}
-Latest
-{% endblock pagesubtitle %}
+
 
 {% block content %}
-{% if historical_busy %}
-{% include "camera_parts/historical-busy-message.jinja" %}
-{% else %}
-{% if isHistorical %}
-<div class="columns">
-  <section class="calendar half-width">
-    {% include "camera_parts/calendar.jinja" %}
-  </section>
-  <section class="current-movie historical">
-    {% include "camera_parts/allsky-movie.jinja" %}
-  </section>
-</div>
-{% else %}
-<div class="columns">
-  <section class="allsky-current-image">
-    <h2>Current image</h2>
-    <div class="current-still">
-      {% include "camera_parts/allsky-image.jinja" %}
-    </div>
-  </section>
+ {% if historical_busy %}
+    {% include "camera_parts/historical-busy-message.jinja" %}
+  {% else %}
+    {% if isHistorical %}
+      <div class="columns">
+        <section id="calendar" class="calendar half-width">
+        </section>
+        <section class="current-movie historical">
+          {% include "camera_parts/allsky-movie.jinja" %}
+        </section>
+      </div>
+      {% else %}
+      <div class="columns">
+        <section class="allsky-current-image">
+          <h2>Current image</h2>
+          <div class="current-still">
+            {% include "camera_parts/allsky-image.jinja" %}
+          </div>
+        </section>
 
-  <section class="allsky-current-movie">
-    <h2>Current movie</h2>
-    <div class="current-movie">
-      {% include "camera_parts/allsky-movie.jinja" %}
-    </div>
-  </section>
-</div>
-{% endif %}
-{% endif %}
+        <section class="allsky-current-movie">
+          <h2>Current movie</h2>
+          <div class="current-movie">
+            {% include "camera_parts/allsky-movie.jinja" %}
+          </div>
+        </section>
+      </div>
+    {% endif %}
+  {% endif %}
 {% endblock content %}
 
 {% block footer_scripts %}

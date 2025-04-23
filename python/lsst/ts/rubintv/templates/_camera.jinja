@@ -5,10 +5,26 @@
   {% endblock inline_status %}
 {% endblock pagetitle %}
 
+{% block pagesubtitle %}
+  {% if isHistorical %}
+    Historical
+  {% else %}
+    Latest
+  {% endif %}
+{% endblock pagesubtitle %}
+
+{% block undertitle %}
+  {% if date %}
+    <div id="header-date">{{ date }}</div>
+  {% endif %}
+{% endblock undertitle %}
+
 {% block further %}
   <script>
     window.APP_DATA.camera = {{ camera|tojson }}
     window.APP_DATA.date = "{{ date }}"
     window.APP_DATA.historicalBusy = {{ historical_busy|tojson if historical_busy else "null" }}
+    window.APP_DATA.isHistorical = {{ isHistorical | tojson }}
+    window.APP_DATA.calendar = {{ calendar | tojson }}
   </script>
 {% endblock further %}
