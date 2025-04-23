@@ -439,3 +439,4 @@ class ServiceMessageTypes(Enum):
     CAMERA_PD_BACKDATED = "perDayBackdated"
     NIGHT_REPORT = "nightReport"
     HISTORICAL_STATUS = "historicalStatus"
+    DAY_CHANGE = "dayChange"

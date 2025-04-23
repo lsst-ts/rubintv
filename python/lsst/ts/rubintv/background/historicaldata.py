@@ -8,7 +8,10 @@ from typing import Any
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.config import rubintv_logger
-from lsst.ts.rubintv.handlers.websocket_notifiers import notify_all_status_change
+from lsst.ts.rubintv.handlers.websocket_notifiers import (
+    notify_all_status_change,
+    notify_ws_clients,
+)
 from lsst.ts.rubintv.models.models import (
     Camera,
     Channel,
@@ -16,8 +19,10 @@ from lsst.ts.rubintv.models.models import (
     Location,
     NightReport,
     NightReportData,
-    get_current_day_obs,
 )
+from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
+from lsst.ts.rubintv.models.models import ServiceTypes as Service
+from lsst.ts.rubintv.models.models import get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import (
     make_table_from_event_list,
     objects_to_events,
@@ -84,6 +89,9 @@ class HistoricalPoller:
                     or self._last_reload < get_current_day_obs()
                 ):
                     time_start = time()
+                    # Let the clients know the day has changed
+                    await self.notify_clients_of_day_change()
+
                     await self.clear_all_data()
                     for location in self._locations:
                         await self._refresh_location_store(location)
@@ -99,8 +107,21 @@ class HistoricalPoller:
                     if self.test_mode:
                         break
                     await asyncio.sleep(self.CHECK_NEW_DAY_PERIOD)
-        except Exception as e:
-            logger.error(e)
+        except Exception:
+            # log error with traceback
+            logger.error("Error in check_for_new_day", exc_info=True)
+
+    async def notify_clients_of_day_change(self) -> None:
+        """Notify the clients that the day has changed."""
+        for loc in self._locations:
+            for cam in loc.cameras:
+                if cam.online:
+                    await notify_ws_clients(
+                        Service.CALENDAR,
+                        MessageType.DAY_CHANGE,
+                        f"{loc.name}/{cam.name}",
+                        "from historical",
+                    )
 
     async def _refresh_location_store(self, location: Location) -> None:
         try:

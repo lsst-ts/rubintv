@@ -25,6 +25,9 @@ import { WebsocketClient } from "../modules/ws-service-client"
   if (!isHistorical) {
     const ws = new WebsocketClient()
     ws.subscribe("service", "camera", locationName, camera.name)
+  } else {
+    const ws = new WebsocketClient()
+    ws.subscribe("service", "calendar", locationName, camera.name)
   }
 
   const bannerRoot = createRoot(_getById("header-banner"))
