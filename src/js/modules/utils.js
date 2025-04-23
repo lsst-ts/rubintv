@@ -234,3 +234,21 @@ export function getMediaType(ext) {
   }
   return "image" // Changed "video" to "image" to fix a bug in the original code
 }
+
+export const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+]
+
+export const ymdToDateStr = (year, month, day) =>
+  `${year}-${("0" + month).slice(-2)}-${("0" + day).slice(-2)}`

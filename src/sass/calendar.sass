@@ -16,7 +16,7 @@
   font-size: 1.1em
   cursor: pointer
   max-width: fit-content
-  &.current
+  &.selected
     color: #eee
 
 .year-title-viewbox
@@ -37,7 +37,7 @@
   box-sizing: border-box
   gap: 3em
   overflow-x: scroll
-  &.current
+  &.selected
     display: flex
 
 
@@ -78,3 +78,5 @@
   .num_evs
     font-size: 0.7em
     display: block
+  &.today
+    background: #84ff6a

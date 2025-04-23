@@ -520,4 +520,4 @@ class CurrentPoller:
                     location.name, camera
                 ):
                     yield MessageType.LATEST_METADATA, (latest_metadata)
-                yield MessageType.DAY_CHANGE, None
+                yield MessageType.DAY_CHANGE, "from current poller"

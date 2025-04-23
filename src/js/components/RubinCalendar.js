@@ -1,140 +1,194 @@
-import React, { useEffect } from "react"
+import React, { StrictMode, useEffect, useState } from "react"
 import Calendar from "calendar"
+import { monthNames, ymdToDateStr } from "../modules/utils"
 
-const RubinCalendar = ({ date, calendar, camera, locationName }) => {
-  // Determine the year to display:
-  const calFrame = new Calendar.Calendar(0)
-  const sortedYears = Object.keys(calendar).sort()
-  const yearToDisplay = sortedYears[sortedYears.length - 1]
+const homeUrl = window.APP_DATA.homeUrl
 
-  // Create camera URL (adjust as needed)
-  const cameraUrl = `/camera/${locationName}/${camera.name}`
+// Day component renders an individual day
+const Day = ({ day, dateStr, cameraUrl, noSeqNum, calendarData, dayObs }) => {
+  const currentDayClass = dayObs === dateStr ? "day obs today" : "day obs"
+  if (day === 0) {
+    return <p className="no-day"></p>
+  }
 
-  // Flag for displaying count vs. asterisk:
-  const noTotalSeq = camera.name === "allsky"
+  if (calendarData && calendarData[day] !== undefined) {
+    return (
+      <a className={currentDayClass} href={`${cameraUrl}/date/${dateStr}`}>
+        <span className="day_num">{day}</span>
+        {!noSeqNum ? (
+          <span className="num_evs">({calendarData[day]})</span>
+        ) : (
+          <span>*</span>
+        )}
+      </a>
+    )
+  }
 
-  useEffect(() => {
-    const yearEl = document.querySelector(".year.current")
-    const monthEl = document.querySelector(".month.current")
-    if (yearEl && monthEl) {
-      yearEl.scrollLeft = monthEl.offsetLeft - yearEl.offsetLeft
-    }
-  }, [yearToDisplay])
+  return <p className="day">{day}</p>
+}
 
+// Month component renders a month and its days
+const Month = ({
+  year,
+  month,
+  isSelected,
+  calendar,
+  cameraUrl,
+  noSeqNum,
+  calendarFrame,
+  dayObs,
+}) => {
   return (
-    <div>
-      <div className="year-titles">
-        <div className="year-button year-more"></div>
-        <div className="year-title-viewbox">
-          {[...sortedYears].reverse().map((yr) => (
-            <p
-              key={yr}
-              className={`year-title ${yr == yearToDisplay ? "current" : ""}`}
-              data-year={yr}
-            >
-              {yr}
-            </p>
-          ))}
-        </div>
-        <div className="year-button year-less"></div>
-      </div>
-
-      <div className="years">
-        {[...sortedYears].reverse().map((yr) => (
-          <div
-            key={yr}
-            className={`year ${yr == yearToDisplay ? "current" : ""}`}
-            id={`year-${yr}`}
-          >
-            {
-              // Sort months in descending order:
-              [...Object.keys(calendar[yr]).sort()]
-                .reverse()
-                .map((monthStr) => {
-                  const month = parseInt(monthStr, 10)
-                  return (
-                    <div
-                      key={month}
-                      className={`month ${
-                        yr == yearToDisplay && month == date.month
-                          ? "current"
-                          : ""
-                      }`}
-                    >
-                      <h5 className="month-title">{monthNames[month - 1]}</h5>
-                      <div className="days">
-                        {calFrame
-                          .monthDays(parseInt(yr), month)
-                          .map((week, weekIndex) =>
-                            week.map((day, dayIndex) => {
-                              if (day === 0) {
-                                return (
-                                  <p
-                                    key={`${weekIndex}-${dayIndex}`}
-                                    className="no-day"
-                                  ></p>
-                                )
-                              }
-                              if (
-                                calendar[yr][month] &&
-                                calendar[yr][month][day] !== undefined
-                              ) {
-                                const dateStr = `${yr}-${("0" + month).slice(
-                                  -2
-                                )}-${("0" + day).slice(-2)}`
-                                return (
-                                  <a
-                                    key={`${weekIndex}-${dayIndex}`}
-                                    className="day obs"
-                                    href={`${cameraUrl}/date/${dateStr}`}
-                                  >
-                                    <span className="day_num">{day}</span>
-                                    {!noTotalSeq ? (
-                                      <span className="num_evs">
-                                        ({calendar[yr][month][day]})
-                                      </span>
-                                    ) : (
-                                      <span>*</span>
-                                    )}
-                                  </a>
-                                )
-                              } else {
-                                return (
-                                  <p
-                                    key={`${weekIndex}-${dayIndex}`}
-                                    className="day"
-                                  >
-                                    {day}
-                                  </p>
-                                )
-                              }
-                            })
-                          )}
-                      </div>
-                    </div>
-                  )
-                })
-            }
-          </div>
-        ))}
+    <div className={`month ${isSelected ? "selected" : ""}`}>
+      <h5 className="month-title">{monthNames[month - 1]}</h5>
+      <div className="days">
+        {calendarFrame.monthDays(parseInt(year), month - 1).map((week) =>
+          week.map((day, dayIndex) => {
+            const dateStr = ymdToDateStr(year, month, day)
+            return (
+              <Day
+                key={dateStr + dayIndex}
+                day={day}
+                dateStr={dateStr}
+                cameraUrl={cameraUrl}
+                noSeqNum={noSeqNum}
+                calendarData={calendar[year][month]}
+                dayObs={dayObs}
+              />
+            )
+          })
+        )}
       </div>
     </div>
   )
 }
 
-export default RubinCalendar
+// Year component renders a year and its months
+const Year = ({
+  year,
+  yearToDisplay,
+  date,
+  calendar,
+  calendarFrame,
+  cameraUrl,
+  noSeqNum,
+  dayObs,
+}) => {
+  return (
+    <div
+      className={`year ${year == yearToDisplay ? "selected" : ""}`}
+      id={`year-${year}`}
+    >
+      {Object.keys(calendar[year])
+        .sort((a, b) => a - b)
+        .reverse()
+        .map((monthStr) => {
+          const month = parseInt(monthStr, 10)
+          const isSelected = year == yearToDisplay && month == date.month
+          return (
+            <Month
+              key={month}
+              year={year}
+              month={month}
+              isSelected={isSelected}
+              calendar={calendar}
+              cameraUrl={cameraUrl}
+              noSeqNum={noSeqNum}
+              calendarFrame={calendarFrame}
+              dayObs={dayObs}
+            />
+          )
+        })}
+    </div>
+  )
+}
 
-const monthNames = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-]
+const RubinCalendar = ({ date, initialCalendar, camera, locationName }) => {
+  const [calendar, setCalendar] = useState(initialCalendar)
+  const [dayObs, setDayObs] = useState(null)
+
+  const calFrame = new Calendar.Calendar(1)
+  const sortedYears = Object.keys(calendar).sort((a, b) => a - b)
+  const yearToDisplay = sortedYears[sortedYears.length - 1]
+  const cameraUrl = `${homeUrl}${locationName}/${camera.name}`
+  const noSeqNum = camera.name === "allsky"
+
+  useEffect(() => {
+    const yearEl = document.querySelector(".year.selected")
+    const monthEl = document.querySelector(".month.selected")
+    if (yearEl && monthEl) {
+      yearEl.scrollLeft = monthEl.offsetLeft - yearEl.offsetLeft
+    }
+  }, [yearToDisplay])
+
+  useEffect(() => {
+    const handleCalendarEvent = (event) => {
+      const { dataType, data, datestamp } = event.detail
+      if (dataType === "dayChange") {
+        setDayObs(datestamp)
+      }
+      if (dataType === "latestMetadata") {
+        const [year, month, day] = datestamp.split("-").map((x) => parseInt(x))
+        const seqNum = parseInt(Object.keys(data)[0])
+        setCalendar((prevCalendar) => {
+          const newCalendar = { ...prevCalendar }
+          if (!newCalendar[year]) {
+            newCalendar[year] = {}
+          }
+          if (!newCalendar[year][month]) {
+            newCalendar[year][month] = {}
+          }
+          newCalendar[year][month][day] = seqNum
+          return newCalendar
+        })
+        setDayObs(datestamp)
+      }
+    }
+    window.addEventListener("calendar", handleCalendarEvent)
+    return () => {
+      window.removeEventListener("calendar", handleCalendarEvent)
+    }
+  })
+
+  return (
+    <StrictMode>
+      <div>
+        <div className="year-titles">
+          <div className="year-button year-more"></div>
+          <div className="year-title-viewbox">
+            {[...sortedYears].reverse().map((yr) => (
+              <p
+                key={yr}
+                className={`year-title ${
+                  yr == yearToDisplay ? "selected" : ""
+                }`}
+                data-year={yr}
+              >
+                {yr}
+              </p>
+            ))}
+          </div>
+          <div className="year-button year-less"></div>
+        </div>
+
+        <div className="years">
+          {[...sortedYears].reverse().map((yr) => (
+            <Year
+              key={yr}
+              dayObs={dayObs}
+              year={yr}
+              yearToDisplay={yearToDisplay}
+              date={date}
+              calendar={calendar}
+              calendarFrame={calFrame}
+              cameraUrl={cameraUrl}
+              noSeqNum={noSeqNum}
+            />
+          ))}
+        </div>
+      </div>
+    </StrictMode>
+  )
+}
+
+export default RubinCalendar

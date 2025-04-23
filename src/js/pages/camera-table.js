@@ -10,7 +10,6 @@ import { WebsocketClient } from "../modules/ws-service-client"
   if (window.APP_DATA.historicalBusy) {
     return
   }
-
   const {
     siteLocation,
     locationName,
@@ -35,7 +34,7 @@ import { WebsocketClient } from "../modules/ws-service-client"
     calendarRoot.render(
       <RubinCalendar
         date={date}
-        calendar={calendar}
+        initialCalendar={calendar}
         camera={camera}
         locationName={locationName}
       />
