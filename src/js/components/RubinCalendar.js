@@ -15,6 +15,7 @@ const Day = ({
   dayObs,
 }) => {
   let hasData = false
+  let isSelected = false
   let currentDayClassList = ["day"]
   if (calendarData && calendarData[day] !== undefined) {
     hasData = true
@@ -23,7 +24,10 @@ const Day = ({
   if (dayObs === dateStr) {
     currentDayClassList.push("today")
   }
-  if (dateStr == date) currentDayClassList.push("selected")
+  if (dateStr == date) {
+    isSelected = true
+    currentDayClassList.push("selected")
+  }
   const currentDayClass = currentDayClassList.join(" ")
 
   if (day === 0) {
@@ -39,11 +43,16 @@ const Day = ({
         ) : (
           <span>*</span>
         )}
+        {isSelected && <div className="selected-border"></div>}
       </a>
     )
   }
 
-  return <p className={currentDayClass}>{day}</p>
+  return (
+    <p className={currentDayClass} title="today: no data yet">
+      {day}
+    </p>
+  )
 }
 
 // Month component renders a month and its days

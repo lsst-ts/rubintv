@@ -70,14 +70,26 @@
   user-select: none
   font-size: 0.8em
   border-radius: 0.2em
+  position: relative
   &.obs
     cursor: pointer
     transition: background 0.3s
+    &.today
+      background: #84ff6a
+      color: #000
   .day_num
     display: block
   .num_evs
     font-size: 0.7em
     display: block
   &.today
-    background: #84ff6a
-    color: #000
+    background: #347627
+    color: #fff
+
+.selected-border
+  position: absolute
+  top: 0
+  left: 0
+  right: 0
+  bottom: 0
+  border: 2px #2f6a0e dotted
