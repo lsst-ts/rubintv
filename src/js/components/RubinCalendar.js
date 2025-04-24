@@ -135,14 +135,18 @@ const Year = ({
 }
 
 const RubinCalendar = ({ date, initialCalendar, camera, locationName }) => {
+  const [yearToDisplay, setYearToDisplay] = useState(date.split("-")[0])
   const [calendar, setCalendar] = useState(initialCalendar)
   const [dayObs, setDayObs] = useState(null)
 
-  const calFrame = new Calendar.Calendar(1)
   const sortedYears = Object.keys(calendar).sort((a, b) => a - b)
-  const yearToDisplay = sortedYears[sortedYears.length - 1]
+  const calFrame = new Calendar.Calendar(1)
   const cameraUrl = `${homeUrl}${locationName}/${camera.name}`
   const noSeqNum = camera.name === "allsky"
+
+  const handleYearClick = (year) => {
+    setYearToDisplay(year)
+  }
 
   useEffect(() => {
     const yearEl = document.querySelector(".year.selected")
@@ -181,7 +185,7 @@ const RubinCalendar = ({ date, initialCalendar, camera, locationName }) => {
     }
   })
   const yearClass = (year) => {
-    return year == yearToDisplay ? "selected" : ""
+    return year == yearToDisplay ? "selected year-title" : "year-title"
   }
   return (
     <StrictMode>
@@ -190,7 +194,12 @@ const RubinCalendar = ({ date, initialCalendar, camera, locationName }) => {
           <div className="year-button year-more"></div>
           <div className="year-title-viewbox">
             {[...sortedYears].reverse().map((yr) => (
-              <p key={yr} className={yearClass(yr)} data-year={yr}>
+              <p
+                key={yr}
+                className={yearClass(yr)}
+                data-year={yr}
+                onClick={() => handleYearClick(yr)}
+              >
                 {yr}
               </p>
             ))}
