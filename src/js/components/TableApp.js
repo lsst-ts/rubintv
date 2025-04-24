@@ -110,7 +110,9 @@ export default function TableApp({
 
     if (datestamp && datestamp !== date) {
       window.APP_DATA.date = datestamp
-      _getById("header-date").textContent = datestamp
+      const headerDate = _getById("header-date")
+      headerDate.textContent = datestamp
+      headerDate.classList.remove("stale")
       setDate(datestamp)
       setMetadata({})
       setChannelData({})

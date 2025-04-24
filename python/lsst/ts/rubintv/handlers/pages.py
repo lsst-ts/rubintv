@@ -177,6 +177,7 @@ async def get_camera_for_date_page(
     channel_data: dict[int, dict[str, dict]] = {}
     calendar: dict[int, dict[int, dict[int, int]]] = {}
     result = None
+    stale_data = False
     no_data_at_all = False
 
     current_day_obs = get_current_day_obs()
@@ -185,6 +186,8 @@ async def get_camera_for_date_page(
         result = await get_camera_current_data(location, camera, request)
         if result:
             (channel_data, per_day, metadata, nr_exists) = result
+        else:
+            stale_data = True
     try:
         if (day_obs == current_day_obs and result is None) or date_str == "historical":
             day_obs = await get_most_recent_historical_day(location, camera, request)
@@ -237,6 +240,7 @@ async def get_camera_for_date_page(
             "nr_link": nr_link,
             "calendar": calendar,
             "title": title,
+            "isStale": stale_data,
         },
     )
 

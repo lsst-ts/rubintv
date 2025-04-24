@@ -17,7 +17,8 @@
 
 {% block undertitle %}
   {% if date %}
-    <div id="header-date">{{ date }}</div>
+    {% set stale_class = "stale" if isStale else "" %}
+    <div id="header-date" class="{{stale_class}}">{{ date }}</div>
   {% endif %}
 {% endblock undertitle %}
 
