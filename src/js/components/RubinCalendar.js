@@ -14,7 +14,12 @@ const Day = ({
   date,
   dayObs,
 }) => {
-  let currentDayClassList = ["day obs"]
+  let hasData = false
+  let currentDayClassList = ["day"]
+  if (calendarData && calendarData[day] !== undefined) {
+    hasData = true
+    currentDayClassList.push("obs")
+  }
   if (dayObs === dateStr) {
     currentDayClassList.push("today")
   }
@@ -25,7 +30,7 @@ const Day = ({
     return <p className="no-day"></p>
   }
 
-  if (calendarData && calendarData[day] !== undefined) {
+  if (hasData) {
     return (
       <a className={currentDayClass} href={`${cameraUrl}/date/${dateStr}`}>
         <span className="day_num">{day}</span>
@@ -38,7 +43,7 @@ const Day = ({
     )
   }
 
-  return <p className="day">{day}</p>
+  return <p className={currentDayClass}>{day}</p>
 }
 
 // Month component renders a month and its days
