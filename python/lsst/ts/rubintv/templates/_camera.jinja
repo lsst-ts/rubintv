@@ -6,10 +6,12 @@
 {% endblock pagetitle %}
 
 {% block pagesubtitle %}
-  {% if isHistorical %}
-    Historical
-  {% else %}
-    Latest
+  {% if not historical_busy %}
+    {% if isHistorical %}
+      Historical
+    {% else %}
+      Latest
+    {% endif %}
   {% endif %}
 {% endblock pagesubtitle %}
 

@@ -23,6 +23,15 @@ import { WebsocketClient } from "../modules/ws-service-client"
     calendar,
   } = window.APP_DATA
 
+  const bannerRoot = createRoot(_getById("header-banner"))
+  bannerRoot.render(
+    <Banner
+      siteLocation={siteLocation}
+      locationName={locationName}
+      camera={camera}
+    />
+  )
+
   if (!isHistorical) {
     const ws = new WebsocketClient()
     ws.subscribe("service", "camera", locationName, camera.name)
@@ -40,15 +49,6 @@ import { WebsocketClient } from "../modules/ws-service-client"
       />
     )
   }
-
-  const bannerRoot = createRoot(_getById("header-banner"))
-  bannerRoot.render(
-    <Banner
-      siteLocation={siteLocation}
-      locationName={locationName}
-      camera={camera}
-    />
-  )
 
   const tableRoot = createRoot(_getById("table"))
   tableRoot.render(

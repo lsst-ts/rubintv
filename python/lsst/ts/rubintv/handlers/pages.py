@@ -177,13 +177,14 @@ async def get_camera_for_date_page(
     channel_data: dict[int, dict[str, dict]] = {}
     calendar: dict[int, dict[int, dict[int, int]]] = {}
     result = None
+    no_data_at_all = False
 
     current_day_obs = get_current_day_obs()
     if day_obs == current_day_obs:
+        is_historical = False
         result = await get_camera_current_data(location, camera, request)
         if result:
             (channel_data, per_day, metadata, nr_exists) = result
-            is_historical = False
     try:
         if (day_obs == current_day_obs and result is None) or date_str == "historical":
             day_obs = await get_most_recent_historical_day(location, camera, request)
@@ -193,6 +194,8 @@ async def get_camera_for_date_page(
             )
             if result:
                 (channel_data, per_day, metadata, nr_exists) = result
+        if day_obs is None:
+            no_data_at_all = True
 
     except HTTPException as http_error:
         # status 423 is raised if the historical data resource is locked
@@ -212,7 +215,9 @@ async def get_camera_for_date_page(
     if camera.name == "allsky":
         template = "allsky"
     if result is None and not historical_busy:
-        template = "camera_empty"
+        template = "not-on-this-day"
+    if no_data_at_all and not historical_busy:
+        template = "camera-empty"
 
     title = build_title(location.title, camera.title, date_str)
 
