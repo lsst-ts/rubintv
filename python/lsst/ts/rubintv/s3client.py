@@ -18,16 +18,23 @@ __all__ = ["S3Client"]
 
 
 class S3Client:
-    def __init__(self, profile_name: str, bucket_name: str) -> None:
-        endpoint_url = app_config.s3_endpoint_url
+    def __init__(
+        self, profile_name: str, bucket_name: str, endpoint_url: str | None = None
+    ) -> None:
         session = boto3.Session(region_name="us-east-1", profile_name=profile_name)
-        if endpoint_url is not None and not endpoint_url == "testing":
+        if app_config.s3_endpoint_url == "testing":
+            endpoint_url = "testing"
+            self._client = session.client("s3")
+        else:
+            if endpoint_url is None:
+                # Use the default endpoint URL from the config if not provided
+                # in the Location.
+                endpoint_url = app_config.s3_endpoint_url
             self._client = session.client(
                 "s3", endpoint_url=endpoint_url, config=config
             )
-        else:
-            self._client = session.client("s3")
         self._bucket_name = bucket_name
+        self._endpoint_url = endpoint_url
 
     async def async_list_objects(self, prefix: str) -> list[dict[str, str]]:
         loop = asyncio.get_event_loop()
@@ -36,19 +43,28 @@ class S3Client:
 
     def list_objects(self, prefix: str) -> list[dict[str, str]]:
         objects = []
-        response = self._client.list_objects_v2(Bucket=self._bucket_name, Prefix=prefix)
-        while True:
-            for content in response.get("Contents", []):
-                object = {}
-                object["key"] = content["Key"]
-                object["hash"] = content["ETag"].strip('"')
-                objects.append(object)
-            if "NextContinuationToken" not in response:
-                break
+        try:
             response = self._client.list_objects_v2(
-                Bucket=self._bucket_name,
-                Prefix=prefix,
-                ContinuationToken=response["NextContinuationToken"],
+                Bucket=self._bucket_name, Prefix=prefix
+            )
+            while True:
+                for content in response.get("Contents", []):
+                    object = {}
+                    object["key"] = content["Key"]
+                    object["hash"] = content["ETag"].strip('"')
+                    objects.append(object)
+                if "NextContinuationToken" not in response:
+                    break
+                response = self._client.list_objects_v2(
+                    Bucket=self._bucket_name,
+                    Prefix=prefix,
+                    ContinuationToken=response["NextContinuationToken"],
+                )
+        except ClientError as e:
+            logger.error(
+                f"Error listing objects in bucket: {self._bucket_name} at "
+                f"{self._endpoint_url} with prefix: {prefix}",
+                error=e,
             )
         return objects
 

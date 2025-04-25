@@ -1,6 +1,6 @@
 bucket_configurations:
   usdf-k8s:
-    [ summit-usdf, slac ]
+    [ summit-usdf, slac, base-usdf, tucson-usdf ]
   base:
     [ base ]
   tucson:
@@ -13,31 +13,26 @@ bucket_configurations:
     [ summit-usdf, slac, base-usdf, tucson-usdf ]
 
 locations:
-  - name: test
-    title: TEST
-    profile_name: rubin-rubintv-data-summit
-    bucket_name: rubin-rubintv-data-summit
-    camera_groups:
-      Test: [ comcam, comcam_sim ]
-
   - name: slac
     title: SLAC
     profile_name: rubin-rubintv-data-usdf-embargo
     bucket_name: rubin-rubintv-data-usdf
+    endpoint_url: https://sdfembs3.sdf.slac.stanford.edu
     logo: SLAC_Logo.svg
     camera_groups:
-      Nightly Validation: [ lsstcam, lsstcam_aos ]
+      Nightly Validation: [ lsstcam, lsstcam_aos, ra_performance ]
 
   - name: base-usdf
     title: Base
     is_teststand: True
     profile_name: rubin-rubintv-data-bts
     bucket_name: rubin-rubintv-data-bts
+    endpoint_url: https://s3dfrgw.slac.stanford.edu
     logo: bts_720.jpg
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, ra_performance ]
       Cameras: [ fake_auxtel ]
       Telescopes: [ tma ]
     services: [ auxtel, tma ]
@@ -47,6 +42,7 @@ locations:
     is_teststand: True
     profile_name: rubin-rubintv-data-tts
     bucket_name: rubin-rubintv-data-tts
+    endpoint_url: https://s3dfrgw.slac.stanford.edu
     logo: cactus.svg
     camera_groups:
       Telescope Mounted: [ auxtel ]
@@ -57,11 +53,12 @@ locations:
     title: Summit
     profile_name: rubin-rubintv-data-summit-embargo
     bucket_name: rubin-rubintv-data-summit
+    endpoint_url: https://sdfembs3.sdf.slac.stanford.edu
     logo: Summit.jpg
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, ra_performance ]
       Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
@@ -75,7 +72,7 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, ra_performance]
       Cameras: [ fake_auxtel ]
       Telescopes: [ tma ]
 
@@ -96,13 +93,113 @@ locations:
     profile_name: summit-data-summit
     bucket_name: rubintv
     camera_groups:
-      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, ra_performance ]
       Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
       Deprecated Cameras: [ comcam, comcam_aos ]
 
 cameras:
+  - name: lsstcam
+    title: LSSTCam
+    online: True
+    logo: LSSTSummit.jpg
+    text_colour: "#fff"
+    channels:
+      - name: witness_detector
+        title: Witness Detector
+        colour: "#64ced9"
+      - name: focal_plane_mosaic
+        title: Post-ISR mosaic
+        colour: "#85e986"
+      - name: calexp_mosaic
+        title: Calexp mosaic
+        colour: "#E76FD8"
+      - name: psf_shape_azel
+        title: PSF shape AzEl
+        colour: "#6F58E7"
+      - name: fwhm_focal_plane
+        title: FWHM Focal Plane
+        colour: "#6232A8"
+      - name: mount
+        title: Mount torques
+        colour: "#58b4e7"
+      - name: imexam
+        title: Image Analysis
+        colour: "#e7587b"
+      - name: event_timeline
+        title: Event timeline
+        colour: "#e79459"
+
+      - name: day_movie
+        title: Whole Day Movie
+        per_day: True
+        color: "#83daee"
+        icon: movies
+
+    time_since_clock:
+      label: Time since last image
+
+    extra_buttons:
+      - title: Movies View
+        name: moviesView
+        # relative url
+        linkURL: mosaic
+        logo: AI-astral-movie.jpg
+        text_colour: "#fff"
+
+    mosaic_view_meta:
+      - channel: day_movie
+        mediaType: video
+        metaColumns: []
+
+    image_viewer_link: "http://lsstcam-mcm.{siteLoc}.lsst.org/FITSInfo/view.html\
+      ?image=MC_{controller:default=O}_{dayObs}_{seqNum}&raft=all&color=grey\
+      &bias=Simple+Overscan+Correction&scale=Per-Segment&source=raw"
+
+
+  - name: lsstcam_aos
+    title: LSSTCamAOS
+    online: True
+    logo: LSSTSummitDonuts.jpg
+    text_colour: "#fff"
+    time_since_clock:
+      label: Time since last refocus
+    channels:
+      - name: focal_plane_mosaic_aos
+        title: Post-ISR mosaic
+        colour: "#6fe9ba"
+      - name: fp_donut_gallery
+        title: Donut Gallery
+        colour: "#c7e692"
+      - name: zk_residual_pyramid
+        title: Zernike Residual Pyramid
+        colour: "#e2d36b"
+      - name: zk_measurement_pyramid
+        title: Zernike Measurement Pyramid
+        colour: "#876f45"
+      - name: focus_sweep
+        title: Focus Sweep
+        colour: "#965d82"
+      - name: psf_zk_panel
+        title: AOS residual FWHM
+        colour: "#d27549"
+
+
+  - name: ra_performance
+    title: Rapid Analysis Performance
+    online: True
+    text_colour: "rgba(0,0,0,0)"
+    logo: RA_Performance.jpg
+    channels:
+      - name: timimg_diagram
+        title: Timing Diagram
+        colour: "#85e986"
+
+    copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
+      {seqNum}}, \"detector\": 0}"
+
+
   - name: tma
     title: TMA
     online: True
@@ -116,6 +213,7 @@ cameras:
         colour: "#97d2f0"
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
       {seqNum}}"
+
 
   - name: auxtel
     title: AuxTel
@@ -182,6 +280,7 @@ cameras:
         title: Analysis
         colour: "#ba528f"
 
+
   - name: startracker_wide
     title: StarTracker Wide
     online: True
@@ -196,6 +295,7 @@ cameras:
         label: ST Wide Analysis
         colour: "#fda529"
 
+
   - name: startracker_fast
     title: StarTracker Fast
     online: True
@@ -209,6 +309,7 @@ cameras:
         title: Analysis
         prefix: analysis
         colour: "#d5fa80"
+
 
   - name: allsky
     title: All Sky
@@ -230,6 +331,7 @@ cameras:
       - channel: movies
         mediaType: video
         metaColumns: []
+
 
   - name: comcam
     title: ComCam
@@ -290,6 +392,7 @@ cameras:
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
       view.html?image=CC_O_{dayObs}_{seqNum}"
 
+
   - name: comcam_sim
     title: ComCamSim
     online: True
@@ -306,6 +409,7 @@ cameras:
         colour: "#BC8CE7"
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
       {seqNum}}"
+
 
   - name: comcam_sim_aos
     title: ComCamSimAOS
@@ -327,6 +431,7 @@ cameras:
       - name: psf_zk_panel
         title: AOS residual FWHM
         colour: "#d27c54"
+
 
   - name: comcam_aos
     title: ComCamAOS
@@ -365,80 +470,6 @@ cameras:
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
       {seqNum}}"
 
-  - name: lsstcam
-    title: LSSTCam
-    online: True
-    logo: LSSTSummit.jpg
-    text_colour: "#fff"
-    channels:
-      - name: focal_plane_mosaic
-        title: Post-ISR mosaic
-        colour: "#85e986"
-      - name: calexp_mosaic
-        title: Calexp mosaic
-        colour: "#E76FD8"
-      - name: psf_shape_azel
-        title: PSF shape AzEl
-        colour: "#6F58E7"
-      - name: mount
-        title: Mount torques
-        colour: "#58b4e7"
-      - name: imexam
-        title: Image Analysis
-        colour: "#e7587b"
-      - name: event_timeline
-        title: Event timeline
-        colour: "#e79459"
-
-      - name: day_movie
-        title: Whole Day Movie
-        per_day: True
-        color: "#83daee"
-        icon: movies
-
-    time_since_clock:
-      label: Time since last image
-
-    extra_buttons:
-      - title: Movies View
-        name: moviesView
-        # relative url
-        linkURL: mosaic
-        logo: AI-astral-movie.jpg
-        text_colour: "#fff"
-
-    mosaic_view_meta:
-      - channel: day_movie
-        mediaType: video
-        metaColumns: []
-
-    image_viewer_link: "http://lsstcam-mcm.{siteLoc}.lsst.org/FITSInfo/view.html\
-      ?image=MC_{controller:default=O}_{dayObs}_{seqNum}&raft=all&color=grey\
-      &bias=Simple+Overscan+Correction&scale=Per-Segment&source=raw"
-
-  - name: lsstcam_aos
-    title: LSSTCamAOS
-    online: True
-    logo: LSSTSummitDonuts.jpg
-    text_colour: "#fff"
-    time_since_clock:
-      label: Time since last refocus
-    channels:
-      - name: fp_donut_gallery
-        title: Donut Gallery
-        colour: "#c7e692"
-      - name: zk_residual_pyramid
-        title: Zernike Residual Pyramid
-        colour: "#e2d36b"
-      - name: zk_measurement_pyramid
-        title: Zernike Measurement Pyramid
-        colour: "#876f45"
-      - name: focus_sweep
-        title: Focus Sweep
-        colour: "#965d82"
-      - name: psf_zk_panel
-        title: AOS residual FWHM
-        colour: "#d27549"
 
   - name: slac_lsstcam
     title: LSSTCam
@@ -806,6 +837,12 @@ metadata_cols:
     Largest azimuth torque:
         The largest azimuth torque during the event, in Nm, including its sign. So, if the largest toque magnitude is a negative one, it will be a large negative value, if the largest toque seen was positive, it will be large and positive.
 
+  ra_performance:
+    Exposure time:
+      The image exposure time
+    Image type:
+      The image type, e.g. bias, dark, flat etc
+
 
 admin_for:
   usdf-k8s:
@@ -813,6 +850,9 @@ admin_for:
     - cslater
     - saranda
     - guymw
+    - kbechtol
+    - bechtol
+    - ktl
 
   summit:
     - mfl
@@ -823,6 +863,10 @@ admin_for:
     - jmeyers
     - bkalmbach
     - csuberlak
+    - kbechtol
+    - bechtol
+    - ktl
+    - tribeiro
 
   base: ["*"]
   tucson: ["*"]

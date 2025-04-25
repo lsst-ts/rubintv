@@ -61,14 +61,14 @@ MetadataCell.propTypes = {
 
 // Component for individual channel cell
 function ChannelCell({ event, chanName, chanColour, noEventReplacement }) {
-  const eventURL = window.APP_DATA.eventURL
+  const eventUrl = window.APP_DATA.eventUrl
   return (
     <td className="grid-cell">
       {event && (
         <a
           className={`button button-table ${chanName}`}
           style={{ backgroundColor: chanColour }}
-          href={`${eventURL}?key=${event.key}`}
+          href={`${eventUrl}?key=${event.key}`}
           aria-label={chanName} // Add accessible name
         ></a>
       )}
@@ -80,7 +80,7 @@ function ChannelCell({ event, chanName, chanColour, noEventReplacement }) {
 }
 ChannelCell.propTypes = {
   event: PropTypes.object,
-  eventURL: PropTypes.string,
+  eventUrl: PropTypes.string,
   chanName: PropTypes.string,
   chanColour: PropTypes.string,
   noEventReplacement: PropTypes.string,
@@ -212,7 +212,7 @@ TableBody.propTypes = {
   metadataColumns: PropTypes.array,
   channelData: PropTypes.object,
   metadata: PropTypes.object,
-  eventURL: PropTypes.string,
+  eventUrl: PropTypes.string,
 }
 
 // Component for individual channel header
