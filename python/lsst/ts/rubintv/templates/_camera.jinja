@@ -17,7 +17,7 @@
 
 {% block undertitle %}
   {% if date %}
-    {% set stale_class = "stale" if isStale else "" %}
+    {% set stale_class = "stale" if isStale and not isHistorical else "" %}
     <div id="header-date" class="{{stale_class}}">{{ date }}</div>
   {% endif %}
 {% endblock undertitle %}
