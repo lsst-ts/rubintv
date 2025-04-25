@@ -219,3 +219,18 @@ export const toTimeString = (period) => {
   // Add "-" prefix for negative periods
   return period < 0 ? `-${timeString}` : timeString
 }
+
+export function getBaseFromEventUrl(url) {
+  let baseImgUrl = url.split("/").slice(0, -1).join("/")
+  if (!baseImgUrl.endsWith("/")) {
+    baseImgUrl += "/"
+  }
+  return baseImgUrl
+}
+
+export function getMediaType(ext) {
+  if (["mp4", "mov"].includes(ext)) {
+    return "video"
+  }
+  return "image" // Changed "video" to "image" to fix a bug in the original code
+}

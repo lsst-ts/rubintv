@@ -3,6 +3,13 @@
 from __future__ import annotations
 
 import os
+
+# ensure s3_endpoint_url is always "testing" in pytest runs
+os.environ.pop("S3_ENDPOINT_URL", None)
+
+# ignore flake8 errors for the following imports
+# flake8: noqa: F402
+
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, AsyncIterator, Iterator, Tuple

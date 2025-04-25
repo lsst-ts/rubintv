@@ -47,7 +47,9 @@ class HistoricalPoller:
         self._calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
         self._locations = locations
         self._clients = {
-            location.name: S3Client(location.profile_name, location.bucket_name)
+            location.name: S3Client(
+                location.profile_name, location.bucket_name, location.endpoint_url
+            )
             for location in locations
         }
 
