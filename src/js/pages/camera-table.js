@@ -42,8 +42,8 @@ import { WebsocketClient } from "../modules/ws-service-client"
     const calendarRoot = createRoot(_getById("calendar"))
     calendarRoot.render(
       <RubinCalendar
-        date={date}
-        initialCalendar={calendar}
+        selectedDate={date}
+        initialCalendarData={calendar}
         camera={camera}
         locationName={locationName}
       />

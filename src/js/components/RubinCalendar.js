@@ -10,11 +10,11 @@ const homeUrl = window.APP_DATA.homeUrl
 const Day = ({
   day,
   dateStr,
+  calendarData,
+  dayObs,
+  selectedDate,
   cameraUrl,
   noSeqNum,
-  calendarData,
-  date,
-  dayObs,
 }) => {
   let hasData = false
   let isSelected = false
@@ -26,7 +26,7 @@ const Day = ({
   if (dayObs === dateStr) {
     currentDayClassList.push("today")
   }
-  if (dateStr == date) {
+  if (dateStr == selectedDate) {
     isSelected = true
     currentDayClassList.push("selected")
   }
@@ -62,11 +62,11 @@ const Month = ({
   year,
   month,
   isSelected,
-  calendar,
+  calendarData,
   cameraUrl,
   noSeqNum,
   calendarFrame,
-  date,
+  selectedDate,
   dayObs,
 }) => {
   return (
@@ -79,13 +79,13 @@ const Month = ({
             return (
               <Day
                 key={dateStr + dayIndex}
-                day={day}
                 dateStr={dateStr}
-                cameraUrl={cameraUrl}
-                noSeqNum={noSeqNum}
-                calendarData={calendar[year][month]}
-                date={date}
+                day={day}
+                calendarData={calendarData[year][month]}
                 dayObs={dayObs}
+                selectedDate={selectedDate}
+                noSeqNum={noSeqNum}
+                cameraUrl={cameraUrl}
               />
             )
           })
@@ -94,13 +94,24 @@ const Month = ({
     </div>
   )
 }
+Month.propTypes = {
+  year: PropTypes.string.isRequired,
+  month: PropTypes.number.isRequired,
+  isSelected: PropTypes.bool.isRequired,
+  calendarData: PropTypes.object.isRequired,
+  cameraUrl: PropTypes.string.isRequired,
+  noSeqNum: PropTypes.bool.isRequired,
+  calendarFrame: PropTypes.object.isRequired,
+  selectedDate: PropTypes.string.isRequired,
+  dayObs: PropTypes.string,
+}
 
 // Year component renders a year and its months
 const Year = ({
   year,
   yearToDisplay,
-  date,
-  calendar,
+  selectedDate,
+  calendarData,
   calendarFrame,
   cameraUrl,
   noSeqNum,
@@ -111,23 +122,24 @@ const Year = ({
       className={`year ${year == yearToDisplay ? "selected" : ""}`}
       id={`year-${year}`}
     >
-      {Object.keys(calendar[year])
+      {Object.keys(calendarData[year])
         .sort((a, b) => a - b)
         .reverse()
         .map((monthStr) => {
           const month = parseInt(monthStr)
-          const isSelected = year == yearToDisplay && month == date.month
+          const isSelected =
+            year == yearToDisplay && month == selectedDate.month
           return (
             <Month
               key={month}
               year={year}
               month={month}
               isSelected={isSelected}
-              calendar={calendar}
+              calendarData={calendarData}
               cameraUrl={cameraUrl}
               noSeqNum={noSeqNum}
               calendarFrame={calendarFrame}
-              date={date}
+              selectedDate={selectedDate}
               dayObs={dayObs}
             />
           )
@@ -135,13 +147,28 @@ const Year = ({
     </div>
   )
 }
+Year.propTypes = {
+  year: PropTypes.string.isRequired,
+  yearToDisplay: PropTypes.string.isRequired,
+  dayObs: PropTypes.string,
+  selectedDate: PropTypes.string.isRequired,
+  calendarData: calendarType.isRequired,
+  calendarFrame: PropTypes.object.isRequired,
+  cameraUrl: PropTypes.string.isRequired,
+  noSeqNum: PropTypes.bool.isRequired,
+}
 
-const RubinCalendar = ({ date, initialCalendar, camera, locationName }) => {
-  const [yearToDisplay, setYearToDisplay] = useState(date.split("-")[0])
-  const [calendar, setCalendar] = useState(initialCalendar)
+const RubinCalendar = ({
+  selectedDate,
+  initialCalendarData,
+  camera,
+  locationName,
+}) => {
+  const [yearToDisplay, setYearToDisplay] = useState(selectedDate.split("-")[0])
+  const [calendarData, setCalendarData] = useState(initialCalendarData)
   const [dayObs, setDayObs] = useState(null)
 
-  const sortedYears = Object.keys(calendar).sort((a, b) => a - b)
+  const sortedYears = Object.keys(calendarData).sort((a, b) => a - b)
   const calFrame = new Calendar.Calendar(1)
   const cameraUrl = `${homeUrl}${locationName}/${camera.name}`
   const noSeqNum = camera.name === "allsky"
@@ -167,8 +194,8 @@ const RubinCalendar = ({ date, initialCalendar, camera, locationName }) => {
       if (dataType === "latestMetadata") {
         const [year, month, day] = datestamp.split("-").map((x) => parseInt(x))
         const seqNum = parseInt(Object.keys(data)[0])
-        setCalendar((prevCalendar) => {
-          const newCalendar = { ...prevCalendar }
+        setCalendarData((prevCalendarData) => {
+          const newCalendar = { ...prevCalendarData }
           if (!newCalendar[year]) {
             newCalendar[year] = {}
           }
@@ -212,11 +239,11 @@ const RubinCalendar = ({ date, initialCalendar, camera, locationName }) => {
         {[...sortedYears].reverse().map((yr) => (
           <Year
             key={yr}
-            dayObs={dayObs}
             year={yr}
             yearToDisplay={yearToDisplay}
-            date={date}
-            calendar={calendar}
+            dayObs={dayObs}
+            selectedDate={selectedDate}
+            calendarData={calendarData}
             calendarFrame={calFrame}
             cameraUrl={cameraUrl}
             noSeqNum={noSeqNum}
@@ -227,8 +254,8 @@ const RubinCalendar = ({ date, initialCalendar, camera, locationName }) => {
   )
 }
 RubinCalendar.propTypes = {
-  date: PropTypes.string.isRequired,
-  initialCalendar: calendarType.isRequired,
+  selectedDate: PropTypes.string.isRequired,
+  initialCalendarData: calendarType.isRequired,
   camera: cameraType.isRequired,
   locationName: PropTypes.string.isRequired,
 }
