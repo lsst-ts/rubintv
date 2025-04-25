@@ -229,7 +229,7 @@ export function getBaseFromEventUrl(url) {
 }
 
 export function getMediaType(ext) {
-  if (ext === "mp4" || ext === "mov") {
+  if (["mp4", "mov"].includes(ext)) {
     return "video"
   }
   return "image" // Changed "video" to "image" to fix a bug in the original code
