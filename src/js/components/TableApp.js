@@ -199,6 +199,8 @@ function getAllColumnNames(metadata, defaultColNames) {
   const allColNames = Object.values(metadata)
     .map((obj) => Object.keys(obj))
     .flat()
+    .sort()
+  // get the set of all data for list of all available attrs
   const uniqueColNames = Array.from(
     new Set(defaultColNames.concat(allColNames))
   )

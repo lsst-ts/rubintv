@@ -232,7 +232,7 @@ export function getMediaType(ext) {
   if (["mp4", "mov"].includes(ext)) {
     return "video"
   }
-  return "image" // Changed "video" to "image" to fix a bug in the original code
+  return "image" // default to image
 }
 
 export const monthNames = [
@@ -250,5 +250,60 @@ export const monthNames = [
   "December",
 ]
 
+/**
+ * Converts numerical year, month, and day to a string in the format YYYY-MM-DD.
+ * The month and day are zero-padded to two digits.
+ * @param {number} year
+ * @param {number} month
+ * @param {number} day
+ * @returns {string} - A string in the format YYYY-MM-DD
+ */
 export const ymdToDateStr = (year, month, day) =>
   `${year}-${("0" + month).slice(-2)}-${("0" + day).slice(-2)}`
+
+/**
+ * Splits an array into n pieces and interleaves them.
+ * Any leftover items (if arr.length isn’t divisible by n) are appended at the end.
+ *
+ * @param {Array} arr  - The input array.
+ * @param {number} n   - How many pieces to split into.
+ * @returns {Array}    - The interleaved result.
+ */
+export function interleaveSplit(arr, n) {
+  if (!Array.isArray(arr)) {
+    throw new TypeError("First argument must be an array")
+  }
+  if (n <= 1) {
+    // nothing to interleave
+    return arr.slice()
+  }
+
+  const len = arr.length
+  const chunkSize = Math.floor(len / n)
+  if (chunkSize === 0) {
+    // too many pieces: just return original
+    return arr.slice()
+  }
+
+  // 1) build the n equal‐sized chunks (dropping any remainder)
+  const chunks = []
+  for (let i = 0; i < n; i++) {
+    const start = i * chunkSize
+    chunks.push(arr.slice(start, start + chunkSize))
+  }
+
+  // 2) interleave them: take one element from each chunk in turn
+  const result = []
+  for (let i = 0; i < chunkSize; i++) {
+    for (let j = 0; j < n; j++) {
+      // guard in case some chunks are shorter
+      if (i < chunks[j].length) {
+        result.push(chunks[j][i])
+      }
+    }
+  }
+
+  // 3) append any leftover items that couldn't be chunked
+  const remainder = arr.slice(chunkSize * n)
+  return result.concat(remainder)
+}
