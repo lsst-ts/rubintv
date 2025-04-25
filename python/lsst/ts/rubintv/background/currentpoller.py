@@ -299,6 +299,17 @@ class CurrentPoller:
                 await notify_ws_clients(
                     Service.CAMERA, MessageType.CAMERA_METADATA, loc_cam, data
                 )
+            logger.debug(
+                "Current - sending latest metadata:",
+                loc_cam=loc_cam,
+                md=self.get_last_entry_in_metadata(data),
+            )
+            await notify_ws_clients(
+                Service.CALENDAR,
+                MessageType.LATEST_METADATA,
+                loc_cam,
+                self.get_last_entry_in_metadata(data),
+            )
 
     async def sieve_out_night_reports(
         self, objects: list[dict[str, str]], location: Location, camera: Camera
@@ -416,13 +427,24 @@ class CurrentPoller:
 
     async def get_latest_metadata(self, location_name: str, camera: Camera) -> dict:
         md = await self.get_current_metadata(location_name, camera)
-        if not md:
+        return self.get_last_entry_in_metadata(md)
+
+    def get_last_entry_in_metadata(self, metadata: dict) -> dict:
+        """Get the last entry in the metadata dictionary.
+        Parameters
+        ----------
+        metadata : `dict`
+            The metadata dictionary.
+        Returns
+        -------
+        `dict`
+            The last entry in the metadata dictionary or an empty
+            dict.
+        """
+        if not metadata:
             return {}
-        # get the most recent metadatum
-        last_seq = str(max(iter(int(k) for k in md.keys())))
-        # metadata is keyed by string of sequence number
-        latest_metadata = {last_seq: md[last_seq]}
-        return latest_metadata
+        last_seq = str(max(iter(int(k) for k in metadata.keys())))
+        return {last_seq: metadata[last_seq]}
 
     async def get_current_channel_event(
         self, location_name: str, camera_name: str, channel_name: str

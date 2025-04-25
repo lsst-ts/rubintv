@@ -1,4 +1,6 @@
-import React, { StrictMode, useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
+import PropTypes from "prop-types"
+import { calendarType, cameraType } from "./componentPropTypes"
 import Calendar from "calendar"
 import { monthNames, ymdToDateStr } from "../modules/utils"
 
@@ -188,43 +190,47 @@ const RubinCalendar = ({ date, initialCalendar, camera, locationName }) => {
     return year == yearToDisplay ? "selected year-title" : "year-title"
   }
   return (
-    <StrictMode>
-      <div>
-        <div className="year-titles">
-          <div className="year-button year-more"></div>
-          <div className="year-title-viewbox">
-            {[...sortedYears].reverse().map((yr) => (
-              <p
-                key={yr}
-                className={yearClass(yr)}
-                data-year={yr}
-                onClick={() => handleYearClick(yr)}
-              >
-                {yr}
-              </p>
-            ))}
-          </div>
-          <div className="year-button year-less"></div>
-        </div>
-
-        <div className="years">
+    <div>
+      <div className="year-titles">
+        <div className="year-button year-more"></div>
+        <div className="year-title-viewbox">
           {[...sortedYears].reverse().map((yr) => (
-            <Year
+            <p
               key={yr}
-              dayObs={dayObs}
-              year={yr}
-              yearToDisplay={yearToDisplay}
-              date={date}
-              calendar={calendar}
-              calendarFrame={calFrame}
-              cameraUrl={cameraUrl}
-              noSeqNum={noSeqNum}
-            />
+              className={yearClass(yr)}
+              data-year={yr}
+              onClick={() => handleYearClick(yr)}
+            >
+              {yr}
+            </p>
           ))}
         </div>
+        <div className="year-button year-less"></div>
       </div>
-    </StrictMode>
+
+      <div className="years">
+        {[...sortedYears].reverse().map((yr) => (
+          <Year
+            key={yr}
+            dayObs={dayObs}
+            year={yr}
+            yearToDisplay={yearToDisplay}
+            date={date}
+            calendar={calendar}
+            calendarFrame={calFrame}
+            cameraUrl={cameraUrl}
+            noSeqNum={noSeqNum}
+          />
+        ))}
+      </div>
+    </div>
   )
+}
+RubinCalendar.propTypes = {
+  date: PropTypes.string.isRequired,
+  initialCalendar: calendarType.isRequired,
+  camera: cameraType.isRequired,
+  locationName: PropTypes.string.isRequired,
 }
 
 export default RubinCalendar

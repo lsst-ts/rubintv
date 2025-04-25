@@ -285,14 +285,14 @@ export function interleaveSplit(arr, n) {
     return arr.slice()
   }
 
-  // 1) build the n equal‐sized chunks (dropping any remainder)
+  // build n equal‐sized chunks (dropping any remainder)
   const chunks = []
   for (let i = 0; i < n; i++) {
     const start = i * chunkSize
     chunks.push(arr.slice(start, start + chunkSize))
   }
 
-  // 2) interleave them: take one element from each chunk in turn
+  // interleave by take one element from each chunk in turn
   const result = []
   for (let i = 0; i < chunkSize; i++) {
     for (let j = 0; j < n; j++) {
@@ -303,7 +303,7 @@ export function interleaveSplit(arr, n) {
     }
   }
 
-  // 3) append any leftover items that couldn't be chunked
+  // append any leftover items that couldn't be chunked
   const remainder = arr.slice(chunkSize * n)
   return result.concat(remainder)
 }

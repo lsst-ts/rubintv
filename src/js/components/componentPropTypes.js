@@ -97,3 +97,11 @@ export const mosaicSingleView = PropTypes.shape({
   latestImage: PropTypes.string,
   latestMetadata: metadataType,
 })
+
+export const calendarType = PropTypes.shape({
+  [PropTypes.number]: PropTypes.shape({
+    [PropTypes.number]: PropTypes.shape({
+      [PropTypes.number]: PropTypes.number,
+    }),
+  }),
+})
