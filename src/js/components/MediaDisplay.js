@@ -43,9 +43,9 @@ export default function MediaDisplay({
           <span className="media-seqnum">{mediaEvent.seq_num}</span>
         </h2>
         {isCurrent ? (
-          <PrevNext prevNext={prevNext} eventUrl={eventUrl} />
-        ) : (
           <TimeSinceLastImageClock metadata={metadata} camera={camera} />
+        ) : (
+          <PrevNext prevNext={prevNext} eventUrl={eventUrl} />
         )}
       </div>
       <a
