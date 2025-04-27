@@ -60,7 +60,7 @@ COPY --chown=rubintv:rubintv . .
 
 # Install Python dependencies
 RUN pip install -r requirements.txt && \
-    python setup.py install
+    pip install -e .
 
 # Adjust permissions for executable
 RUN chmod +x start-daemon.sh
