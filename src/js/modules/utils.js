@@ -29,6 +29,9 @@ export async function simplePost(url, message = {}) {
     body: JSON.stringify(message),
   })
   const data = await res.text()
+  if (!res.ok) {
+    throw new Error(`HTTP error ${res.status}: ${data}`)
+  }
   return data
 }
 

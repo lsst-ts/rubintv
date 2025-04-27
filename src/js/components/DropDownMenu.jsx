@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"
 import PropTypes from "prop-types"
 
-export default function DropDownMenu({ menu, onItemSelect }) {
+export default function DropDownMenu({ menu, onItemSelect, clearDropdown }) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(menu.selectedItem)
 
@@ -42,6 +42,12 @@ export default function DropDownMenu({ menu, onItemSelect }) {
   }
   , [isOpen])
 
+  useEffect(() => {
+    if (clearDropdown) {
+      setSelectedItem(null)
+    }
+  }, [clearDropdown])
+
   const toggleMenu = () => setIsOpen(isOpen => !isOpen)
 
   const handleItemSelect = (item) => {
@@ -78,4 +84,5 @@ export default function DropDownMenu({ menu, onItemSelect }) {
 DropDownMenu.propTypes = {
   menu: PropTypes.object.isRequired,
   onItemSelect: PropTypes.func,
+  clearDropdown: PropTypes.bool,
 }

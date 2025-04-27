@@ -65,7 +65,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     app.state.historical = hp
     app.state.s3_clients = {}
     if config.ra_redis_host:
-        redis_client = _makeRedis()
+        redis_client = await _makeRedis()
         app.state.redis_client = redis_client
     for location in models.locations:
         app.state.s3_clients[location.name] = S3Client(
@@ -96,7 +96,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         await c.close()
 
 
-def _makeRedis() -> redis.Redis:
+async def _makeRedis() -> redis.Redis:
     """Create a redis connection.
 
     Returns
@@ -107,7 +107,14 @@ def _makeRedis() -> redis.Redis:
     host: str = config.ra_redis_host
     password = config.ra_redis_password
     port: int = config.ra_redis_port
-    return redis.Redis(host=host, password=password, port=port)
+    # set socket_timeout to 3 seconds
+    redis_client = await redis.Redis(
+        host=host, password=password, port=port, socket_timeout=3
+    )
+    # Redis never complains even if it can't connect
+    # until you try to do something with it.
+    logger.info(f"(Possibly) connected to Redis at {host}:{port}")
+    return redis_client
 
 
 def create_app() -> FastAPI:

@@ -440,3 +440,10 @@ class ServiceMessageTypes(Enum):
     NIGHT_REPORT = "nightReport"
     HISTORICAL_STATUS = "historicalStatus"
     DAY_CHANGE = "dayChange"
+
+
+class KeyValue(BaseModel):
+    """A simple key-value pair."""
+
+    key: str
+    value: str | int | float | bool | None = None

@@ -4,7 +4,6 @@ import asyncio
 from datetime import date
 from typing import Any, Callable
 
-import redis.asyncio as redis
 from fastapi import HTTPException, Request
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
@@ -141,16 +140,3 @@ def date_validation(date_str: str) -> date:
     except ValueError:
         raise HTTPException(status_code=404, detail="Invalid date.")
     return day_obs
-
-
-async def validate_redis_connection(app_state: Any) -> redis.Redis:
-    try:
-        redis_client: redis.Redis = app_state.redis_client
-    except AttributeError:
-        raise HTTPException(500, "Redis not connected")
-    if not redis_client:
-        raise HTTPException(500, "Redis not connected")
-    ping = await redis_client.ping()
-    if not ping:
-        raise HTTPException(500, "Redis is unreachable")
-    return redis_client

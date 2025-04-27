@@ -2,6 +2,7 @@
 
 from typing import Annotated
 
+import redis.exceptions
 from fastapi import APIRouter, HTTPException, Query, Request
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
@@ -10,9 +11,8 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
     date_validation,
     get_camera_events_for_date,
     get_current_night_report_payload,
-    validate_redis_connection,
 )
-from lsst.ts.rubintv.models.models import Camera, Event, Location, NightReport
+from lsst.ts.rubintv.models.models import Camera, Event, KeyValue, Location, NightReport
 from lsst.ts.rubintv.models.models_helpers import find_first
 
 api_router = APIRouter()
@@ -36,45 +36,37 @@ async def historical_reset(request: Request) -> None:
 
 
 @api_router.post("/redis")
-async def redis_post(request: Request, message: dict) -> dict:
-    redis_client = await validate_redis_connection(request.app.state)
-    if "key" not in message:
+async def redis_post(request: Request, message: KeyValue) -> dict:
+    redis_client = request.app.state.redis_client
+    if not redis_client:
+        raise HTTPException(500, "Redis client not initialized")
+    key, value = message.key, message.value
+    if not key:
         raise HTTPException(400, "Message must contain a 'key' key")
-    if "value" not in message:
+    if key != "clear_redis" and value is None:
         raise HTTPException(400, "Message must contain a 'value' key")
-    key = message["key"]
-    value = message["value"]
-    if key == "clear_redis" and value == "true":
-        success = False
+    if key == "clear_redis":
         try:
-            success = await redis_client.flushdb()
-            logger.info("Redis database cleared", extra={"success": success})
+            response = await redis_client.flushdb()
+            logger.info("Redis database cleared")
         except Exception as e:
             logger.error(f"Failed to clear Redis database: {e}")
-            raise HTTPException(500, "Failed to clear Redis database")
-        return {"success": success}
-
-    logger.info(
-        "Setting Redis key",
-        extra={
-            "key": key,
-            "value": value,
-        },
-    )
-    success = await redis_client.set(message["key"], message["value"])
-    return {"success": success}
-
-
-@api_router.get("/redis", response_model=dict)
-async def redis_get(request: Request, keys: str) -> dict:
-    if not keys:
-        raise HTTPException(400, "No keys provided")
-    key_list: list[str] = keys.split(",")
-    redis_client = await validate_redis_connection(request.app.state)
-    values = {}
-    for key in key_list:
-        values[key] = await redis_client.get(key)
-    return values
+            raise HTTPException(500, f"Failed to clear Redis database: {e}")
+        return {"response": response}
+    else:
+        logger.info("Setting Redis key", extra={"key": key, "value": value})
+        try:
+            response = await redis_client.set(key, value)
+        except redis.exceptions.ResponseError:
+            raise HTTPException(500, "Failed to set Redis key: No response")
+        except redis.exceptions.TimeoutError:
+            logger.error("Failed to set Redis key: Timeout")
+            raise HTTPException(500, "Failed to set Redis key: Timeout")
+        except redis.exceptions.ConnectionError:
+            raise HTTPException(500, "Failed to set Redis key: Connection error")
+        except redis.exceptions.RedisError as e:
+            raise HTTPException(500, f"Failed to set Redis key: {e}")
+        return {"response": response}
 
 
 @api_router.get("/{location_name}", response_model=Location)
