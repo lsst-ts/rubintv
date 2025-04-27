@@ -299,11 +299,6 @@ class CurrentPoller:
                 await notify_ws_clients(
                     Service.CAMERA, MessageType.CAMERA_METADATA, loc_cam, data
                 )
-            logger.debug(
-                "Current - sending latest metadata:",
-                loc_cam=loc_cam,
-                md=self.get_last_entry_in_metadata(data),
-            )
             await notify_ws_clients(
                 Service.CALENDAR,
                 MessageType.LATEST_METADATA,
