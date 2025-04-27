@@ -111,6 +111,11 @@ export function RedisPanel({ menus, redisEndpointUrl, redisKeyPrefix }) {
           redisEndpointUrl={redisEndpointUrl}
           redisKeyPrefix={redisKeyPrefix}
         />
+        <AdminSendRedisValue
+          redisEndpointUrl={redisEndpointUrl}
+          redisKeyPrefix={redisKeyPrefix}
+          keyToSend="WITNESS_DETECTOR"
+        />
       </div>
     </div>
   )
@@ -157,6 +162,55 @@ export function DropDownMenuContainer({ menu, onItemSelect }) {
 DropDownMenuContainer.propTypes = {
   menu: PropTypes.object.isRequired,
   onItemSelect: PropTypes.func.isRequired,
+}
+
+export function AdminSendRedisValue({
+  redisEndpointUrl,
+  redisKeyPrefix,
+  keyToSend,
+}) {
+  const [redisChanged, updateRedisStatus] = useRedisStatus()
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    updateRedisStatus("pending") // set pending state
+    const key = redisKeyPrefix(keyToSend)
+    const value = e.target.elements.value.value
+    simplePost(redisEndpointUrl, { key, value })
+      .then(() => {
+        updateRedisStatus("true")
+      })
+      .catch((error) => {
+        updateRedisStatus("false")
+        console.error("Error posting to redis:", error)
+      })
+  }
+
+  return (
+    <div className="redis-command-panel box">
+      <div className="redis-command-header box-header">
+        <h4 className="redis-command-title box-title">Witness Detector</h4>
+        <StatusIndicator status={redisChanged} />
+      </div>
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label htmlFor="value">Value:</label>
+          <input
+            type="text"
+            id="value"
+            name="value"
+            placeholder="Value"
+            required
+          />
+        </div>
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  )
+}
+AdminSendRedisCommand.propTypes = {
+  redisEndpointUrl: PropTypes.string.isRequired,
+  redisKeyPrefix: PropTypes.func.isRequired,
 }
 
 export function AdminSendRedisCommand({ redisEndpointUrl, redisKeyPrefix }) {
