@@ -178,14 +178,34 @@ function TableBody({
   channelData,
   metadataColumns,
   metadata,
+  sortOn,
 }) {
   const allSeqs = Array.from(
     new Set(Object.keys(channelData).concat(Object.keys(metadata)))
   )
-    .map((seq) => parseInt(seq))
-    .toSorted((a, b) => a - b)
-    .reverse()
-    .map((seq) => `${seq}`)
+  allSeqs.sort((a, b) => {
+    if (sortOn.column === "seq") {
+      return sortOn.order === "asc" ? a - b : b - a
+    }
+    const aValue =
+      metadata[a]?.[sortOn.column] ?? channelData[a]?.[sortOn.column]
+    const bValue =
+      metadata[b]?.[sortOn.column] ?? channelData[b]?.[sortOn.column]
+    if (typeof aValue === "string" && typeof bValue === "string") {
+      if (aValue === bValue) {
+        // if the compare values are equal, sort by seqNum
+        return sortOn.order === "asc" ? a - b : b - a
+      }
+      return sortOn.order === "asc"
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue)
+    }
+    if (aValue === undefined || bValue === undefined) {
+      // if one of the values is undefined, sort by seqNum
+      return sortOn.order === "asc" ? a - b : b - a
+    }
+    return sortOn.order === "asc" ? aValue - bValue : bValue - aValue
+  })
   return (
     <tbody>
       {allSeqs.map((seqNum) => {
@@ -340,6 +360,7 @@ export default function TableView({
   metadataColumns,
   filterOn,
   filteredRowsCount,
+  sortOn,
 }) {
   const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
   if (filterColumnSet && filteredRowsCount == 0) {
@@ -357,6 +378,7 @@ export default function TableView({
         channelData={channelData}
         metadataColumns={metadataColumns}
         metadata={metadata}
+        sortOn={sortOn}
       />
     </table>
   )

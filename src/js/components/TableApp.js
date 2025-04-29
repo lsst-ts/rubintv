@@ -185,6 +185,7 @@ export default function TableApp({
           metadataColumns={selectedMetaCols}
           filterOn={filterOn}
           filteredRowsCount={filteredRowsCount}
+          sortOn={sortOn}
         />
       </ModalProvider>
     </div>
