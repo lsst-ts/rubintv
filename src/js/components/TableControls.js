@@ -68,6 +68,13 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
 
   const columnsToDisplay = interleaveSplit(allColNames, numControlColumns)
 
+  // allow escape from the table to close the controls
+  const handleKeyDown = (event) => {
+    if (event.key === "Escape") {
+      setControlsOpen(false)
+    }
+  }
+
   const handleCheckboxChange = (name) => {
     setSelected((prevSelected) => {
       let updatedSelected
@@ -88,6 +95,12 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
         <button
           className="table-control-button"
           onClick={() => setControlsOpen(!controlsOpen)}
+          onKeyDown={handleKeyDown}
+          title="Add/Remove Columns"
+          aria-label="Add/Remove Columns"
+          aria-expanded={controlsOpen}
+          aria-controls="table-controls"
+          aria-haspopup="true"
         >
           Add/Remove Columns
         </button>
