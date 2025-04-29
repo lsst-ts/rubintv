@@ -25,6 +25,11 @@ export default function TableApp({
     column: "",
     value: "",
   })
+  const [sortOn, setSortOn] = useState({
+    column: "seq",
+    order: "desc",
+  })
+
   const [error, setError] = useState(null)
 
   const locationName = window.APP_DATA.locationName
@@ -167,6 +172,8 @@ export default function TableApp({
               setFilterOn={setFilterOn}
               filteredRowsCount={filteredRowsCount}
               unfilteredRowsCount={unfilteredRowsCount}
+              sortOn={sortOn}
+              setSortOn={setSortOn}
             />
           </div>
           <JumpButtons></JumpButtons>
@@ -225,6 +232,9 @@ function getTableColumnWidths() {
   return cellWidths
 }
 
+/**
+ * Redraws the header widths based on the current table column widths.
+ */
 function redrawHeaderWidths() {
   const columns = getTableColumnWidths()
   const headers = Array.from(document.querySelectorAll(".grid-title"))

@@ -222,31 +222,51 @@ function ChannelHeader({
   setFilterOn,
   filteredRowsCount,
   unfilteredRowsCount,
+  sortOn,
+  setSortOn,
 }) {
   const { showModal } = useModal()
-  const filterClass =
-    channel.name === filterOn.column && filterOn.value !== "" ? "filtering" : ""
 
-  const handleColumnClick = () => {
-    showModal(
-      <FilterDialog
-        column={channel.name}
-        setFilterOn={setFilterOn}
-        filterOn={filterOn}
-        filteredRowsCount={filteredRowsCount}
-        unfilteredRowsCount={unfilteredRowsCount}
-      />
-    )
+  const handleColumnClick = (event, column) => {
+    handleSortClick(event, column, setSortOn)
+    if (!event.shiftKey) {
+      showModal(
+        <FilterDialog
+          column={channel.name}
+          setFilterOn={setFilterOn}
+          filterOn={filterOn}
+          filteredRowsCount={filteredRowsCount}
+          unfilteredRowsCount={unfilteredRowsCount}
+        />
+      )
+    }
   }
-  const elProps = {
-    className: `grid-title gt-channel sideways ${filterClass}`,
-    onClick: handleColumnClick,
+
+  const isMetadataColumn = !channel.hasOwnProperty("title")
+  const containerClass = isMetadataColumn
+    ? "meta grid-title sortable"
+    : "grid-title"
+  const isFilteredOn = filterOn.column === channel.name && filterOn.value !== ""
+  let titleClass = isFilteredOn ? "filtering sideways" : "sideways"
+  const isSortedOn = sortOn.column === channel.name
+  const sortingClass = `sorting-indicator ${sortOn.order}`
+
+  const containerProps = {
+    className: containerClass,
+  }
+  if (isMetadataColumn) {
+    containerProps.onClick = () => handleColumnClick(event, channel.name)
   }
   if (channel.desc) {
-    elProps.title = channel.desc
+    containerProps.title = channel.desc
   }
   return (
-    <div {...elProps}>{channel.label || channel.title || channel.name}</div>
+    <div {...containerProps}>
+      {isSortedOn && <div className={sortingClass}></div>}
+      <div className={titleClass}>
+        {channel.label || channel.title || channel.name}
+      </div>
+    </div>
   )
 }
 ChannelHeader.propTypes = {
@@ -265,12 +285,22 @@ export function TableHeader({
   setFilterOn,
   filteredRowsCount,
   unfilteredRowsCount,
+  sortOn,
+  setSortOn,
 }) {
   const channelColumns = seqChannels(camera)
   const columns = channelColumns.concat(metadataColumns)
+  const sorting = sortOn.column == "seq"
+  const sortingClass = `sorting-indicator ${sortOn.order}`
   return (
     <>
-      <div className="grid-title sideways">Seq. No.</div>
+      <div
+        className="grid-title sortable"
+        onClick={(event) => handleSortClick(event, "seq", setSortOn)}
+      >
+        {sorting && <div className={sortingClass}></div>}
+        <div className="sideways">Seq. No.</div>
+      </div>
       {camera.copy_row_template && (
         <div className="grid-title" id="ctbEmpty"></div>
       )}
@@ -286,6 +316,8 @@ export function TableHeader({
             setFilterOn={setFilterOn}
             filteredRowsCount={filteredRowsCount}
             unfilteredRowsCount={unfilteredRowsCount}
+            sortOn={sortOn}
+            setSortOn={setSortOn}
           />
         )
       })}
@@ -405,3 +437,24 @@ function handleCopyButton(date, seqNum, template) {
 }
 
 export { TableRow }
+
+const handleSortClick = (event, column, setSortOn) => {
+  event.stopPropagation()
+  const isShiftKey = event.shiftKey
+  if (isShiftKey) {
+    // if shift key pressed, use this column
+    // for sorting
+    setSortOn((prev) => {
+      if (prev.column === column) {
+        return {
+          column: column,
+          order: prev.order === "asc" ? "desc" : "asc",
+        }
+      }
+      return {
+        column: column,
+        order: "asc",
+      }
+    })
+  }
+}
