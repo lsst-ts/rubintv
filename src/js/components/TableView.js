@@ -183,32 +183,10 @@ function TableBody({
   const allSeqs = Array.from(
     new Set(Object.keys(channelData).concat(Object.keys(metadata)))
   )
-  allSeqs.sort((a, b) => {
-    if (sortOn.column === "seq") {
-      return sortOn.order === "asc" ? a - b : b - a
-    }
-    const aValue =
-      metadata[a]?.[sortOn.column] ?? channelData[a]?.[sortOn.column]
-    const bValue =
-      metadata[b]?.[sortOn.column] ?? channelData[b]?.[sortOn.column]
-    if (typeof aValue === "string" && typeof bValue === "string") {
-      if (aValue === bValue) {
-        // if the compare values are equal, sort by seqNum
-        return sortOn.order === "asc" ? a - b : b - a
-      }
-      return sortOn.order === "asc"
-        ? aValue.localeCompare(bValue)
-        : bValue.localeCompare(aValue)
-    }
-    if (aValue === undefined || bValue === undefined) {
-      // if one of the values is undefined, sort by seqNum
-      return sortOn.order === "asc" ? a - b : b - a
-    }
-    return sortOn.order === "asc" ? aValue - bValue : bValue - aValue
-  })
+  const seqs = applySorting(allSeqs, sortOn, metadata, channelData)
   return (
     <tbody>
-      {allSeqs.map((seqNum) => {
+      {seqs.map((seqNum) => {
         const metadataRow = seqNum in metadata ? metadata[seqNum] : {}
         const channelRow = seqNum in channelData ? channelData[seqNum] : {}
         return (
@@ -233,6 +211,34 @@ TableBody.propTypes = {
   channelData: PropTypes.object,
   metadata: PropTypes.object,
   eventUrl: PropTypes.string,
+}
+
+// Function to sort the rows based on the selected column
+// and order (ascending or descending)
+function applySorting(allSeqs, sortOn, metadata, channelData) {
+  return allSeqs.toSorted((a, b) => {
+    if (sortOn.column === "seq") {
+      return sortOn.order === "asc" ? a - b : b - a
+    }
+    const aValue =
+      metadata[a]?.[sortOn.column] ?? channelData[a]?.[sortOn.column]
+    const bValue =
+      metadata[b]?.[sortOn.column] ?? channelData[b]?.[sortOn.column]
+    if (typeof aValue === "string" && typeof bValue === "string") {
+      if (aValue === bValue) {
+        // if the compare values are equal, sort by seqNum
+        return sortOn.order === "asc" ? a - b : b - a
+      }
+      return sortOn.order === "asc"
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue)
+    }
+    if (aValue === undefined || bValue === undefined) {
+      // if one of the values is undefined, sort by seqNum
+      return sortOn.order === "asc" ? a - b : b - a
+    }
+    return sortOn.order === "asc" ? aValue - bValue : bValue - aValue
+  })
 }
 
 // Component for individual channel header
