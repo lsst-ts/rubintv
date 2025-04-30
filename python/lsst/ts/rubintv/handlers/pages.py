@@ -76,6 +76,20 @@ async def get_home(
     )
 
 
+@pages_router.get("/detectors", response_class=HTMLResponse, name="detectors")
+async def get_detectors_page(request: Request) -> Response:
+    title = build_title("Detectors")
+    return templates.TemplateResponse(
+        request=request,
+        name="detectors.jinja",
+        context={
+            "request": request,
+            "title": title,
+            "date": get_current_day_obs().isoformat(),
+        },
+    )
+
+
 @pages_router.get("/admin", response_class=HTMLResponse, name="admin")
 async def get_admin_page(request: Request) -> Response:
     admin = await get_admin(request)

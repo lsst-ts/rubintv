@@ -1,0 +1,30 @@
+{% extends "_layout.jinja" %}
+
+{% block pagetitle %}
+  Detectors
+{% endblock pagetitle  %}
+
+{% block undertitle %}
+{% endblock undertitle %}
+
+
+{% block breadcrumb %}
+  <a href="{{ url_for('home') }}">
+    Home
+  </a>>
+  <p>Detetctors</p>
+{% endblock breadcrumb  %}
+
+{% block content %}
+    <section id="detectors">
+      {# React TableApp root here #}
+    </section>
+{% endblock content %}
+
+{% block footer_scripts %}
+    <script>
+      window.APP_DATA.date = {{ date|tojson }}
+    </script>
+    <script src='{{ url_for("static", path="assets/detectors.js") }}'></script>
+  {{ super() }}
+{% endblock footer_scripts  %}
