@@ -1,0 +1,150 @@
+.detector-container
+  padding: 1rem
+  display: flex
+  flex-direction: column
+  gap: 2rem
+
+.main-detectors
+  display: flex
+  gap: 2rem
+  justify-content: center
+
+.aos-detectors
+  display: flex
+  gap: 2rem
+  justify-content: center
+
+.step1b-section
+  display: flex
+  flex-direction: column
+  gap: 2rem
+
+.step1b-groups
+  display: flex
+  gap: 4rem
+  justify-content: center
+
+.step1b-row, .backlog-row
+  h3
+    margin-bottom: 0.5rem
+    font-size: 1.1em
+    text-align: center
+
+.step1b-cells
+  display: flex
+  gap: 1rem
+  justify-content: center
+
+  .detector-cell
+    width: 50px
+    height: 50px
+    border-radius: 4px
+    position: relative
+    
+    &.status-free
+      background-color: #4CAF50
+    &.status-busy
+      background-color: #f44336
+    &.status-queued
+      background-color: #FF9800
+    &.status-missing
+      background-color: #9E9E9E
+
+    .queue-length
+      position: absolute
+      top: 50%
+      left: 50%
+      transform: translate(-50%, -50%)
+      color: white
+      font-weight: bold
+
+.detector
+  &-container
+    padding: 1rem
+    display: flex
+    flex-direction: column
+    gap: 2rem
+
+  &-grid
+    display: flex
+    gap: 2rem
+    margin-bottom: 1rem
+
+  &-row
+    display: flex
+    gap: 2rem
+
+  &-section-large
+    flex: 1
+    max-width: 50%
+  &-section-small
+    flex: 1
+    max-width: 25%
+    &.detector-title
+      font-size: 0.9rem
+
+  &-title
+    font-size: 1.25rem
+    font-weight: bold
+    margin-bottom: 1rem
+
+  &-canvas
+    position: relative
+    // border: 1px solid #ccc
+    width: 100%
+    aspect-ratio: 1
+
+  &-cell
+    position: absolute
+    border: 1px solid #374151
+    opacity: 0.8
+
+    &-content
+      position: absolute
+      inset: 0
+      display: flex
+      align-items: center
+      justify-content: center
+
+.queue-length
+  color: black
+  font-weight: bold
+
+.status
+  &-free
+    background-color: #22c55e
+  &-busy
+    background-color: #eab308
+  &-queued
+    background-color: #ef4444
+  &-missing
+    background-color: #d1d5db
+  
+
+.legend
+  margin-top: 1rem
+
+  &-title
+    font-weight: bold
+
+  &-items
+    display: flex
+    gap: 1rem
+    margin-top: 0.5rem
+
+  &-item
+    display: flex
+    align-items: center
+
+  &-color
+    width: 1rem
+    height: 1rem
+    margin-right: 0.5rem
+
+.loading-message,
+.error-message
+  padding: 1rem
+  text-align: center
+
+.error-message
+  color: #ef4444
