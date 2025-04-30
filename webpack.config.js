@@ -4,7 +4,7 @@ const CssMinimizerPlugin = require("css-minimizer-webpack-plugin")
 const TerserPlugin = require("terser-webpack-plugin")
 const { DuplicatesPlugin } = require("inspectpack/plugin")
 
-const pagesWithoutHistory = ["admin"].reduce(
+const pagesWithoutHistory = ["admin", "detectors"].reduce(
   (pages, page) => ({
     ...pages,
     [page]: [`./src/js/pages/${page}.js`],
