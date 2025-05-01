@@ -6,7 +6,7 @@
 {% endblock pagetitle %}
 
 {% block pagesubtitle %}
-  {% if not historical_busy %}
+  {% if not historicalBusy %}
     {% if isHistorical %}
       Historical
     {% else %}
@@ -17,8 +17,13 @@
 
 {% block undertitle %}
   {% if date %}
-    {% set stale_class = "stale" if isStale and not isHistorical else "" %}
-    <div id="header-date" class="{{stale_class}}">{{ date }}</div>
+    {# only show the date is stale if we're actually displaying a tabale #}
+    {% set showStale = isStale and not historicalBusy %}
+    {% set stale_class = "stale" if showStale else "" %}
+    {% set stale_label = 'aria-label="stale data"' if showStale else "" %}
+    <div id="header-date" class="{{stale_class}}" {{stale_label}}>
+      {{ date }}
+    </div>
   {% endif %}
 {% endblock undertitle %}
 
@@ -26,7 +31,7 @@
   <script>
     window.APP_DATA.camera = {{ camera|tojson }}
     window.APP_DATA.date = "{{ date }}"
-    window.APP_DATA.historicalBusy = {{ historical_busy|tojson if historical_busy else "null" }}
+    window.APP_DATA.historicalBusy = {{ historicalBusy|tojson if historicalBusy else "null" }}
     window.APP_DATA.calendar = {{ calendar | tojson if calendar else "null" }}
     window.APP_DATA.isHistorical = {{ isHistorical | tojson if isHistorical else "null" }}
   </script>

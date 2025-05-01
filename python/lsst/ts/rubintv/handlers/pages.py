@@ -236,7 +236,7 @@ async def get_camera_for_date_page(
             "channelData": channel_data,
             "per_day": per_day,
             "metadata": metadata,
-            "historical_busy": historical_busy,
+            "historicalBusy": historical_busy,
             "nr_link": nr_link,
             "calendar": calendar,
             "title": title,
@@ -337,7 +337,7 @@ async def get_historical_night_report_page(
             "camera": camera.model_dump(),
             "date": day_obs,
             "night_report": night_report.model_dump(),
-            "historical_busy": historical_busy,
+            "historicalBusy": historical_busy,
             "title": title,
         },
     )
@@ -387,7 +387,7 @@ async def get_specific_channel_event_page(
             "channel": to_dict(channel),
             "event": to_dict(event),
             "prevNext": next_prev,
-            "historical_busy": historical_busy,
+            "historicalBusy": historical_busy,
             "title": title,
         },
     )
