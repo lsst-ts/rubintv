@@ -212,7 +212,7 @@ const RubinCalendar = ({
     return () => {
       window.removeEventListener("calendar", handleCalendarEvent)
     }
-  })
+  }, [])
   const yearClass = (year) => {
     return year == yearToDisplay ? "selected year-title" : "year-title"
   }
