@@ -200,7 +200,7 @@ cameras:
     text_colour: "rgba(0,0,0,0)"
     logo: RA_Performance.jpg
     channels:
-      - name: timimg_diagram
+      - name: timing_diagram
         title: Timing Diagram
         colour: "#85e986"
 
