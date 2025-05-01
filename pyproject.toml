@@ -18,6 +18,7 @@ dependencies = [
   "jinja2",
   "websockets",
   "moto",
+  "redis"
 ]
 readme = "README.md"
 dynamic = ["version"]
