@@ -27,6 +27,7 @@ async def get_camera_current_data(
     camera: Camera,
     connection: HTTPConnection,
 ) -> CameraPageData:
+    """Get the current data for a camera."""
     if not camera.online:
         return None
     current_poller: CurrentPoller = connection.app.state.current_poller
@@ -52,6 +53,7 @@ async def get_latest_metadata(
     camera: Camera,
     connection: HTTPConnection,
 ) -> dict | None:
+    """Get the latest metadata for a camera."""
     if not camera.online:
         return None
     current_poller: CurrentPoller = connection.app.state.current_poller
@@ -68,6 +70,7 @@ async def get_latest_metadata(
 async def get_most_recent_historical_day(
     location: Location, camera: Camera, connection: HTTPConnection
 ) -> date | None:
+    """Get the most recent historical day for a camera."""
     historical: HistoricalPoller = connection.app.state.historical
     if await historical.is_busy():
         raise HTTPException(423, "Historical data is being processed")
@@ -83,6 +86,7 @@ async def get_most_recent_historical_day(
 async def get_camera_events_for_date(
     location: Location, camera: Camera, day_obs: date, connection: HTTPConnection
 ) -> CameraPageData:
+    """Get the camera events for a particular date."""
     historical: HistoricalPoller = connection.app.state.historical
     if await historical.is_busy():
         raise HTTPException(423, "Historical data is being processed")
@@ -102,6 +106,7 @@ async def get_camera_events_for_date(
 async def get_camera_calendar(
     location: Location, camera: Camera, request: Request
 ) -> dict[int, dict[int, dict[int, int]]]:
+    """Get the camera calendar data for a particular date."""
     historical: HistoricalPoller = request.app.state.historical
     return await historical.get_camera_calendar(location, camera)
 
@@ -109,6 +114,7 @@ async def get_camera_calendar(
 async def get_current_night_report_payload(
     location: Location, camera: Camera, connection: HTTPConnection
 ) -> tuple[date, NightReport]:
+    """Get the current night report data for a camera."""
     day_obs = get_current_day_obs()
     current_poller: CurrentPoller = connection.app.state.current_poller
     night_report = await current_poller.get_current_night_report(
@@ -120,6 +126,10 @@ async def get_current_night_report_payload(
 async def try_historical_call(
     async_func: Callable, is_busy_default: Any = None, *args: Any, **kwargs: Any
 ) -> tuple[Any, bool]:
+    """Try to call a historical function and return the result.
+    If the function raises an HTTPException with status code 423, return
+    the default value and True to show the historical poller is busy.
+    """
     try:
         result = await async_func(*args, **kwargs)
         return result, False
@@ -133,6 +143,7 @@ async def try_historical_call(
 async def get_prev_next_event(
     location: Location, camera: Camera, event: Event, request: Request
 ) -> dict[str, dict | None]:
+    """Get the previous and next events for a given event."""
     nxt: dict | None = None
     prv: dict | None = None
     day_obs = event.day_obs_date()
@@ -148,6 +159,7 @@ async def get_prev_next_event(
 
 
 def date_validation(date_str: str) -> date:
+    """Validate the date string and return a date object."""
     try:
         day_obs = date_str_to_date(date_str)
     except ValueError:

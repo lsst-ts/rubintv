@@ -145,7 +145,7 @@ class CurrentPoller:
                     await sleep(self.MIN_INTERVAL - elapsed)
 
             except Exception:
-                logger.exception("Caught exception during poll for data")
+                logger.debug("Caught exception during poll for data")
 
     async def poll_for_yesterdays_per_day(self, location: Location) -> None:
         """Uses the store of prefixes for yesterday's missing per-day data to

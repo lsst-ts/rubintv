@@ -107,6 +107,8 @@ async def get_camera_page(
     camera_name: str,
     request: Request,
 ) -> Response:
+    """GET ``/rubintv/{location_name}/{camera_name}``
+    (the camera page for the current day)."""
     day_obs = get_current_day_obs()
     return await get_camera_for_date_page(
         location_name=location_name,
@@ -127,8 +129,13 @@ async def get_camera_mosaic_page(
     request: Request,
     headerless: bool = False,
 ) -> Response:
+    """GET ``/rubintv/{location_name}/{camera_name}/mosaic``
+    Collects together a page of updating images from the camera.
+    """
     logger.info("Getting mosaic page", headerless=headerless)
     location, camera = await get_location_camera(location_name, camera_name, request)
+
+    # check if the camera has a mosaic view (see models_data.yaml)
     if not camera.mosaic_view_meta:
         raise HTTPException(404, "No mosaic found for this camera.")
 
@@ -169,19 +176,19 @@ async def get_camera_for_date_page(
     if not camera.online:
         raise HTTPException(404, "Camera not online.")
 
-    historical_busy = False
-    is_historical = True
-    calendar: dict[int, dict[int, dict[int, int]]] = {}
     data: CameraPageData = CameraPageData()
     stale_data = False
     no_data_at_all = False
 
+    is_historical = True
     current_day_obs = get_current_day_obs()
     if day_obs == current_day_obs:
         is_historical = False
         data = await get_camera_current_data(location, camera, request)
         if data.is_empty():
             stale_data = True
+
+    historical_busy = False
     try:
         if (day_obs == current_day_obs and data.is_empty()) or date_str == "historical":
             day_obs = await get_most_recent_historical_day(location, camera, request)
@@ -197,6 +204,7 @@ async def get_camera_for_date_page(
         else:
             raise http_error
 
+    calendar: dict[int, dict[int, dict[int, int]]] = {}
     if is_historical:
         calendar = await get_camera_calendar(location, camera, request)
 
