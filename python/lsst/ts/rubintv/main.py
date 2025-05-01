@@ -20,6 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from . import __version__
 from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
+from .background.redishandler import RedisHandler
 from .config import config, rubintv_logger
 from .handlers.api import api_router
 from .handlers.ddv_routes_handler import ddv_router
@@ -58,13 +59,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     # initialise the background bucket pollers
     hp = HistoricalPoller(models.locations)
 
+    # initialise the redis client
+    if config.ra_redis_host:
+        redis_client = _makeRedis()
+        redis_subscriber = RedisHandler(
+            redis_client=redis_client,
+            mapped_keys=models.redis_detectors,
+        )
+        redis_task = asyncio.create_task(redis_subscriber.run_async())
+        app.state.redis_client = redis_client
+        app.state.redis_subscriber = redis_subscriber
+
     # inject app state
     app.state.models = models
     app.state.historical = hp
     app.state.s3_clients = {}
-    if config.ra_redis_host:
-        redis_client = await _makeRedis()
-        app.state.redis_client = redis_client
     for location in models.locations:
         app.state.s3_clients[location.name] = S3Client(
             location.profile_name, location.bucket_name, location.endpoint_url
@@ -82,6 +91,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     # If no lifespan is needed for the subapp, still yield to the main app
     else:
         yield
+
+    if redis_task:
+        redis_task.cancel()
+        try:
+            await redis_task
+        except asyncio.CancelledError:
+            pass
 
     historical_polling.cancel()
     today_polling.cancel()

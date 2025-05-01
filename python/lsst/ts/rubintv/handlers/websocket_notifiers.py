@@ -102,3 +102,40 @@ async def notify_all_status_change(historical_busy: bool) -> None:
 
     # Use asyncio.gather to handle all tasks concurrently
     await asyncio.gather(*tasks, return_exceptions=True)
+
+
+async def notify_redis_detector_status(data: dict) -> None:
+    """Notify all clients subscribed to the Redis detector service about
+    status changes.
+
+    Parameters
+    ----------
+    data : dict
+        The detector status data to send to clients. Contains:
+        - set: The name of the set (e.g., 'sfmset0', 'aosset0')
+        - event: The event type
+        - data: The actual data from Redis
+    """
+    service = Service.DETECTORS
+    message_type = MessageType.DETECTOR_STATUS
+    key = "detectors"
+    tasks = []
+
+    async with services_lock:
+        if key not in services_clients:
+            return
+        client_ids = services_clients[key]
+
+    # Gather websockets for the clients
+    async with clients_lock:
+        websockets = [
+            clients[client_id] for client_id in client_ids if client_id in clients
+        ]
+
+    # Prepare tasks for each websocket
+    for websocket in websockets:
+        task = send_notification(websocket, service, message_type, data)
+        tasks.append(task)
+
+    # Use asyncio.gather to handle all tasks concurrently
+    await asyncio.gather(*tasks, return_exceptions=True)
