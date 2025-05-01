@@ -11,7 +11,7 @@ from .redissubscribe import KeyspaceSubscriber
 logger = rubintv_logger()
 
 
-class RedisHandler:
+class DetectorStatusHandler:
     def __init__(
         self, redis_client: redis.Redis, mapped_keys: list[dict[str, str]]
     ) -> None:
@@ -52,42 +52,59 @@ class RedisHandler:
         key_type = await self.redis_client.type(key)
         key_type = key_type.decode()
 
-        if key_type == "string":
-            value = await self.redis_client.get(key)
-            if value:
-                try:
-                    # Try to parse as JSON first
-                    return json.loads(value.decode())
-                except json.JSONDecodeError:
-                    # If not JSON, return as plain string
-                    return value.decode()
-            return "{}"
-        elif key_type == "list":
-            value = await self.redis_client.lrange(key, 0, -1)
-            return [v.decode() for v in value]
-        elif key_type == "set":
-            value = await self.redis_client.smembers(key)
-            return [v.decode() for v in value]
-        elif key_type == "hash":
-            value = await self.redis_client.hgetall(key)
-            return {k.decode(): json.loads(v.decode()) for k, v in value.items()}
-        else:
-            logger.debug(f"Unsupported Redis type {key_type} for key {key}")
+        # The keys are expected to be string representations of JSON
+        # objects
+        if key_type != "string":
+            logger.debug(f"Key {key} is not a string")
             return None
+
+        value = await self.redis_client.get(key)
+        if value is None:
+            logger.debug(f"Key {key} does not exist")
+            return None
+
+        try:
+            # Try to parse as JSON first
+            data = json.loads(value.decode())
+        except json.JSONDecodeError:
+            # If not JSON, return nothing
+            logger.debug(f"Key {key} is not JSON")
+            return None
+        if not isinstance(data, dict):
+            logger.debug(f"Key {key} is not a JSON object")
+            logger.debug(f"Key {key} value: {data}")
+            return None
+
+        # Unpack the data into a dict with keys as strings
+        # and values as dicts with "status" and "queue_length"
+        # or "status" and the original value
+        unpacked_data = {}
+        for k, v in data.items():
+            try:
+                v = int(v)
+                unpacked_data[k] = {"status": "queued", "queue_length": v}
+            except ValueError:
+                # If the value cannot be cast to an int, we assume it's a
+                # string and create a nested dict with key "status" and the
+                # original value
+                unpacked_data[k] = {"status": v}
+        return unpacked_data
 
     async def read_initial_data(
         self,
-    ) -> dict[str, str | list[str] | dict[str, Any]] | None:
+    ) -> dict[str, str | list[str] | dict[str, Any]]:
         """Read initial data for all subscribed keys and notify clients"""
+        logger.debug("Reading initial data for all keys", key=self.keys)
+        data = {}
         for key in self.keys:
             try:
                 decoded_value = await self._decode_redis_value(key)
                 if decoded_value is not None:
                     set_name = self.mapped_keys[key]
-                    return {set_name: decoded_value}
+                    data[set_name] = decoded_value
             except Exception as e:
                 logger.debug(f"Error reading initial data for {key}: {e}")
-        return None
+        return data
 
     async def on_event(self, event: dict[str, Any]) -> None:
         """Handle Redis keyspace events

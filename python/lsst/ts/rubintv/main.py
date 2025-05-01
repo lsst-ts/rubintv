@@ -20,7 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from . import __version__
 from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
-from .background.redishandler import RedisHandler
+from .background.redishandler import DetectorStatusHandler
 from .config import config, rubintv_logger
 from .handlers.api import api_router
 from .handlers.ddv_routes_handler import ddv_router
@@ -62,7 +62,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     # initialise the redis client
     if config.ra_redis_host:
         redis_client = _makeRedis()
-        redis_subscriber = RedisHandler(
+        redis_subscriber = DetectorStatusHandler(
             redis_client=redis_client,
             mapped_keys=models.redis_detectors,
         )
