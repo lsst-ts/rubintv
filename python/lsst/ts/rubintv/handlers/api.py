@@ -12,7 +12,14 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
     get_camera_events_for_date,
     get_current_night_report_payload,
 )
-from lsst.ts.rubintv.models.models import Camera, Event, KeyValue, Location, NightReport
+from lsst.ts.rubintv.models.models import (
+    Camera,
+    CameraPageData,
+    Event,
+    KeyValue,
+    Location,
+    NightReport,
+)
 from lsst.ts.rubintv.models.models_helpers import find_first
 
 api_router = APIRouter()
@@ -102,15 +109,16 @@ async def get_camera_events_for_date_api(
 
     day_obs = date_validation(date_str)
 
-    data = await get_camera_events_for_date(location, camera, day_obs, request)
-    if data:
-        channel_data, per_day, metadata, nr_exists = data
+    data: CameraPageData = await get_camera_events_for_date(
+        location, camera, day_obs, request
+    )
+    if not data.is_empty():
         return {
             "date": day_obs,
-            "channelData": channel_data,
-            "metadata": metadata,
-            "perDay": per_day,
-            "nightReportExists": nr_exists,
+            "channelData": data.channel_data,
+            "metadata": data.metadata,
+            "perDay": data.per_day,
+            "nightReportExists": data.nr_exists,
         }
     else:
         return {}
