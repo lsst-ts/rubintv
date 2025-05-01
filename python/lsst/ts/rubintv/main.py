@@ -56,12 +56,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     models = ModelsInitiator()
 
     # initialise the background bucket pollers
-    cp = CurrentPoller(models.locations)
     hp = HistoricalPoller(models.locations)
 
     # inject app state
     app.state.models = models
-    app.state.current_poller = cp
     app.state.historical = hp
     app.state.s3_clients = {}
     if config.ra_redis_host:
@@ -73,7 +71,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         )
 
     # start polling buckets for data
-    today_polling = asyncio.create_task(cp.poll_buckets_for_todays_data())
+    today_polling = await startup_current_poller(models, app)
     historical_polling = asyncio.create_task(hp.check_for_new_day())
 
     # Startup phase for the subapp
@@ -94,6 +92,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 
     for c in clients.values():
         await c.close()
+
+
+async def startup_current_poller(models: ModelsInitiator, app: FastAPI) -> asyncio.Task:
+    """Start the current poller.
+    Parameters
+    ----------
+    models : dict
+        The models dictionary.
+    app : FastAPI
+        The FastAPI application.
+    """
+    first_pass = asyncio.Event()
+    cp = CurrentPoller(models.locations, first_pass_event=first_pass)
+    app.state.current_poller = cp
+    # Create an event to signal the first pass is complete
+    app.state.first_pass_event = first_pass
+    return asyncio.create_task(cp.poll_buckets_for_todays_data())
 
 
 async def _makeRedis() -> redis.Redis:

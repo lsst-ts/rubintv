@@ -157,7 +157,7 @@ async def get_specific_channel_event(
     ],
     request: Request,
 ) -> Event | None:
-    location, camera = await get_location_camera(location_name, camera_name, request)
+    _, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online or not key:
         return None
     event = Event(key=key)

@@ -29,12 +29,15 @@ async def get_camera_current_data(
     if not camera.online:
         return None
     current_poller: CurrentPoller = connection.app.state.current_poller
-    while not current_poller.completed_first_poll:
-        await asyncio.sleep(0.3)
+    first_pass: asyncio.Event = connection.app.state.first_pass_event
+    # wait for the first poll to complete
+    await first_pass.wait()
+
     channel_data = await current_poller.get_current_channel_table(location.name, camera)
     metadata = await current_poller.get_current_metadata(location.name, camera)
     per_day = await current_poller.get_current_per_day_data(location.name, camera)
     nr_exists = current_poller.night_report_exists(location.name, camera.name)
+
     if not (channel_data or metadata or per_day or nr_exists):
         return None
     return (channel_data, per_day, metadata, nr_exists)
@@ -48,8 +51,10 @@ async def get_latest_metadata(
     if not camera.online:
         return None
     current_poller: CurrentPoller = connection.app.state.current_poller
-    while not current_poller.completed_first_poll:
-        await asyncio.sleep(0.3)
+    first_pass: asyncio.Event = connection.app.state.first_pass_event
+    # wait for the first poll to complete
+    await first_pass.wait()
+
     metadata = await current_poller.get_latest_metadata(location.name, camera)
     if not metadata:
         return None
