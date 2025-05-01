@@ -13,6 +13,14 @@ const getStatusClass = (status) => {
   }
 }
 
+const createPlaceholders = (count) => {
+  const placeholders = {}
+  for (let i = 0; i < count; i++) {
+    placeholders[i] = { status: 'missing' }
+  }
+  return placeholders
+}
+
 const DetectorSection = ({ title, map, statuses, size = 'large' }) => {
   return (
     <div className={`detector-section detector-section-${size}`}>
@@ -31,15 +39,15 @@ const DetectorStatusVisualization = () => {
   const [mainDetectorStatuses, setMainDetectorStatuses] = useState({
     sfmSet0: {},
     sfmSet1: {},
-    sfbStep1b: Array(8).fill({ status: 'missing', queue_length: 0 }), // Initialize with 8 placeholders
-    backlogWorkers: Array(4).fill({ status: 'missing', queue_length: 0 }) // Initialize with 4 placeholders
+    sfmStep1b: createPlaceholders(8),
+    spareWorkers:createPlaceholders(4)
   })
   const [cwfsStatuses, setCwfsStatuses] = useState({
     aosSet0: {},
     aosSet1: {},
     aosSet2: {},
     aosSet3: {},
-    aosStep1b: Array(5).fill({ status: 'missing', queue_length: 0 }) // Initialize with 8 placeholders
+    aosStep1b: createPlaceholders(8)
   })
 
   useEffect(() => {
@@ -49,13 +57,13 @@ const DetectorStatusVisualization = () => {
       if (dataType !== 'detectorStatus') {
         return
       }
-      
+
       // Update detector statuses based on received data
       const {
         sfmSet0,
         sfmSet1,
-        sfbStep1b,
-        backlogWorkers,
+        sfmStep1b,
+        spareWorkers,
         aosSet0,
         aosSet1,
         aosSet2,
@@ -63,14 +71,13 @@ const DetectorStatusVisualization = () => {
         aosStep1b
       } = data
       
-      console.debug(sfmSet0)
       // Only update the detectors that have new data
       setMainDetectorStatuses(prev => ({
         ...prev,
         ...(sfmSet0 && { sfmSet0 }),
         ...(sfmSet1 && { sfmSet1 }),
-        ...(sfbStep1b && { sfbStep1b }),
-        ...(backlogWorkers && { backlogWorkers })
+        ...(sfmStep1b && { sfmStep1b }),
+        ...(spareWorkers && { spareWorkers })
       }))
 
       setCwfsStatuses(prev => ({
@@ -82,12 +89,6 @@ const DetectorStatusVisualization = () => {
         ...(aosStep1b && { aosStep1b })
       }))
     }
-
-    // Show the updated status in the console
-    console.debug('Detector status updated:', {
-      mainDetectorStatuses,
-      cwfsStatuses
-    })
 
     // Add event listener for detector status updates
     window.addEventListener('detectors', handleDetectorEvent)
@@ -145,7 +146,7 @@ const DetectorStatusVisualization = () => {
           <div className="step1b-row">
             <h3>SFB Step 1b</h3>
             <div className="step1b-cells">
-              {mainDetectorStatuses.sfbStep1b.map((status, i) => (
+              {Object.entries(mainDetectorStatuses.sfmStep1b).map(([i, status]) => (
                 <div
                   key={`sfb-step1b-${i}`}
                   className={`detector-cell ${getStatusClass(status.status)}`}
@@ -160,7 +161,7 @@ const DetectorStatusVisualization = () => {
           <div className="step1b-row">
             <h3>AOS Step 1b</h3>
             <div className="step1b-cells">
-              {cwfsStatuses.aosStep1b.map((status, i) => (
+              {Object.entries(cwfsStatuses.aosStep1b).map(([i,status]) => (
                 <div
                   key={`aos-step1b-${i}`}
                   className={`detector-cell ${getStatusClass(status.status)}`}
@@ -176,7 +177,7 @@ const DetectorStatusVisualization = () => {
         <div className="backlog-row">
           <h3>Backlog Workers</h3>
           <div className="step1b-cells">
-            {mainDetectorStatuses.backlogWorkers.map((status, i) => (
+            {Object.entries(mainDetectorStatuses.spareWorkers).map(([i,status]) => (
               <div
                 key={`backlog-worker-${i}`}
                 className={`detector-cell ${getStatusClass(status.status)}`}

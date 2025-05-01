@@ -66,7 +66,7 @@ class KeyspaceSubscriber:
                 message = await self.pubsub.get_message()
                 if message:
                     await self.callback(message)
-                await asyncio.sleep(0.01)  # Prevent tight loop
+                await asyncio.sleep(0.1)  # Prevent tight loop
             except Exception as e:
                 logger.exception(f"Error in callback: {e}")
                 if not self._running:
