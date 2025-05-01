@@ -451,7 +451,7 @@ class CurrentPoller:
         """
         if not metadata:
             return {}
-        last_seq = str(max(iter(int(k) for k in metadata.keys())))
+        last_seq = str(max(int(k) for k in metadata.keys()))
         return {last_seq: metadata[last_seq]}
 
     async def get_current_channel_event(
