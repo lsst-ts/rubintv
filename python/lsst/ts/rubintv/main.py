@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
 
-import redis.asyncio as redis
+import redis.asyncio as redis  # type: ignore
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 

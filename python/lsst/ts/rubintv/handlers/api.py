@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-import redis.exceptions
+import redis.exceptions  # type: ignore
 from fastapi import APIRouter, HTTPException, Query, Request
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller

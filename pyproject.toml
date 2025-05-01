@@ -67,4 +67,5 @@ dev = [
   "types-PyYAML",
   "beautifulsoup4",
   "types-python-dateutil",
+  "types-redis"
   ]
