@@ -423,12 +423,15 @@ class Heartbeat:
         }
 
 
-class ServiceTypes(Enum):
+class ServiceTypes(str, Enum):
+    """The types of services provided by RubinTV."""
+
     CAMERA = "camera"
     CHANNEL = "channel"
     NIGHTREPORT = "nightreport"
     HISTORICALSTATUS = "historicalStatus"
     CALENDAR = "calendar"
+    DETECTORS = "detectors"
 
 
 class ServiceMessageTypes(Enum):
@@ -441,6 +444,7 @@ class ServiceMessageTypes(Enum):
     NIGHT_REPORT = "nightReport"
     HISTORICAL_STATUS = "historicalStatus"
     DAY_CHANGE = "dayChange"
+    DETECTOR_STATUS = "detectorStatus"
 
 
 class KeyValue(BaseModel):
