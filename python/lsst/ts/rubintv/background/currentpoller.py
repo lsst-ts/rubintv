@@ -37,7 +37,7 @@ class CurrentPoller:
     def __init__(
         self,
         locations: list[Location],
-        first_pass_event: AsyncioEvent,
+        first_pass_event: AsyncioEvent | None = None,
         test_mode: bool = False,
     ) -> None:
         self._s3clients: dict[str, S3Client] = {}
@@ -131,7 +131,10 @@ class CurrentPoller:
                     await self.poll_for_yesterdays_per_day(location)
 
                 self.completed_first_poll = True
-                if not self.completed_first_poll_event.is_set():
+                if (
+                    self.completed_first_poll_event is not None
+                    and not self.completed_first_poll_event.is_set()
+                ):
                     self.completed_first_poll_event.set()
 
                 if self.test_mode:
