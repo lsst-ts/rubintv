@@ -1,6 +1,7 @@
 """Models for rubintv."""
 
 import asyncio
+import dataclasses
 import re
 from datetime import date, datetime, timedelta, timezone
 from enum import Enum
@@ -447,3 +448,17 @@ class KeyValue(BaseModel):
 
     key: str
     value: str | int | float | bool | None = None
+
+
+@dataclass
+class CameraPageData:
+    """Data for a camera page."""
+
+    channel_data: dict[int, dict[str, dict]] = dataclasses.field(default_factory=dict)
+    metadata: dict[str, Any] = dataclasses.field(default_factory=dict)
+    per_day: dict[str, dict] = dataclasses.field(default_factory=dict)
+    nr_exists: bool = False
+
+    def is_empty(self) -> bool:
+        """Check if the data is empty."""
+        return not any([self.channel_data, self.metadata, self.per_day, self.nr_exists])

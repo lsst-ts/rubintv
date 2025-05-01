@@ -25,8 +25,8 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
 )
 from lsst.ts.rubintv.handlers.pages_helpers import build_title, get_admin, to_dict
 from lsst.ts.rubintv.models.models import (
+    CameraPageData,
     Channel,
-    Event,
     Location,
     NightReport,
     get_current_day_obs,
@@ -170,33 +170,23 @@ async def get_camera_for_date_page(
         raise HTTPException(404, "Camera not online.")
 
     historical_busy = False
-    nr_exists = False
     is_historical = True
-    metadata: dict = {}
-    per_day: dict[str, Event] = {}
-    channel_data: dict[int, dict[str, dict]] = {}
     calendar: dict[int, dict[int, dict[int, int]]] = {}
-    result = None
+    data: CameraPageData = CameraPageData()
     stale_data = False
     no_data_at_all = False
 
     current_day_obs = get_current_day_obs()
     if day_obs == current_day_obs:
         is_historical = False
-        result = await get_camera_current_data(location, camera, request)
-        if result:
-            (channel_data, per_day, metadata, nr_exists) = result
-        else:
+        data = await get_camera_current_data(location, camera, request)
+        if data.is_empty():
             stale_data = True
     try:
-        if (day_obs == current_day_obs and result is None) or date_str == "historical":
+        if (day_obs == current_day_obs and data.is_empty()) or date_str == "historical":
             day_obs = await get_most_recent_historical_day(location, camera, request)
-        if day_obs is not None and result is None:
-            result = await get_camera_events_for_date(
-                location, camera, day_obs, request
-            )
-            if result:
-                (channel_data, per_day, metadata, nr_exists) = result
+        if day_obs is not None and data.is_empty():
+            data = await get_camera_events_for_date(location, camera, day_obs, request)
         if day_obs is None:
             no_data_at_all = True
 
@@ -211,13 +201,13 @@ async def get_camera_for_date_page(
         calendar = await get_camera_calendar(location, camera, request)
 
     nr_link = ""
-    if nr_exists:
+    if not data.is_empty() and data.nr_exists:
         nr_link = "historical"
 
     template = "camera"
     if camera.name == "allsky":
         template = "allsky"
-    if result is None and not historical_busy:
+    if data is None and not historical_busy:
         template = "not-on-this-day"
     if no_data_at_all and not historical_busy:
         template = "camera-empty"
@@ -233,9 +223,9 @@ async def get_camera_for_date_page(
             "isHistorical": is_historical,
             "location": location,
             "camera": camera.model_dump(),
-            "channelData": channel_data,
-            "per_day": per_day,
-            "metadata": metadata,
+            "channelData": data.channel_data,
+            "per_day": data.per_day,
+            "metadata": data.metadata,
             "historicalBusy": historical_busy,
             "nr_link": nr_link,
             "calendar": calendar,
