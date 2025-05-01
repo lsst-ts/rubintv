@@ -884,3 +884,23 @@ admin_for:
   local: ["*"]
   test: ["*"]
   gha: ["*"]
+
+redis_detectors:
+  - key: CLUSTER_STATUS_SFM_SET_0
+    name: sfmSet0
+  - key: CLUSTER_STATUS_SFM_SET_1
+    name: sfmSet1
+  - key: CLUSTER_STATUS_AOS_SET_0
+    name: aosSet0
+  - key: CLUSTER_STATUS_AOS_SET_1
+    name: aosSet1
+  - key: CLUSTER_STATUS_AOS_SET_2
+    name: aosSet2
+  - key: CLUSTER_STATUS_AOS_SET_3
+    name: aosSet3
+  - key: CLUSTER_STATUS_SFM_STEP1B_SET_0
+    name: sfmStep1b
+  - key: CLUSTER_STATUS_AOS_STEP1B_SET_0
+    name: aosStep1b
+  - key: CLUSTER_STATUS_SPAREWORKERS_SET_0
+    name: spareWorkers

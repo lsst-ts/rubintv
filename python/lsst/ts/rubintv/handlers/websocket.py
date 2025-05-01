@@ -62,8 +62,10 @@ async def data_websocket(
                 del websocket_to_client[websocket]
                 logger.info("Num clients:", num_clients=len(clients))
                 await remove_client_from_services(client_id)
-    except Exception:
-        logger.exception("Caught surprise exception")
+    except Exception as e:
+        # Catch all exceptions to prevent the websocket from crashing
+        # and show the stack trace in the logs
+        logger.error("Unexpected error in websocket handler", error=e)
 
 
 async def validate_raw_message(raw: str) -> tuple[uuid.UUID, dict] | None:
@@ -100,20 +102,74 @@ async def remove_client_from_services(client_id: uuid.UUID) -> None:
     logger.info("Removed client.")
 
 
+async def attach_simple_service(
+    client_id: uuid.UUID,
+    websocket: WebSocket,
+    service: Service,
+    message_type: MessageType,
+    service_key: str,
+) -> None:
+    """Attach a client to a simple service that just needs initial state
+    notification.
+
+    Parameters
+    ----------
+    client_id : uuid.UUID
+        The ID of the client to attach
+    websocket : WebSocket
+        The websocket connection
+    service : Service
+        The service type (e.g. HISTORICALSTATUS, DETECTORS)
+    message_type : MessageType
+        The type of message to send
+    service_key : str
+        The key to use for storing in services_clients
+    """
+    # Get initial state based on service type
+    if service == Service.HISTORICALSTATUS:
+        payload = await websocket.app.state.historical.is_busy()
+    if service == Service.DETECTORS:
+        payload = await websocket.app.state.redis_subscriber.read_initial_data()
+
+    # Send initial state
+    await send_notification(
+        websocket,
+        service,
+        message_type,
+        payload,
+    )
+
+    # Register client for this service
+    async with services_lock:
+        if service_key not in services_clients:
+            services_clients[service_key] = [client_id]
+        else:
+            services_clients[service_key].append(client_id)
+
+
 async def attach_service(
     client_id: uuid.UUID, service_loc_cam: str, websocket: WebSocket
 ) -> None:
+    # Handle simple services that don't need location/camera parsing
     if service_loc_cam == "historicalStatus":
-        await attach_historical_busy_service(client_id, websocket)
-        return
-
-    if not await is_valid_service(service_loc_cam):
-        logger.error(
-            "Not valid service",
-            service_loc=service_loc_cam,
-            client_id=client_id,
+        await attach_simple_service(
+            client_id,
+            websocket,
+            Service.HISTORICALSTATUS,
+            MessageType.HISTORICAL_STATUS,
+            "historicalStatus",
         )
         return
+    elif service_loc_cam == "detectors":
+        await attach_simple_service(
+            client_id,
+            websocket,
+            Service.DETECTORS,
+            MessageType.DETECTOR_STATUS,
+            "detectors",
+        )
+        return
+
     try:
         service_str, loc_cam = service_loc_cam.split(" ")
         service = Service[service_str.upper()]
@@ -147,24 +203,6 @@ async def attach_service(
             services_clients[service_loc_cam].append(client_id)
         else:
             services_clients[service_loc_cam] = [client_id]
-
-
-async def attach_historical_busy_service(
-    client_id: uuid.UUID, websocket: WebSocket
-) -> None:
-    historical_busy = await websocket.app.state.historical.is_busy()
-    await websocket.send_json(
-        {
-            "service": Service.HISTORICALSTATUS.value,
-            "dataType": MessageType.HISTORICAL_STATUS.value,
-            "payload": historical_busy,
-        }
-    )
-    async with services_lock:
-        if "historicalStatus" not in services_clients:
-            services_clients["historicalStatus"] = [client_id]
-        else:
-            services_clients["historicalStatus"].append(client_id)
 
 
 async def is_valid_client_request(data: dict) -> bool:

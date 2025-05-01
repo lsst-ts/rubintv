@@ -9,7 +9,7 @@ import { WebsocketClient } from "../modules/ws-service-client"
   // Set up websocket connection if not historical
   if (!isHistorical) {
     const ws = new WebsocketClient()
-    ws.subscribe("service", "detector", locationName, camera.name)
+    ws.subscribe("service", "detectors")
   }
 
   const tableRoot = createRoot(_getById("detectors"))
