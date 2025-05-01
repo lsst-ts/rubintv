@@ -47,7 +47,7 @@ export class WebsocketClient {
     if (subscriptionType === "historicalStatus") {
       payload = { message: subscriptionType }
     } else {
-      const message = [servicePageType, pageID].join(" ")
+      const message = [servicePageType, pageID].join(" ").trim()
       payload = { message }
     }
     return payload

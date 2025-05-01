@@ -1,17 +1,17 @@
-import React from 'react';
-import { useState, useEffect, useRef } from 'react';
-import detectorMap from '../data/detectorMap.json';
-import cwfsMap from '../data/cwfsMap.json';
+import React from 'react'
+import { useState, useEffect, useRef } from 'react'
+import detectorMap from '../data/detectorMap.json'
+import cwfsMap from '../data/cwfsMap.json'
 
 // Get status class name
 const getStatusClass = (status) => {
   switch(status) {
-    case 'free': return 'status-free';
-    case 'busy': return 'status-busy';
-    case 'queued': return 'status-queued';
-    default: return 'status-missing';
+    case 'free': return 'status-free'
+    case 'busy': return 'status-busy'
+    case 'queued': return 'status-queued'
+    default: return 'status-missing'
   }
-};
+}
 
 const DetectorSection = ({ title, map, statuses, size = 'large' }) => {
   return (
@@ -23,82 +23,80 @@ const DetectorSection = ({ title, map, statuses, size = 'large' }) => {
         size={size}
       />
     </div>
-  );
-};
+  )
+}
 
-const DetectorRow = ({ children }) => {
-  return (
-    <div className="detector-row">
-      {children}
-    </div>
-  );
-};
 
 const DetectorStatusVisualization = () => {
   const [mainDetectorStatuses, setMainDetectorStatuses] = useState({
     sfmSet0: {},
     sfmSet1: {},
-    sfbStep1b: [],
-    backlogWorkers: []
-  });
+    sfbStep1b: Array(8).fill({ status: 'missing', queue_length: 0 }), // Initialize with 8 placeholders
+    backlogWorkers: Array(4).fill({ status: 'missing', queue_length: 0 }) // Initialize with 4 placeholders
+  })
   const [cwfsStatuses, setCwfsStatuses] = useState({
     aosSet0: {},
     aosSet1: {},
     aosSet2: {},
     aosSet3: {},
-    aosStep1b: []
-  });
-
-  // For demo purposes, let's create some sample statuses for detectors
-  const generateRandomStatuses = (detectorIds) => {
-    const statuses = {};
-    const statusOptions = ['free', 'busy', 'queued', 'missing'];
-
-    detectorIds.forEach(id => {
-      const statusIndex = Math.floor(Math.random() * 4);
-      const status = statusOptions[statusIndex];
-
-      statuses[id] = {
-        status,
-        queue_length: status === 'queued' ? Math.floor(Math.random() * 10) + 1 : 0
-      };
-    });
-
-    return statuses;
-  };
-
-  // Generate random statuses for step1b and backlog cells
-  const generateCells = (count) => {
-    const statusOptions = ['free', 'busy', 'queued', 'missing'];
-    return Array(count).fill().map(() => {
-      const statusIndex = Math.floor(Math.random() * 4);
-      const status = statusOptions[statusIndex];
-      return {
-        status,
-        queue_length: status === 'queued' ? Math.floor(Math.random() * 10) + 1 : 0
-      };
-    });
-  };
+    aosStep1b: Array(5).fill({ status: 'missing', queue_length: 0 }) // Initialize with 8 placeholders
+  })
 
   useEffect(() => {
-    const mainDetectorIds = Object.keys(detectorMap);
-    const cwfsDetectorIds = Object.keys(cwfsMap);
+    function handleDetectorEvent(event) {
+      const { data, dataType } = event.detail
+      
+      if (dataType !== 'detectorStatus') {
+        return
+      }
+      
+      // Update detector statuses based on received data
+      const {
+        sfmSet0,
+        sfmSet1,
+        sfbStep1b,
+        backlogWorkers,
+        aosSet0,
+        aosSet1,
+        aosSet2,
+        aosSet3,
+        aosStep1b
+      } = data
+      
+      console.debug(sfmSet0)
+      // Only update the detectors that have new data
+      setMainDetectorStatuses(prev => ({
+        ...prev,
+        ...(sfmSet0 && { sfmSet0 }),
+        ...(sfmSet1 && { sfmSet1 }),
+        ...(sfbStep1b && { sfbStep1b }),
+        ...(backlogWorkers && { backlogWorkers })
+      }))
 
-    setMainDetectorStatuses({
-      sfmSet0: generateRandomStatuses(mainDetectorIds),
-      sfmSet1: generateRandomStatuses(mainDetectorIds),
-      sfbStep1b: generateCells(5),
-      backlogWorkers: generateCells(8)
-    });
+      setCwfsStatuses(prev => ({
+        ...prev,
+        ...(aosSet0 && { aosSet0 }),
+        ...(aosSet1 && { aosSet1 }),
+        ...(aosSet2 && { aosSet2 }),
+        ...(aosSet3 && { aosSet3 }),
+        ...(aosStep1b && { aosStep1b })
+      }))
+    }
 
-    setCwfsStatuses({
-      aosSet0: generateRandomStatuses(cwfsDetectorIds),
-      aosSet1: generateRandomStatuses(cwfsDetectorIds),
-      aosSet2: generateRandomStatuses(cwfsDetectorIds),
-      aosSet3: generateRandomStatuses(cwfsDetectorIds),
-      aosStep1b: generateCells(5)
-    });
-  }, []);
+    // Show the updated status in the console
+    console.debug('Detector status updated:', {
+      mainDetectorStatuses,
+      cwfsStatuses
+    })
+
+    // Add event listener for detector status updates
+    window.addEventListener('detectors', handleDetectorEvent)
+
+    // Cleanup listener on unmount
+    return () => {
+      window.removeEventListener('detectors', handleDetectorEvent)
+    }
+  }, []) // Empty dependency array since we don't need to re-register the listener
 
   return (
     <div className="detector-container">
@@ -212,84 +210,99 @@ const DetectorStatusVisualization = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
 const DetectorCanvas = ({ detectorMap, detectorStatuses }) => {
-  const containerRef = useRef(null);
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const containerRef = useRef(null)
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
 
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
+        const rect = containerRef.current.getBoundingClientRect()
         setDimensions({
           width: rect.width,
           height: rect.width  // Keep it square
-        });
+        })
       }
-    };
+    }
 
-    updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-    return () => window.removeEventListener('resize', updateDimensions);
-  }, []);
+    updateDimensions()
+    window.addEventListener('resize', updateDimensions)
+    return () => window.removeEventListener('resize', updateDimensions)
+  }, [])
 
-  const { width, height } = dimensions;
-  const padding = Math.min(width, height) * 0.05; // 5% padding
+  const { width, height } = dimensions
+  const padding = Math.min(width, height) * 0.05 // 5% padding
 
   // Find the min and max values for x and y to calculate scaling
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
 
   Object.values(detectorMap).forEach(detector => {
-    if (detector.corners) {
+    if (detector?.corners) {
       const corners = detector.corners;
-      [corners.upperLeft, corners.upperRight, corners.lowerLeft, corners.lowerRight].forEach(corner => {
-        minX = Math.min(minX, corner[0]);
-        maxX = Math.max(maxX, corner[0]);
-        minY = Math.min(minY, corner[1]);
-        maxY = Math.max(maxY, corner[1]);
-      });
+      // Add checks for array values
+      const cornerPoints = [corners.upperLeft, corners.upperRight, corners.lowerLeft, corners.lowerRight];
+      if (cornerPoints.every(corner => Array.isArray(corner) && corner.length >= 2)) {
+        cornerPoints.forEach(corner => {
+          minX = Math.min(minX, corner[0]);
+          maxX = Math.max(maxX, corner[0]);
+          minY = Math.min(minY, corner[1]);
+          maxY = Math.max(maxY, corner[1]);
+        });
+      }
     }
   });
 
+  // Only proceed with calculations if we have valid bounds
+  if (minX === Infinity || maxX === -Infinity || minY === Infinity || maxY === -Infinity) {
+    return <div ref={containerRef} className="detector-canvas" />;
+  }
+
   // Calculate scale factors to fit the data into the canvas
-  const dataWidth = maxX - minX;
-  const dataHeight = maxY - minY;
+  const dataWidth = maxX - minX
+  const dataHeight = maxY - minY
   const scale = Math.min(
     (width - 2 * padding) / dataWidth,
     (height - 2 * padding) / dataHeight
-  );
+  )
 
   // Function to convert data coordinates to canvas coordinates
-  const toCanvasX = (x) => (x - minX) * scale + padding;
-  const toCanvasY = (y) => (maxY - y) * scale + padding;
+  const toCanvasX = (x) => (x - minX) * scale + padding
+  const toCanvasY = (y) => (maxY - y) * scale + padding
 
-  if (width === 0) return <div ref={containerRef} className="detector-canvas" />;
+  if (width === 0) return <div ref={containerRef} className="detector-canvas" />
 
   return (
     <div ref={containerRef} className="detector-canvas">
       {Object.entries(detectorMap).map(([id, detector]) => {
-        if (!detector.corners) return null;
+        if (!detector?.corners) return null;
         
         const status = detectorStatuses[id] || { status: 'unknown', queue_length: 0 };
         const { corners } = detector;
+        
+        // Verify all corner arrays exist and have correct format
+        const cornerPoints = [corners.upperLeft, corners.upperRight, corners.lowerLeft, corners.lowerRight];
+        if (!cornerPoints.every(corner => Array.isArray(corner) && corner.length >= 2)) {
+          return null;
+        }
 
         const canvasCorners = {
-          upperLeft: [toCanvasX(corners.upperLeft[0]), toCanvasY(corners.upperLeft[1])],
-          upperRight: [toCanvasX(corners.upperRight[0]), toCanvasY(corners.upperRight[1])],
-          lowerLeft: [toCanvasX(corners.lowerLeft[0]), toCanvasY(corners.lowerLeft[1])],
-          lowerRight: [toCanvasX(corners.lowerRight[0]), toCanvasY(corners.lowerRight[1])]
-        };
+          upperLeft: [toCanvasX(cornerPoints[0][0]), toCanvasY(cornerPoints[0][1])],
+          upperRight: [toCanvasX(cornerPoints[1][0]), toCanvasY(cornerPoints[1][1])],
+          lowerLeft: [toCanvasX(cornerPoints[2][0]), toCanvasY(cornerPoints[2][1])],
+          lowerRight: [toCanvasX(cornerPoints[3][0]), toCanvasY(cornerPoints[3][1])]
+        }
 
-        const left = Math.min(canvasCorners.upperLeft[0], canvasCorners.lowerLeft[0]);
-        const top = Math.min(canvasCorners.upperLeft[1], canvasCorners.upperRight[1]);
-        const right = Math.max(canvasCorners.upperRight[0], canvasCorners.lowerRight[0]);
-        const bottom = Math.max(canvasCorners.lowerLeft[1], canvasCorners.lowerRight[1]);
+        const left = Math.min(canvasCorners.upperLeft[0], canvasCorners.lowerLeft[0])
+        const top = Math.min(canvasCorners.upperLeft[1], canvasCorners.upperRight[1])
+        const right = Math.max(canvasCorners.upperRight[0], canvasCorners.lowerRight[0])
+        const bottom = Math.max(canvasCorners.lowerLeft[1], canvasCorners.lowerRight[1])
 
-        const cellWidth = right - left;
-        const cellHeight = bottom - top;
-        const fontSize = Math.max(8, Math.min(cellWidth / 3, cellHeight / 3, 14));
+        const cellWidth = right - left
+        const cellHeight = bottom - top
+        const fontSize = Math.max(8, Math.min(cellWidth / 3, cellHeight / 3, 14))
 
         return (
           <div
@@ -310,10 +323,10 @@ const DetectorCanvas = ({ detectorMap, detectorStatuses }) => {
               )}
             </div>
           </div>
-        );
+        )
       })}
     </div>
-  );
-};
+  )
+}
 
-export default DetectorStatusVisualization;
+export default DetectorStatusVisualization
