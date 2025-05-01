@@ -352,6 +352,10 @@ class HistoricalPoller:
         day = max(calendar[year][month].keys())
         most_recent = date(year, month, day)
         if most_recent == get_current_day_obs():
+            # check there is more than one day in the calendar
+            # if there is only one day, return None
+            if len(calendar[year][month]) == 1:
+                return None
             # return the second most recent day
             if len(calendar[year][month]) > 1:
                 day = max(
