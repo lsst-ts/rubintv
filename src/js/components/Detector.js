@@ -196,6 +196,14 @@ const Step1bSection = ({ title, statuses }) => {
 }
 
 const Cells = ({ statuses, prefix }) => {
+  if (statuses.num_workers && statuses.num_workers > 0) {
+    const numWorkers = statuses.num_workers
+    const placeholders = createPlaceholders(numWorkers)
+    statuses = { ...placeholders, ...statuses }
+  }
+  if (statuses.num_workers && statuses.num_workers === 0) {
+    return <div className={`${prefix}-cells`}></div>
+  }
   return (
     <div className={`${prefix}-cells`}>
       {Object.entries(statuses).map(([i, status]) => (
