@@ -2,7 +2,7 @@ import asyncio
 import json
 from typing import Any
 
-import redis.asyncio as redis
+import redis.asyncio as redis  # type: ignore[import]
 
 from ..config import rubintv_logger
 from ..handlers.websocket_notifiers import notify_redis_detector_status
@@ -80,6 +80,10 @@ class DetectorStatusHandler:
         # or "status" and the original value
         unpacked_data = {}
         for k, v in data.items():
+            if k == "num_workers":
+                # If the key is "num_workers", pass it through
+                unpacked_data[k] = v
+                continue
             try:
                 v = int(v)
                 unpacked_data[k] = {"status": "queued", "queue_length": v}
