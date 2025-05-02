@@ -59,9 +59,7 @@ async def redis_post(request: Request, message: KeyValue) -> dict:
             response = await redis_client.flushdb()
             logger.info("Redis database cleared")
         except Exception as e:
-            logger.error(f"Failed to clear Redis database: {e}")
             raise HTTPException(500, f"Failed to clear Redis database: {e}")
-        return {"response": response}
     else:
         logger.info("Setting Redis key", extra={"key": key, "value": value})
         try:
@@ -69,13 +67,12 @@ async def redis_post(request: Request, message: KeyValue) -> dict:
         except redis.exceptions.ResponseError:
             raise HTTPException(500, "Failed to set Redis key: No response")
         except redis.exceptions.TimeoutError:
-            logger.error("Failed to set Redis key: Timeout")
             raise HTTPException(500, "Failed to set Redis key: Timeout")
         except redis.exceptions.ConnectionError:
             raise HTTPException(500, "Failed to set Redis key: Connection error")
         except redis.exceptions.RedisError as e:
             raise HTTPException(500, f"Failed to set Redis key: {e}")
-        return {"response": response}
+    return {"response": response}
 
 
 @api_router.get("/slac", response_class=RedirectResponse)

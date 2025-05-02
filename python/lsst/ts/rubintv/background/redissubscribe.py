@@ -76,4 +76,4 @@ class KeyspaceSubscriber:
         """Stop listening and clean up asynchronously"""
         self._running = False
         await self.pubsub.unsubscribe()
-        await self.pubsub.close()
+        await self.pubsub.aclose()
