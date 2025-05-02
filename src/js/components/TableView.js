@@ -178,17 +178,15 @@ function TableBody({
   channelData,
   metadataColumns,
   metadata,
+  sortOn,
 }) {
   const allSeqs = Array.from(
     new Set(Object.keys(channelData).concat(Object.keys(metadata)))
   )
-    .map((seq) => parseInt(seq))
-    .toSorted((a, b) => a - b)
-    .reverse()
-    .map((seq) => `${seq}`)
+  const seqs = applySorting(allSeqs, sortOn, metadata, channelData)
   return (
     <tbody>
-      {allSeqs.map((seqNum) => {
+      {seqs.map((seqNum) => {
         const metadataRow = seqNum in metadata ? metadata[seqNum] : {}
         const channelRow = seqNum in channelData ? channelData[seqNum] : {}
         return (
@@ -215,6 +213,34 @@ TableBody.propTypes = {
   eventUrl: PropTypes.string,
 }
 
+// Function to sort the rows based on the selected column
+// and order (ascending or descending)
+function applySorting(allSeqs, sortOn, metadata, channelData) {
+  return allSeqs.toSorted((a, b) => {
+    if (sortOn.column === "seq") {
+      return sortOn.order === "asc" ? a - b : b - a
+    }
+    const aValue =
+      metadata[a]?.[sortOn.column] ?? channelData[a]?.[sortOn.column]
+    const bValue =
+      metadata[b]?.[sortOn.column] ?? channelData[b]?.[sortOn.column]
+    if (typeof aValue === "string" && typeof bValue === "string") {
+      if (aValue === bValue) {
+        // if the compare values are equal, sort by seqNum
+        return sortOn.order === "asc" ? a - b : b - a
+      }
+      return sortOn.order === "asc"
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue)
+    }
+    if (aValue === undefined || bValue === undefined) {
+      // if one of the values is undefined, sort by seqNum
+      return sortOn.order === "asc" ? a - b : b - a
+    }
+    return sortOn.order === "asc" ? aValue - bValue : bValue - aValue
+  })
+}
+
 // Component for individual channel header
 function ChannelHeader({
   channel,
@@ -222,31 +248,51 @@ function ChannelHeader({
   setFilterOn,
   filteredRowsCount,
   unfilteredRowsCount,
+  sortOn,
+  setSortOn,
 }) {
   const { showModal } = useModal()
-  const filterClass =
-    channel.name === filterOn.column && filterOn.value !== "" ? "filtering" : ""
 
-  const handleColumnClick = () => {
-    showModal(
-      <FilterDialog
-        column={channel.name}
-        setFilterOn={setFilterOn}
-        filterOn={filterOn}
-        filteredRowsCount={filteredRowsCount}
-        unfilteredRowsCount={unfilteredRowsCount}
-      />
-    )
+  const handleColumnClick = (event, column) => {
+    handleSortClick(event, column, setSortOn)
+    if (!event.shiftKey) {
+      showModal(
+        <FilterDialog
+          column={channel.name}
+          setFilterOn={setFilterOn}
+          filterOn={filterOn}
+          filteredRowsCount={filteredRowsCount}
+          unfilteredRowsCount={unfilteredRowsCount}
+        />
+      )
+    }
   }
-  const elProps = {
-    className: `grid-title gt-channel sideways ${filterClass}`,
-    onClick: handleColumnClick,
+
+  const isMetadataColumn = !channel.hasOwnProperty("title")
+  const containerClass = isMetadataColumn
+    ? "meta grid-title sortable"
+    : "grid-title"
+  const isFilteredOn = filterOn.column === channel.name && filterOn.value !== ""
+  let titleClass = isFilteredOn ? "filtering sideways" : "sideways"
+  const isSortedOn = sortOn.column === channel.name
+  const sortingClass = `sorting-indicator ${sortOn.order}`
+
+  const containerProps = {
+    className: containerClass,
+  }
+  if (isMetadataColumn) {
+    containerProps.onClick = (event) => handleColumnClick(event, channel.name)
   }
   if (channel.desc) {
-    elProps.title = channel.desc
+    containerProps.title = channel.desc
   }
   return (
-    <div {...elProps}>{channel.label || channel.title || channel.name}</div>
+    <div {...containerProps}>
+      {isSortedOn && <div className={sortingClass}></div>}
+      <div className={titleClass}>
+        {channel.label || channel.title || channel.name}
+      </div>
+    </div>
   )
 }
 ChannelHeader.propTypes = {
@@ -265,12 +311,22 @@ export function TableHeader({
   setFilterOn,
   filteredRowsCount,
   unfilteredRowsCount,
+  sortOn,
+  setSortOn,
 }) {
   const channelColumns = seqChannels(camera)
   const columns = channelColumns.concat(metadataColumns)
+  const sorting = sortOn.column == "seq"
+  const sortingClass = `sorting-indicator ${sortOn.order}`
   return (
     <>
-      <div className="grid-title sideways">Seq. No.</div>
+      <div
+        className="grid-title sortable"
+        onClick={(event) => handleSortClick(event, "seq", setSortOn)}
+      >
+        {sorting && <div className={sortingClass}></div>}
+        <div className="sideways">Seq. No.</div>
+      </div>
       {camera.copy_row_template && (
         <div className="grid-title" id="ctbEmpty"></div>
       )}
@@ -286,6 +342,8 @@ export function TableHeader({
             setFilterOn={setFilterOn}
             filteredRowsCount={filteredRowsCount}
             unfilteredRowsCount={unfilteredRowsCount}
+            sortOn={sortOn}
+            setSortOn={setSortOn}
           />
         )
       })}
@@ -308,6 +366,7 @@ export default function TableView({
   metadataColumns,
   filterOn,
   filteredRowsCount,
+  sortOn,
 }) {
   const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
   if (filterColumnSet && filteredRowsCount == 0) {
@@ -325,6 +384,7 @@ export default function TableView({
         channelData={channelData}
         metadataColumns={metadataColumns}
         metadata={metadata}
+        sortOn={sortOn}
       />
     </table>
   )
@@ -405,3 +465,24 @@ function handleCopyButton(date, seqNum, template) {
 }
 
 export { TableRow }
+
+const handleSortClick = (event, column, setSortOn) => {
+  event.stopPropagation()
+  const isShiftKey = event.shiftKey
+  if (isShiftKey) {
+    // if shift key pressed, use this column
+    // for sorting
+    setSortOn((prev) => {
+      if (prev.column === column) {
+        return {
+          column: column,
+          order: prev.order === "asc" ? "desc" : "asc",
+        }
+      }
+      return {
+        column: column,
+        order: "asc",
+      }
+    })
+  }
+}
