@@ -1,21 +1,11 @@
 {% extends "_camera.jinja" %}
 
-{% block pagesubtitle %}
-  Latest
-{% endblock pagesubtitle  %}
-
-{% block undertitle %}
-{% if date %}
-  <div id="header-date">{{ date }}</div>
-{% endif %}
-{% endblock undertitle %}
-
 {% block headerbuttons %}
-    <a
-      class="button historical"
-      href="{{ url_for('historical', location_name=location.name, camera_name=camera.name) }}">
+  {% if not isHistorical %}
+    <a class="button historical" href="{{ url_for('historical', location_name=location.name, camera_name=camera.name) }}">
       Historical<img src="{{ url_for('static', path='images/history-line.svg') }}">
     </a>
+  {% endif %}
 {% endblock headerbuttons %}
 
 {% block breadcrumb %}
@@ -26,53 +16,52 @@
     {{ location.title }}
   </a>>
   <p>{{ camera.title }}</p>
-{% endblock breadcrumb  %}
+{% endblock breadcrumb %}
 
 {% block content %}
-
-  {% if historical_busy %}
+  {% if historicalBusy %}
     {% include "camera_parts/historical-busy-message.jinja" %}
   {% else %}
-    <div id="per-day" class="columns">
+  <section id="calendar" class="calendar">
+   {# React Calendar root here #}
+  </section>
+
+  <div id="per-day" class="columns">
     {# React PerDay root here #}
-    </div>
-    <section>
-      <nav id="per-image-menu" class="channel-menu" role="navigation">
-        <h3>Current image channels</h3>
-          <ul class="channels flr">
-            {% for channel in camera.channels if not channel.per_day %}
-              <li class="channel service"
-                  id="{{ channel.name }}">
-                <a  class="button button-large {{ channel.name }}"
-                    style="background-color: {{ channel.colour }};"
-                    href="{{
-                      url_for('current_event',
-                      location_name=location.name,
-                      camera_name=camera.name,
-                      channel_name=channel.name) }}"
-                    target="_blank">
-                  <span>{{ channel.title }}</span>
-                </a>
-              </li>
-            {% endfor %}
-          </ul>
-        </nav>
-    </section>
-    <section id="table">
-      {# React TableApp root here #}
-    </section>
+  </div>
+  <section>
+    <nav id="per-image-menu" class="channel-menu" role="navigation">
+      <h3>Current image channels</h3>
+      <ul class="channels flr">
+        {% for channel in camera.channels if not channel.perDay %}
+        <li class="channel service" id="{{ channel.name }}">
+          <a class="button button-large {{ channel.name }}" style="background-color: {{ channel.colour }};" href="{{
+                        url_for('current_event',
+                        location_name=location.name,
+                        camera_name=camera.name,
+                        channel_name=channel.name) }}" target="_blank">
+            <span>{{ channel.title }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </section>
+  <section id="table">
+    {# React TableApp root here #}
+  </section>
   {% endif %}
 
 {% endblock content %}
 
 {% block footer_scripts %}
-    <script>
-      window.APP_DATA.tableMetadata = {{ metadata|tojson }}
-      window.APP_DATA.tableChannels = {{ channelData|tojson }}
-      window.APP_DATA.perDay = {{ per_day|tojson }}
-      window.APP_DATA.eventUrl = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}"
-      window.APP_DATA.nightReportLink = {{ nr_link|tojson }}
-    </script>
-    <script src='{{ url_for("static", path="assets/camera-table.js") }}'></script>
+  <script>
+    window.APP_DATA.metadata = {{ metadata | tojson }}
+    window.APP_DATA.channelData = {{ channelData | tojson }}
+    window.APP_DATA.perDay = {{ perDay | tojson }}
+    window.APP_DATA.eventUrl = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}"
+    window.APP_DATA.nightReportLink = {{ nr_link | tojson }}
+  </script>
+  <script src='{{ url_for("static", path="assets/camera-table.js") }}'></script>
   {{ super() }}
-{% endblock footer_scripts  %}
+{% endblock footer_scripts %}

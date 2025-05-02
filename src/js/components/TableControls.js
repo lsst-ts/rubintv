@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import PropTypes from "prop-types"
 import Clock, { TimeSinceLastImageClock } from "./Clock"
-import { _getById } from "../modules/utils"
+import { _getById, interleaveSplit } from "../modules/utils"
 import { cameraType, metadataType } from "./componentPropTypes"
 
 export default function AboveTableRow({
@@ -58,6 +58,16 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
 
   const locationName = window.APP_DATA.locationName
 
+  let numControlColumns = 2
+  if (allColNames.length > 45) {
+    numControlColumns = 3
+  }
+  const gridStyle = {
+    gridTemplateColumns: `repeat(${numControlColumns}, 1fr)`,
+  }
+
+  const columnsToDisplay = interleaveSplit(allColNames, numControlColumns)
+
   const handleCheckboxChange = (name) => {
     setSelected((prevSelected) => {
       let updatedSelected
@@ -83,8 +93,8 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
         </button>
 
         {controlsOpen && (
-          <div className="table-controls">
-            {allColNames.map((title) => (
+          <div className="table-controls" style={gridStyle}>
+            {columnsToDisplay.map((title) => (
               <div className="table-control" key={title}>
                 <label htmlFor={title}>
                   <input

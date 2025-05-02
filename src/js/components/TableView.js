@@ -339,7 +339,7 @@ TableView.propTypes = {
 }
 
 function seqChannels(camera) {
-  return camera.channels.filter((cam) => !cam.per_day)
+  return camera.channels.filter((cam) => !cam.perDay)
 }
 
 /** Generate a modal window for displaying a metadata object of

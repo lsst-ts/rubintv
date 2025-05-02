@@ -1,3 +1,4 @@
+from asyncio import Event as AsyncioEvent
 from asyncio import sleep
 from time import time
 from typing import AsyncGenerator
@@ -33,7 +34,12 @@ class CurrentPoller:
     # min time between polls
     MIN_INTERVAL = 1
 
-    def __init__(self, locations: list[Location], test_mode: bool = False) -> None:
+    def __init__(
+        self,
+        locations: list[Location],
+        first_pass_event: AsyncioEvent | None = None,
+        test_mode: bool = False,
+    ) -> None:
         self._s3clients: dict[str, S3Client] = {}
         self._objects: dict[str, list] = {}
         self._events: dict[str, list[Event]] = {}
@@ -48,6 +54,8 @@ class CurrentPoller:
         self._test_iterations = 1
 
         self.completed_first_poll = False
+        self.completed_first_poll_event = first_pass_event
+
         self.locations = locations
         self._current_day_obs = get_current_day_obs()
         for location in locations:
@@ -123,6 +131,11 @@ class CurrentPoller:
                     await self.poll_for_yesterdays_per_day(location)
 
                 self.completed_first_poll = True
+                if (
+                    self.completed_first_poll_event is not None
+                    and not self.completed_first_poll_event.is_set()
+                ):
+                    self.completed_first_poll_event.set()
 
                 if self.test_mode:
                     self._test_iterations -= 1
@@ -130,12 +143,12 @@ class CurrentPoller:
                         break
 
                 elapsed = time() - timer_start
-                logger.info("Current - time taken:", elapsed=elapsed)
+                logger.debug("Current - time taken:", elapsed=elapsed)
                 if elapsed < self.MIN_INTERVAL:
                     await sleep(self.MIN_INTERVAL - elapsed)
 
             except Exception:
-                logger.exception("Caught exception during poll for data")
+                logger.debug("Caught exception during poll for data")
 
     async def poll_for_yesterdays_per_day(self, location: Location) -> None:
         """Uses the store of prefixes for yesterday's missing per-day data to
@@ -299,6 +312,12 @@ class CurrentPoller:
                 await notify_ws_clients(
                     Service.CAMERA, MessageType.CAMERA_METADATA, loc_cam, data
                 )
+            await notify_ws_clients(
+                Service.CALENDAR,
+                MessageType.LATEST_METADATA,
+                loc_cam,
+                self.get_last_entry_in_metadata(data),
+            )
 
     async def sieve_out_night_reports(
         self, objects: list[dict[str, str]], location: Location, camera: Camera
@@ -414,6 +433,27 @@ class CurrentPoller:
         loc_cam = f"{location_name}/{name}"
         return self._metadata.get(loc_cam, {})
 
+    async def get_latest_metadata(self, location_name: str, camera: Camera) -> dict:
+        md = await self.get_current_metadata(location_name, camera)
+        return self.get_last_entry_in_metadata(md)
+
+    def get_last_entry_in_metadata(self, metadata: dict) -> dict:
+        """Get the last entry in the metadata dictionary.
+        Parameters
+        ----------
+        metadata : `dict`
+            The metadata dictionary.
+        Returns
+        -------
+        `dict`
+            The last entry in the metadata dictionary or an empty
+            dict.
+        """
+        if not metadata:
+            return {}
+        last_seq = str(max(int(k) for k in metadata.keys()))
+        return {last_seq: metadata[last_seq]}
+
     async def get_current_channel_event(
         self, location_name: str, camera_name: str, channel_name: str
     ) -> Event | None:
@@ -491,6 +531,11 @@ class CurrentPoller:
                 )
                 yield MessageType.CHANNEL_EVENT, event.__dict__ if event else None
 
+                if latest_metadata := await self.get_latest_metadata(
+                    location.name, camera
+                ):
+                    yield MessageType.LATEST_METADATA, (latest_metadata)
+
             case Service.NIGHTREPORT:
                 night_report = await self.get_current_night_report(
                     location.name, camera.name
@@ -499,3 +544,10 @@ class CurrentPoller:
                 # pydantic.BaseModel)
                 if night_report != NightReport():
                     yield MessageType.NIGHT_REPORT, night_report.model_dump()
+
+            case Service.CALENDAR:
+                if latest_metadata := await self.get_latest_metadata(
+                    location.name, camera
+                ):
+                    yield MessageType.LATEST_METADATA, (latest_metadata)
+                yield MessageType.DAY_CHANGE, "from current poller"

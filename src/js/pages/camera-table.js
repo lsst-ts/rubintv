@@ -3,29 +3,25 @@ import { createRoot } from "react-dom/client"
 import TableApp from "../components/TableApp"
 import PerDay from "../components/PerDay"
 import Banner from "../components/Banner"
+import RubinCalendar from "../components/RubinCalendar"
 import { _getById } from "../modules/utils"
 import { WebsocketClient } from "../modules/ws-service-client"
 ;(function () {
   if (window.APP_DATA.historicalBusy) {
     return
   }
-
   const {
     siteLocation,
     locationName,
     camera = {},
-    tableChannels = {},
-    tableMetadata = {},
+    channelData = {},
+    metadata = {},
     perDay = {},
     nightReportLink = "",
     date = "",
     isHistorical,
+    calendar,
   } = window.APP_DATA
-
-  if (!isHistorical) {
-    const ws = new WebsocketClient()
-    ws.subscribe("service", "camera", locationName, camera.name)
-  }
 
   const bannerRoot = createRoot(_getById("header-banner"))
   bannerRoot.render(
@@ -36,13 +32,31 @@ import { WebsocketClient } from "../modules/ws-service-client"
     />
   )
 
+  if (!isHistorical) {
+    const ws = new WebsocketClient()
+    ws.subscribe("service", "camera", locationName, camera.name)
+  } else {
+    const ws = new WebsocketClient()
+    ws.subscribe("service", "calendar", locationName, camera.name)
+
+    const calendarRoot = createRoot(_getById("calendar"))
+    calendarRoot.render(
+      <RubinCalendar
+        selectedDate={date}
+        initialCalendarData={calendar}
+        camera={camera}
+        locationName={locationName}
+      />
+    )
+  }
+
   const tableRoot = createRoot(_getById("table"))
   tableRoot.render(
     <TableApp
       camera={camera}
       initialDate={date}
-      initialChannelData={tableChannels}
-      initialMetadata={tableMetadata}
+      initialChannelData={channelData}
+      initialMetadata={metadata}
       isHistorical={isHistorical}
     />
   )

@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
 
-import redis.asyncio as redis
+import redis.asyncio as redis  # type: ignore
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
@@ -56,16 +56,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     models = ModelsInitiator()
 
     # initialise the background bucket pollers
-    cp = CurrentPoller(models.locations)
     hp = HistoricalPoller(models.locations)
 
     # inject app state
     app.state.models = models
-    app.state.current_poller = cp
     app.state.historical = hp
     app.state.s3_clients = {}
     if config.ra_redis_host:
-        redis_client = _makeRedis()
+        redis_client = await _makeRedis()
         app.state.redis_client = redis_client
     for location in models.locations:
         app.state.s3_clients[location.name] = S3Client(
@@ -73,7 +71,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         )
 
     # start polling buckets for data
-    today_polling = asyncio.create_task(cp.poll_buckets_for_todays_data())
+    today_polling = await startup_current_poller(models, app)
     historical_polling = asyncio.create_task(hp.check_for_new_day())
 
     # Startup phase for the subapp
@@ -88,13 +86,32 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     historical_polling.cancel()
     today_polling.cancel()
 
-    await redis_client.close()
+    # types-redis doesn't include aclose but mypy complains if I don't
+    # ignore it
+    await redis_client.aclose()  # type: ignore [attr-defined]
 
     for c in clients.values():
         await c.close()
 
 
-def _makeRedis() -> redis.Redis:
+async def startup_current_poller(models: ModelsInitiator, app: FastAPI) -> asyncio.Task:
+    """Start the current poller.
+    Parameters
+    ----------
+    models : dict
+        The models dictionary.
+    app : FastAPI
+        The FastAPI application.
+    """
+    first_pass = asyncio.Event()
+    cp = CurrentPoller(models.locations, first_pass_event=first_pass)
+    app.state.current_poller = cp
+    # Create an event to signal the first pass is complete
+    app.state.first_pass_event = first_pass
+    return asyncio.create_task(cp.poll_buckets_for_todays_data())
+
+
+async def _makeRedis() -> redis.Redis:
     """Create a redis connection.
 
     Returns
@@ -102,10 +119,17 @@ def _makeRedis() -> redis.Redis:
     Redis:
         The redis connection.
     """
+    SOCKET_TIMEOUT = 3
     host: str = config.ra_redis_host
     password = config.ra_redis_password
     port: int = config.ra_redis_port
-    return redis.Redis(host=host, password=password, port=port)
+    redis_client = await redis.Redis(
+        host=host, password=password, port=port, socket_timeout=SOCKET_TIMEOUT
+    )
+    # Redis never complains even if it can't connect
+    # until you try to do something with it.
+    logger.info(f"(Possibly) connected to Redis at {host}:{port}")
+    return redis_client
 
 
 def create_app() -> FastAPI:

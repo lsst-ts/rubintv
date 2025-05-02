@@ -28,7 +28,7 @@ async def test_get_home(
     mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
     """Test that home page has links to every location"""
-    client, app, mocker = mocked_client
+    client, _, _ = mocked_client
     response = await client.get(f"/{app_name}/")
     html = await response.aread()
     parsed = BeautifulSoup(html, "html.parser")
@@ -48,7 +48,7 @@ async def test_get_location(
     mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
     """Test that location page has links to cameras"""
-    client, app, mocker = mocked_client
+    client, _, _ = mocked_client
     location_name = "summit-usdf"
     location = find_first(m.locations, "name", location_name)
     assert type(location) is Location
@@ -92,7 +92,6 @@ async def test_current_channels(
 
                 html = await response.aread()
                 parsed = BeautifulSoup(html, "html.parser")
-                print(parsed.prettify())
                 if mocker.empty_channel.get(loc_cam) == seq_chan.name:
                     assert parsed.select(".event-error")
                     assert not parsed.select(".event-info")
@@ -107,7 +106,7 @@ async def test_all_endpoints(
     mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
 
-    client, app, mocker = mocked_client
+    client, app, _ = mocked_client
 
     locations = [loc.name for loc in m.locations]
     summit: Location = find_first(m.locations, "name", "summit-usdf")
@@ -147,6 +146,9 @@ async def test_all_endpoints(
     for url_frag in page_rel_urls:
         url = f"/{app_name}/{url_frag}"
         res = await client.get(url)
+        if url.endswith("historical"):
+            assert res.is_redirect
+            continue
         assert res.is_success
 
 
@@ -155,7 +157,7 @@ async def test_request_invalid_dates(
     mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
 
-    client, app, mocker = mocked_client
+    client, _, _ = mocked_client
 
     summit: Location = find_first(m.locations, "name", "summit-usdf")
     assert isinstance(summit, Location)

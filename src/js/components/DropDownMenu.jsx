@@ -42,6 +42,7 @@ export default function DropDownMenu({ menu, onItemSelect }) {
   }
   , [isOpen])
 
+
   const toggleMenu = () => setIsOpen(isOpen => !isOpen)
 
   const handleItemSelect = (item) => {

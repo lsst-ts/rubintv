@@ -8,7 +8,10 @@ from typing import Any
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.config import rubintv_logger
-from lsst.ts.rubintv.handlers.websocket_notifiers import notify_all_status_change
+from lsst.ts.rubintv.handlers.websocket_notifiers import (
+    notify_all_status_change,
+    notify_ws_clients,
+)
 from lsst.ts.rubintv.models.models import (
     Camera,
     Channel,
@@ -16,8 +19,10 @@ from lsst.ts.rubintv.models.models import (
     Location,
     NightReport,
     NightReportData,
-    get_current_day_obs,
 )
+from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
+from lsst.ts.rubintv.models.models import ServiceTypes as Service
+from lsst.ts.rubintv.models.models import get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import (
     make_table_from_event_list,
     objects_to_events,
@@ -38,7 +43,9 @@ class HistoricalPoller:
     # polling period in seconds
     CHECK_NEW_DAY_PERIOD = 5
 
-    def __init__(self, locations: list[Location], test_mode: bool = False) -> None:
+    def __init__(
+        self, locations: list[Location], test_mode: bool = False, prefix_extra: str = ""
+    ) -> None:
         self._clients: dict[str, S3Client] = {}
         self._metadata: dict[str, bytes] = {}
         self._temp_events: dict[str, list[Event]] = {}
@@ -59,6 +66,7 @@ class HistoricalPoller:
         self.cam_year_rgx = re.compile(r"(\w+)\/([\d]{4})-[\d]{2}-[\d]{2}")
 
         self.test_mode = test_mode
+        self.prefix_extra = prefix_extra
 
     async def clear_all_data(self) -> None:
         self._have_downloaded = False
@@ -81,6 +89,9 @@ class HistoricalPoller:
                     or self._last_reload < get_current_day_obs()
                 ):
                     time_start = time()
+                    # Let the clients know the day has changed
+                    await self.notify_clients_of_day_change()
+
                     await self.clear_all_data()
                     for location in self._locations:
                         await self._refresh_location_store(location)
@@ -96,8 +107,21 @@ class HistoricalPoller:
                     if self.test_mode:
                         break
                     await asyncio.sleep(self.CHECK_NEW_DAY_PERIOD)
-        except Exception as e:
-            logger.error(e)
+        except Exception:
+            # log error with traceback
+            logger.error("Error in check_for_new_day", exc_info=True)
+
+    async def notify_clients_of_day_change(self) -> None:
+        """Notify the clients that the day has changed."""
+        for loc in self._locations:
+            for cam in loc.cameras:
+                if cam.online:
+                    await notify_ws_clients(
+                        Service.CALENDAR,
+                        MessageType.DAY_CHANGE,
+                        f"{loc.name}/{cam.name}",
+                        "from historical",
+                    )
 
     async def _refresh_location_store(self, location: Location) -> None:
         try:
@@ -118,7 +142,7 @@ class HistoricalPoller:
         objects = []
         for cam in location.cameras:
             if cam.online:
-                prefix = cam.name
+                prefix = cam.name + "/" + self.prefix_extra
                 logger.info(
                     "Listing objects for:",
                     location=location.name,
@@ -326,7 +350,19 @@ class HistoricalPoller:
         year = max(calendar.keys())
         month = max(calendar[year].keys())
         day = max(calendar[year][month].keys())
-        return date(year, month, day)
+        most_recent = date(year, month, day)
+        if most_recent == get_current_day_obs():
+            # check there is more than one day in the calendar
+            # if there is only one day, return None
+            if len(calendar[year][month]) == 1:
+                return None
+            # return the second most recent day
+            if len(calendar[year][month]) > 1:
+                day = max(
+                    d for d in calendar[year][month].keys() if d != most_recent.day
+                )
+                most_recent = date(year, month, day)
+        return most_recent
 
     async def get_most_recent_events(
         self, location: Location, camera: Camera

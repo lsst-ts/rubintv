@@ -110,7 +110,9 @@ export default function TableApp({
 
     if (datestamp && datestamp !== date) {
       window.APP_DATA.date = datestamp
-      _getById("header-date").textContent = datestamp
+      const headerDate = _getById("header-date")
+      headerDate.textContent = datestamp
+      headerDate.classList.remove("stale")
       setDate(datestamp)
       setMetadata({})
       setChannelData({})
@@ -197,6 +199,8 @@ function getAllColumnNames(metadata, defaultColNames) {
   const allColNames = Object.values(metadata)
     .map((obj) => Object.keys(obj))
     .flat()
+    .sort()
+  // get the set of all data for list of all available attrs
   const uniqueColNames = Array.from(
     new Set(defaultColNames.concat(allColNames))
   )
