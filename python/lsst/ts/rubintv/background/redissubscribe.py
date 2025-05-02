@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any, Awaitable, Callable
 
-import redis.asyncio as redis
+import redis.asyncio as redis  # type: ignore[import]
 
 from ..config import rubintv_logger
 
