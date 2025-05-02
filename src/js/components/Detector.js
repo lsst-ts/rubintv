@@ -1,27 +1,31 @@
-import React from 'react'
-import { useState, useEffect, useRef } from 'react'
-import detectorMap from '../data/detectorMap.json'
-import cwfsMap from '../data/cwfsMap.json'
+import React from "react"
+import { useState, useEffect, useRef } from "react"
+import detectorMap from "../data/detectorMap.json"
+import cwfsMap from "../data/cwfsMap.json"
 
 // Get status class name
 const getStatusClass = (status) => {
-  switch(status) {
-    case 'free': return 'status-free'
-    case 'busy': return 'status-busy'
-    case 'queued': return 'status-queued'
-    default: return 'status-missing'
+  switch (status) {
+    case "free":
+      return "status-free"
+    case "busy":
+      return "status-busy"
+    case "queued":
+      return "status-queued"
+    default:
+      return "status-missing"
   }
 }
 
 const createPlaceholders = (count) => {
   const placeholders = {}
   for (let i = 0; i < count; i++) {
-    placeholders[i] = { status: 'missing' }
+    placeholders[i] = { status: "missing" }
   }
   return placeholders
 }
 
-const DetectorSection = ({ title, map, statuses, size = 'large' }) => {
+const DetectorSection = ({ title, map, statuses, size = "large" }) => {
   return (
     <div className={`detector-section detector-section-${size}`}>
       <h2 className="detector-title">{title}</h2>
@@ -34,27 +38,26 @@ const DetectorSection = ({ title, map, statuses, size = 'large' }) => {
   )
 }
 
-
 const DetectorStatusVisualization = () => {
   const [mainDetectorStatuses, setMainDetectorStatuses] = useState({
     sfmSet0: {},
     sfmSet1: {},
     sfmStep1b: createPlaceholders(8),
-    spareWorkers:createPlaceholders(4)
+    spareWorkers: createPlaceholders(4),
   })
   const [cwfsStatuses, setCwfsStatuses] = useState({
     aosSet0: {},
     aosSet1: {},
     aosSet2: {},
     aosSet3: {},
-    aosStep1b: createPlaceholders(8)
+    aosStep1b: createPlaceholders(8),
   })
 
   useEffect(() => {
     function handleDetectorEvent(event) {
       const { data, dataType } = event.detail
-      
-      if (dataType !== 'detectorStatus') {
+
+      if (dataType !== "detectorStatus") {
         return
       }
 
@@ -68,34 +71,34 @@ const DetectorStatusVisualization = () => {
         aosSet1,
         aosSet2,
         aosSet3,
-        aosStep1b
+        aosStep1b,
       } = data
-      
+
       // Only update the detectors that have new data
-      setMainDetectorStatuses(prev => ({
+      setMainDetectorStatuses((prev) => ({
         ...prev,
         ...(sfmSet0 && { sfmSet0 }),
         ...(sfmSet1 && { sfmSet1 }),
         ...(sfmStep1b && { sfmStep1b }),
-        ...(spareWorkers && { spareWorkers })
+        ...(spareWorkers && { spareWorkers }),
       }))
 
-      setCwfsStatuses(prev => ({
+      setCwfsStatuses((prev) => ({
         ...prev,
         ...(aosSet0 && { aosSet0 }),
         ...(aosSet1 && { aosSet1 }),
         ...(aosSet2 && { aosSet2 }),
         ...(aosSet3 && { aosSet3 }),
-        ...(aosStep1b && { aosStep1b })
+        ...(aosStep1b && { aosStep1b }),
       }))
     }
 
     // Add event listener for detector status updates
-    window.addEventListener('detectors', handleDetectorEvent)
+    window.addEventListener("detectors", handleDetectorEvent)
 
     // Cleanup listener on unmount
     return () => {
-      window.removeEventListener('detectors', handleDetectorEvent)
+      window.removeEventListener("detectors", handleDetectorEvent)
     }
   }, []) // Empty dependency array since we don't need to re-register the listener
 
@@ -113,6 +116,10 @@ const DetectorStatusVisualization = () => {
           map={detectorMap}
           statuses={mainDetectorStatuses.sfmSet1}
           size="large"
+        />
+        <Step1bSection
+          title="SMF Step 1b"
+          statuses={mainDetectorStatuses.sfmStep1b}
         />
       </div>
       <div className="aos-detectors">
@@ -140,56 +147,17 @@ const DetectorStatusVisualization = () => {
           statuses={cwfsStatuses.aosSet3}
           size="small"
         />
+        <Step1bSection title="AOS Step 1b" statuses={cwfsStatuses.aosStep1b} />
       </div>
-      <div className="step1b-section">
-        <div className="step1b-groups">
-          <div className="step1b-row">
-            <h3>SFB Step 1b</h3>
-            <div className="step1b-cells">
-              {Object.entries(mainDetectorStatuses.sfmStep1b).map(([i, status]) => (
-                <div
-                  key={`sfb-step1b-${i}`}
-                  className={`detector-cell ${getStatusClass(status.status)}`}
-                >
-                  {status.status === 'queued' && (
-                    <div className="queue-length">{status.queue_length}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="step1b-row">
-            <h3>AOS Step 1b</h3>
-            <div className="step1b-cells">
-              {Object.entries(cwfsStatuses.aosStep1b).map(([i,status]) => (
-                <div
-                  key={`aos-step1b-${i}`}
-                  className={`detector-cell ${getStatusClass(status.status)}`}
-                >
-                  {status.status === 'queued' && (
-                    <div className="queue-length">{status.queue_length}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="backlog-row">
-          <h3>Backlog Workers</h3>
-          <div className="step1b-cells">
-            {Object.entries(mainDetectorStatuses.spareWorkers).map(([i,status]) => (
-              <div
-                key={`backlog-worker-${i}`}
-                className={`detector-cell ${getStatusClass(status.status)}`}
-              >
-                {status.status === 'queued' && (
-                  <div className="queue-length">{status.queue_length}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+
+      <div className="spareworkers-row">
+        <h3>Backlog Workers</h3>
+        <Cells
+          statuses={mainDetectorStatuses.spareWorkers}
+          prefix="spareworkers"
+        />
       </div>
+
       <div className="legend">
         <div className="legend-items">
           <div className="legend-item">
@@ -214,6 +182,38 @@ const DetectorStatusVisualization = () => {
   )
 }
 
+const Step1bSection = ({ title, statuses }) => {
+  return (
+    <div className="step1b-section">
+      <h2 className="detector-title">{title}</h2>
+      <div className="centered">
+        <div className="step1b-cells">
+          <Cells statuses={statuses} prefix="step1b" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const Cells = ({ statuses, prefix }) => {
+  return (
+    <div className={`${prefix}-cells`}>
+      {Object.entries(statuses).map(([i, status]) => (
+        <div
+          key={`${prefix}-${i}`}
+          className={`detector-cell ${getStatusClass(status.status)}`}
+        >
+          {status.status === "queued" && (
+            <div className="detector-cell-content queue-length">
+              {status.queue_length}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 const DetectorCanvas = ({ detectorMap, detectorStatuses }) => {
   const containerRef = useRef(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
@@ -224,41 +224,58 @@ const DetectorCanvas = ({ detectorMap, detectorStatuses }) => {
         const rect = containerRef.current.getBoundingClientRect()
         setDimensions({
           width: rect.width,
-          height: rect.width  // Keep it square
+          height: rect.width, // Keep it square
         })
       }
     }
 
     updateDimensions()
-    window.addEventListener('resize', updateDimensions)
-    return () => window.removeEventListener('resize', updateDimensions)
+    window.addEventListener("resize", updateDimensions)
+    return () => window.removeEventListener("resize", updateDimensions)
   }, [])
 
   const { width, height } = dimensions
-  const padding = Math.min(width, height) * 0.05 // 5% padding
+  const padding = Math.min(width, height) * 0.1 // 5% padding
 
   // Find the min and max values for x and y to calculate scaling
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+  let minX = Infinity,
+    maxX = -Infinity,
+    minY = Infinity,
+    maxY = -Infinity
 
-  Object.values(detectorMap).forEach(detector => {
+  Object.values(detectorMap).forEach((detector) => {
     if (detector?.corners) {
-      const corners = detector.corners;
+      const corners = detector.corners
       // Add checks for array values
-      const cornerPoints = [corners.upperLeft, corners.upperRight, corners.lowerLeft, corners.lowerRight];
-      if (cornerPoints.every(corner => Array.isArray(corner) && corner.length >= 2)) {
-        cornerPoints.forEach(corner => {
-          minX = Math.min(minX, corner[0]);
-          maxX = Math.max(maxX, corner[0]);
-          minY = Math.min(minY, corner[1]);
-          maxY = Math.max(maxY, corner[1]);
-        });
+      const cornerPoints = [
+        corners.upperLeft,
+        corners.upperRight,
+        corners.lowerLeft,
+        corners.lowerRight,
+      ]
+      if (
+        cornerPoints.every(
+          (corner) => Array.isArray(corner) && corner.length >= 2
+        )
+      ) {
+        cornerPoints.forEach((corner) => {
+          minX = Math.min(minX, corner[0])
+          maxX = Math.max(maxX, corner[0])
+          minY = Math.min(minY, corner[1])
+          maxY = Math.max(maxY, corner[1])
+        })
       }
     }
-  });
+  })
 
   // Only proceed with calculations if we have valid bounds
-  if (minX === Infinity || maxX === -Infinity || minY === Infinity || maxY === -Infinity) {
-    return <div ref={containerRef} className="detector-canvas" />;
+  if (
+    minX === Infinity ||
+    maxX === -Infinity ||
+    minY === Infinity ||
+    maxY === -Infinity
+  ) {
+    return <div ref={containerRef} className="detector-canvas" />
   }
 
   // Calculate scale factors to fit the data into the canvas
@@ -278,47 +295,90 @@ const DetectorCanvas = ({ detectorMap, detectorStatuses }) => {
   return (
     <div ref={containerRef} className="detector-canvas">
       {Object.entries(detectorMap).map(([id, detector]) => {
-        if (!detector?.corners) return null;
-        
-        const status = detectorStatuses[id] || { status: 'unknown', queue_length: 0 };
-        const { corners } = detector;
-        
+        if (!detector?.corners) return null
+
+        const status = detectorStatuses[id] || {
+          status: "unknown",
+          queue_length: 0,
+        }
+        const { corners } = detector
+
         // Verify all corner arrays exist and have correct format
-        const cornerPoints = [corners.upperLeft, corners.upperRight, corners.lowerLeft, corners.lowerRight];
-        if (!cornerPoints.every(corner => Array.isArray(corner) && corner.length >= 2)) {
-          return null;
+        const cornerPoints = [
+          corners.upperLeft,
+          corners.upperRight,
+          corners.lowerLeft,
+          corners.lowerRight,
+        ]
+        if (
+          !cornerPoints.every(
+            (corner) => Array.isArray(corner) && corner.length >= 2
+          )
+        ) {
+          return null
         }
 
         const canvasCorners = {
-          upperLeft: [toCanvasX(cornerPoints[0][0]), toCanvasY(cornerPoints[0][1])],
-          upperRight: [toCanvasX(cornerPoints[1][0]), toCanvasY(cornerPoints[1][1])],
-          lowerLeft: [toCanvasX(cornerPoints[2][0]), toCanvasY(cornerPoints[2][1])],
-          lowerRight: [toCanvasX(cornerPoints[3][0]), toCanvasY(cornerPoints[3][1])]
+          upperLeft: [
+            toCanvasX(cornerPoints[0][0]),
+            toCanvasY(cornerPoints[0][1]),
+          ],
+          upperRight: [
+            toCanvasX(cornerPoints[1][0]),
+            toCanvasY(cornerPoints[1][1]),
+          ],
+          lowerLeft: [
+            toCanvasX(cornerPoints[2][0]),
+            toCanvasY(cornerPoints[2][1]),
+          ],
+          lowerRight: [
+            toCanvasX(cornerPoints[3][0]),
+            toCanvasY(cornerPoints[3][1]),
+          ],
         }
 
-        const left = Math.min(canvasCorners.upperLeft[0], canvasCorners.lowerLeft[0])
-        const top = Math.min(canvasCorners.upperLeft[1], canvasCorners.upperRight[1])
-        const right = Math.max(canvasCorners.upperRight[0], canvasCorners.lowerRight[0])
-        const bottom = Math.max(canvasCorners.lowerLeft[1], canvasCorners.lowerRight[1])
+        const left = Math.min(
+          canvasCorners.upperLeft[0],
+          canvasCorners.lowerLeft[0]
+        )
+        const top = Math.min(
+          canvasCorners.upperLeft[1],
+          canvasCorners.upperRight[1]
+        )
+        const right = Math.max(
+          canvasCorners.upperRight[0],
+          canvasCorners.lowerRight[0]
+        )
+        const bottom = Math.max(
+          canvasCorners.lowerLeft[1],
+          canvasCorners.lowerRight[1]
+        )
 
         const cellWidth = right - left
         const cellHeight = bottom - top
-        const fontSize = Math.max(8, Math.min(cellWidth / 3, cellHeight / 3, 14))
+        const fontSize = Math.max(
+          8,
+          Math.min(cellWidth / 3, cellHeight / 3, 14)
+        )
 
         return (
           <div
             key={id}
             className={`detector-cell ${getStatusClass(status.status)}`}
             style={{
-              position: 'absolute',
+              position: "absolute",
               left: `${left}px`,
               top: `${top}px`,
               width: `${cellWidth}px`,
-              height: `${cellHeight}px`
-            }}>
+              height: `${cellHeight}px`,
+            }}
+          >
             <div className="detector-cell-content">
-              {status.status === 'queued' && (
-                <div className="queue-length" style={{ fontSize: `${fontSize}px` }}>
+              {status.status === "queued" && (
+                <div
+                  className="queue-length"
+                  style={{ fontSize: `${fontSize}px` }}
+                >
                   {status.queue_length}
                 </div>
               )}
