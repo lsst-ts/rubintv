@@ -13,7 +13,7 @@ import { _getById } from "../modules/utils"
   camera.mosaic_view_meta.forEach((view) => {
     ws.subscribe("service", "channel", locationName, camera.name, view.channel)
     const channel = camera.channels.find(({ name }) => name === view.channel)
-    if (!channel.per_day) {
+    if (!channel.perDay) {
       hasSequencedChannels = true
     }
   })

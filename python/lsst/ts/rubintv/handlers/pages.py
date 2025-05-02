@@ -232,7 +232,7 @@ async def get_camera_for_date_page(
             "location": location,
             "camera": camera.model_dump(),
             "channelData": data.channel_data,
-            "per_day": data.per_day,
+            "perDay": data.per_day,
             "metadata": data.metadata,
             "historicalBusy": historical_busy,
             "nr_link": nr_link,

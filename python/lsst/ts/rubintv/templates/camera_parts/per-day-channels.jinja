@@ -1,13 +1,13 @@
-{% if per_day %}
+{% if perDay %}
   <nav id="per-day-menu" class="channel-menu" role="navigation">
     <h3>Per Day Channels</h3>
     <ul class="channels flr">
-      {% for chan in per_day %}
+      {% for chan in perDay %}
       {% set ns =namespace(camchannel={}) %}
         {% for camchan in camera.channels %}
           {% set ns.camchannel = camchan if camchan.name == chan %}
         {% endfor %}
-        {% set event = per_day[chan] %}
+        {% set event = perDay[chan] %}
         <li class="channel">
           <a  class="button button-large {{ chan }}"
               href="{{
