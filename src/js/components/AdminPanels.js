@@ -129,19 +129,25 @@ RedisPanel.propTypes = {
 
 export function DropDownMenuContainer({ menu, onItemSelect }) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
-  const [clearDropdown, setClearDropdown] = useState(false)
+  const [thisMenu, setThisMenu] = useState(menu)
 
   const handleSelect = (item) => {
-    updateRedisStatus("pending") // set pending state
+    updateRedisStatus("pending")
     onItemSelect(item)
       .then(() => {
         updateRedisStatus("true")
-        setClearDropdown(false)
+        setThisMenu((prevMenu) => ({
+          ...prevMenu,
+          selectedItem: item,
+        }))
       })
       .catch((error) => {
         console.error("Error selecting item:", error)
         updateRedisStatus("false")
-        setClearDropdown(true)
+        setThisMenu((prevMenu) => ({
+          ...prevMenu,
+          selectedItem: null,
+        }))
       })
   }
 
@@ -151,11 +157,7 @@ export function DropDownMenuContainer({ menu, onItemSelect }) {
         <h4 className="dropdown-menu-title box-title">{menu.title}</h4>
         <StatusIndicator status={redisChanged} />
       </div>
-      <DropDownMenu
-        menu={menu}
-        onItemSelect={handleSelect}
-        clearDropdown={clearDropdown}
-      />
+      <DropDownMenu menu={thisMenu} onItemSelect={handleSelect} />
     </div>
   )
 }
@@ -218,7 +220,7 @@ export function AdminSendRedisCommand({ redisEndpointUrl, redisKeyPrefix }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    updateRedisStatus("pending") // set pending state
+    updateRedisStatus("pending")
     const key = redisKeyPrefix(e.target.elements.key.value)
     const value = e.target.elements.value.value
     simplePost(redisEndpointUrl, { key, value })
@@ -312,18 +314,13 @@ AdminDangerPanel.propTypes = {
 }
 
 export function StatusIndicator({ status }) {
+  const statusClass = {
+    pending: "pending indicator",
+    true: "success indicator",
+    false: "fail indicator",
+  }
   return (
-    <div
-      className={
-        status === "pending"
-          ? "pending indicator"
-          : status === "true"
-          ? "success indicator"
-          : status === "false"
-          ? "fail indicator"
-          : "indicator"
-      }
-    >
+    <div className={statusClass[status] || "indicator"}>
       <span className="status-icon">●</span>
     </div>
   )

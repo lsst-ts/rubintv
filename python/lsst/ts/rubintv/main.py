@@ -119,12 +119,12 @@ async def _makeRedis() -> redis.Redis:
     Redis:
         The redis connection.
     """
+    SOCKET_TIMEOUT = 3
     host: str = config.ra_redis_host
     password = config.ra_redis_password
     port: int = config.ra_redis_port
-    # set socket_timeout to 3 seconds
     redis_client = await redis.Redis(
-        host=host, password=password, port=port, socket_timeout=3
+        host=host, password=password, port=port, socket_timeout=SOCKET_TIMEOUT
     )
     # Redis never complains even if it can't connect
     # until you try to do something with it.
