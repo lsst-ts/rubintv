@@ -281,7 +281,7 @@ function ChannelHeader({
     className: containerClass,
   }
   if (isMetadataColumn) {
-    containerProps.onClick = () => handleColumnClick(event, channel.name)
+    containerProps.onClick = (event) => handleColumnClick(event, channel.name)
   }
   if (channel.desc) {
     containerProps.title = channel.desc
