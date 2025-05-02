@@ -1,62 +1,40 @@
+.centered
+  display: flex
+  align-items: center
+  height: 100%
+  
 .detector-container
   padding: 1rem
   display: flex
   flex-direction: column
   gap: 2rem
 
-.main-detectors
+.main-detectors, .aos-detectors
   display: flex
   gap: 2rem
-  justify-content: center
-
-.aos-detectors
-  display: flex
-  gap: 2rem
-  justify-content: center
 
 .step1b-section
-  display: flex
-  flex-direction: column
-  gap: 2rem
+  max-width: 20%
 
-.step1b-groups
+.spareworkers-cells
   display: flex
-  gap: 4rem
-  justify-content: center
-
-.step1b-row, .backlog-row
-  h3
-    margin-bottom: 0.5rem
-    font-size: 1.1em
-    text-align: center
+  gap: 0.2rem
+  flex-wrap: wrap
+  justify-content: start
 
 .step1b-cells
-  display: flex
-  gap: 1rem
-  justify-content: center
+  display: grid
+  grid-template-rows: repeat(5, 36px)
+  grid-auto-flow: column
+  justify-content: start
+  gap: 0.2rem
 
+.step1b-cells, .spareworkers-cells
   .detector-cell
-    width: 50px
-    height: 50px
-    border-radius: 4px
-    position: relative
-    
-    &.status-free
-      background-color: #4CAF50
-    &.status-busy
-      background-color: #f44336
-    &.status-queued
-      background-color: #FF9800
-    &.status-missing
-      background-color: #9E9E9E
-
-    .queue-length
-      position: absolute
-      top: 50%
-      left: 50%
-      transform: translate(-50%, -50%)
-      color: white
-      font-weight: bold
+      height: 36px
+      aspect-ratio: 1
+      border-radius: 3px
+      position: relative
 
 .detector
   &-container
@@ -76,28 +54,27 @@
 
   &-section-large
     flex: 1
-    max-width: 50%
+    max-width: 40%
   &-section-small
     flex: 1
-    max-width: 25%
+    max-width: 20%
     &.detector-title
       font-size: 0.9rem
 
   &-title
     font-size: 1.25rem
-    font-weight: bold
     margin-bottom: 1rem
 
   &-canvas
     position: relative
-    // border: 1px solid #ccc
+    border: 1px solid #ccc
     width: 100%
     aspect-ratio: 1
 
   &-cell
     position: absolute
     border: 1px solid #374151
-    opacity: 0.8
+    opacity: 0.9
 
     &-content
       position: absolute
@@ -131,6 +108,7 @@
     display: flex
     gap: 1rem
     margin-top: 0.5rem
+    justify-content: end
 
   &-item
     display: flex
