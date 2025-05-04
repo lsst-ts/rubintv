@@ -33,7 +33,8 @@
     <nav id="per-image-menu" class="channel-menu" role="navigation">
       <h3>Current image channels</h3>
       <ul class="channels flr">
-        {% for channel in camera.channels if not channel.perDay %}
+        {# Use snake_cased per_day as it's an attribute in a Python object #}
+        {% for channel in camera.channels if not channel.per_day %}
         <li class="channel service" id="{{ channel.name }}">
           <a class="button button-large {{ channel.name }}" style="background-color: {{ channel.colour }};" href="{{
                         url_for('current_event',
