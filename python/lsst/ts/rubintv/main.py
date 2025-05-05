@@ -101,6 +101,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         yield
 
     if redis_task:
+        await redis_subscriber.stop_async()
         redis_task.cancel()
         try:
             await redis_task

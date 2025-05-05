@@ -1,6 +1,9 @@
+# detector_status_handler.py
+from __future__ import annotations  # postpone evaluation of annotations (Python ≥3.7)
+
 import asyncio
 import json
-from typing import Any
+from typing import Literal, Mapping, TypeAlias, TypedDict, cast
 
 import redis.asyncio as redis  # type: ignore[import]
 
@@ -10,149 +13,164 @@ from .redissubscribe import KeyspaceSubscriber
 
 logger = rubintv_logger()
 
+# ----------------------------------------------------------------------
+# Typed helpers – all the “wordy” shapes collapse into a few names
+# ----------------------------------------------------------------------
+
+StatusLiteral: TypeAlias = Literal["free", "busy", "missing", "queued"]
+
+
+class QueueStatus(TypedDict, total=False):
+    """Status for one detector entry.
+
+    `queue_length` is present only when status == "queued".
+    """
+
+    status: StatusLiteral
+    queue_length: int
+
+
+# A "numWorkers" entry is just an int, everything else is a QueueStatus
+DecodedRedisValue: TypeAlias = Mapping[str, int | QueueStatus]
+
+# detector‑name  ->  DecodedRedisValue
+InitialData: TypeAlias = Mapping[str, DecodedRedisValue]
+
+KeyspaceEvent: TypeAlias = Mapping[str, bytes]
+
+# ----------------------------------------------------------------------
+# Main handler
+# ----------------------------------------------------------------------
+
 
 class DetectorStatusHandler:
-    def __init__(
-        self, redis_client: redis.Redis, mapped_keys: list[dict[str, str]]
-    ) -> None:
-        """RedisHandler for subscribing to Redis keyspace notifications.
-        This class handles the subscription to Redis keyspace notifications
-        and processes the events asynchronously.
+    """Subscribe to Redis key‑space notifications and forward structured status
+    information to websocket clients."""
 
+    def __init__(
+        self,
+        redis_client: redis.Redis,
+        mapped_keys: list[dict[str, str]],
+    ) -> None:
+        """
         Parameters
         ----------
-        redis_client : redis.Redis
-            Redis client instance.
-        keys : dict
-            List of keys to subscribe to. The keys should be in the format
+        redis_client
+            Connected **async** Redis client.
+        mapped_keys
+            Each item must contain ``{"key": "<redis key>", "name":
+            "<detector name>"}``.
         """
         self.redis_client = redis_client
-        self.keys = [detector["key"] for detector in mapped_keys]
-        self.mapped_keys = {
-            detector["key"]: detector["name"] for detector in mapped_keys
-        }
+        self.keys: list[str] = [d["key"] for d in mapped_keys]
+        self.mapped_keys: dict[str, str] = {d["key"]: d["name"] for d in mapped_keys}
         self._running = False
         self.subscriber: KeyspaceSubscriber | None = None
 
-    async def _decode_redis_value(
-        self, key: str
-    ) -> str | list[str] | dict[str, Any] | None:
-        """Helper method to decode Redis values of different types.
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
 
-        Parameters
-        ----------
-        key : str
-            Redis key to decode
-
-        Returns
-        -------
-        decoded_value : Union[str, list, dict]
-            Decoded value from Redis
-        """
-        key_type = await self.redis_client.type(key)
-        key_type = key_type.decode()
-
-        # The keys are expected to be string representations of JSON
-        # objects
+    async def _decode_redis_value(self, key: str) -> DecodedRedisValue | None:
+        """Translate the raw Redis string into a typed Python structure."""
+        key_type = (await self.redis_client.type(key)).decode()
         if key_type != "string":
-            logger.debug(f"Key {key} is not a string")
+            logger.debug("Key %s is not a string", key)
             return None
 
-        value = await self.redis_client.get(key)
-        if value is None:
-            logger.debug(f"Key {key} does not exist")
+        raw = await self.redis_client.get(key)
+        if raw is None:
+            logger.debug("Key %s does not exist", key)
             return None
 
         try:
-            # Try to parse as JSON first
-            data = json.loads(value.decode())
+            data = json.loads(raw.decode())
         except json.JSONDecodeError:
-            # If not JSON, return nothing
-            logger.debug(f"Key {key} is not JSON")
-            return None
-        if not isinstance(data, dict):
-            logger.debug(f"Key {key} is not a JSON object")
-            logger.debug(f"Key {key} value: {data}")
+            logger.debug("Key %s value is not valid JSON", key)
             return None
 
-        # Unpack the data into a dict with keys as strings
-        # and values as dicts with "status" and "queue_length"
-        # or "status" and the original value
-        unpacked_data = {}
+        if not isinstance(data, dict):
+            logger.debug("Key %s does not hold a JSON object: %s", key, data)
+            return None
+
+        unpacked: dict[str, int | QueueStatus] = {}
         for k, v in data.items():
             if k == "num_workers":
-                # If the key is "num_workers", pass it through
-                unpacked_data[k] = v
+                # pass through as int, defaulting to 0 on bad data
+                try:
+                    unpacked["numWorkers"] = int(v)
+                except (ValueError, TypeError):
+                    unpacked["numWorkers"] = 0
                 continue
-            try:
-                v = int(v)
-                unpacked_data[k] = {"status": "queued", "queue_length": v}
-            except ValueError:
-                # If the value cannot be cast to an int, we assume it's a
-                # string and create a nested dict with key "status" and the
-                # original value
-                unpacked_data[k] = {"status": v}
-        return unpacked_data
 
-    async def read_initial_data(
-        self,
-    ) -> dict[str, str | list[str] | dict[str, Any]]:
-        """Read initial data for all subscribed keys and notify clients"""
-        logger.debug("Reading initial data for all keys", key=self.keys)
-        data = {}
+            # All other keys describe detector queues / status
+            if isinstance(v, str):
+                try:
+                    q_len = int(v)  # "15"  -> queued / 15
+                    unpacked[k] = {"status": "queued", "queue_length": q_len}
+                except ValueError:
+                    if v in ("free", "busy", "missing"):
+                        unpacked[k] = {"status": cast(StatusLiteral, v)}
+                    else:
+                        logger.debug("Key %s has unknown status string: %s", key, v)
+
+            elif isinstance(v, int):
+                unpacked[k] = {"status": "queued", "queue_length": v}
+            else:
+                logger.debug("Key %s has an unsupported value type: %s", key, v)
+
+        return unpacked
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    async def read_initial_data(self) -> InitialData | None:
+        """Fetch the current value for every subscribed key (once)."""
+        logger.debug("Reading initial data for keys: %s", self.keys)
+        initial: dict[str, DecodedRedisValue] = {}
         for key in self.keys:
             try:
-                decoded_value = await self._decode_redis_value(key)
-                if decoded_value is not None:
-                    set_name = self.mapped_keys[key]
-                    data[set_name] = decoded_value
-            except Exception as e:
-                logger.debug(f"Error reading initial data for {key}: {e}")
-        return data
+                decoded = await self._decode_redis_value(key)
+                if decoded is not None:
+                    initial[self.mapped_keys[key]] = decoded
+            except Exception as exc:
+                logger.debug("Error reading %s: %s", key, exc, exc_info=True)
 
-    async def on_event(self, event: dict[str, Any]) -> None:
-        """Handle Redis keyspace events
+        return initial or None
 
-        Parameters
-        ----------
-        event : dict
-            Redis keyspace notification event
-        """
+    async def on_event(self, event: KeyspaceEvent) -> None:
+        """Handle a single Redis key‑space notification."""
         try:
-            # Extract the key from the channel name
             set_key = event["channel"].split(b":", 1)[1].decode()
+            decoded = await self._decode_redis_value(set_key)
+            if decoded is not None:
+                await notify_redis_detector_status({self.mapped_keys[set_key]: decoded})
+        except Exception as exc:
+            logger.debug("Error processing event: %s", exc, exc_info=True)
 
-            # Read the current value for the changed key
-            decoded_value = await self._decode_redis_value(set_key)
-            if decoded_value is not None:
-                set_name = self.mapped_keys[set_key]
-                # Format data to match expected structure
-                formatted_data = {set_name: decoded_value}
-                await notify_redis_detector_status(formatted_data)
-        except Exception as e:
-            logger.debug(f"Error processing event: {e}")
+    # ------------------------------------------------------------------
+    # Lifecycle helpers
+    # ------------------------------------------------------------------
 
     async def run_async(self) -> None:
-        """Async version of the run method"""
+        """Start the subscription loop (cancellable)."""
         self.subscriber = KeyspaceSubscriber(
-            client=self.redis_client, keys=self.keys, callback=self.on_event
+            client=self.redis_client,
+            keys=self.keys,
+            callback=self.on_event,
         )
         self._running = True
         try:
-            # Start the subscriber in async mode
             await self.subscriber.start_async()
-
-            # Keep the task alive until cancelled
             while self._running:
-                await asyncio.sleep(0.1)  # Prevent tight loop
-
+                await asyncio.sleep(0.1)
         except asyncio.CancelledError:
-            self._running = False
             await self.stop_async()
             raise
 
     async def stop_async(self) -> None:
-        """Async cleanup method"""
+        """Gracefully close the subscriber and mark the loop as stopped."""
         self._running = False
-        if self.subscriber:
+        if self.subscriber is not None:
             await self.subscriber.stop_async()

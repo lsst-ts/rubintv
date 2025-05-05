@@ -37,6 +37,7 @@ class KeyspaceSubscriber:
         self.keys = keys
         self.callback = callback
         self._running: bool = False
+        self._task: asyncio.Task | None = None
 
     def _build_channels(self) -> list[str]:
         # Keyspace notifications publish to __keyspace@<db>__:<key>
@@ -57,7 +58,7 @@ class KeyspaceSubscriber:
             logger.info(f"Subscribed to {ch}")
 
         # Start listening in the background
-        asyncio.create_task(self._listen_async())
+        self._task = asyncio.create_task(self._listen_async())
 
     async def _listen_async(self) -> None:
         """Listen for messages asynchronously"""
@@ -75,5 +76,11 @@ class KeyspaceSubscriber:
     async def stop_async(self) -> None:
         """Stop listening and clean up asynchronously"""
         self._running = False
+        if self._task:
+            self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass
         await self.pubsub.unsubscribe()
         await self.pubsub.aclose()

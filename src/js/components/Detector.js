@@ -196,12 +196,12 @@ const Step1bSection = ({ title, statuses }) => {
 }
 
 const Cells = ({ statuses, prefix }) => {
-  if (statuses.num_workers && statuses.num_workers > 0) {
-    const numWorkers = statuses.num_workers
+  if (statuses.numWorkers && statuses.numWorkers > 0) {
+    const { numWorkers } = statuses
     const placeholders = createPlaceholders(numWorkers)
     statuses = { ...placeholders, ...statuses }
   }
-  if (statuses.num_workers && statuses.num_workers === 0) {
+  if (statuses.numWorkers && statuses.numWorkers === 0) {
     return <div className={`${prefix}-cells`}></div>
   }
   return (
