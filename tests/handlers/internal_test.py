@@ -12,7 +12,7 @@ from ..mockdata import RubinDataMocker
 
 @pytest.mark.asyncio
 async def test_get_index(
-    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker]
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
     client, app, mocker = mocked_client
     """Test ``GET /``"""

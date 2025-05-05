@@ -48,6 +48,18 @@
             &.transition .status-icon
                 transform: scale(1.2)
                 opacity: 0.8
+            &.pending .status-icon
+                background-color: #ff0
+                animation: pulse 1s infinite
+
+// pulse animation for pending status
+@keyframes pulse
+    0%
+        transform: scale(1)
+    50%
+        transform: scale(1.2)
+    100%
+        transform: scale(1)
 
 .dropdown-menu
     color: #fff

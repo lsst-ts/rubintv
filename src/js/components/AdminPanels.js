@@ -4,28 +4,16 @@ import { useModal, ConfirmationModal, ModalProvider } from "./Modal"
 import { simplePost, simpleGet } from "../modules/utils"
 import PropTypes from "prop-types"
 
-// Utility function to fetch and update menus
-const fetchAndUpdateMenus = (redisEndpointUrl, menus, setMenus) => {
-  simpleGet(redisEndpointUrl, { keys: menus.map((menu) => menu.key) }).then(
-    (dataStr) => {
-      const data = JSON.parse(dataStr)
-      const updatedMenus = menus.map((menu) => {
-        const value = data[menu.key]
-        const selectedItem = menu.items.find((item) => item.value === value)
-        return { ...menu, selectedItem }
-      })
-      setMenus(updatedMenus)
-    }
-  )
-}
-
 // Custom hook to handle Redis post success/failure
 function useRedisStatus() {
   const [redisChanged, setRedisChanged] = useState(null)
 
   const updateRedisStatus = (status) => {
     setRedisChanged(status)
-    setTimeout(() => setRedisChanged(null), 2000)
+    // Only auto-clear if status is "true" or "false"
+    if (status === "true" || status === "false") {
+      setTimeout(() => setRedisChanged(null), 2000)
+    }
   }
 
   return [redisChanged, updateRedisStatus]
@@ -40,9 +28,6 @@ export default function AdminPanels({
 }) {
   const [admin, setAdmin] = useState(initAdmin)
   const [menus, setMenus] = useState(initMenus)
-
-  const refreshMenus = () =>
-    fetchAndUpdateMenus(redisEndpointUrl, menus, setMenus)
 
   useEffect(() => {
     simpleGet(authEndpointUrl)
@@ -79,10 +64,7 @@ export default function AdminPanels({
         <div className="danger-panel">
           <div className="danger-panel-border">
             <h4 className="danger-panel-title">Danger Zone</h4>
-            <AdminDangerPanel
-              refreshMenus={refreshMenus}
-              redisEndpointUrl={redisEndpointUrl}
-            />
+            <AdminDangerPanel redisEndpointUrl={redisEndpointUrl} />
           </div>
         </div>
       </div>
@@ -101,24 +83,15 @@ AdminPanels.propTypes = {
   authEndpointUrl: PropTypes.string,
 }
 
-export function RedisPanel({
-  menus,
-  setMenus,
-  redisEndpointUrl,
-  redisKeyPrefix,
-}) {
-  const handleRefresh = () => {
-    fetchAndUpdateMenus(redisEndpointUrl, menus, setMenus)
-  }
-
-  useEffect(() => {
-    handleRefresh()
-  }, [redisEndpointUrl])
-
-  const handleItemSelect = (menuKey, item) => {
-    return simplePost(redisEndpointUrl, { key: menuKey, value: item.value })
-      .then(() => console.log("Redis updated successfully"))
-      .catch((error) => console.error("Error posting to redis:", error))
+export function RedisPanel({ menus, redisEndpointUrl, redisKeyPrefix }) {
+  const handleItemSelect = async (menuKey, item) => {
+    try {
+      await simplePost(redisEndpointUrl, { key: menuKey, value: item.value })
+      console.log("Redis updated successfully")
+    } catch (error) {
+      console.error("Error posting to redis:", error)
+      throw error
+    }
   }
 
   return (
@@ -135,9 +108,13 @@ export function RedisPanel({
       </div>
       <div className="admin-panel-part">
         <AdminSendRedisCommand
-          onRefresh={handleRefresh}
           redisEndpointUrl={redisEndpointUrl}
           redisKeyPrefix={redisKeyPrefix}
+        />
+        <AdminSendRedisValue
+          redisEndpointUrl={redisEndpointUrl}
+          redisKeyPrefix={redisKeyPrefix}
+          keyToSend="WITNESS_DETECTOR"
         />
       </div>
     </div>
@@ -152,15 +129,25 @@ RedisPanel.propTypes = {
 
 export function DropDownMenuContainer({ menu, onItemSelect }) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
+  const [thisMenu, setThisMenu] = useState(menu)
 
   const handleSelect = (item) => {
+    updateRedisStatus("pending")
     onItemSelect(item)
       .then(() => {
-        updateRedisStatus(true)
+        updateRedisStatus("true")
+        setThisMenu((prevMenu) => ({
+          ...prevMenu,
+          selectedItem: item,
+        }))
       })
       .catch((error) => {
         console.error("Error selecting item:", error)
-        updateRedisStatus(false)
+        updateRedisStatus("false")
+        setThisMenu((prevMenu) => ({
+          ...prevMenu,
+          selectedItem: null,
+        }))
       })
   }
 
@@ -170,7 +157,7 @@ export function DropDownMenuContainer({ menu, onItemSelect }) {
         <h4 className="dropdown-menu-title box-title">{menu.title}</h4>
         <StatusIndicator status={redisChanged} />
       </div>
-      <DropDownMenu menu={menu} onItemSelect={handleSelect} />
+      <DropDownMenu menu={thisMenu} onItemSelect={handleSelect} />
     </div>
   )
 }
@@ -179,24 +166,69 @@ DropDownMenuContainer.propTypes = {
   onItemSelect: PropTypes.func.isRequired,
 }
 
-export function AdminSendRedisCommand({
-  onRefresh,
+export function AdminSendRedisValue({
   redisEndpointUrl,
   redisKeyPrefix,
+  keyToSend,
 }) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    updateRedisStatus("pending") // set pending state
+    const key = redisKeyPrefix(keyToSend)
+    const value = e.target.elements.value.value
+    simplePost(redisEndpointUrl, { key, value })
+      .then(() => {
+        updateRedisStatus("true")
+      })
+      .catch((error) => {
+        updateRedisStatus("false")
+        console.error("Error posting to redis:", error)
+      })
+  }
+
+  return (
+    <div className="redis-command-panel box">
+      <div className="redis-command-header box-header">
+        <h4 className="redis-command-title box-title">Witness Detector</h4>
+        <StatusIndicator status={redisChanged} />
+      </div>
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label htmlFor="value">Value:</label>
+          <input
+            type="text"
+            id="value"
+            name="value"
+            placeholder="Value"
+            required
+          />
+        </div>
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  )
+}
+AdminSendRedisCommand.propTypes = {
+  redisEndpointUrl: PropTypes.string.isRequired,
+  redisKeyPrefix: PropTypes.func.isRequired,
+}
+
+export function AdminSendRedisCommand({ redisEndpointUrl, redisKeyPrefix }) {
+  const [redisChanged, updateRedisStatus] = useRedisStatus()
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    updateRedisStatus("pending")
     const key = redisKeyPrefix(e.target.elements.key.value)
     const value = e.target.elements.value.value
     simplePost(redisEndpointUrl, { key, value })
       .then(() => {
-        updateRedisStatus(true)
-        if (onRefresh) onRefresh()
+        updateRedisStatus("true")
       })
       .catch((error) => {
-        updateRedisStatus(false)
+        updateRedisStatus("false")
         console.error("Error posting to redis:", error)
       })
   }
@@ -228,23 +260,22 @@ export function AdminSendRedisCommand({
   )
 }
 AdminSendRedisCommand.propTypes = {
-  onRefresh: PropTypes.func,
   redisEndpointUrl: PropTypes.string.isRequired,
   redisKeyPrefix: PropTypes.func.isRequired,
 }
 
-export function AdminDangerPanel({ refreshMenus, redisEndpointUrl }) {
+export function AdminDangerPanel({ redisEndpointUrl }) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
   const { showModal } = useModal()
 
   const clearRedis = () => {
+    updateRedisStatus("pending") // set pending state
     simplePost(redisEndpointUrl, { key: "clear_redis", value: "true" })
       .then(() => {
-        updateRedisStatus(true)
-        if (refreshMenus) refreshMenus()
+        updateRedisStatus("true")
       })
       .catch((error) => {
-        updateRedisStatus(false)
+        updateRedisStatus("false")
         console.error("Error posting to redis:", error)
       })
   }
@@ -280,24 +311,20 @@ export function AdminDangerPanel({ refreshMenus, redisEndpointUrl }) {
 }
 AdminDangerPanel.propTypes = {
   redisEndpointUrl: PropTypes.string.isRequired,
-  refreshMenus: PropTypes.func,
 }
 
 export function StatusIndicator({ status }) {
+  const statusClass = {
+    pending: "pending indicator",
+    true: "success indicator",
+    false: "fail indicator",
+  }
   return (
-    <div
-      className={
-        status !== null
-          ? status
-            ? "success indicator"
-            : "fail indicator"
-          : "indicator"
-      }
-    >
+    <div className={statusClass[status] || "indicator"}>
       <span className="status-icon">●</span>
     </div>
   )
 }
 StatusIndicator.propTypes = {
-  status: PropTypes.bool,
+  status: PropTypes.string,
 }

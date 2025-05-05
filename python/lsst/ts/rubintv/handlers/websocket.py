@@ -21,7 +21,7 @@ from lsst.ts.rubintv.models.models_helpers import find_first
 data_ws_router = APIRouter()
 logger = rubintv_logger()
 
-valid_services = ["camera", "channel", "nightreport"]
+valid_services = [Service.value for Service in Service]
 
 
 @data_ws_router.websocket("/")
@@ -209,7 +209,6 @@ async def notify_new_client(
     channel_name: str,
     service: Service,
 ) -> None:
-
     current_poller: CurrentPoller = websocket.app.state.current_poller
     async for message_type, data in current_poller.get_latest_data(
         location, camera, channel_name, service

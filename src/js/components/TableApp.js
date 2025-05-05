@@ -25,6 +25,11 @@ export default function TableApp({
     column: "",
     value: "",
   })
+  const [sortOn, setSortOn] = useState({
+    column: "seq",
+    order: "desc",
+  })
+
   const [error, setError] = useState(null)
 
   const locationName = window.APP_DATA.locationName
@@ -110,7 +115,9 @@ export default function TableApp({
 
     if (datestamp && datestamp !== date) {
       window.APP_DATA.date = datestamp
-      _getById("header-date").textContent = datestamp
+      const headerDate = _getById("header-date")
+      headerDate.textContent = datestamp
+      headerDate.classList.remove("stale")
       setDate(datestamp)
       setMetadata({})
       setChannelData({})
@@ -165,6 +172,8 @@ export default function TableApp({
               setFilterOn={setFilterOn}
               filteredRowsCount={filteredRowsCount}
               unfilteredRowsCount={unfilteredRowsCount}
+              sortOn={sortOn}
+              setSortOn={setSortOn}
             />
           </div>
           <JumpButtons></JumpButtons>
@@ -176,6 +185,7 @@ export default function TableApp({
           metadataColumns={selectedMetaCols}
           filterOn={filterOn}
           filteredRowsCount={filteredRowsCount}
+          sortOn={sortOn}
         />
       </ModalProvider>
     </div>
@@ -197,6 +207,8 @@ function getAllColumnNames(metadata, defaultColNames) {
   const allColNames = Object.values(metadata)
     .map((obj) => Object.keys(obj))
     .flat()
+    .sort()
+  // get the set of all data for list of all available attrs
   const uniqueColNames = Array.from(
     new Set(defaultColNames.concat(allColNames))
   )
@@ -221,6 +233,9 @@ function getTableColumnWidths() {
   return cellWidths
 }
 
+/**
+ * Redraws the header widths based on the current table column widths.
+ */
 function redrawHeaderWidths() {
   const columns = getTableColumnWidths()
   const headers = Array.from(document.querySelectorAll(".grid-title"))

@@ -145,6 +145,8 @@ main
 	justify-content: center
 	align-items: center
 
+.stale
+	color: #ff0000
 
 h2
 	font-size: 1.7em
@@ -281,15 +283,18 @@ section
 	position: absolute
 	font-size: 14px
 	cursor: pointer
-	&.sideways
-		transform: rotate(330deg)
-		transform-origin: 0 0
-		white-space: nowrap
-	&.filtering
-		background:#ff0
-		color: #000
-		border-radius: 5px
-		padding: 2px
+	user-select: none
+.sideways
+	transform: rotate(330deg)
+	transform-origin: 0 0
+	white-space: nowrap
+	margin-bottom: 2px
+	user-select: none
+.filtering
+	background:#ff0
+	color: #000
+	border-radius: 5px
+	padding: 2px
 
 .grid-cell
 	min-width: 40px
@@ -373,6 +378,19 @@ section
 	display: flex
 	border: none
 	background: inherit
+
+.sorting-indicator
+	position: absolute
+	bottom: -5px
+	left: 0px
+	width: 20px
+	height: 12px
+	background-image: url(../images/sorting-indicator.svg)
+	background-size: contain
+	background-repeat: no-repeat
+	background-position: center
+	&.asc
+		transform: rotate(180deg)
 
 .jump-buttons
 	position: absolute

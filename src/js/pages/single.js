@@ -24,7 +24,6 @@ import MediaDisplay from "../components/MediaDisplay"
   if (isCurrent) {
     const ws = new WebsocketClient()
     ws.subscribe("service", "channel", locationName, camera.name, channel)
-    ws.subscribe("service", "camera", locationName, camera.name)
   }
 
   // Render the MediaDisplay component instead of manually handling DOM updates

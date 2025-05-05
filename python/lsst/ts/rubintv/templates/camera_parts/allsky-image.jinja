@@ -1,5 +1,5 @@
-{% if "stills" in per_day and per_day["stills"] %}
-  {% set still = per_day["stills"] %}
+{% if "stills" in perDay and perDay["stills"] %}
+  {% set still = perDay["stills"] %}
   {% set img_url = url_for('event_image',
                       location_name=location.name,
                       camera_name=camera.name,

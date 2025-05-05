@@ -16,7 +16,7 @@
   font-size: 1.1em
   cursor: pointer
   max-width: fit-content
-  &.current
+  &.selected
     color: #eee
 
 .year-title-viewbox
@@ -37,7 +37,7 @@
   box-sizing: border-box
   gap: 3em
   overflow-x: scroll
-  &.current
+  &.selected
     display: flex
 
 
@@ -55,14 +55,13 @@
 
 .month
   box-sizing: border-box
-  flex-basis: calc(25% - 0.5em)
 
 .days
   display: grid
   grid-template-columns: repeat(7, 1fr)
   gap: 2px
   & > *
-    min-width: 2.4em
+    width: 2.7em
     height: 2.2em
     box-sizing: content-box
 
@@ -70,13 +69,27 @@
   padding: 0.4em
   user-select: none
   font-size: 0.8em
-  width: 36px
   border-radius: 0.2em
+  position: relative
   &.obs
     cursor: pointer
     transition: background 0.3s
+    &.today
+      background: #84ff6a
+      color: #000
   .day_num
     display: block
   .num_evs
     font-size: 0.7em
     display: block
+  &.today
+    background: #347627
+    color: #fff
+
+.selected-border
+  position: absolute
+  top: 0
+  left: 0
+  right: 0
+  bottom: 0
+  border: 2px #2f6a0e dotted
