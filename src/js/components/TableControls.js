@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import PropTypes from "prop-types"
 import Clock, { TimeSinceLastImageClock } from "./Clock"
-import { _getById, interleaveSplit } from "../modules/utils"
+import { _getById } from "../modules/utils"
 import { cameraType, metadataType } from "./componentPropTypes"
 
 export default function AboveTableRow({
@@ -63,10 +63,10 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
     numControlColumns = 3
   }
   const gridStyle = {
-    gridTemplateColumns: `repeat(${numControlColumns}, 1fr)`,
+    columnCount: numControlColumns,
   }
 
-  const columnsToDisplay = interleaveSplit(allColNames, numControlColumns)
+  const columnsToDisplay = allColNames
 
   // allow escape from the table to close the controls
   const handleKeyDown = (event) => {
