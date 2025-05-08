@@ -23,17 +23,22 @@
             {% include "logo-button.jinja" %}
           </li>
         {% endfor %}
+
+        {% if group_name == "Nightly Validation" and location.has_cluster_status %}
+          <li>
+            {% set button = {
+                  "title": "Cluster Status",
+                  "logo": "",
+                  "text_colour": "#000",
+                  "text_shadow": false
+              } %}
+            {% set button_url = url_for('detectors', location_name=location.name) %}
+            {% include "logo-button.jinja" %}
+          </li>
+        {% endif %}
       </ul>
     </nav>
   </section>
 {% endfor %}
 {% endblock content %}
-{% block further %}
-  <div class="admin-access">
-    {# <a
-      class="button button-small admin"
-      href="{{ url_for('admin', location=location.name) }}">
-      Admin
-    </a> #}
-  </div>
-{% endblock further %}
+

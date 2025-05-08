@@ -76,20 +76,6 @@ async def get_home(
     )
 
 
-@pages_router.get("/detectors", response_class=HTMLResponse, name="detectors")
-async def get_detectors_page(request: Request) -> Response:
-    title = build_title("Detectors")
-    return templates.TemplateResponse(
-        request=request,
-        name="detectors.jinja",
-        context={
-            "request": request,
-            "title": title,
-            "date": get_current_day_obs().isoformat(),
-        },
-    )
-
-
 @pages_router.get("/admin", response_class=HTMLResponse, name="admin")
 async def get_admin_page(request: Request) -> Response:
     admin = await get_admin(request)
@@ -128,6 +114,26 @@ async def get_location_page(
         request=request,
         name="location.jinja",
         context={"request": request, "location": location, "title": title},
+    )
+
+
+@pages_router.get(
+    "/{location_name}/cluster-status", response_class=HTMLResponse, name="detectors"
+)
+async def get_detectors_page(location_name: str, request: Request) -> Response:
+    location = await get_location(location_name, request)
+    if not location.has_cluster_status:
+        raise HTTPException(404, "No cluster status found for this location.")
+    title = build_title(location.title, "Cluster Status")
+    return templates.TemplateResponse(
+        request=request,
+        name="detectors.jinja",
+        context={
+            "request": request,
+            "location": location,
+            "title": title,
+            "date": get_current_day_obs().isoformat(),
+        },
     )
 
 

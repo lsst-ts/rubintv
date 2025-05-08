@@ -206,6 +206,7 @@ class Location(HasButton):
     cameras: list[Camera] = []
     services: list[str] = []
     is_teststand: bool = False
+    has_cluster_status: bool = False
 
 
 @dataclass
