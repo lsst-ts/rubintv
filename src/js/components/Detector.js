@@ -106,13 +106,13 @@ const DetectorStatusVisualization = () => {
     <div className="detector-container">
       <div className="main-detectors">
         <DetectorSection
-          title="SMF Worker Set 1"
+          title="Imaging Worker Set 1"
           map={detectorMap}
           statuses={mainDetectorStatuses.sfmSet0}
           size="large"
         />
         <DetectorSection
-          title="SMF Worker Set 2"
+          title="Imaging Worker Set 2"
           map={detectorMap}
           statuses={mainDetectorStatuses.sfmSet1}
           size="large"
@@ -124,25 +124,25 @@ const DetectorStatusVisualization = () => {
       </div>
       <div className="aos-detectors">
         <DetectorSection
-          title="AOS Worker Set 1"
+          title="CWFS Worker Set 1"
           map={cwfsMap}
           statuses={cwfsStatuses.aosSet0}
           size="small"
         />
         <DetectorSection
-          title="AOS Worker Set 2"
+          title="CWFS Worker Set 2"
           map={cwfsMap}
           statuses={cwfsStatuses.aosSet1}
           size="small"
         />
         <DetectorSection
-          title="AOS Worker Set 3"
+          title="CWFS Worker Set 3"
           map={cwfsMap}
           statuses={cwfsStatuses.aosSet2}
           size="small"
         />
         <DetectorSection
-          title="AOS Worker Set 4"
+          title="CWFS Worker Set 4"
           map={cwfsMap}
           statuses={cwfsStatuses.aosSet3}
           size="small"
