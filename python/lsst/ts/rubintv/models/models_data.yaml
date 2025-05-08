@@ -29,6 +29,7 @@ locations:
     logo: SLAC_Logo.svg
     camera_groups:
       Nightly Validation: [ lsstcam, lsstcam_aos, ra_performance ]
+    has_cluster_status: True
 
   - name: base-usdf
     title: Base
@@ -106,6 +107,8 @@ locations:
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
       Deprecated Cameras: [ comcam, comcam_aos ]
+    has_cluster_status: True
+    
 
 cameras:
   - name: lsstcam
@@ -208,7 +211,6 @@ cameras:
 
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
       {seqNum}}, \"detector\": 0}"
-
 
   - name: tma
     title: TMA
