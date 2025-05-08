@@ -64,7 +64,6 @@ async def data_websocket(
                 await remove_client_from_services(client_id)
     except Exception as e:
         # Catch all exceptions to prevent the websocket from crashing
-        # and show the stack trace in the logs
         logger.error("Unexpected error in websocket handler", error=e)
 
 
@@ -129,6 +128,9 @@ async def attach_simple_service(
     if service == Service.HISTORICALSTATUS:
         payload = await websocket.app.state.historical.is_busy()
     if service == Service.DETECTORS:
+        if websocket.app.state.redis_subscriber is None:
+            logger.error("Redis subscriber not initialized")
+            return
         payload = await websocket.app.state.redis_subscriber.read_initial_data()
 
     # Send initial state
