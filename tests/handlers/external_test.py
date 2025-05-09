@@ -193,10 +193,11 @@ async def test_slac_redirect(
 ) -> None:
     """Test that the SLAC redirect works"""
     client, _, _ = mocked_client
+    # Test with no path
     response = await client.get(f"/{app_name}/slac")
     assert response.status_code == 301
     assert response.headers["Location"].endswith(f"/{app_name}/usdf")
-
+    # Test with a trailing slash
     response = await client.get(f"/{app_name}/slac/")
     assert response.status_code == 301
     assert response.headers["Location"].endswith(f"/{app_name}/usdf/")

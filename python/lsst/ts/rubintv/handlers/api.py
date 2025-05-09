@@ -79,8 +79,6 @@ async def redis_post(request: Request, message: KeyValue) -> dict:
 
 @api_router.get("/slac", response_class=RedirectResponse)
 async def redirect_slac_no_slash(request: Request) -> RedirectResponse:
-    """Redirects ``/rubintv/slac`` to ``/rubintv/usdf``."""
-    # redirect to the new path
     new_url = request.url.replace(path="/rubintv/usdf")
     return RedirectResponse(url=str(new_url), status_code=301)
 
@@ -88,7 +86,6 @@ async def redirect_slac_no_slash(request: Request) -> RedirectResponse:
 @api_router.get("/slac/{path:path}", response_class=RedirectResponse)
 async def redirect_slac(path: str | None, request: Request) -> RedirectResponse:
     old_path = request.url.path
-    # only replace the first occurrence
     new_path = old_path.replace("/slac", "/usdf", 1)
     new_url = request.url.replace(path=new_path)
     return RedirectResponse(url=str(new_url), status_code=301)
