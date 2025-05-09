@@ -2,6 +2,10 @@ from typing import Any
 
 from fastapi import Request
 
+from ..config import rubintv_logger
+
+logger = rubintv_logger()
+
 __all__ = ["build_title", "to_dict", "get_admin"]
 
 
@@ -57,3 +61,25 @@ async def get_admin(request: Request) -> dict | None:
         return {"username": username, "email": email}
 
     return None
+
+
+async def get_key_from_type_and_visit(
+    camera_name: str,
+    type: str,
+    visit: str,
+) -> str:
+    """Get the key from the type and visit.
+    e.g from type="calexp_mosaic" and visit="2025042200233" return
+    key="lsstcam/2025-04-22/calexp_mosaic/000233/lsstcam_calexp_mosaic_2025-04-22_000233.jpg"
+    key="lsstcam/2025-04-22/calexp_mosaic/000233/lsstcam_calexp_mosaic_2025-04-22_000233
+    """
+    try:
+        day_obs_no_hyphens = visit[:8]
+        day_obs = f"{day_obs_no_hyphens[:4]}-{day_obs_no_hyphens[4:6]}-{day_obs_no_hyphens[6:]}"
+        seq_num = f"{int(visit[8:]):06}"
+        key = f"{camera_name}/{day_obs}/{type}/{seq_num}/{camera_name}_{type}_{day_obs}_{seq_num}"
+    except ValueError:
+        logger.error(f"Invalid visit number: {visit}. Expected format: YYYYMMDDHHMMSS.")
+        key = ""
+    logger.debug(f"Key generated: {key}")
+    return key

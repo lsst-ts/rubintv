@@ -1,6 +1,7 @@
 """Handlers for the app's external root, ``/rubintv/``."""
 
 from datetime import date
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -23,7 +24,12 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
     get_prev_next_event,
     try_historical_call,
 )
-from lsst.ts.rubintv.handlers.pages_helpers import build_title, get_admin, to_dict
+from lsst.ts.rubintv.handlers.pages_helpers import (
+    build_title,
+    get_admin,
+    get_key_from_type_and_visit,
+    to_dict,
+)
 from lsst.ts.rubintv.models.models import (
     CameraPageData,
     Channel,
@@ -363,10 +369,24 @@ async def get_historical_night_report_page(
 async def get_specific_channel_event_page(
     location_name: str,
     camera_name: str,
-    key: str,
     request: Request,
+    key: Optional[str] = None,
+    type: Optional[str] = None,
+    visit: Optional[str] = None,
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
+    if key is None:
+        if type is None or visit is None:
+            raise HTTPException(status_code=404, detail="Key not found.")
+        key = await get_key_from_type_and_visit(
+            camera_name=camera_name,
+            type=type,
+            visit=visit,
+        )
+        if key is None:
+            raise HTTPException(status_code=404, detail="Key not found.")
+
+    logger.info("Key found", key=key)
     event = await get_specific_channel_event(location_name, camera_name, key, request)
     channel: Channel | None = None
     channel_title = ""

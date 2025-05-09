@@ -22,6 +22,7 @@ from lsst.ts.rubintv.models.models import (
     NightReport,
 )
 from lsst.ts.rubintv.models.models_helpers import find_first
+from lsst.ts.rubintv.s3client import S3Client
 
 api_router = APIRouter()
 """FastAPI router for all external handlers."""
@@ -176,13 +177,32 @@ async def get_specific_channel_event(
     camera_name: str,
     key: Annotated[
         str,
-        Query(pattern=r"(\w+)\/([\d-]+)\/(\w+)\/(\d{6}|final)\/([\w-]+)\.(\w+)$"),
+        Query(pattern=r"(\w+)\/([\d-]+)\/(\w+)\/(\d{6}|final)\/([\w-]+)(\.\w+)?$"),
     ],
     request: Request,
 ) -> Event | None:
     _, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online or not key:
         return None
+    if not key.endswith(r"\.\w+"):
+        # There is no file extension given, so we need to establish it
+        # by looking it up in the bucket
+        s3_client: S3Client = request.app.state.s3_clients[location_name]
+        if not s3_client:
+            raise HTTPException(status_code=404, detail="Location not found.")
+        # Check if the key exists in the bucket
+        objects = await s3_client.async_list_objects(key)
+        if not objects:
+            raise HTTPException(status_code=404, detail="Key not found.")
+        # Get the first object that matches the key
+        # and has a valid file extension
+        for obj in objects:
+            logger.info("Object found:", obj=obj)
+            if obj["key"].startswith(key):
+                key = obj["key"]
+                break
+        else:
+            raise HTTPException(status_code=404, detail="Key not found.")
     event = Event(key=key)
     if event.ext not in ["png", "jpg", "jpeg", "mp4"]:
         return None
