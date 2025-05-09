@@ -104,6 +104,26 @@ const DetectorStatusVisualization = () => {
 
   return (
     <div className="detector-container">
+      <div className="legend">
+        <div className="legend-items">
+          <div className="legend-item">
+            <div className="legend-color status-free"></div>
+            <span>Free</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color status-busy"></div>
+            <span>Busy</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color status-queued"></div>
+            <span>Queued</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color status-missing"></div>
+            <span>Missing</span>
+          </div>
+        </div>
+      </div>
       <div className="main-detectors">
         <DetectorSection
           title="Imaging Worker Set 1"
@@ -156,27 +176,6 @@ const DetectorStatusVisualization = () => {
           statuses={mainDetectorStatuses.spareWorkers}
           prefix="spareworkers"
         />
-      </div>
-
-      <div className="legend">
-        <div className="legend-items">
-          <div className="legend-item">
-            <div className="legend-color status-free"></div>
-            <span>Free</span>
-          </div>
-          <div className="legend-item">
-            <div className="legend-color status-busy"></div>
-            <span>Busy</span>
-          </div>
-          <div className="legend-item">
-            <div className="legend-color status-queued"></div>
-            <span>Queued</span>
-          </div>
-          <div className="legend-item">
-            <div className="legend-color status-missing"></div>
-            <span>Missing</span>
-          </div>
-        </div>
       </div>
     </div>
   )
