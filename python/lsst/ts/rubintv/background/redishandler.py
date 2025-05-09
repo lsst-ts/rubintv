@@ -2,8 +2,7 @@
 from __future__ import annotations  # postpone evaluation of annotations (Python ≥3.7)
 
 import asyncio
-import json
-from typing import Literal, Mapping, TypeAlias, TypedDict, cast
+from typing import Literal, Mapping, TypeAlias, TypedDict
 
 import redis.asyncio as redis  # type: ignore[import]
 
@@ -72,53 +71,36 @@ class DetectorStatusHandler:
     # ------------------------------------------------------------------
 
     async def _decode_redis_value(self, key: str) -> DecodedRedisValue | None:
-        """Translate the raw Redis string into a typed Python structure."""
+        """Translate the raw Redis hash into a typed Python structure."""
         key_type = (await self.redis_client.type(key)).decode()
-        if key_type != "string":
-            logger.debug("Key %s is not a string", key)
+        if key_type != "hash":
+            logger.debug("Key %s is not a hash", key)
             return None
 
-        raw = await self.redis_client.get(key)
-        if raw is None:
-            logger.debug("Key %s does not exist", key)
-            return None
-
-        try:
-            data = json.loads(raw.decode())
-        except json.JSONDecodeError:
-            logger.debug("Key %s value is not valid JSON", key)
-            return None
-
-        if not isinstance(data, dict):
-            logger.debug("Key %s does not hold a JSON object: %s", key, data)
+        data = await self.redis_client.hgetall(key)
+        if not data:
+            logger.debug("Key %s does not exist or is empty", key)
             return None
 
         unpacked: dict[str, int | QueueStatus] = {}
-        for k, v in data.items():
-            if k == "num_workers":
-                # pass through as int, defaulting to 0 on bad data
+        for raw_k, raw_v in data.items():
+            k = raw_k.decode()
+            v = raw_v.decode()
+            if k in ("num_workers", "numWorkers"):
                 try:
                     unpacked["numWorkers"] = int(v)
                 except (ValueError, TypeError):
                     unpacked["numWorkers"] = 0
                 continue
 
-            # All other keys describe detector queues / status
-            if isinstance(v, str):
-                try:
-                    q_len = int(v)  # "15"  -> queued / 15
-                    unpacked[k] = {"status": "queued", "queue_length": q_len}
-                except ValueError:
-                    if v in ("free", "busy", "missing"):
-                        unpacked[k] = {"status": cast(StatusLiteral, v)}
-                    else:
-                        logger.debug("Key %s has unknown status string: %s", key, v)
-
-            elif isinstance(v, int):
-                unpacked[k] = {"status": "queued", "queue_length": v}
-            else:
-                logger.debug("Key %s has an unsupported value type: %s", key, v)
-
+            try:
+                q_len = int(v)  # e.g., "15" -> queued / 15
+                unpacked[k] = {"status": "queued", "queue_length": q_len}
+            except ValueError:
+                if v in ("free", "busy", "missing"):
+                    unpacked[k] = {"status": v}  # type: ignore
+                else:
+                    logger.debug("Key %s has unknown status string: %s", key, v)
         return unpacked
 
     # ------------------------------------------------------------------
