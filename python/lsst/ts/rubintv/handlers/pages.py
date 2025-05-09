@@ -1,7 +1,6 @@
 """Handlers for the app's external root, ``/rubintv/``."""
 
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -370,10 +369,40 @@ async def get_specific_channel_event_page(
     location_name: str,
     camera_name: str,
     request: Request,
-    key: Optional[str] = None,
-    type: Optional[str] = None,
-    visit: Optional[str] = None,
+    key: str | None = None,
+    type: str | None = None,
+    visit: str | None = None,
 ) -> Response:
+    """Get the page for a specific event.
+    Can be retrieved by key or (type and visit).
+
+    Parameters
+    ----------
+    location_name : str
+        Location name.
+    camera_name : str
+        Camera name.
+    request : Request
+        The request object.
+    key : str | None, optional
+        The key for the event file in the bucket, by default None
+    type : str | None, optional
+        The type (which is synonymous with channel name), by default None
+    visit : str | None, optional
+        A composite of day obs and seq num without hyphens, by default None
+
+    Returns
+    -------
+    Response
+        _description_
+
+    Raises
+    ------
+    HTTPException
+        _description_
+    HTTPException
+        _description_
+    """
     location, camera = await get_location_camera(location_name, camera_name, request)
     if key is None:
         if type is None or visit is None:
@@ -386,7 +415,6 @@ async def get_specific_channel_event_page(
         if key is None:
             raise HTTPException(status_code=404, detail="Key not found.")
 
-    logger.info("Key found", key=key)
     event = await get_specific_channel_event(location_name, camera_name, key, request)
     channel: Channel | None = None
     channel_title = ""

@@ -181,6 +181,32 @@ async def get_specific_channel_event(
     ],
     request: Request,
 ) -> Event | None:
+    """Get a specific event from the camera.
+    If the key has no file extension, it will be looked up in the bucket.
+
+    Parameters
+    ----------
+    location_name : str
+        Location name.
+    camera_name : str
+        Camera name.
+    request : Request
+        the request object.
+    key : str
+        Checked against a regex for valid key patterns, either the whole
+        key or the key without the file extension.
+
+    Returns
+    -------
+    Event | None
+        The event object if found, None if not found or the camera is
+        offline.
+
+    Raises
+    ------
+    HTTPException
+        404: If the location or camera is not found.
+    """
     _, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online or not key:
         return None
@@ -195,7 +221,6 @@ async def get_specific_channel_event(
         if not objects:
             raise HTTPException(status_code=404, detail="Key not found.")
         # Get the first object that matches the key
-        # and has a valid file extension
         for obj in objects:
             logger.info("Object found:", obj=obj)
             if obj["key"].startswith(key):
