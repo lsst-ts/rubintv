@@ -185,3 +185,31 @@ async def test_request_invalid_dates(
         url = f"/{app_name}/{url_frag}"
         res = await client.get(url)
         assert res.is_success
+
+
+@pytest.mark.asyncio
+async def test_slac_redirect(
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
+) -> None:
+    """Test that the SLAC redirect works"""
+    client, _, _ = mocked_client
+    # Test with no path
+    response = await client.get(f"/{app_name}/slac")
+    assert response.status_code == 301
+    assert response.headers["Location"].endswith(f"/{app_name}/usdf")
+    # Test with a trailing slash
+    response = await client.get(f"/{app_name}/slac/")
+    assert response.status_code == 301
+    assert response.headers["Location"].endswith(f"/{app_name}/usdf/")
+    # Test with a path
+    response = await client.get(f"/{app_name}/slac/lsstcam")
+    assert response.status_code == 301
+    assert response.headers["Location"].endswith(f"/{app_name}/usdf/lsstcam")
+    # Test with a path and no trailing slash
+    response = await client.get(f"/{app_name}/slac/lsstcam/")
+    assert response.status_code == 301
+    assert response.headers["Location"].endswith(f"/{app_name}/usdf/lsstcam/")
+    # Test with a deeper path
+    response = await client.get(f"/{app_name}/slac/lsstcam/2023-10-01")
+    assert response.status_code == 301
+    assert response.headers["Location"].endswith(f"/{app_name}/usdf/lsstcam/2023-10-01")

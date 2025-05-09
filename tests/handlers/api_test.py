@@ -30,7 +30,7 @@ async def test_get_api_location(
 ) -> None:
     """Test that api location gives data for a particular location"""
     client, _, _ = mocked_client
-    location_name = "slac"
+    location_name = "usdf"
     location: Location | None = find_first(m.locations, "name", location_name)
     assert location is not None
     response = await client.get(f"/rubintv/api/{location_name}")
@@ -112,7 +112,7 @@ async def test_get_api_camera_for_today(
         await asyncio.sleep(0.1)
 
     today = get_current_day_obs()
-    response = await client.get(f"/rubintv/api/slac/lsstcam/date/{today}")
+    response = await client.get(f"/rubintv/api/usdf/lsstcam/date/{today}")
     data = response.json()
     assert "channelData" in data
     assert data["channelData"] != {}

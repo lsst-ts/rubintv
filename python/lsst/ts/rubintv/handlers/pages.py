@@ -83,6 +83,20 @@ async def get_admin_page(request: Request) -> Response:
     )
 
 
+@pages_router.get("/slac", response_class=RedirectResponse)
+async def redirect_slac_no_slash(request: Request) -> RedirectResponse:
+    new_url = request.url.replace(path="/rubintv/usdf")
+    return RedirectResponse(url=str(new_url), status_code=301)
+
+
+@pages_router.get("/slac/{path:path}", response_class=RedirectResponse)
+async def redirect_slac(path: str | None, request: Request) -> RedirectResponse:
+    old_path = request.url.path
+    new_path = old_path.replace("/slac", "/usdf", 1)
+    new_url = request.url.replace(path=new_path)
+    return RedirectResponse(url=str(new_url), status_code=301)
+
+
 @pages_router.get("/{location_name}", response_class=HTMLResponse, name="location")
 async def get_location_page(
     location_name: str,
