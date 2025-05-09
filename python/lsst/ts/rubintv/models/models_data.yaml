@@ -1,6 +1,6 @@
 bucket_configurations:
   usdf-k8s:
-    [ summit-usdf, slac, base-usdf, tucson-usdf ]
+    [ summit-usdf, usdf, base-usdf, tucson-usdf ]
   base:
     [ base ]
   tucson:
@@ -8,9 +8,9 @@ bucket_configurations:
   summit:
     [ summit ]
   gha:
-    [ summit-usdf, slac, base-usdf, tucson-usdf ]
+    [ summit-usdf, usdf, base-usdf, tucson-usdf ]
   local:
-    [ summit-usdf, slac, base-usdf, tucson-usdf ]
+    [ summit-usdf, usdf, base-usdf, tucson-usdf ]
 
 locations:
   - name: test
@@ -21,8 +21,8 @@ locations:
     camera_groups:
       Test: [ lsstcam, allsky ]
 
-  - name: slac
-    title: SLAC
+  - name: usdf
+    title: USDF
     profile_name: rubin-rubintv-data-usdf-embargo
     bucket_name: rubin-rubintv-data-usdf
     endpoint_url: https://sdfembs3.sdf.slac.stanford.edu

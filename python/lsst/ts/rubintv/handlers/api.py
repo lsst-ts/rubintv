@@ -4,6 +4,7 @@ from typing import Annotated
 
 import redis.exceptions  # type: ignore
 from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi.responses import RedirectResponse
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
 from lsst.ts.rubintv.config import rubintv_logger
@@ -74,6 +75,23 @@ async def redis_post(request: Request, message: KeyValue) -> dict:
         except redis.exceptions.RedisError as e:
             raise HTTPException(500, f"Failed to set Redis key: {e}")
         return {"response": response}
+
+
+@api_router.get("/slac", response_class=RedirectResponse)
+async def redirect_slac_no_slash(request: Request) -> RedirectResponse:
+    """Redirects ``/rubintv/slac`` to ``/rubintv/usdf``."""
+    # redirect to the new path
+    new_url = request.url.replace(path="/rubintv/usdf")
+    return RedirectResponse(url=str(new_url), status_code=301)
+
+
+@api_router.get("/slac/{path:path}", response_class=RedirectResponse)
+async def redirect_slac(path: str | None, request: Request) -> RedirectResponse:
+    old_path = request.url.path
+    # only replace the first occurrence
+    new_path = old_path.replace("/slac", "/usdf", 1)
+    new_url = request.url.replace(path=new_path)
+    return RedirectResponse(url=str(new_url), status_code=301)
 
 
 @api_router.get("/{location_name}", response_model=Location)
