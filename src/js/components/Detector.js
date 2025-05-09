@@ -118,7 +118,7 @@ const DetectorStatusVisualization = () => {
           size="large"
         />
         <Step1bSection
-          title="SMF Step 1b"
+          title="SFM Step 1b"
           statuses={mainDetectorStatuses.sfmStep1b}
         />
       </div>
