@@ -207,10 +207,12 @@ async def get_specific_channel_event(
     HTTPException
         404: If the location or camera is not found.
     """
+    allowed_extensions = [".png", ".jpg", ".jpeg", ".mp4"]
     _, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online or not key:
         return None
-    if not key.endswith(r"\.\w+"):
+    has_ext = any(key.endswith(ext) for ext in allowed_extensions)
+    if not has_ext:
         # There is no file extension given, so we need to establish it
         # by looking it up in the bucket
         s3_client: S3Client = request.app.state.s3_clients[location_name]
@@ -222,15 +224,16 @@ async def get_specific_channel_event(
             raise HTTPException(status_code=404, detail="Key not found.")
         # Get the first object that matches the key
         for obj in objects:
-            logger.info("Object found:", obj=obj)
             if obj["key"].startswith(key):
                 key = obj["key"]
                 break
         else:
             raise HTTPException(status_code=404, detail="Key not found.")
     event = Event(key=key)
-    if event.ext not in ["png", "jpg", "jpeg", "mp4"]:
-        return None
+    if event.ext not in allowed_extensions:
+        raise HTTPException(
+            status_code=400, detail=f"Invalid file extension: {event.ext}"
+        )
     return event
 
 

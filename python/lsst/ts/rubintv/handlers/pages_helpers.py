@@ -71,7 +71,6 @@ async def get_key_from_type_and_visit(
     """Get the key from the type and visit.
     e.g from type="calexp_mosaic" and visit="2025042200233" return
     key="lsstcam/2025-04-22/calexp_mosaic/000233/lsstcam_calexp_mosaic_2025-04-22_000233.jpg"
-    key="lsstcam/2025-04-22/calexp_mosaic/000233/lsstcam_calexp_mosaic_2025-04-22_000233
     """
     try:
         day_obs_no_hyphens = visit[:8]

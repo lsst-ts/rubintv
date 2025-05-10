@@ -412,7 +412,7 @@ async def get_specific_channel_event_page(
             type=type,
             visit=visit,
         )
-        if key is None:
+        if not key:
             raise HTTPException(status_code=404, detail="Key not found.")
 
     event = await get_specific_channel_event(location_name, camera_name, key, request)
