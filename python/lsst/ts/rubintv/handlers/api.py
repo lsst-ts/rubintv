@@ -207,11 +207,11 @@ async def get_specific_channel_event(
     HTTPException
         404: If the location or camera is not found.
     """
-    allowed_extensions = [".png", ".jpg", ".jpeg", ".mp4"]
+    allowed_extensions = ["png", "jpg", "jpeg", "mp4"]
     _, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online or not key:
         return None
-    has_ext = any(key.endswith(ext) for ext in allowed_extensions)
+    has_ext = any(key.endswith(f".{ext}") for ext in allowed_extensions)
     if not has_ext:
         # There is no file extension given, so we need to establish it
         # by looking it up in the bucket
