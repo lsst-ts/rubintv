@@ -142,7 +142,10 @@ class RubinDataMocker:
         self, bucket_name: str, camera_name: str, channel_name: str, seq_num: str
     ) -> dict[str, str]:
         day_obs = self.day_obs
-        key = f"{camera_name}/{day_obs}/{channel_name}/{seq_num}/mocked_event.jpg"
+        key = (
+            f"{camera_name}/{day_obs}/{channel_name}/{seq_num}/"
+            f"{camera_name}_{channel_name}_{day_obs}_{seq_num}.jpg"
+        )
         hash: None | str = None
         if self.s3_required:
             if self.upload_file(
