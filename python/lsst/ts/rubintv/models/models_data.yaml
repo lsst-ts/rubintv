@@ -84,6 +84,7 @@ locations:
       Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, ra_performance]
       Cameras: [ fake_auxtel ]
       Telescopes: [ tma ]
+    has_cluster_status: True
 
   - name: tucson
     title: Tucson

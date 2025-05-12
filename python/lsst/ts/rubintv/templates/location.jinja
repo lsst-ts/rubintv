@@ -24,7 +24,7 @@
           </li>
         {% endfor %}
 
-        {% if group_name == "Nightly Validation" and location.has_cluster_status %}
+        {% if group_name == location.camera_groups | first and location.has_cluster_status %}
           <li>
             {% set button = {
                   "title": "Cluster Status",
