@@ -23,7 +23,12 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
     get_prev_next_event,
     try_historical_call,
 )
-from lsst.ts.rubintv.handlers.pages_helpers import build_title, get_admin, to_dict
+from lsst.ts.rubintv.handlers.pages_helpers import (
+    build_title,
+    get_admin,
+    get_key_from_type_and_visit,
+    to_dict,
+)
 from lsst.ts.rubintv.models.models import (
     CameraPageData,
     Channel,
@@ -363,10 +368,53 @@ async def get_historical_night_report_page(
 async def get_specific_channel_event_page(
     location_name: str,
     camera_name: str,
-    key: str,
     request: Request,
+    key: str | None = None,
+    type: str | None = None,
+    visit: str | None = None,
 ) -> Response:
+    """Get the page for a specific event.
+    Can be retrieved by key or (type and visit).
+
+    Parameters
+    ----------
+    location_name : str
+        Location name.
+    camera_name : str
+        Camera name.
+    request : Request
+        The request object.
+    key : str | None, optional
+        The key for the event file in the bucket, by default None
+    type : str | None, optional
+        The type (which is synonymous with channel name), by default None
+    visit : str | None, optional
+        A composite of day obs and seq num without hyphens, by default None
+
+    Returns
+    -------
+    Response
+        _description_
+
+    Raises
+    ------
+    HTTPException
+        _description_
+    HTTPException
+        _description_
+    """
     location, camera = await get_location_camera(location_name, camera_name, request)
+    if key is None:
+        if type is None or visit is None:
+            raise HTTPException(status_code=404, detail="Key not found.")
+        key = await get_key_from_type_and_visit(
+            camera_name=camera_name,
+            type=type,
+            visit=visit,
+        )
+        if not key:
+            raise HTTPException(status_code=404, detail="Key not found.")
+
     event = await get_specific_channel_event(location_name, camera_name, key, request)
     channel: Channel | None = None
     channel_title = ""
