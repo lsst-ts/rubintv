@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react"
 import detectorMap from "../data/detectorMap.json"
 import cwfsMap from "../data/cwfsMap.json"
 import { simplePost } from "../modules/utils"
+import { ModalProvider, useModal, ConfirmationModal } from "./Modal"
 
 const RESET_PREFIX = "RUBINTV_CONTROL_RESET_"
 const RedisEndpointContext = createContext(null)
@@ -86,11 +87,12 @@ const Cells = ({ statuses, prefix }) => {
 const ResetButton = ({ redisKey }) => {
   const [status, setStatus] = useState("")
   const { url: redisEndpointUrl, admin } = useRedisEndpoint()
+  const { showModal, closeModal } = useModal()
 
   // Only show reset button if admin
   if (!admin) return null
 
-  const onClick = async () => {
+  const handleReset = async () => {
     try {
       const resetKey = redisKey.replace("CLUSTER_STATUS_", RESET_PREFIX)
       const response = await simplePost(redisEndpointUrl, {
@@ -108,6 +110,18 @@ const ResetButton = ({ redisKey }) => {
       console.error("Error resetting detector:", error)
       setStatus("error")
     }
+    closeModal()
+  }
+
+  const onClick = () => {
+    showModal(
+      <ConfirmationModal
+        title="Confirm Reset"
+        message="Are you sure you want to restart these workers?"
+        onConfirm={handleReset}
+        onCancel={closeModal}
+      />
+    )
   }
 
   const statusClass = `reset-button ${status}`
@@ -198,95 +212,97 @@ const DetectorStatusVisualization = ({
   }, [])
 
   return (
-    <RedisEndpointContext.Provider value={{ url: redisEndpointUrl, admin }}>
-      <div className="detector-container">
-        <div className="legend">
-          <div className="legend-items">
-            <div className="legend-item">
-              <div className="legend-color status-free"></div>
-              <span>Free</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color status-busy"></div>
-              <span>Busy</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color status-queued"></div>
-              <span>Queued</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color status-missing"></div>
-              <span>Missing</span>
+    <ModalProvider>
+      <RedisEndpointContext.Provider value={{ url: redisEndpointUrl, admin }}>
+        <div className="detector-container">
+          <div className="legend">
+            <div className="legend-items">
+              <div className="legend-item">
+                <div className="legend-color status-free"></div>
+                <span>Free</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color status-busy"></div>
+                <span>Busy</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color status-queued"></div>
+                <span>Queued</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color status-missing"></div>
+                <span>Missing</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="main-detectors">
-          <DetectorSection
-            title="Imaging Worker Set 1"
-            map={detectorMap}
-            statuses={mainDetectorStatuses.sfmSet0}
-            redisKey={redisKeys.sfmSet0}
-            size="large"
-          />
-          <DetectorSection
-            title="Imaging Worker Set 2"
-            map={detectorMap}
-            statuses={mainDetectorStatuses.sfmSet1}
-            redisKey={redisKeys.sfmSet1}
-            size="large"
-          />
-          <Step1bSection
-            title="SFM Step 1b"
-            statuses={mainDetectorStatuses.sfmStep1b}
-            redisKey={redisKeys.sfmStep1b}
-          />
-        </div>
-        <div className="aos-detectors">
-          <DetectorSection
-            title="CWFS Worker Set 1"
-            map={cwfsMap}
-            statuses={cwfsStatuses.aosSet0}
-            redisKey={redisKeys.aosSet0}
-            size="small"
-          />
-          <DetectorSection
-            title="CWFS Worker Set 2"
-            map={cwfsMap}
-            statuses={cwfsStatuses.aosSet1}
-            redisKey={redisKeys.aosSet1}
-            size="small"
-          />
-          <DetectorSection
-            title="CWFS Worker Set 3"
-            map={cwfsMap}
-            statuses={cwfsStatuses.aosSet2}
-            redisKey={redisKeys.aosSet2}
-            size="small"
-          />
-          <DetectorSection
-            title="CWFS Worker Set 4"
-            map={cwfsMap}
-            statuses={cwfsStatuses.aosSet3}
-            redisKey={redisKeys.aosSet3}
-            size="small"
-          />
-          <Step1bSection
-            title="AOS Step 1b"
-            statuses={cwfsStatuses.aosStep1b}
-            redisKey={redisKeys.aosStep1b}
-          />
-        </div>
+          <div className="main-detectors">
+            <DetectorSection
+              title="Imaging Worker Set 1"
+              map={detectorMap}
+              statuses={mainDetectorStatuses.sfmSet0}
+              redisKey={redisKeys.sfmSet0}
+              size="large"
+            />
+            <DetectorSection
+              title="Imaging Worker Set 2"
+              map={detectorMap}
+              statuses={mainDetectorStatuses.sfmSet1}
+              redisKey={redisKeys.sfmSet1}
+              size="large"
+            />
+            <Step1bSection
+              title="SFM Step 1b"
+              statuses={mainDetectorStatuses.sfmStep1b}
+              redisKey={redisKeys.sfmStep1b}
+            />
+          </div>
+          <div className="aos-detectors">
+            <DetectorSection
+              title="CWFS Worker Set 1"
+              map={cwfsMap}
+              statuses={cwfsStatuses.aosSet0}
+              redisKey={redisKeys.aosSet0}
+              size="small"
+            />
+            <DetectorSection
+              title="CWFS Worker Set 2"
+              map={cwfsMap}
+              statuses={cwfsStatuses.aosSet1}
+              redisKey={redisKeys.aosSet1}
+              size="small"
+            />
+            <DetectorSection
+              title="CWFS Worker Set 3"
+              map={cwfsMap}
+              statuses={cwfsStatuses.aosSet2}
+              redisKey={redisKeys.aosSet2}
+              size="small"
+            />
+            <DetectorSection
+              title="CWFS Worker Set 4"
+              map={cwfsMap}
+              statuses={cwfsStatuses.aosSet3}
+              redisKey={redisKeys.aosSet3}
+              size="small"
+            />
+            <Step1bSection
+              title="AOS Step 1b"
+              statuses={cwfsStatuses.aosStep1b}
+              redisKey={redisKeys.aosStep1b}
+            />
+          </div>
 
-        <div className="spareworkers-row">
-          <h3>Backlog Workers</h3>
-          <Cells
-            statuses={mainDetectorStatuses.spareWorkers}
-            prefix="spareworkers"
-          />
+          <div className="spareworkers-row">
+            <h3>Backlog Workers</h3>
+            <Cells
+              statuses={mainDetectorStatuses.spareWorkers}
+              prefix="spareworkers"
+            />
+          </div>
+          <OtherQueuesSection otherQueues={otherQueues} />
         </div>
-        <OtherQueuesSection otherQueues={otherQueues} />
-      </div>
-    </RedisEndpointContext.Provider>
+      </RedisEndpointContext.Provider>
+    </ModalProvider>
   )
 }
 
