@@ -97,13 +97,6 @@ const ResetButton = ({ redisKey }) => {
         key: resetKey,
         value: "reset",
       })
-
-      const timedStatus = setTimeout((status) => {
-        setStatus("error")
-        console.error("Reset timed out")
-      }, 2000)
-
-      console.log("Reset response:", response)
       if (response) {
         console.log("Reset successful")
         setStatus("success")
@@ -144,6 +137,7 @@ const DetectorStatusVisualization = ({ detectorKeys, redisEndpointUrl }) => {
     aosSet3: {},
     aosStep1b: createPlaceholders(8),
   })
+  const [otherQueues, setOtherQueues] = useState({})
 
   useEffect(() => {
     function handleDetectorEvent(event) {
@@ -182,6 +176,11 @@ const DetectorStatusVisualization = ({ detectorKeys, redisEndpointUrl }) => {
         ...(aosSet2 && { aosSet2 }),
         ...(aosSet3 && { aosSet3 }),
         ...(aosStep1b && { aosStep1b }),
+      }))
+
+      setOtherQueues((prev) => ({
+        ...prev,
+        ...data.otherQueues,
       }))
     }
 
@@ -281,8 +280,37 @@ const DetectorStatusVisualization = ({ detectorKeys, redisEndpointUrl }) => {
             prefix="spareworkers"
           />
         </div>
+        <OtherQueuesSection otherQueues={otherQueues} />
       </div>
     </RedisEndpointContext.Provider>
+  )
+}
+
+const OtherQueuesSection = ({ otherQueues }) => {
+  return (
+    <div className="other-queues-section">
+      {Object.entries(otherQueues).length > 0 && (
+        <div className="other-queues">
+          <h3>Other Queues</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Queue Name</th>
+                <th>Queue Length</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(otherQueues).map(([key, value]) => (
+                <tr key={key}>
+                  <td>{key}</td>
+                  <td>{value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   )
 }
 

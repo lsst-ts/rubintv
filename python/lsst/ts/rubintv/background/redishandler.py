@@ -29,11 +29,14 @@ class QueueStatus(TypedDict, total=False):
     queue_length: int
 
 
-# A "numWorkers" entry is just an int, everything else is a QueueStatus
-DecodedRedisValue: TypeAlias = Mapping[str, int | QueueStatus]
+# Text data is a simple mapping of strings to strings
+TextData: TypeAlias = dict[str, str]
 
-# detector‑name  ->  DecodedRedisValue
-InitialData: TypeAlias = Mapping[str, DecodedRedisValue]
+# A "numWorkers" entry is just an int, everything else is a QueueStatus
+DecodedRedisValue: TypeAlias = Mapping[str, int | QueueStatus] | TextData
+
+# detector‑name  ->  DecodedRedisValue | TextData
+InitialData: TypeAlias = Mapping[str, DecodedRedisValue | TextData]
 
 KeyspaceEvent: TypeAlias = Mapping[str, bytes]
 
@@ -43,13 +46,14 @@ KeyspaceEvent: TypeAlias = Mapping[str, bytes]
 
 
 class DetectorStatusHandler:
-    """Subscribe to Redis key‑space notifications and forward structured status
+    """Subscribe to Redis key-space notifications and forward structured status
     information to websocket clients."""
 
     def __init__(
         self,
         redis_client: redis.Redis,
         mapped_keys: list[dict[str, str]],
+        text_keys: list[dict[str, str]],
     ) -> None:
         """
         Parameters
@@ -62,13 +66,33 @@ class DetectorStatusHandler:
         """
         self.redis_client = redis_client
         self.keys: list[str] = [d["key"] for d in mapped_keys]
+        self.keys.extend(d["key"] for d in text_keys)
         self.mapped_keys: dict[str, str] = {d["key"]: d["name"] for d in mapped_keys}
+        self.text_keys: dict[str, str] = {d["key"]: d["name"] for d in text_keys}
         self._running = False
         self.subscriber: KeyspaceSubscriber | None = None
 
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
+
+    def _parse_worker_count(self, value: str) -> int:
+        """Parse the worker count from a Redis value.
+
+        Parameters
+        ----------
+        value : str
+            The raw value from Redis
+
+        Returns
+        -------
+        int
+            The number of workers, defaulting to 0 if parsing fails
+        """
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            return 0
 
     async def _decode_redis_value(self, key: str) -> DecodedRedisValue | None:
         """Translate the raw Redis hash into a typed Python structure."""
@@ -77,31 +101,42 @@ class DetectorStatusHandler:
             logger.debug("Key %s is not a hash", key)
             return None
 
-        data = await self.redis_client.hgetall(key)
-        if not data:
+        redis_data = await self.redis_client.hgetall(key)
+        if not redis_data:
             logger.debug("Key %s does not exist or is empty", key)
             return None
 
-        unpacked: dict[str, int | QueueStatus] = {}
-        for raw_k, raw_v in data.items():
-            k = raw_k.decode()
-            v = raw_v.decode()
-            if k in ("num_workers", "numWorkers"):
-                try:
-                    unpacked["numWorkers"] = int(v)
-                except (ValueError, TypeError):
-                    unpacked["numWorkers"] = 0
+        decoded_data: dict[str, int | QueueStatus] = {}
+        for raw_key, raw_value in redis_data.items():
+            key_str = raw_key.decode()
+            value_str = raw_value.decode()
+
+            if key_str in ("num_workers", "numWorkers"):
+                decoded_data["numWorkers"] = self._parse_worker_count(value_str)
                 continue
 
             try:
-                q_len = int(v)  # e.g., "15" -> queued / 15
-                unpacked[k] = {"status": "queued", "queue_length": q_len}
+                queue_length = int(value_str)  # e.g., "15" -> queued / 15
+                decoded_data[key_str] = {
+                    "status": "queued",
+                    "queue_length": queue_length,
+                }
             except ValueError:
-                if v in ("free", "busy", "missing"):
-                    unpacked[k] = {"status": v}  # type: ignore
+                if value_str in ("free", "busy", "missing"):
+                    decoded_data[key_str] = {"status": value_str}  # type: ignore
                 else:
-                    logger.debug("Key %s has unknown status string: %s", key, v)
-        return unpacked
+                    logger.debug("Key %s has unknown status string: %s", key, value_str)
+
+        return decoded_data
+
+    async def _decode_text_data(self, key: str) -> TextData:
+        """Translate the raw Redis hash into a typed Python structure."""
+        text_data = await self.redis_client.hgetall(key)
+        if not text_data:
+            logger.debug("Key %s does not exist or is empty", key)
+            return {}
+        text_data = {k.decode(): v.decode() for k, v in text_data.items()}
+        return text_data
 
     # ------------------------------------------------------------------
     # Public API
@@ -113,6 +148,9 @@ class DetectorStatusHandler:
         initial: dict[str, DecodedRedisValue] = {}
         for key in self.keys:
             try:
+                if key in self.text_keys:
+                    initial[self.text_keys[key]] = await self._decode_text_data(key)
+                    continue
                 decoded = await self._decode_redis_value(key)
                 if decoded is not None:
                     initial[self.mapped_keys[key]] = decoded
@@ -122,9 +160,17 @@ class DetectorStatusHandler:
         return initial or None
 
     async def on_event(self, event: KeyspaceEvent) -> None:
-        """Handle a single Redis key‑space notification."""
+        """Handle a single Redis key-space notification."""
         try:
             set_key = event["channel"].split(b":", 1)[1].decode()
+            if set_key in self.text_keys:
+                # This is a text key
+                text_data = await self._decode_text_data(
+                    set_key
+                )  # This returns TextData
+                await notify_redis_detector_status({self.text_keys[set_key]: text_data})
+                return
+
             decoded = await self._decode_redis_value(set_key)
             if decoded is not None:
                 await notify_redis_detector_status({self.mapped_keys[set_key]: decoded})
