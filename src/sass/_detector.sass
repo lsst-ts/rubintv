@@ -1,8 +1,4 @@
-.centered
-  display: flex
-  align-items: center
-  height: 100%
-  
+
 .detector-container
   padding: 1rem
   display: flex
@@ -13,8 +9,6 @@
   display: flex
   gap: 2rem
 
-.step1b-section
-  max-width: 20%
 
 .spareworkers-cells
   display: flex
@@ -22,12 +16,25 @@
   flex-wrap: wrap
   justify-content: start
 
-.step1b-cells
-  display: grid
-  grid-template-rows: repeat(5, 36px)
-  grid-auto-flow: column
-  justify-content: start
-  gap: 0.2rem
+.step1b
+  &-section
+    position: relative
+    max-width: 20%
+    display: flex
+    flex-direction: column
+  &-canvas
+    display: flex
+    align-items: center
+    height: 100%
+    align-items: center
+    justify-content: center
+    border: 1px solid #ccc
+  &-cells
+    display: grid
+    grid-template-rows: repeat(5, 36px)
+    grid-auto-flow: column
+    justify-content: start
+    gap: 0.2rem
 
 .step1b-cells, .spareworkers-cells
   .detector-cell
@@ -52,6 +59,8 @@
     display: flex
     gap: 2rem
 
+  &-section
+    position: relative
   &-section-large
     flex: 1
     max-width: 40%
@@ -97,6 +106,27 @@
   &-missing
     background-color: #d1d5db
   
+
+.reset-button
+    position: absolute
+    bottom: -1.2em
+    right: 0.2rem
+    padding: 0.2rem 0.4rem
+    background-color: #f97316
+    color: white
+    border: none
+    cursor: pointer
+    border-radius: 0.25rem
+    &:hover
+      background-color: #ea580c
+    &.success
+      background-color: #22c55e
+      &:hover
+        background-color: #16a34a
+    &.error
+      background-color: #ef4444
+      &:hover
+        background-color: #dc2626
 
 .legend
   margin-top: 1rem
