@@ -123,6 +123,7 @@ async def get_detectors_page(location_name: str, request: Request) -> Response:
     location = await get_location(location_name, request)
     if not location.has_cluster_status:
         raise HTTPException(404, "No cluster status found for this location.")
+    admin = await get_admin(request)
     detector_keys = request.app.state.models.redis_detectors
     title = build_title(location.title, "Cluster Status")
     return templates.TemplateResponse(
@@ -134,6 +135,7 @@ async def get_detectors_page(location_name: str, request: Request) -> Response:
             "title": title,
             "date": get_current_day_obs().isoformat(),
             "detector_keys": detector_keys,
+            "admin": admin,
         },
     )
 
