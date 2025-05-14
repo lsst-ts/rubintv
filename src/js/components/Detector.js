@@ -61,19 +61,20 @@ const DetectorSection = ({
 }
 
 const Cells = ({ statuses, prefix }) => {
-  const justCells = { ...statuses }
-  if (statuses.numWorkers && statuses.numWorkers > 0) {
-    const { numWorkers } = statuses
-    delete justCells.numWorkers
-    const actualWorkerCount = Object.keys(justCells).length
-    const missingWorkers = numWorkers - actualWorkerCount
-    for (let i = 0; i < missingWorkers; i++) {
-      justCells[actualWorkerCount + i] = { status: "missing" }
+  let activeWorkerCells = { ...statuses }
+  const { numWorkers } = statuses
+  if (numWorkers && numWorkers > 0) {
+    // Delete numWorkers key
+    delete activeWorkerCells.numWorkers
+    const cellsToAdd = createPlaceholders(numWorkers)
+    activeWorkerCells = {
+      ...cellsToAdd,
+      ...activeWorkerCells,
     }
   }
   return (
     <div className={`${prefix}-cells`}>
-      {Object.entries(justCells).map(([i, status]) => (
+      {Object.entries(activeWorkerCells).map(([i, status]) => (
         <div
           key={`${prefix}-${i}`}
           className={`detector-cell ${getStatusClass(status.status)}`}
