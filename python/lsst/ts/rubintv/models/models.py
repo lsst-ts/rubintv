@@ -5,7 +5,7 @@ import dataclasses
 import re
 from datetime import date, datetime, timedelta, timezone
 from enum import Enum
-from typing import Any, TypedDict
+from typing import Any
 
 from lsst.ts.rubintv import __version__
 from lsst.ts.rubintv.config import config, rubintv_logger
@@ -469,11 +469,3 @@ class CameraPageData:
     def is_empty(self) -> bool:
         """Check if the data is empty."""
         return not any([self.channel_data, self.metadata, self.per_day, self.nr_exists])
-
-
-class DetectorData(TypedDict):
-    """TypedDict for detector data."""
-
-    status: str | None
-    queue_length: int | None
-    num_workers: int | None

@@ -1,7 +1,21 @@
-import React from "react"
+import React, { createContext, useContext } from "react"
 import { useState, useEffect, useRef } from "react"
 import detectorMap from "../data/detectorMap.json"
 import cwfsMap from "../data/cwfsMap.json"
+import { simplePost } from "../modules/utils"
+
+const RESET_PREFIX = "RUBINTV_CONTROL_RESET_"
+const RedisEndpointContext = createContext(null)
+
+const useRedisEndpoint = () => {
+  const context = useContext(RedisEndpointContext)
+  if (context === null) {
+    throw new Error(
+      "useRedisEndpoint must be used within a RedisEndpointProvider"
+    )
+  }
+  return context
+}
 
 // Get status class name
 const getStatusClass = (status) => {
@@ -19,13 +33,19 @@ const getStatusClass = (status) => {
 
 const createPlaceholders = (count) => {
   const placeholders = {}
-  for (let i = 0; i < count; i++) {
-    placeholders[i] = { status: "missing" }
+  for (let i = 1; i < count; i++) {
+    placeholders[i - 1] = { status: "missing" }
   }
   return placeholders
 }
 
-const DetectorSection = ({ title, map, statuses, size = "large" }) => {
+const DetectorSection = ({
+  title,
+  map,
+  statuses,
+  redisKey,
+  size = "large",
+}) => {
   return (
     <div className={`detector-section detector-section-${size}`}>
       <h2 className="detector-title">{title}</h2>
@@ -34,11 +54,83 @@ const DetectorSection = ({ title, map, statuses, size = "large" }) => {
         detectorStatuses={statuses}
         size={size}
       />
+      <ResetButton redisKey={redisKey} />
     </div>
   )
 }
 
-const DetectorStatusVisualization = () => {
+const Cells = ({ statuses, prefix }) => {
+  if (statuses.numWorkers && statuses.numWorkers > 0) {
+    const { numWorkers } = statuses
+    const placeholders = createPlaceholders(numWorkers)
+    statuses = { ...placeholders, ...statuses }
+  }
+  if (statuses.numWorkers && statuses.numWorkers === 0) {
+    return <div className={`${prefix}-cells`}></div>
+  }
+  return (
+    <div className={`${prefix}-cells`}>
+      {Object.entries(statuses).map(([i, status]) => (
+        <div
+          key={`${prefix}-${i}`}
+          className={`detector-cell ${getStatusClass(status.status)}`}
+        >
+          {status.status === "queued" && (
+            <div className="detector-cell-content queue-length">
+              {status.queue_length}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const ResetButton = ({ redisKey }) => {
+  const [status, setStatus] = useState("")
+  const redisEndpointUrl = useRedisEndpoint()
+
+  const onClick = async () => {
+    try {
+      const resetKey = redisKey.replace("CLUSTER_STATUS_", RESET_PREFIX)
+      const response = await simplePost(redisEndpointUrl, {
+        key: resetKey,
+        value: "reset",
+      })
+
+      const timedStatus = setTimeout((status) => {
+        setStatus("error")
+        console.error("Reset timed out")
+      }, 2000)
+
+      console.log("Reset response:", response)
+      if (response) {
+        console.log("Reset successful")
+        setStatus("success")
+      } else {
+        console.error("Reset failed:", response)
+        setStatus("error")
+      }
+    } catch (error) {
+      console.error("Error resetting detector:", error)
+      setStatus("error")
+    }
+  }
+
+  const statusClass = `reset-button ${status}`
+  return (
+    <button className={statusClass} onClick={onClick}>
+      Reset
+    </button>
+  )
+}
+
+const DetectorStatusVisualization = ({ detectorKeys, redisEndpointUrl }) => {
+  // redisKeys is a map of detector section names to their respective
+  // keys in the Redis database
+  // e.g. { sfmSet0: "CLUSTER_STATUS_SFM_SET_0", ... }
+  const redisKeys = Object.fromEntries(detectorKeys.map((o) => [o.name, o.key]))
+
   const [mainDetectorStatuses, setMainDetectorStatuses] = useState({
     sfmSet0: {},
     sfmSet1: {},
@@ -100,123 +192,110 @@ const DetectorStatusVisualization = () => {
     return () => {
       window.removeEventListener("detectors", handleDetectorEvent)
     }
-  }, []) // Empty dependency array since we don't need to re-register the listener
+  }, [])
 
   return (
-    <div className="detector-container">
-      <div className="legend">
-        <div className="legend-items">
-          <div className="legend-item">
-            <div className="legend-color status-free"></div>
-            <span>Free</span>
-          </div>
-          <div className="legend-item">
-            <div className="legend-color status-busy"></div>
-            <span>Busy</span>
-          </div>
-          <div className="legend-item">
-            <div className="legend-color status-queued"></div>
-            <span>Queued</span>
-          </div>
-          <div className="legend-item">
-            <div className="legend-color status-missing"></div>
-            <span>Missing</span>
+    <RedisEndpointContext.Provider value={redisEndpointUrl}>
+      <div className="detector-container">
+        <div className="legend">
+          <div className="legend-items">
+            <div className="legend-item">
+              <div className="legend-color status-free"></div>
+              <span>Free</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color status-busy"></div>
+              <span>Busy</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color status-queued"></div>
+              <span>Queued</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color status-missing"></div>
+              <span>Missing</span>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="main-detectors">
-        <DetectorSection
-          title="Imaging Worker Set 1"
-          map={detectorMap}
-          statuses={mainDetectorStatuses.sfmSet0}
-          size="large"
-        />
-        <DetectorSection
-          title="Imaging Worker Set 2"
-          map={detectorMap}
-          statuses={mainDetectorStatuses.sfmSet1}
-          size="large"
-        />
-        <Step1bSection
-          title="SFM Step 1b"
-          statuses={mainDetectorStatuses.sfmStep1b}
-        />
-      </div>
-      <div className="aos-detectors">
-        <DetectorSection
-          title="CWFS Worker Set 1"
-          map={cwfsMap}
-          statuses={cwfsStatuses.aosSet0}
-          size="small"
-        />
-        <DetectorSection
-          title="CWFS Worker Set 2"
-          map={cwfsMap}
-          statuses={cwfsStatuses.aosSet1}
-          size="small"
-        />
-        <DetectorSection
-          title="CWFS Worker Set 3"
-          map={cwfsMap}
-          statuses={cwfsStatuses.aosSet2}
-          size="small"
-        />
-        <DetectorSection
-          title="CWFS Worker Set 4"
-          map={cwfsMap}
-          statuses={cwfsStatuses.aosSet3}
-          size="small"
-        />
-        <Step1bSection title="AOS Step 1b" statuses={cwfsStatuses.aosStep1b} />
-      </div>
+        <div className="main-detectors">
+          <DetectorSection
+            title="Imaging Worker Set 1"
+            map={detectorMap}
+            statuses={mainDetectorStatuses.sfmSet0}
+            redisKey={redisKeys.sfmSet0}
+            size="large"
+          />
+          <DetectorSection
+            title="Imaging Worker Set 2"
+            map={detectorMap}
+            statuses={mainDetectorStatuses.sfmSet1}
+            redisKey={redisKeys.sfmSet1}
+            size="large"
+          />
+          <Step1bSection
+            title="SFM Step 1b"
+            statuses={mainDetectorStatuses.sfmStep1b}
+            redisKey={redisKeys.sfmStep1b}
+          />
+        </div>
+        <div className="aos-detectors">
+          <DetectorSection
+            title="CWFS Worker Set 1"
+            map={cwfsMap}
+            statuses={cwfsStatuses.aosSet0}
+            redisKey={redisKeys.aosSet0}
+            size="small"
+          />
+          <DetectorSection
+            title="CWFS Worker Set 2"
+            map={cwfsMap}
+            statuses={cwfsStatuses.aosSet1}
+            redisKey={redisKeys.aosSet1}
+            size="small"
+          />
+          <DetectorSection
+            title="CWFS Worker Set 3"
+            map={cwfsMap}
+            statuses={cwfsStatuses.aosSet2}
+            redisKey={redisKeys.aosSet2}
+            size="small"
+          />
+          <DetectorSection
+            title="CWFS Worker Set 4"
+            map={cwfsMap}
+            statuses={cwfsStatuses.aosSet3}
+            redisKey={redisKeys.aosSet3}
+            size="small"
+          />
+          <Step1bSection
+            title="AOS Step 1b"
+            statuses={cwfsStatuses.aosStep1b}
+            redisKey={redisKeys.aosStep1b}
+          />
+        </div>
 
-      <div className="spareworkers-row">
-        <h3>Backlog Workers</h3>
-        <Cells
-          statuses={mainDetectorStatuses.spareWorkers}
-          prefix="spareworkers"
-        />
+        <div className="spareworkers-row">
+          <h3>Backlog Workers</h3>
+          <Cells
+            statuses={mainDetectorStatuses.spareWorkers}
+            prefix="spareworkers"
+          />
+        </div>
       </div>
-    </div>
+    </RedisEndpointContext.Provider>
   )
 }
 
-const Step1bSection = ({ title, statuses }) => {
+const Step1bSection = ({ title, statuses, redisKey }) => {
   return (
     <div className="step1b-section">
       <h2 className="detector-title">{title}</h2>
-      <div className="centered">
+      <div className="step1b-canvas">
         <div className="step1b-cells">
           <Cells statuses={statuses} prefix="step1b" />
         </div>
       </div>
-    </div>
-  )
-}
-
-const Cells = ({ statuses, prefix }) => {
-  if (statuses.numWorkers && statuses.numWorkers > 0) {
-    const { numWorkers } = statuses
-    const placeholders = createPlaceholders(numWorkers)
-    statuses = { ...placeholders, ...statuses }
-  }
-  if (statuses.numWorkers && statuses.numWorkers === 0) {
-    return <div className={`${prefix}-cells`}></div>
-  }
-  return (
-    <div className={`${prefix}-cells`}>
-      {Object.entries(statuses).map(([i, status]) => (
-        <div
-          key={`${prefix}-${i}`}
-          className={`detector-cell ${getStatusClass(status.status)}`}
-        >
-          {status.status === "queued" && (
-            <div className="detector-cell-content queue-length">
-              {status.queue_length}
-            </div>
-          )}
-        </div>
-      ))}
+      <ResetButton redisKey={redisKey} />
     </div>
   )
 }
@@ -231,7 +310,7 @@ const DetectorCanvas = ({ detectorMap, detectorStatuses }) => {
         const rect = containerRef.current.getBoundingClientRect()
         setDimensions({
           width: rect.width,
-          height: rect.width, // Keep it square
+          height: rect.width,
         })
       }
     }
@@ -242,7 +321,7 @@ const DetectorCanvas = ({ detectorMap, detectorStatuses }) => {
   }, [])
 
   const { width, height } = dimensions
-  const padding = Math.min(width, height) * 0.1 // 5% padding
+  const padding = Math.min(width, height) * 0.1
 
   // Find the min and max values for x and y to calculate scaling
   let minX = Infinity,
@@ -253,7 +332,6 @@ const DetectorCanvas = ({ detectorMap, detectorStatuses }) => {
   Object.values(detectorMap).forEach((detector) => {
     if (detector?.corners) {
       const corners = detector.corners
-      // Add checks for array values
       const cornerPoints = [
         corners.upperLeft,
         corners.upperRight,
@@ -373,7 +451,6 @@ const DetectorCanvas = ({ detectorMap, detectorStatuses }) => {
             key={id}
             className={`detector-cell ${getStatusClass(status.status)}`}
             style={{
-              position: "absolute",
               left: `${left}px`,
               top: `${top}px`,
               width: `${cellWidth}px`,
