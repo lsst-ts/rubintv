@@ -88,7 +88,10 @@ const Cells = ({ statuses, prefix }) => {
 
 const ResetButton = ({ redisKey }) => {
   const [status, setStatus] = useState("")
-  const redisEndpointUrl = useRedisEndpoint()
+  const { url: redisEndpointUrl, admin } = useRedisEndpoint()
+
+  // Only show reset button if admin
+  if (!admin) return null
 
   const onClick = async () => {
     try {
@@ -113,12 +116,16 @@ const ResetButton = ({ redisKey }) => {
   const statusClass = `reset-button ${status}`
   return (
     <button className={statusClass} onClick={onClick}>
-      Reset
+      Restart Workers
     </button>
   )
 }
 
-const DetectorStatusVisualization = ({ detectorKeys, redisEndpointUrl }) => {
+const DetectorStatusVisualization = ({
+  detectorKeys,
+  redisEndpointUrl,
+  admin,
+}) => {
   // redisKeys is a map of detector section names to their respective
   // keys in the Redis database
   // e.g. { sfmSet0: "CLUSTER_STATUS_SFM_SET_0", ... }
@@ -194,7 +201,7 @@ const DetectorStatusVisualization = ({ detectorKeys, redisEndpointUrl }) => {
   }, [])
 
   return (
-    <RedisEndpointContext.Provider value={redisEndpointUrl}>
+    <RedisEndpointContext.Provider value={{ url: redisEndpointUrl, admin }}>
       <div className="detector-container">
         <div className="legend">
           <div className="legend-items">

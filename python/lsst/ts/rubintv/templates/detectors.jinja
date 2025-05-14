@@ -29,8 +29,8 @@
 
 {% block footer_scripts %}
     <script>
-      window.APP_DATA.date = {{ date|tojson }}
       window.APP_DATA.detectorKeys = {{ detector_keys|tojson }}
+      window.APP_DATA.admin = {{ admin|tojson }}
     </script>
     <script src='{{ url_for("static", path="assets/detectors.js") }}'></script>
   {{ super() }}
