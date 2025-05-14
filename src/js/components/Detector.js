@@ -33,8 +33,8 @@ const getStatusClass = (status) => {
 
 const createPlaceholders = (count) => {
   const placeholders = {}
-  for (let i = 1; i < count; i++) {
-    placeholders[i - 1] = { status: "missing" }
+  for (let i = 0; i < count; i++) {
+    placeholders[i] = { status: "missing" }
   }
   return placeholders
 }
@@ -62,11 +62,8 @@ const DetectorSection = ({
 const Cells = ({ statuses, prefix }) => {
   if (statuses.numWorkers && statuses.numWorkers > 0) {
     const { numWorkers } = statuses
-    const placeholders = createPlaceholders(numWorkers)
+    const placeholders = createPlaceholders(numWorkers - 1)
     statuses = { ...placeholders, ...statuses }
-  }
-  if (statuses.numWorkers && statuses.numWorkers === 0) {
-    return <div className={`${prefix}-cells`}></div>
   }
   return (
     <div className={`${prefix}-cells`}>
