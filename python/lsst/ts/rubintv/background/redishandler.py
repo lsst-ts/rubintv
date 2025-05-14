@@ -13,7 +13,7 @@ from .redissubscribe import KeyspaceSubscriber
 logger = rubintv_logger()
 
 # ----------------------------------------------------------------------
-# Typed helpers – all the “wordy” shapes collapse into a few names
+# Typed helpers
 # ----------------------------------------------------------------------
 
 StatusLiteral: TypeAlias = Literal["free", "busy", "missing", "queued"]
