@@ -163,11 +163,13 @@ class DetectorStatusHandler:
         """Handle a single Redis key-space notification."""
         try:
             set_key = event["channel"].split(b":", 1)[1].decode()
+            # Add logging to debug what events we're receiving
+            logger.debug(f"Received event for key {set_key}: {event}")
+
             if set_key in self.text_keys:
                 # This is a text key
-                text_data = await self._decode_text_data(
-                    set_key
-                )  # This returns TextData
+                text_data = await self._decode_text_data(set_key)
+                logger.debug(f"Decoded text data: {text_data}")
                 await notify_redis_detector_status({self.text_keys[set_key]: text_data})
                 return
 

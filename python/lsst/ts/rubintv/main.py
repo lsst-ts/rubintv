@@ -159,8 +159,8 @@ async def _makeRedis() -> redis.Redis | None:
         logger.error(f"Redis connection error: {e}")
         return None
     # Set up keyspace notifications for keyspace events
-    # KEgh$ = Keyevent events for Evicted, Expired, and Keyspace events
-    await redis_client.config_set("notify-keyspace-events", "KEgh$")
+    # KEA for keyevent notifications
+    await redis_client.config_set("notify-keyspace-events", "KEA")
     return redis_client
 
 
