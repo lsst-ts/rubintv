@@ -28,8 +28,8 @@ echo "ADDRESS=$DDV_CLIENT_WS_ADDRESS" > .env
 if [ -f ".fvmrc" ] || [ -f "fvm_config.json" ]; then
     fvm install
     fvm use
-    fvm flutter build web --base-href $DDV_BASE_HREF --profile --source-maps
+    fvm flutter build web --base-href $DDV_BASE_HREF --wasm
 else
     # Fallback to global flutter if no fvm config found
-    flutter build web --base-href $DDV_BASE_HREF --profile --source-maps
+    flutter build web --base-href $DDV_BASE_HREF --wasm
 fi
