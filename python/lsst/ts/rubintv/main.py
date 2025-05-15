@@ -160,7 +160,7 @@ async def _makeRedis() -> redis.Redis | None:
         return None
     # Set up keyspace notifications for keyspace events
     # KEgh$ = Keyevent events for Evicted, Expired, and Keyspace events
-    redis_client.config_set("notify-keyspace-events", "KEgh$")
+    await redis_client.config_set("notify-keyspace-events", "KEgh$")
     return redis_client
 
 
