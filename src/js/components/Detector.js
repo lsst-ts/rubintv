@@ -328,12 +328,15 @@ const OtherQueuesSection = ({ otherQueues }) => {
             <tbody>
               {Object.entries(otherQueues)
                 .toSorted()
-                .map(([key, value]) => (
-                  <tr key={key}>
-                    <td>{key}</td>
-                    <td>{value}</td>
-                  </tr>
-                ))}
+                .map(
+                  ([key, value]) =>
+                    value && (
+                      <tr key={key}>
+                        <td>{key}</td>
+                        <td>{value}</td>
+                      </tr>
+                    )
+                )}
             </tbody>
           </table>
         </div>
