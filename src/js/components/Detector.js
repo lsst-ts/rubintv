@@ -171,7 +171,62 @@ const DetectorStatusVisualization = ({
         return
       }
 
-      // Update detector statuses based on received data
+      console.log("Received detector data:", data)
+
+      // Check if this is a single set update by looking at the structure
+      const isNumWorkersUpdate = (obj) => {
+        return Object.keys(obj).length === 1 && "numWorkers" in obj
+      }
+
+      const isSingleSetUpdate = (obj) => {
+        const keys = Object.keys(obj)
+        return keys.length === 1 && !isNaN(keys[0])
+      }
+
+      // Handle single set updates
+      const knownSets = {
+        sfmSet0: setMainDetectorStatuses,
+        sfmSet1: setMainDetectorStatuses,
+        sfmStep1b: setMainDetectorStatuses,
+        spareWorkers: setMainDetectorStatuses,
+        aosSet0: setCwfsStatuses,
+        aosSet1: setCwfsStatuses,
+        aosSet2: setCwfsStatuses,
+        aosSet3: setCwfsStatuses,
+        aosStep1b: setCwfsStatuses,
+      }
+
+      for (const [setName, value] of Object.entries(data)) {
+        if (!knownSets[setName]) continue
+
+        if (isNumWorkersUpdate(value)) {
+          // Keep existing cell statuses but update numWorkers
+          const setState = knownSets[setName]
+          setState((prev) => ({
+            ...prev,
+            [setName]: {
+              ...prev[setName],
+              numWorkers: value.numWorkers,
+            },
+          }))
+          return
+        }
+
+        if (isSingleSetUpdate(value)) {
+          // This is a single cell update
+          const setState = knownSets[setName]
+          setState((prev) => ({
+            ...prev,
+            [setName]: {
+              ...prev[setName],
+              ...value,
+            },
+          }))
+          return
+        }
+      }
+
+      // If we get here, treat it as a batch update
       const {
         sfmSet0,
         sfmSet1,
@@ -182,6 +237,7 @@ const DetectorStatusVisualization = ({
         aosSet2,
         aosSet3,
         aosStep1b,
+        otherQueues,
       } = data
 
       // Only update the detectors that have new data
@@ -202,10 +258,12 @@ const DetectorStatusVisualization = ({
         ...(aosStep1b && { aosStep1b }),
       }))
 
-      setOtherQueues((prev) => ({
-        ...prev,
-        ...data.otherQueues,
-      }))
+      if (otherQueues) {
+        setOtherQueues((prev) => ({
+          ...prev,
+          ...otherQueues,
+        }))
+      }
     }
 
     // Add event listener for detector status updates
@@ -328,12 +386,15 @@ const OtherQueuesSection = ({ otherQueues }) => {
             <tbody>
               {Object.entries(otherQueues)
                 .toSorted()
-                .map(([key, value]) => (
-                  <tr key={key}>
-                    <td>{key}</td>
-                    <td>{value}</td>
-                  </tr>
-                ))}
+                .map(
+                  ([key, value]) =>
+                    value && (
+                      <tr key={key}>
+                        <td>{key}</td>
+                        <td>{value}</td>
+                      </tr>
+                    )
+                )}
             </tbody>
           </table>
         </div>
