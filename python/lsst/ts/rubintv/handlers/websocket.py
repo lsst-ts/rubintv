@@ -1,5 +1,6 @@
 import json
 import re
+import traceback
 import uuid
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -64,7 +65,11 @@ async def data_websocket(
                 await remove_client_from_services(client_id)
     except Exception as e:
         # Catch all exceptions to prevent the websocket from crashing
-        logger.error("Unexpected error in websocket handler", error=e)
+        logger.error(
+            "Unexpected error in websocket handler",
+            error=e,
+            traceback=traceback.format_exc(),
+        )
 
 
 async def validate_raw_message(raw: str) -> tuple[uuid.UUID, dict] | None:
@@ -124,29 +129,26 @@ async def attach_simple_service(
     service_key : str
         The key to use for storing in services_clients
     """
-    # Get initial state based on service type
-    if service == Service.HISTORICALSTATUS:
-        payload = await websocket.app.state.historical.is_busy()
-    if service == Service.DETECTORS:
-        if websocket.app.state.redis_subscriber is None:
-            logger.error("Redis subscriber not initialized")
-            return
-        payload = await websocket.app.state.redis_subscriber.read_initial_data()
-
-    # Send initial state
-    await send_notification(
-        websocket,
-        service,
-        message_type,
-        payload,
-    )
-
     # Register client for this service
     async with services_lock:
         if service_key not in services_clients:
             services_clients[service_key] = [client_id]
         else:
             services_clients[service_key].append(client_id)
+
+    payload = None
+    if service == Service.HISTORICALSTATUS:
+        payload = await websocket.app.state.historical.is_busy()
+    elif service == Service.DETECTORS:
+        if hasattr(websocket.app.state, "redis_subscriber"):
+            payload = await websocket.app.state.redis_subscriber.read_initial_state()
+    if payload:
+        await send_notification(
+            websocket,
+            service,
+            message_type,
+            payload,
+        )
 
 
 async def attach_service(

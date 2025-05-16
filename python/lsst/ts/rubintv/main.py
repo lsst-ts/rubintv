@@ -19,9 +19,9 @@ from fastapi.staticfiles import StaticFiles
 from redis.exceptions import ConnectionError, TimeoutError  # type: ignore[import]
 
 from . import __version__
+from .background.clusterstatushandler import DetectorStatusHandler
 from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
-from .background.redishandler import DetectorStatusHandler
 from .config import config, rubintv_logger
 from .handlers.api import api_router
 from .handlers.ddv_routes_handler import ddv_router
@@ -62,6 +62,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 
     # initialise the redis client
     redis_client = None
+    redis_subscriber = None
     if config.ra_redis_host:
         redis_client = await _makeRedis()
     if redis_client:
@@ -101,7 +102,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     else:
         yield
 
-    if redis_task:
+    if redis_task and redis_subscriber is not None:
         await redis_subscriber.stop_async()
         redis_task.cancel()
         try:
@@ -114,7 +115,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 
     if redis_client is not None:
         try:
-            await redis_client.aclose()
+            await redis_client.aclose()  # type: ignore
         except (ConnectionError, TimeoutError) as e:
             logger.error(f"Redis connection error: {e}")
 
@@ -158,9 +159,6 @@ async def _makeRedis() -> redis.Redis | None:
     except (ConnectionError, TimeoutError) as e:
         logger.error(f"Redis connection error: {e}")
         return None
-    # Set up keyspace notifications for keyspace events
-    # KEA for keyevent notifications
-    await redis_client.config_set("notify-keyspace-events", "KEA")
     return redis_client
 
 
