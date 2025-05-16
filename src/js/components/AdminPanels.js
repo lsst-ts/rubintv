@@ -115,6 +115,15 @@ export function RedisPanel({ menus, redisEndpointUrl, redisKeyPrefix }) {
           redisEndpointUrl={redisEndpointUrl}
           redisKeyPrefix={redisKeyPrefix}
           keyToSend="WITNESS_DETECTOR"
+          title="Witness Detector"
+        />
+        <AdminSendRedisValue
+          redisEndpointUrl={redisEndpointUrl}
+          redisKeyPrefix={redisKeyPrefix}
+          keyToSend="RESET_HEAD_NODE"
+          valueToSend="1"
+          title="Reset Head Node"
+          size="small"
         />
       </div>
     </div>
@@ -169,7 +178,10 @@ DropDownMenuContainer.propTypes = {
 export function AdminSendRedisValue({
   redisEndpointUrl,
   redisKeyPrefix,
+  title = "Send Redis Value",
   keyToSend,
+  valueToSend = null,
+  size = "",
 }) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
 
@@ -189,21 +201,26 @@ export function AdminSendRedisValue({
   }
 
   return (
-    <div className="redis-command-panel box">
+    <div className={`redis-command-panel box ${size}`}>
       <div className="redis-command-header box-header">
-        <h4 className="redis-command-title box-title">Witness Detector</h4>
+        <h4 className="redis-command-title box-title">{title}</h4>
         <StatusIndicator status={redisChanged} />
       </div>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="value">Value:</label>
-          <input
-            type="text"
-            id="value"
-            name="value"
-            placeholder="Value"
-            required
-          />
+          {!valueToSend && (
+            <input
+              type="text"
+              id="value"
+              name="value"
+              placeholder="Value"
+              required
+            />
+          )}
+          {valueToSend && (
+            <input type="hidden" id="value" name="value" value={valueToSend} />
+          )}
         </div>
         <button type="submit">Send</button>
       </form>
