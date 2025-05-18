@@ -11,6 +11,7 @@ export default function MediaDisplay({
   imgUrl,
   videoUrl,
   camera,
+  dateUrl,
   metadata,
   eventUrl,
   prevNext,
@@ -19,6 +20,7 @@ export default function MediaDisplay({
   const [mediaEvent, setMediaEvent] = useState(() =>
     unifyMediaEvent(initialEvent, imgUrl, videoUrl)
   )
+
   useEffect(() => {
     const handleChannelEvent = (message) => {
       const { data: event, dataType } = message.detail
@@ -39,7 +41,9 @@ export default function MediaDisplay({
     <>
       <div className="event-info">
         <h2>
-          <span className="media-date">{mediaEvent.day_obs}</span>
+          <a href={dateUrl}>
+            <span className="media-date">{mediaEvent.day_obs}</span>
+          </a>
           <span className="media-seqnum">{mediaEvent.seq_num}</span>
         </h2>
         {isCurrent ? (
@@ -74,6 +78,7 @@ MediaDisplay.propTypes = {
   imgUrl: PropTypes.string.isRequired,
   videoUrl: PropTypes.string.isRequired,
   camera: cameraType,
+  dateUrl: PropTypes.string.isRequired,
   metadata: metadataType,
   eventUrl: PropTypes.string,
   prevNext: PropTypes.shape({

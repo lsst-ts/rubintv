@@ -71,7 +71,6 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
   }
 
   function toggleControls(e) {
-    // Keep open if clicking inside controls
     if (e.target.closest(".table-controls")) {
       return
     }
