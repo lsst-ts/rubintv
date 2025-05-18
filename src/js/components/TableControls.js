@@ -1,7 +1,7 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import PropTypes from "prop-types"
 import Clock, { TimeSinceLastImageClock } from "./Clock"
-import { _getById, interleaveSplit } from "../modules/utils"
+import { _getById } from "../modules/utils"
 import { cameraType, metadataType } from "./componentPropTypes"
 
 export default function AboveTableRow({
@@ -16,7 +16,7 @@ export default function AboveTableRow({
   return (
     <div className="row">
       <h3 id="the-date">
-        <span className="date">{date}</span>
+        Data for day: <span className="date">{date}</span>
       </h3>
       <TableControls
         cameraName={camera.name}
@@ -39,8 +39,6 @@ export default function AboveTableRow({
 AboveTableRow.propTypes = {
   /** the names of all metadata columns */
   allColNames: PropTypes.arrayOf(PropTypes.string),
-  /** the current camera */
-  camera: cameraType,
   /** the names of the currently selected columns to display */
   selected: PropTypes.arrayOf(PropTypes.string),
   /** callback function from the parent component TableApp */
@@ -58,20 +56,30 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
 
   const locationName = window.APP_DATA.locationName
 
-  let numControlColumns = 2
-  if (allColNames.length > 45) {
-    numControlColumns = 3
-  }
-  const gridStyle = {
-    gridTemplateColumns: `repeat(${numControlColumns}, 1fr)`,
-  }
+  useEffect(() => {
+    window.addEventListener("click", toggleControls)
+    return () => {
+      window.removeEventListener("click", toggleControls)
+    }
+  }, [controlsOpen])
 
-  const columnsToDisplay = interleaveSplit(allColNames, numControlColumns)
-
-  // allow escape from the table to close the controls
   const handleKeyDown = (event) => {
+    console.log(event.key)
     if (event.key === "Escape") {
       setControlsOpen(false)
+    }
+  }
+
+  function toggleControls(e) {
+    // Keep open if clicking inside controls
+    if (e.target.closest(".table-controls")) {
+      return
+    }
+
+    if (controlsOpen) {
+      setControlsOpen(false)
+    } else if (e.target.classList.contains("table-control-button")) {
+      setControlsOpen(true)
     }
   }
 
@@ -94,20 +102,15 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
       <div className={panelClass}>
         <button
           className="table-control-button"
-          onClick={() => setControlsOpen(!controlsOpen)}
+          onClick={() => toggleControls}
           onKeyDown={handleKeyDown}
-          title="Add/Remove Columns"
-          aria-label="Add/Remove Columns"
-          aria-expanded={controlsOpen}
-          aria-controls="table-controls"
-          aria-haspopup="true"
         >
           Add/Remove Columns
         </button>
 
         {controlsOpen && (
-          <div className="table-controls" style={gridStyle}>
-            {columnsToDisplay.map((title) => (
+          <div className="table-controls">
+            {allColNames.map((title) => (
               <div className="table-control" key={title}>
                 <label htmlFor={title}>
                   <input
@@ -117,6 +120,7 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
                     value={1}
                     checked={selected.includes(title)}
                     onChange={() => handleCheckboxChange(title)}
+                    onKeyDown={handleKeyDown}
                   />
                   {title}
                 </label>
