@@ -173,7 +173,7 @@ async def get_all_channel_names_for_date_seq_num(
     day_obs: date,
     seq_num: int,
     connection: HTTPConnection,
-) -> dict[str, Any]:
+) -> list[str]:
     """Get all channels for a given date and sequence number."""
     if day_obs == get_current_day_obs().isoformat():
         cp: CurrentPoller = connection.app.state.current_poller

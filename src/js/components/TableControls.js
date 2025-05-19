@@ -63,9 +63,8 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
     }
   }, [controlsOpen])
 
-  const handleKeyDown = (event) => {
-    console.log(event.key)
-    if (event.key === "Escape") {
+  const handleKeyDown = (e) => {
+    if (e.key === "Escape") {
       setControlsOpen(false)
     }
   }
@@ -101,7 +100,7 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
       <div className={panelClass}>
         <button
           className="table-control-button"
-          onClick={() => toggleControls}
+          onClick={() => toggleControls(e)}
           onKeyDown={handleKeyDown}
         >
           Add/Remove Columns
