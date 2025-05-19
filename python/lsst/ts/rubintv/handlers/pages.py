@@ -471,15 +471,25 @@ async def get_current_channel_event_page(
     location_name: str, camera_name: str, channel_name: str, request: Request
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
+    channel: Channel = find_first(camera.channels, "name", channel_name)
+    if channel is None or channel not in camera.channels:
+        raise HTTPException(status_code=404, detail="Channel not found.")
+
     event = await get_current_channel_event(
         location_name, camera_name, channel_name, request
     )
 
     metadata = await get_latest_metadata(location, camera, request)
 
-    channel: Channel = find_first(camera.channels, "name", channel_name)
-    if channel is None or channel not in camera.channels:
-        raise HTTPException(status_code=404, detail="Channel not found.")
+    all_channel_names = []
+    if event is not None:
+        all_channel_names = await get_all_channel_names_for_date_seq_num(
+            location=location,
+            camera=camera,
+            day_obs=event.day_obs,
+            seq_num=event.seq_num,
+            connection=request,
+        )
 
     title = build_title(location.title, camera.title, channel.title, "Current")
 
@@ -491,6 +501,7 @@ async def get_current_channel_event_page(
             "location": location,
             "camera": camera.model_dump(),
             "channel": to_dict(channel),
+            "allChannelNames": all_channel_names,
             "title": title,
             "event": to_dict(event),
             "metadata": metadata,
