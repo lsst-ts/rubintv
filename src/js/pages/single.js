@@ -18,6 +18,7 @@ import MediaDisplay from "../components/MediaDisplay"
     isCurrent,
     eventUrl,
     prevNext,
+    allChannelNames,
   } = window.APP_DATA
   const channel = initEvent.channel_name
 
@@ -46,6 +47,7 @@ import MediaDisplay from "../components/MediaDisplay"
       metadata={metadata}
       eventUrl={eventUrl}
       prevNext={prevNext}
+      allChannelNames={allChannelNames}
       isCurrent={isCurrent}
     />
   )

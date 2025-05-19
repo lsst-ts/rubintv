@@ -430,3 +430,35 @@ class HistoricalPoller:
         """
         loc_cam = f"{location.name}/{camera.name}"
         return self._calendar.get(loc_cam, {})
+
+    async def get_all_channel_names_for_date_and_seq_num(
+        self, location: Location, camera: Camera, date: str, seq_num: int
+    ) -> list[str]:
+        """Returns a list of Events for the given date and seq_num.
+
+        Parameters
+        ----------
+        camera : `Camera`
+            The given Camera.
+        date : `str`
+            The given date.
+        seq_num : `int`
+            The given sequence number.
+
+        Returns
+        -------
+        chan_names : `list` [`str`]
+            A list of channel names for the given date and seq_num.
+        """
+        loc_cam = f"{location.name}/{camera.name}"
+        compressed = self._compressed_events.get(loc_cam, None)
+        if compressed is None:
+            return []
+        events: list[Event] = pickle.loads(zlib.decompress(compressed))
+        relevant_events = [
+            e for e in events if e.day_obs == date and e.seq_num == seq_num
+        ]
+        chan_names = [e.channel_name for e in relevant_events]
+        if not chan_names:
+            return []
+        return chan_names

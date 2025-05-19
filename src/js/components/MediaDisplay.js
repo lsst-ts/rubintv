@@ -15,10 +15,11 @@ export default function MediaDisplay({
   metadata,
   eventUrl,
   prevNext,
+  allChannelNames,
   isCurrent = false,
 }) {
   const [mediaEvent, setMediaEvent] = useState(() =>
-    unifyMediaEvent(initialEvent, imgUrl, videoUrl)
+    bundleMediaEventData(initialEvent, imgUrl, videoUrl)
   )
 
   useEffect(() => {
@@ -28,7 +29,7 @@ export default function MediaDisplay({
         return
       }
       setMediaEvent({
-        ...unifyMediaEvent(event, imgUrl, videoUrl),
+        ...bundleMediaEventData(event, imgUrl, videoUrl),
       })
     }
 
@@ -51,6 +52,11 @@ export default function MediaDisplay({
         ) : (
           <PrevNext prevNext={prevNext} eventUrl={eventUrl} />
         )}
+        <OtherChannelLinks
+          allChannelNames={allChannelNames}
+          thisChannel={mediaEvent.channel_name}
+          camera={camera}
+        />
       </div>
       <a
         className="event-link"
@@ -85,6 +91,7 @@ MediaDisplay.propTypes = {
     prev: eventType,
     next: eventType,
   }),
+  allChannelNames: PropTypes.arrayOf(PropTypes.string),
   isCurrent: PropTypes.bool,
 }
 
@@ -100,7 +107,7 @@ MediaDisplay.propTypes = {
  * the source URL using the filename and base URL. The media type can be
  * either "image" or "video".
  */
-function unifyMediaEvent(mEvent, imgUrl, videoUrl) {
+function bundleMediaEventData(mEvent, imgUrl, videoUrl) {
   const { filename, ext } = mEvent
   const mediaType = getMediaType(ext)
   const url = mediaType === "video" ? videoUrl : imgUrl
@@ -111,4 +118,38 @@ function unifyMediaEvent(mEvent, imgUrl, videoUrl) {
     mediaType,
     src,
   }
+}
+
+const OtherChannelLinks = ({ allChannelNames, thisChannel, camera }) => {
+  if (!allChannelNames || allChannelNames.length === 0) {
+    return null
+  }
+  // Filter out the current channel from the list of all channels
+  const filteredChannels = allChannelNames.filter(
+    (channel) => channel !== thisChannel
+  )
+  const currentUrl = document.location.toString()
+  return (
+    <div className="other-channels">
+      {filteredChannels.map((channel) => {
+        const channelObj = camera.channels.find((chan) => chan.name === channel)
+        const chanStyle = {
+          backgroundColor: channelObj.colour,
+          color: channelObj.text_colour,
+        }
+        // Construct the URL for each channel
+        const channelUrl = currentUrl.replaceAll(thisChannel, channel)
+        return (
+          <a
+            key={channel}
+            href={channelUrl}
+            style={chanStyle}
+            className="button"
+          >
+            {channel}
+          </a>
+        )
+      })}
+    </div>
+  )
 }

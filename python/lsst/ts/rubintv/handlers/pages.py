@@ -14,6 +14,7 @@ from lsst.ts.rubintv.handlers.api import (
 )
 from lsst.ts.rubintv.handlers.handlers_helpers import (
     date_validation,
+    get_all_channel_names_for_date_seq_num,
     get_camera_calendar,
     get_camera_current_data,
     get_camera_events_for_date,
@@ -434,6 +435,13 @@ async def get_specific_channel_event_page(
         )
         if historical_busy:
             next_prev = {}
+        all_channel_names = await get_all_channel_names_for_date_seq_num(
+            location=location,
+            camera=camera,
+            day_obs=event.day_obs,
+            seq_num=event.seq_num,
+            connection=request,
+        )
 
     title = build_title(location.title, camera.title, channel_title, event_detail)
 
@@ -447,6 +455,7 @@ async def get_specific_channel_event_page(
             "channel": to_dict(channel),
             "event": to_dict(event),
             "prevNext": next_prev,
+            "allChannelNames": all_channel_names,
             "historicalBusy": historical_busy,
             "title": title,
         },

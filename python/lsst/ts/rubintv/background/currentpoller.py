@@ -551,3 +551,28 @@ class CurrentPoller:
                 ):
                     yield MessageType.LATEST_METADATA, (latest_metadata)
                 yield MessageType.DAY_CHANGE, "from current poller"
+
+    async def get_all_channel_names_for_seq_num(
+        self, location_name: str, camera_name: str, seq_num: int
+    ) -> list[str]:
+        """Get all channel names for a given sequence number.
+        Parameters
+        ----------
+        location_name : `str`
+            The name of the location.
+        camera_name : `str`
+            The name of the camera.
+        seq_num : `int`
+            The sequence number.
+        Returns
+        -------
+        `list` [`str`]
+            A list of channel names for the given sequence number.
+        """
+        loc_cam = f"{location_name}/{camera_name}"
+        events = self._events.get(loc_cam, [])
+        relevant_events = [e for e in events if e.seq_num == seq_num]
+        if not relevant_events:
+            return []
+        chan_names = [event.channel_name for event in relevant_events]
+        return chan_names
