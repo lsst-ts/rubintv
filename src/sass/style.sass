@@ -203,6 +203,13 @@ section
 	> *
 		margin-right: 1em
 
+.event-nav
+	display: flex
+	flex-direction: row
+	justify-content: flex-start
+	align-items: center
+	gap: 1em
+	margin-bottom: 1em
 .event-info
 	display: flex
 	flex-direction: row
@@ -213,13 +220,12 @@ section
 		margin-bottom: 0
 	.media-date
 		margin-right: 0.5em
+		color: #fff
+		text-decoration: underline
 	.media-seqnum
 		margin-right: 0.5em
 		&::before
 			content: "Sequence "
-	a
-		color: #fff
-		text-decoration: underline
 
 .event-link
 	color: #fff

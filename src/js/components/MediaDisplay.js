@@ -42,16 +42,17 @@ export default function MediaDisplay({
     <>
       <div className="event-info">
         <h2>
-          <a href={dateUrl}>
-            <span className="media-date">{mediaEvent.day_obs}</span>
+          <a href={dateUrl} className="media-date">
+            {mediaEvent.day_obs}
           </a>
           <span className="media-seqnum">{mediaEvent.seq_num}</span>
         </h2>
-        {isCurrent ? (
+        {isCurrent && (
           <TimeSinceLastImageClock metadata={metadata} camera={camera} />
-        ) : (
-          <PrevNext prevNext={prevNext} eventUrl={eventUrl} />
         )}
+      </div>
+      <div className="event-nav">
+        <PrevNext prevNext={prevNext} eventUrl={eventUrl} />
         <OtherChannelLinks
           allChannelNames={allChannelNames}
           thisChannel={mediaEvent.channel_name}
@@ -146,7 +147,7 @@ const OtherChannelLinks = ({ allChannelNames, thisChannel, camera }) => {
             style={chanStyle}
             className="button"
           >
-            {channel}
+            {channelObj.title}
           </a>
         )
       })}

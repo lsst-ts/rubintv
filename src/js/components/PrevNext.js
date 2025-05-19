@@ -3,6 +3,9 @@ import PropTypes from "prop-types"
 import { eventType } from "./componentPropTypes"
 
 export default function PrevNext({ prevNext, eventUrl }) {
+  if (!prevNext) {
+    return null
+  }
   const left = useRef(null)
   const right = useRef(null)
   useEffect(() => {
@@ -21,23 +24,19 @@ export default function PrevNext({ prevNext, eventUrl }) {
   }, [])
   const prev = prevNext.prev
   const next = prevNext.next
+  const makeUrl = (obj) => {
+    const { channel_name, day_obs, seq_num } = obj
+    return `${eventUrl}?channel_name=${channel_name}&date_str=${day_obs}&seq_num=${seq_num}`
+  }
   return (
     <div className="prev-next-buttons">
       {prev && (
-        <a
-          className="prev prev-next button"
-          href={`${eventUrl}?key=${prev.key}`}
-          ref={left}
-        >
+        <a className="prev prev-next button" href={makeUrl(prev)} ref={left}>
           {prev.seq_num}
         </a>
       )}
       {next && (
-        <a
-          className="next prev-next button"
-          href={`${eventUrl}?key=${next.key}`}
-          ref={right}
-        >
+        <a className="next prev-next button" href={makeUrl(next)} ref={right}>
           {next.seq_num}
         </a>
       )}

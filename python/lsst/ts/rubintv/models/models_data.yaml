@@ -126,9 +126,11 @@ cameras:
       - name: psf_shape_azel
         title: PSF shape AzEl
         colour: "#6F58E7"
+        text_colour: "#fff"
       - name: fwhm_focal_plane
         title: FWHM Focal Plane
         colour: "#6232A8"
+        text_colour: "#fff"
       - name: mount
         title: Mount torques
         colour: "#58b4e7"

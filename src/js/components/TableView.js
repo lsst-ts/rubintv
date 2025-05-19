@@ -68,7 +68,7 @@ function ChannelCell({ event, chanName, chanColour, noEventReplacement }) {
         <a
           className={`button button-table ${chanName}`}
           style={{ backgroundColor: chanColour }}
-          href={`${eventUrl}?key=${event.key}`}
+          href={`${eventUrl}?channel_name=${chanName}&date_str=${event.day_obs}&seq_num=${event.seq_num}`}
           aria-label={chanName} // Add accessible name
         ></a>
       )}
