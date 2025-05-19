@@ -494,12 +494,14 @@ async def get_current_channel_event_page(
             connection=request,
         )
 
-    prev_next = await get_prev_next_event(
-        location=location,
-        camera=camera,
-        event=event,
-        request=request,
-    )
+    prev_next = {}
+    if event is not None:
+        prev_next = await get_prev_next_event(
+            location=location,
+            camera=camera,
+            event=event,
+            request=request,
+        )
 
     title = build_title(location.title, camera.title, channel.title, "Current")
 
