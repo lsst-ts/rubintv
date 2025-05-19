@@ -2,7 +2,8 @@ import React, { useEffect, useRef } from "react"
 import PropTypes from "prop-types"
 import { eventType } from "./componentPropTypes"
 
-export default function PrevNext({ prevNext, eventUrl }) {
+export default function PrevNext({ initialPrevNext, eventUrl }) {
+  const [prevNext, setPrevNext] = React.useState(initialPrevNext)
   if (!prevNext) {
     return null
   }
@@ -22,6 +23,22 @@ export default function PrevNext({ prevNext, eventUrl }) {
       document.removeEventListener("keydown", handleKeyDown)
     }
   }, [])
+
+  useEffect(() => {
+    function handleNewPrevNext(e) {
+      const { data, dataType } = e.detail
+      if (dataType == "prevNext") {
+        const { prev, next } = data
+        setPrevNext({ prev, next })
+      }
+    }
+
+    window.addEventListener("channel", handleNewPrevNext)
+    return () => {
+      window.removeEventListener("channel", handleNewPrevNext)
+    }
+  }, [])
+
   const prev = prevNext.prev
   const next = prevNext.next
   const makeUrl = (obj) => {

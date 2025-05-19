@@ -47,12 +47,12 @@ export default function MediaDisplay({
           </a>
           <span className="media-seqnum">{mediaEvent.seq_num}</span>
         </h2>
+        <PrevNext initialPrevNext={prevNext} eventUrl={eventUrl} />
         {isCurrent && (
           <TimeSinceLastImageClock metadata={metadata} camera={camera} />
         )}
       </div>
       <div className="event-nav">
-        <PrevNext prevNext={prevNext} eventUrl={eventUrl} />
         <OtherChannelLinks
           allChannelNames={allChannelNames}
           thisChannel={mediaEvent.channel_name}
