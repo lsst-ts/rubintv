@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Awaitable, Callable, Generic, TypeVar
+from typing import Awaitable, Callable, Dict, Generic, Mapping, TypeVar
 
 import redis.asyncio as redis  # type: ignore[import]
 
@@ -9,18 +9,22 @@ from ..config import rubintv_logger
 
 logger = rubintv_logger()
 
-T = TypeVar("T")
+# T should be a Mapping type since we're dealing with dictionary states
+T = TypeVar("T", bound=Mapping)
+
+# Type alias for our state dictionary
+StateDict = Dict[str, T]
 
 
 class StreamReader(Generic[T]):
-    """Reads data from Redis streams with guaranteed delivery."""
+    """Reads latest data from Redis streams for real-time display."""
+
+    MAX_MESSAGE_SIZE = 1024 * 1024  # 1MB limit for messages
 
     def __init__(
         self,
         redis_client: redis.Redis,
-        stream_keys: dict[str, str],  # Map of stream names to their friendly names
-        group_name: str,
-        consumer_name: str,
+        stream_keys: dict[str, str],
         decoder: Callable[[dict[bytes, bytes]], T],
         callback: Callable[[str, T], Awaitable[None]],
     ) -> None:
@@ -32,10 +36,6 @@ class StreamReader(Generic[T]):
             Connected Redis client
         stream_keys : dict[str, str]
             Mapping of stream keys to friendly names
-        group_name : str
-            Consumer group name
-        consumer_name : str
-            Unique consumer name within the group
         decoder : Callable
             Function to decode raw Redis data into domain type T
         callback : Callable
@@ -43,89 +43,90 @@ class StreamReader(Generic[T]):
         """
         self.redis = redis_client
         self.stream_keys = stream_keys
-        self.group_name = group_name
-        self.consumer_name = consumer_name
         self.decoder = decoder
         self.callback = callback
         self._running = False
-        self._task: asyncio.Task | None = None
-
-    async def setup_consumer_group(self) -> None:
-        """Ensure consumer group exists for each stream."""
-        for stream_key in self.stream_keys:
-            try:
-                # Create consumer group if it doesn't exists, starting from
-                # earliest message
-                await self.redis.xgroup_create(
-                    stream_key, self.group_name, id="0", mkstream=True
-                )
-            except redis.ResponseError as e:
-                if "BUSYGROUP" not in str(e):
-                    raise
-
-    async def _process_pending(self) -> None:
-        """Process any pending messages from previous sessions."""
-        for stream_key in self.stream_keys:
-            while True:
-                # Get pending messages for this consumer
-                pending = await self.redis.xpending_range(
-                    stream_key,
-                    self.group_name,
-                    min="-",
-                    max="+",
-                    count=10,
-                    consumername=self.consumer_name,
-                )
-                if not pending:
-                    break
-
-                # Claim and process pending messages
-                for p in pending:
-                    message_id = p["message_id"]
-                    messages = await self.redis.xclaim(
-                        stream_key,
-                        self.group_name,
-                        self.consumer_name,
-                        min_idle_time=0,
-                        message_ids=[message_id],
-                    )
-                    await self._handle_messages(stream_key, messages)
+        # Track last known messages for each stream
+        self._last_messages: Dict[str, T] = {}
 
     async def _handle_messages(self, stream_key: str, messages: list) -> None:
-        """Process messages and acknowledge them only after successful
-        processing."""
+        """Process latest messages."""
+        stream_state = self._last_messages.setdefault(stream_key, {})  # type: ignore
+        friendly_name = self.stream_keys[stream_key]
+        state_changed = False
+
         for message_id, data in messages:
             try:
+                # Basic size check to prevent memory issues
+                data_size = sum(len(str(k)) + len(str(v)) for k, v in data.items())
+                if data_size > self.MAX_MESSAGE_SIZE:
+                    logger.error(
+                        f"Message too large ({data_size} bytes) in stream {stream_key}, skipping",
+                        message_id=message_id,
+                    )
+                    continue
+
+                # Ensure all keys and values are bytes
+                try:
+                    data = {
+                        k.encode() if isinstance(k, str) else k: (
+                            v.encode() if isinstance(v, str) else v
+                        )
+                        for k, v in data.items()
+                    }
+                except (AttributeError, TypeError) as e:
+                    logger.error(
+                        f"Invalid data format in stream {stream_key}",
+                        error=str(e),
+                        data=str(data)[:200],
+                    )
+                    continue
+
+                # Decode the full state update
                 decoded_data = self.decoder(data)
-                friendly_name = self.stream_keys[stream_key]
-                await self.callback(friendly_name, decoded_data)
-                # Acknowledge only after successful processing
-                await self.redis.xack(stream_key, self.group_name, message_id)
+
+                # Replace entire stream state with new state
+                if decoded_data != stream_state:
+                    self._last_messages[stream_key] = decoded_data
+                    state_changed = True
+
+            except Exception:
+                logger.error(
+                    f"Error processing message {message_id}",
+                    exc_info=True,
+                    stream_key=stream_key,
+                    data=str(data)[:200] if "data" in locals() else None,
+                )
+
+        # Send update if state changed
+        if state_changed:
+            try:
+                await self.callback(friendly_name, self._last_messages[stream_key])
             except Exception as e:
-                logger.exception(f"Error processing message {message_id}: {e}")
+                logger.error(f"Error in callback for {stream_key}: {e}", exc_info=True)
 
     async def run(self) -> None:
-        """Start reading from streams."""
-        await self.setup_consumer_group()
-        await self._process_pending()
-
+        """Start reading latest messages from streams."""
         self._running = True
-        streams = {key: ">" for key in self.stream_keys}
+
+        # Start from the beginning of each stream (0-0 means start from first
+        # message)
+        streams = {key: "0-0" for key in self.stream_keys}
 
         while self._running:
             try:
-                messages = await self.redis.xreadgroup(
-                    groupname=self.group_name,
-                    consumername=self.consumer_name,
+                messages = await self.redis.xread(
                     streams=streams,
-                    count=10,
+                    count=1,  # Get one message at a time to avoid memory issues
                     block=1000,
                 )
-
                 if messages:
                     for stream, stream_messages in messages:
                         stream_key = stream.decode()
                         await self._handle_messages(stream_key, stream_messages)
+                        # Update our last seen ID to the latest message
+                        if stream_messages:
+                            streams[stream_key] = stream_messages[-1][0]
 
             except asyncio.CancelledError:
                 break
