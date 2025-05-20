@@ -250,6 +250,15 @@ class CurrentPoller:
                     chan_lookup,
                     {"next": None, "prev": prev},
                 )
+                channel_names = await self.get_all_channel_names_for_seq_num(
+                    location.name, camera.name, current_event.seq_num_force_int()
+                )
+                await notify_ws_clients(
+                    Service.CHANNEL,
+                    MessageType.ALL_CHANNELS,
+                    chan_lookup,
+                    channel_names,
+                )
 
     async def sieve_out_metadata(
         self,
@@ -544,6 +553,10 @@ class CurrentPoller:
                 if event is not None:
                     _, prev = await self.get_next_prev_event(location.name, event)
                     yield MessageType.PREV_NEXT, {"next": None, "prev": prev}
+                    channel_names = await self.get_all_channel_names_for_seq_num(
+                        location.name, camera.name, event.seq_num_force_int()
+                    )
+                    yield MessageType.ALL_CHANNELS, channel_names
 
                 if latest_metadata := await self.get_latest_metadata(
                     location.name, camera

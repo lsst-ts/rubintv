@@ -442,6 +442,7 @@ class ServiceMessageTypes(Enum):
     HISTORICAL_STATUS = "historicalStatus"
     DAY_CHANGE = "dayChange"
     PREV_NEXT = "prevNext"
+    ALL_CHANNELS = "allChannels"
 
 
 class KeyValue(BaseModel):

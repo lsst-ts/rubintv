@@ -122,11 +122,23 @@ function bundleMediaEventData(mEvent, imgUrl, videoUrl) {
 }
 
 const OtherChannelLinks = ({ allChannelNames, thisChannel, camera }) => {
-  if (!allChannelNames || allChannelNames.length === 0) {
-    return null
-  }
+  const [channelNames, setChannelNames] = useState(allChannelNames)
+
+  useEffect(() => {
+    function handleChannelNamesChange(event) {
+      const { data: newChannelNames } = event.detail
+      if (newChannelNames) {
+        setChannelNames(newChannelNames)
+      }
+    }
+    window.addEventListener("channel", handleChannelNamesChange)
+    return () => {
+      window.removeEventListener("channel", handleChannelNamesChange)
+    }
+  }, [])
+
   // Filter out the current channel from the list of all channels
-  const filteredChannels = allChannelNames.filter(
+  const filteredChannels = channelNames.filter(
     (channel) => channel !== thisChannel
   )
   const currentUrl = document.location.toString()
