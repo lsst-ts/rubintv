@@ -37,6 +37,8 @@ export default function AboveTableRow({
   )
 }
 AboveTableRow.propTypes = {
+  /** the camera object */
+  cameraType: cameraType,
   /** the names of all metadata columns */
   allColNames: PropTypes.arrayOf(PropTypes.string),
   /** the names of the currently selected columns to display */
@@ -82,16 +84,26 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
   }
 
   const handleCheckboxChange = (name) => {
-    setSelected((prevSelected) => {
-      let updatedSelected
-      if (prevSelected.includes(name)) {
-        updatedSelected = prevSelected.filter((attr) => attr !== name)
-      } else {
-        updatedSelected = [...prevSelected, name]
+    console.log("Checkbox change:", { name, currentSelected: selected })
+
+    // Don't use a callback form since we already have the current selected state
+    const currentSelected = Array.isArray(selected) ? [...selected] : []
+
+    let newSelected
+    if (currentSelected.includes(name)) {
+      newSelected = currentSelected.filter((attr) => attr !== name)
+      // Prevent empty selection
+      if (newSelected.length === 0) {
+        console.log("Preventing empty selection")
+        return
       }
-      storeSelected(updatedSelected, `${locationName}/${cameraName}`)
-      return updatedSelected
-    })
+    } else {
+      newSelected = [...currentSelected, name]
+    }
+
+    console.log("New selection:", newSelected)
+    storeSelected(newSelected, `${locationName}/${cameraName}`)
+    setSelected(newSelected)
   }
 
   let numControlColumns = 2

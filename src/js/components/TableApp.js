@@ -33,35 +33,100 @@ export default function TableApp({
   const [error, setError] = useState(null)
 
   const locationName = window.APP_DATA.locationName
+  const storageKey = `${locationName}/${camera.name}`
 
-  // if they exist, convert metadata_cols into array of objects
-  // from name: description to {name, desc}
-  let defaultColumns
-  if (camera.metadata_cols) {
-    defaultColumns = Object.entries(camera.metadata_cols).map(
-      ([name, desc]) => ({ name, desc })
-    )
-  } else {
-    defaultColumns = []
-  }
-  const defaultColNames = defaultColumns.map((col) => col.name)
-  const allColNames = getAllColumnNames(metadata, defaultColNames)
+  // Column configuration derived from camera metadata
+  const columnConfig = React.useMemo(() => {
+    const columns = camera.metadata_cols
+      ? Object.entries(camera.metadata_cols).map(([name, desc]) => ({
+          name,
+          desc,
+        }))
+      : []
 
-  const [selected, setSelected] = useState(() => {
-    const storedColNames = retrieveStoredSelection(
-      `${locationName}/${camera.name}`
-    )
-    if (storedColNames) {
-      const intersectingColNames = intersect(storedColNames, allColNames)
-      return intersectingColNames
+    return {
+      defaultColumns: columns,
+      defaultColNames: columns.map((col) => col.name),
     }
-    return defaultColNames
+  }, [camera.metadata_cols])
+
+  // Manage dynamic column state
+  const [columnState, setColumnState] = useState(() => {
+    const initialAllColumns = getAllColumnNames(
+      metadata,
+      columnConfig.defaultColNames
+    )
+    const storedColNames = retrieveStoredSelection(storageKey)
+    const selectedColumns = storedColNames
+      ? intersect(storedColNames, initialAllColumns)
+      : columnConfig.defaultColNames
+
+    return {
+      allColumns: initialAllColumns,
+      selected:
+        Array.isArray(selectedColumns) && selectedColumns.length > 0
+          ? selectedColumns
+          : columnConfig.defaultColNames,
+    }
   })
 
-  const selectedObjs = selected.map((c) => ({ name: c }))
-  const selectedMetaCols = defaultColumns
-    .filter((col) => selected.includes(col.name))
-    .concat(selectedObjs.filter((o) => !defaultColNames.includes(o.name)))
+  // Update available columns when metadata changes
+  useEffect(() => {
+    const newAllColumns = getAllColumnNames(
+      metadata,
+      columnConfig.defaultColNames
+    )
+
+    setColumnState((prev) => {
+      const currentSelected = Array.isArray(prev.selected)
+        ? prev.selected
+        : columnConfig.defaultColNames
+      const storedColNames = retrieveStoredSelection(storageKey)
+
+      // If we have stored columns, use them, otherwise keep current selection
+      const selectedColumns = storedColNames
+        ? intersect(storedColNames, newAllColumns)
+        : intersect(currentSelected, newAllColumns)
+
+      return {
+        allColumns: newAllColumns,
+        selected:
+          Array.isArray(selectedColumns) && selectedColumns.length > 0
+            ? selectedColumns
+            : currentSelected,
+      }
+    })
+  }, [metadata, columnConfig.defaultColNames, storageKey])
+
+  // Handle metadata updates from camera events
+  useEffect(() => {
+    function handleMetadataChange(event) {
+      const { data, dataType } = event.detail
+      if (dataType === "metadata" && Object.entries(data).length > 0) {
+        console.log("Setting metadata", data)
+        setMetadata(data)
+      }
+    }
+    window.addEventListener("camera", handleMetadataChange)
+    return () => {
+      window.removeEventListener("camera", handleMetadataChange)
+    }
+  }, [])
+
+  // Ensure we always have arrays for column state
+  const columns = {
+    all: Array.isArray(columnState.allColumns) ? columnState.allColumns : [],
+    selected: Array.isArray(columnState.selected) ? columnState.selected : [],
+    default: Array.isArray(columnConfig.defaultColNames)
+      ? columnConfig.defaultColNames
+      : [],
+  }
+
+  // Create selected objects with defensive checks
+  const selectedObjs = columns.selected.map((c) => ({ name: c }))
+  const selectedMetaCols = columnConfig.defaultColumns
+    .filter((col) => columns.selected.includes(col.name))
+    .concat(selectedObjs.filter((o) => !columns.default.includes(o.name)))
 
   // convenience var for showing filterColumn has been set
   const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
@@ -156,9 +221,16 @@ export default function TableApp({
         <div className="above-table-sticky">
           <AboveTableRow
             camera={camera}
-            allColNames={allColNames}
-            selected={selected}
-            setSelected={setSelected}
+            allColNames={columns.all}
+            selected={columns.selected}
+            setSelected={(newSelected) =>
+              setColumnState((prev) => ({
+                ...prev,
+                selected: Array.isArray(newSelected)
+                  ? newSelected
+                  : columns.default,
+              }))
+            }
             date={date}
             metadata={metadata}
             isHistorical={isHistorical}
