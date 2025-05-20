@@ -56,10 +56,17 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
 
   const locationName = window.APP_DATA.locationName
 
+  // Handle clicks outside to close the panel
   useEffect(() => {
-    window.addEventListener("click", toggleControls)
+    function handleOutsideClick(e) {
+      if (controlsOpen && !e.target.closest(".table-panel")) {
+        setControlsOpen(false)
+      }
+    }
+
+    window.addEventListener("click", handleOutsideClick)
     return () => {
-      window.removeEventListener("click", toggleControls)
+      window.removeEventListener("click", handleOutsideClick)
     }
   }, [controlsOpen])
 
@@ -70,15 +77,8 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
   }
 
   function toggleControls(e) {
-    if (e.target.closest(".table-controls")) {
-      return
-    }
-
-    if (controlsOpen) {
-      setControlsOpen(false)
-    } else if (e.target.classList.contains("table-control-button")) {
-      setControlsOpen(true)
-    }
+    e.stopPropagation()
+    setControlsOpen(!controlsOpen)
   }
 
   const handleCheckboxChange = (name) => {
@@ -100,7 +100,7 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
       <div className={panelClass}>
         <button
           className="table-control-button"
-          onClick={() => toggleControls(e)}
+          onClick={toggleControls}
           onKeyDown={handleKeyDown}
         >
           Add/Remove Columns
