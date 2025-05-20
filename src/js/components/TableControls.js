@@ -37,6 +37,8 @@ export default function AboveTableRow({
   )
 }
 AboveTableRow.propTypes = {
+  /** the camera object */
+  cameraType: cameraType,
   /** the names of all metadata columns */
   allColNames: PropTypes.arrayOf(PropTypes.string),
   /** the current camera */
@@ -68,24 +70,52 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
 
   const columnsToDisplay = interleaveSplit(allColNames, numControlColumns)
 
-  // allow escape from the table to close the controls
-  const handleKeyDown = (event) => {
-    if (event.key === "Escape") {
+  // Handle clicks outside to close the panel
+  useEffect(() => {
+    function handleOutsideClick(e) {
+      if (controlsOpen && !e.target.closest(".table-panel")) {
+        setControlsOpen(false)
+      }
+    }
+
+    window.addEventListener("click", handleOutsideClick)
+    return () => {
+      window.removeEventListener("click", handleOutsideClick)
+    }
+  }, [controlsOpen])
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Escape") {
       setControlsOpen(false)
     }
   }
 
+  function toggleControls(e) {
+    e.stopPropagation() // Prevent the click from bubbling to the window handler
+    setControlsOpen(!controlsOpen)
+  }
+
   const handleCheckboxChange = (name) => {
-    setSelected((prevSelected) => {
-      let updatedSelected
-      if (prevSelected.includes(name)) {
-        updatedSelected = prevSelected.filter((attr) => attr !== name)
-      } else {
-        updatedSelected = [...prevSelected, name]
+    console.log("Checkbox change:", { name, currentSelected: selected })
+
+    // Don't use a callback form since we already have the current selected state
+    const currentSelected = Array.isArray(selected) ? [...selected] : []
+
+    let newSelected
+    if (currentSelected.includes(name)) {
+      newSelected = currentSelected.filter((attr) => attr !== name)
+      // Prevent empty selection
+      if (newSelected.length === 0) {
+        console.log("Preventing empty selection")
+        return
       }
-      storeSelected(updatedSelected, `${locationName}/${cameraName}`)
-      return updatedSelected
-    })
+    } else {
+      newSelected = [...currentSelected, name]
+    }
+
+    console.log("New selection:", newSelected)
+    storeSelected(newSelected, `${locationName}/${cameraName}`)
+    setSelected(newSelected)
   }
   const panelClass = !controlsOpen ? "table-panel" : "table-panel open"
 
@@ -94,7 +124,7 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
       <div className={panelClass}>
         <button
           className="table-control-button"
-          onClick={() => setControlsOpen(!controlsOpen)}
+          onClick={toggleControls}
           onKeyDown={handleKeyDown}
           title="Add/Remove Columns"
           aria-label="Add/Remove Columns"
