@@ -1,4 +1,5 @@
 import asyncio
+import json
 from typing import Literal, Mapping, TypeAlias, TypedDict
 
 import redis.asyncio as redis  # type: ignore[import]
@@ -68,61 +69,51 @@ class DetectorStatusHandler:
         self.reader: StreamReader[DecodedRedisValue] | None = None
 
     async def verify_streams(self) -> None:
-        """Verify that our stream keys exist and contain data."""
+        """Verify that our stream keys exist."""
         for stream_key in self.stream_keys.keys():
             try:
-                # Check if stream exists and get its length
-                length = await self.redis_client.xlen(stream_key)
-                if length > 0:
-                    # Get last entry for diagnostic purposes
-                    last_entry = await self.redis_client.xrevrange(stream_key, count=1)
-                    logger.info(
-                        "Stream verified",
-                        stream=stream_key,
-                        length=length,
-                        last_entry=last_entry,
-                    )
-                else:
-                    logger.warning(f"Stream {stream_key} exists but is empty")
+                # Just check if stream exists
+                exists = await self.redis_client.exists(stream_key)
+                if not exists:
+                    logger.warning(f"Stream {stream_key} does not exist")
             except Exception as e:
                 logger.error(f"Error checking stream {stream_key}: {e}")
 
     async def read_initial_state(self) -> None:
-        """Read all entries from each stream to build complete initial state
-        for each detector.
-        """
+        """Read the latest entry from each stream to get current state."""
         for stream_key, name in self.stream_keys.items():
             try:
-                # Get all entries from the stream, oldest first
-                entries = await self.redis_client.xrange(stream_key)
-                if not entries:
-                    logger.warning(f"No initial state found for stream {stream_key}")
-                    continue
+                # Try up to 3 times to get non-initialization data
+                for attempt in range(3):
+                    # Get just the latest entry since we have maxlen=2
+                    entries = await self.redis_client.xrevrange(stream_key, count=1)
+                    if not entries:
+                        logger.warning(
+                            f"No initial state found for stream {stream_key}"
+                        )
+                        break
 
-                # Build up state from all entries
-                current_state: dict[str, int | QueueStatus | str] = {}
+                    # Get the latest state
+                    _, raw_data = entries[0]
+                    # Convert the raw data into a dictionary with byte keys
+                    data = {
+                        k.encode() if isinstance(k, str) else k: (
+                            v.encode() if isinstance(v, str) else v
+                        )
+                        for k, v in raw_data.items()
+                    }
 
-                # Process entries from oldest to newest
-                for _, data in entries:
+                    # If we got here, we have real data
                     decoded = _decode_stream_message(data)
-
-                    # For text status streams, update with non-empty values
-                    if any(isinstance(v, str) for v in decoded.values()):
-                        for k, v in decoded.items():
-                            if v:  # Only add/update non-empty values
-                                current_state[k] = v
-                            elif k in current_state:  # Remove key if new value is empty
-                                current_state.pop(k)
-                        continue
-
-                    # For worker status streams, update each detector's status
-                    for detector_id, status in decoded.items():
-                        current_state[detector_id] = status
-
-                await notify_redis_detector_status({name: current_state})
+                    await notify_redis_detector_status({name: decoded})
+                    break  # We got good data, no need to retry
 
             except Exception as e:
-                logger.error(f"Error reading initial state from {stream_key}: {e}")
+                logger.error(
+                    f"Error reading initial state from {stream_key}: {e}",
+                    exc_info=True,
+                    raw_data=str(raw_data) if "raw_data" in locals() else None,
+                )
 
     async def run_async(self) -> None:
         """Start reading from streams."""
@@ -136,8 +127,6 @@ class DetectorStatusHandler:
         self.reader = StreamReader[DecodedRedisValue](
             redis_client=self.redis_client,
             stream_keys=self.stream_keys,
-            group_name="detector-status-group",
-            consumer_name=f"detector-status-{id(self)}",
             decoder=_decode_stream_message,
             callback=adapted_callback,
         )
@@ -155,55 +144,57 @@ class DetectorStatusHandler:
             await self.reader.stop()
 
 
-def _parse_worker_count(value: str) -> int:
-    """Parse the worker count from a Redis value.
+def _decode_stream_message(data: dict[bytes, bytes]) -> DecodedRedisValue:
+    """Decode stream message into domain type.
 
     Parameters
     ----------
-    value : str
-        The raw value from Redis
+    data : dict[bytes, bytes]
+        Raw Redis stream message data. Expected to contain a 'data' field
+        with JSON encoded detector status information.
 
     Returns
     -------
-    int
-        The number of workers, defaulting to 0 if parsing fails
+    DecodedRedisValue
+        Decoded message data in the expected format
     """
     try:
-        return int(value)
-    except (ValueError, TypeError):
-        return 0
+        # Get the JSON data from the 'data' field
+        json_data = data[b"data"].decode()
+        state_data = json.loads(json_data)
 
+        if not isinstance(state_data, dict):
+            logger.warning(f"Expected dict data, got {type(state_data)}")
+            return {}
 
-def _decode_stream_message(data: dict[bytes, bytes]) -> DecodedRedisValue:
-    """Decode stream message into domain type."""
+        result: dict[str, QueueStatus | int] = {}
 
-    detector_id = data[b"detector_id"].decode()
-    status = data[b"status"].decode()
-    entry_type = data[b"type"].decode()
+        # Process each detector entry
+        for key, value in state_data.items():
+            if not isinstance(value, dict):
+                continue
 
-    # Handle text-based status messages (like other queues)
-    if entry_type == "text_status":
-        return {detector_id: status}
-
-    # Create a new detector status dict for worker statuses
-    decoded_data: dict[str, int | QueueStatus] = {}
-
-    # Handle based on entry type
-    if entry_type == "worker_count":
-        decoded_data["numWorkers"] = _parse_worker_count(status)
-    else:
-        try:
-            queue_length = int(status)  # If status is a number, it's a queue length
-            decoded_data[detector_id] = {
-                "status": "queued",
-                "queue_length": queue_length,
-            }
-        except ValueError:
-            if status in ("free", "busy", "missing"):
-                decoded_data[detector_id] = {"status": status}  # type: ignore
+            if key == "numWorkers":
+                # Handle worker count specially
+                result[key] = int(value["status"])
             else:
-                logger.debug(
-                    "Detector %s has unknown status string: %s", detector_id, status
-                )
+                # Convert status format
+                status_type = value.get("type", "")
+                status_value = value.get("status", "unknown")
 
-    return decoded_data
+                if status_type == "worker_status":
+                    try:
+                        # Try to parse as queue length
+                        queue_length = int(status_value)
+                        result[key] = {"status": "queued", "queue_length": queue_length}
+                    except ValueError:
+                        # Handle as normal status
+                        if status_value in ("free", "busy", "missing"):
+                            result[key] = {"status": status_value}
+                        else:
+                            result[key] = {"status": "missing"}
+
+        return result
+    except Exception as e:
+        logger.warning(f"Failed to decode state: {e}")
+        return {}
