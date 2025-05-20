@@ -34,13 +34,14 @@ async def get_next_previous_from_table(
         return (None, None)
 
     # creates a 'None' padded list of seq. nums
-    padded_seqs = [None, *chan_table.keys(), None]
+    all_seqs = sorted(set(chan_table.keys() | {event.seq_num_force_int()}))
+    padded_seqs = [None, *all_seqs, None]
 
     # find the index of event's seq num in that padded list
     index = padded_seqs.index(event.seq_num_force_int())
 
-    next_seq = padded_seqs[index - 1]
-    prev_seq = padded_seqs[index + 1]
+    next_seq = padded_seqs[index + 1]
+    prev_seq = padded_seqs[index - 1]
 
     nxt_prv = (
         chan_table.get(next_seq),  # type: ignore
