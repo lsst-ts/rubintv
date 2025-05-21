@@ -1,4 +1,3 @@
-
 .detector-container
   padding: 1rem
   display: flex
@@ -42,6 +41,10 @@
       aspect-ratio: 1
       border-radius: 3px
       position: relative
+      text-align: center
+      align-content: center
+      &-content
+        color: white
 
 .detector
   &-container
@@ -79,18 +82,12 @@
     border: 1px solid #ccc
     width: 100%
     aspect-ratio: 1
-
-  &-cell
-    position: absolute
-    border: 1px solid #374151
-    opacity: 0.9
-
-    &-content
-      position: absolute
-      inset: 0
-      display: flex
-      align-items: center
-      justify-content: center
+    canvas
+      display: block
+      width: 100%
+      height: 100%
+      image-rendering: -webkit-optimize-contrast
+      image-rendering: crisp-edges
 
 .queue-length
   color: black
@@ -106,16 +103,7 @@
   &-missing
     background-color: #d1d5db
   &-restarting
-    background-image: linear-gradient(45deg, rgba(white, 0.5) 25%, transparent 25%, transparent 50%, rgba(white, 0.5)  50%, rgba(white, 0.5)  75%, transparent       75%, transparent)
-    animation: gradientSlide 1s linear infinite
-    background-size: 30px 30px
-    
-@keyframes gradientSlide
-    0%
-      background-position:0 0
-    100%
-      background-position: 60px 30px
-
+    background-color: #a163ac
 
 .reset-button
     position: absolute
