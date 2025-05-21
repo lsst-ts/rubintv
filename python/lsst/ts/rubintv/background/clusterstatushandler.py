@@ -185,7 +185,7 @@ def _decode_stream_message(data: dict[bytes, bytes]) -> DecodedRedisValue:
                     result[key] = {"status": "queued", "queue_length": queue_length}
                 except ValueError:
                     # Handle as normal status
-                    if status_value in ("free", "busy", "missing"):
+                    if status_value in ("free", "busy", "missing", "restarting"):
                         result[key] = {"status": status_value}
                     else:
                         result[key] = {"status": "missing"}

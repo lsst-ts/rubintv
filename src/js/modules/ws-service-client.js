@@ -75,7 +75,6 @@ export class WebsocketClient {
   }
 
   handleMessage(messageEvent) {
-    console.debug(messageEvent)
     if (!this.online) {
       this.online = true
       window.dispatchEvent(
