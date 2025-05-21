@@ -9,11 +9,20 @@
   gap: 2rem
 
 
-.spareworkers-cells
-  display: flex
-  gap: 0.2rem
-  flex-wrap: wrap
-  justify-content: start
+.spareworkers
+  &-section
+    position: relative
+    margin-bottom: 2em
+    .reset-button
+      bottom: -28px
+      right: auto
+      left: 0
+  &-cells
+    display: flex
+    gap: 0.2rem
+    flex-wrap: wrap
+    justify-content: start
+
 
 .step1b
   &-section
@@ -34,6 +43,8 @@
     grid-auto-flow: column
     justify-content: start
     gap: 0.2rem
+  
+
 
 .step1b-cells, .spareworkers-cells
   .detector-cell

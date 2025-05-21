@@ -313,11 +313,14 @@ const DetectorStatusVisualization = ({
           </div>
 
           <div className="spareworkers-row">
-            <h3>Backlog Workers</h3>
-            <Cells
-              statuses={mainDetectorStatuses.spareWorkers}
-              prefix="spareworkers"
-            />
+            <div className="spareworkers-section">
+              <h3>Backlog Workers</h3>
+              <Cells
+                statuses={mainDetectorStatuses.spareWorkers}
+                prefix="spareworkers"
+              />
+              <ResetButton redisKey={redisKeys.spareWorkers} />
+            </div>
           </div>
           <OtherQueuesSection otherQueues={otherQueues} />
         </div>
