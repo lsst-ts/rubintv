@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from "react"
+import React, { createContext, useContext, memo, useMemo } from "react"
 import { useState, useEffect, useRef } from "react"
 import detectorMap from "../data/detectorMap.json"
 import cwfsMap from "../data/cwfsMap.json"
@@ -27,6 +27,8 @@ const getStatusClass = (status) => {
       return "status-busy"
     case "queued":
       return "status-queued"
+    case "restarting":
+      return "status-restarting"
     default:
       return "status-missing"
   }
@@ -60,35 +62,50 @@ const DetectorSection = ({
   )
 }
 
-const Cells = ({ statuses, prefix }) => {
-  let activeWorkerCells = { ...statuses }
-  const { numWorkers } = statuses
-  if (numWorkers && numWorkers > 0) {
-    // Delete numWorkers key
-    delete activeWorkerCells.numWorkers
-    const cellsToAdd = createPlaceholders(numWorkers)
-    activeWorkerCells = {
-      ...cellsToAdd,
-      ...activeWorkerCells,
+const Cell = memo(({ prefix, index, status }) => (
+  <div
+    key={`${prefix}-${index}`}
+    className={`detector-cell ${getStatusClass(status.status)}`}
+  >
+    {status.status === "queued" && (
+      <div className="detector-cell-content queue-length">
+        {status.queue_length}
+      </div>
+    )}
+  </div>
+))
+
+const Cells = memo(({ statuses, prefix }) => {
+  let activeWorkerCells = useMemo(() => {
+    const cells = { ...statuses }
+    const { numWorkers } = statuses
+    if (numWorkers && numWorkers > 0) {
+      delete cells.numWorkers
+      const cellsToAdd = createPlaceholders(numWorkers)
+      return {
+        ...cellsToAdd,
+        ...cells,
+      }
     }
-  }
+    return cells
+  }, [statuses])
+
   return (
     <div className={`${prefix}-cells`}>
       {Object.entries(activeWorkerCells).map(([i, status]) => (
-        <div
+        <Cell
           key={`${prefix}-${i}`}
-          className={`detector-cell ${getStatusClass(status.status)}`}
-        >
-          {status.status === "queued" && (
-            <div className="detector-cell-content queue-length">
-              {status.queue_length}
-            </div>
-          )}
-        </div>
+          prefix={prefix}
+          index={i}
+          status={status}
+        />
       ))}
     </div>
   )
-}
+})
+
+Cells.displayName = "Cells"
+Cell.displayName = "Cell"
 
 const ResetButton = ({ redisKey }) => {
   const [status, setStatus] = useState("")
@@ -361,7 +378,64 @@ const Step1bSection = ({ title, statuses, redisKey }) => {
   )
 }
 
-const DetectorCanvas = ({ detectorMap, detectorStatuses }) => {
+const DetectorCell = memo(({ id, detector, status, calculatedValues }) => {
+  const { toCanvasX, toCanvasY } = calculatedValues
+  const { corners } = detector
+
+  const cornerPoints = [
+    corners.upperLeft,
+    corners.upperRight,
+    corners.lowerLeft,
+    corners.lowerRight,
+  ]
+
+  const canvasCorners = {
+    upperLeft: [toCanvasX(cornerPoints[0][0]), toCanvasY(cornerPoints[0][1])],
+    upperRight: [toCanvasX(cornerPoints[1][0]), toCanvasY(cornerPoints[1][1])],
+    lowerLeft: [toCanvasX(cornerPoints[2][0]), toCanvasY(cornerPoints[2][1])],
+    lowerRight: [toCanvasX(cornerPoints[3][0]), toCanvasY(cornerPoints[3][1])],
+  }
+
+  const left = Math.min(canvasCorners.upperLeft[0], canvasCorners.lowerLeft[0])
+  const top = Math.min(canvasCorners.upperLeft[1], canvasCorners.upperRight[1])
+  const right = Math.max(
+    canvasCorners.upperRight[0],
+    canvasCorners.lowerRight[0]
+  )
+  const bottom = Math.max(
+    canvasCorners.lowerLeft[1],
+    canvasCorners.lowerRight[1]
+  )
+
+  const cellWidth = right - left
+  const cellHeight = bottom - top
+  const fontSize = Math.max(8, Math.min(cellWidth / 3, cellHeight / 3, 14))
+
+  return (
+    <div
+      id={`${id}-cell`}
+      className={`detector-cell ${getStatusClass(status.status)}`}
+      style={{
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${cellWidth}px`,
+        height: `${cellHeight}px`,
+      }}
+    >
+      <div className="detector-cell-content">
+        {status.status === "queued" && (
+          <div className="queue-length" style={{ fontSize: `${fontSize}px` }}>
+            {status.queue_length}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+})
+
+DetectorCell.displayName = "DetectorCell"
+
+const DetectorCanvas = memo(({ detectorMap, detectorStatuses }) => {
   const containerRef = useRef(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
 
@@ -376,67 +450,73 @@ const DetectorCanvas = ({ detectorMap, detectorStatuses }) => {
       }
     }
 
-    updateDimensions()
-    window.addEventListener("resize", updateDimensions)
-    return () => window.removeEventListener("resize", updateDimensions)
+    const resizeObserver = new ResizeObserver(updateDimensions)
+    resizeObserver.observe(containerRef.current)
+    return () => resizeObserver.disconnect()
   }, [])
 
-  const { width, height } = dimensions
-  const padding = Math.min(width, height) * 0.1
+  const calculatedValues = useMemo(() => {
+    const { width, height } = dimensions
+    const padding = Math.min(width, height) * 0.1
 
-  // Find the min and max values for x and y to calculate scaling
-  let minX = Infinity,
-    maxX = -Infinity,
-    minY = Infinity,
-    maxY = -Infinity
+    let minX = Infinity,
+      maxX = -Infinity,
+      minY = Infinity,
+      maxY = -Infinity
 
-  Object.values(detectorMap).forEach((detector) => {
-    if (detector?.corners) {
-      const corners = detector.corners
-      const cornerPoints = [
-        corners.upperLeft,
-        corners.upperRight,
-        corners.lowerLeft,
-        corners.lowerRight,
-      ]
-      if (
-        cornerPoints.every(
-          (corner) => Array.isArray(corner) && corner.length >= 2
-        )
-      ) {
-        cornerPoints.forEach((corner) => {
-          minX = Math.min(minX, corner[0])
-          maxX = Math.max(maxX, corner[0])
-          minY = Math.min(minY, corner[1])
-          maxY = Math.max(maxY, corner[1])
-        })
+    Object.values(detectorMap).forEach((detector) => {
+      if (detector?.corners) {
+        const corners = detector.corners
+        const cornerPoints = [
+          corners.upperLeft,
+          corners.upperRight,
+          corners.lowerLeft,
+          corners.lowerRight,
+        ]
+        if (
+          cornerPoints.every(
+            (corner) => Array.isArray(corner) && corner.length >= 2
+          )
+        ) {
+          cornerPoints.forEach((corner) => {
+            minX = Math.min(minX, corner[0])
+            maxX = Math.max(maxX, corner[0])
+            minY = Math.min(minY, corner[1])
+            maxY = Math.max(maxY, corner[1])
+          })
+        }
       }
-    }
-  })
+    })
 
-  // Only proceed with calculations if we have valid bounds
-  if (
-    minX === Infinity ||
-    maxX === -Infinity ||
-    minY === Infinity ||
-    maxY === -Infinity
-  ) {
+    if (
+      minX === Infinity ||
+      maxX === -Infinity ||
+      minY === Infinity ||
+      maxY === -Infinity
+    ) {
+      return null
+    }
+
+    const dataWidth = maxX - minX
+    const dataHeight = maxY - minY
+    const scale = Math.min(
+      (width - 2 * padding) / dataWidth,
+      (height - 2 * padding) / dataHeight
+    )
+
+    return {
+      padding,
+      scale,
+      toCanvasX: (x) => (x - minX) * scale + padding,
+      toCanvasY: (y) => (maxY - y) * scale + padding,
+      width,
+      height,
+    }
+  }, [dimensions, detectorMap])
+
+  if (!calculatedValues || calculatedValues.width === 0) {
     return <div ref={containerRef} className="detector-canvas" />
   }
-
-  // Calculate scale factors to fit the data into the canvas
-  const dataWidth = maxX - minX
-  const dataHeight = maxY - minY
-  const scale = Math.min(
-    (width - 2 * padding) / dataWidth,
-    (height - 2 * padding) / dataHeight
-  )
-
-  // Function to convert data coordinates to canvas coordinates
-  const toCanvasX = (x) => (x - minX) * scale + padding
-  const toCanvasY = (y) => (maxY - y) * scale + padding
-
-  if (width === 0) return <div ref={containerRef} className="detector-canvas" />
 
   return (
     <div ref={containerRef} className="detector-canvas">
@@ -447,92 +527,21 @@ const DetectorCanvas = ({ detectorMap, detectorStatuses }) => {
           status: "unknown",
           queue_length: 0,
         }
-        const { corners } = detector
-
-        // Verify all corner arrays exist and have correct format
-        const cornerPoints = [
-          corners.upperLeft,
-          corners.upperRight,
-          corners.lowerLeft,
-          corners.lowerRight,
-        ]
-        if (
-          !cornerPoints.every(
-            (corner) => Array.isArray(corner) && corner.length >= 2
-          )
-        ) {
-          return null
-        }
-
-        const canvasCorners = {
-          upperLeft: [
-            toCanvasX(cornerPoints[0][0]),
-            toCanvasY(cornerPoints[0][1]),
-          ],
-          upperRight: [
-            toCanvasX(cornerPoints[1][0]),
-            toCanvasY(cornerPoints[1][1]),
-          ],
-          lowerLeft: [
-            toCanvasX(cornerPoints[2][0]),
-            toCanvasY(cornerPoints[2][1]),
-          ],
-          lowerRight: [
-            toCanvasX(cornerPoints[3][0]),
-            toCanvasY(cornerPoints[3][1]),
-          ],
-        }
-
-        const left = Math.min(
-          canvasCorners.upperLeft[0],
-          canvasCorners.lowerLeft[0]
-        )
-        const top = Math.min(
-          canvasCorners.upperLeft[1],
-          canvasCorners.upperRight[1]
-        )
-        const right = Math.max(
-          canvasCorners.upperRight[0],
-          canvasCorners.lowerRight[0]
-        )
-        const bottom = Math.max(
-          canvasCorners.lowerLeft[1],
-          canvasCorners.lowerRight[1]
-        )
-
-        const cellWidth = right - left
-        const cellHeight = bottom - top
-        const fontSize = Math.max(
-          8,
-          Math.min(cellWidth / 3, cellHeight / 3, 14)
-        )
 
         return (
-          <div
+          <DetectorCell
             key={id}
-            className={`detector-cell ${getStatusClass(status.status)}`}
-            style={{
-              left: `${left}px`,
-              top: `${top}px`,
-              width: `${cellWidth}px`,
-              height: `${cellHeight}px`,
-            }}
-          >
-            <div className="detector-cell-content">
-              {status.status === "queued" && (
-                <div
-                  className="queue-length"
-                  style={{ fontSize: `${fontSize}px` }}
-                >
-                  {status.queue_length}
-                </div>
-              )}
-            </div>
-          </div>
+            id={id}
+            detector={detector}
+            status={status}
+            calculatedValues={calculatedValues}
+          />
         )
       })}
     </div>
   )
-}
+})
+
+DetectorCanvas.displayName = "DetectorCanvas"
 
 export default DetectorStatusVisualization
