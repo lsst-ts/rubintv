@@ -174,25 +174,30 @@ def _decode_stream_message(data: dict[bytes, bytes]) -> DecodedRedisValue:
             if not isinstance(value, dict):
                 continue
 
-            if key == "numWorkers":
-                # Handle worker count specially
-                result[key] = int(value["status"])
-            else:
-                # Convert status format
-                status_type = value.get("type", "")
-                status_value = value.get("status", "unknown")
+            # Convert status format
+            status_type = value.get("type", "")
+            status_value = value.get("status", "unknown")
 
-                if status_type == "worker_status":
-                    try:
-                        # Try to parse as queue length
-                        queue_length = int(status_value)
-                        result[key] = {"status": "queued", "queue_length": queue_length}
-                    except ValueError:
-                        # Handle as normal status
-                        if status_value in ("free", "busy", "missing"):
-                            result[key] = {"status": status_value}
-                        else:
-                            result[key] = {"status": "missing"}
+            if status_type == "worker_status":
+                try:
+                    # Try to parse as queue length
+                    queue_length = int(status_value)
+                    result[key] = {"status": "queued", "queue_length": queue_length}
+                except ValueError:
+                    # Handle as normal status
+                    if status_value in ("free", "busy", "missing"):
+                        result[key] = {"status": status_value}
+                    else:
+                        result[key] = {"status": "missing"}
+            if status_type == "text_status":
+                # Handle text status
+                result[key] = status_value
+            if status_type == "worker_count":
+                # Handle worker count
+                try:
+                    result[key] = int(status_value)
+                except ValueError:
+                    logger.warning(f"Invalid worker count for {key}: {status_value}")
 
         return result
     except Exception as e:
