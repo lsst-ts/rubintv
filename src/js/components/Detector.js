@@ -110,6 +110,13 @@ const ResetButton = ({ redisKey }) => {
   // Only show reset button if admin
   if (!admin) return null
 
+  const showStatusDelay = (status) => {
+    setStatus(status)
+    setTimeout(() => {
+      setStatus("")
+    }, 2000)
+  }
+
   const handleReset = async () => {
     try {
       const resetKey = redisKey.replace("CLUSTER_STATUS_", RESET_PREFIX)
@@ -119,10 +126,10 @@ const ResetButton = ({ redisKey }) => {
       })
       if (response) {
         console.log("Reset successful")
-        setStatus("success")
+        showStatusDelay("success")
       } else {
         console.error("Reset failed:", response)
-        setStatus("error")
+        showStatusDelay("error")
       }
     } catch (error) {
       console.error("Error resetting detector:", error)
