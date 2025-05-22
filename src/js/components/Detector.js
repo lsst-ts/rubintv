@@ -189,6 +189,7 @@ const DetectorStatusVisualization = ({
       if (dataType !== "detectorStatus") {
         return
       }
+      console.log("Received detector status update:", data)
       // If we get here, treat it as a batch update
       const {
         sfmSet0,
@@ -343,32 +344,30 @@ const DetectorStatusVisualization = ({
 const OtherQueuesSection = ({ otherQueues }) => {
   return (
     <div className="other-queues-section">
-      {Object.entries(otherQueues).length > 0 && (
-        <div className="other-queues">
-          <h3>Other Queues</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Queue Name</th>
-                <th>Queue Length</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(otherQueues)
-                .toSorted()
-                .map(
-                  ([key, value]) =>
-                    value && (
-                      <tr key={key}>
-                        <td>{key}</td>
-                        <td>{value}</td>
-                      </tr>
-                    )
-                )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <div className="other-queues">
+        <h3>Other Queues</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Queue Name</th>
+              <th>Queue Length</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(otherQueues)
+              .toSorted()
+              .map(
+                ([key, value]) =>
+                  value.toString() != "" && (
+                    <tr key={key}>
+                      <td>{key}</td>
+                      <td>{value}</td>
+                    </tr>
+                  )
+              )}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

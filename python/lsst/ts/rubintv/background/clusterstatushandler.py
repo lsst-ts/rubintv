@@ -190,16 +190,14 @@ def _decode_stream_message(data: dict[bytes, bytes]) -> DecodedRedisValue:
                     else:
                         result[key] = {"status": "missing"}
             if status_type == "text_status":
-                # Handle text status
+                # text status is passed through as-is
                 result[key] = status_value
             if status_type == "worker_count":
-                # Handle worker count
                 try:
                     result[key] = int(status_value)
                 except ValueError:
                     logger.warning(f"Invalid worker count for {key}: {status_value}")
-
         return result
     except Exception as e:
-        logger.warning(f"Failed to decode state: {e}")
+        logger.warning(f"Failed to decode state: {e}", exc_info=True)
         return {}
