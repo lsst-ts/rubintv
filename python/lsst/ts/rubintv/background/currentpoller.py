@@ -119,14 +119,15 @@ class CurrentPoller:
 
                         objects = await client.async_list_objects(prefix)
                         if objects:
-                            loc_cam = self._get_loc_cam(location.name, camera)
                             objects = await self.sieve_out_metadata(
                                 objects, prefix, location, camera
                             )
                             objects = await self.sieve_out_night_reports(
                                 objects, location, camera
                             )
-                            await self.process_channel_objects(objects, loc_cam, camera)
+                            await self.process_channel_objects(
+                                objects, location, camera
+                            )
 
                     await self.poll_for_yesterdays_per_day(location)
 
@@ -148,7 +149,7 @@ class CurrentPoller:
                     await sleep(self.MIN_INTERVAL - elapsed)
 
             except Exception:
-                logger.debug("Caught exception during poll for data")
+                logger.debug("Caught exception during poll for data", exc_info=True)
 
     async def poll_for_yesterdays_per_day(self, location: Location) -> None:
         """Uses the store of prefixes for yesterday's missing per-day data to
@@ -185,15 +186,16 @@ class CurrentPoller:
             self._yesterday_prefixes[location.name].remove(prefix)
 
     async def process_channel_objects(
-        self, objects: list[dict[str, str]], loc_cam: str, camera: Camera
+        self, objects: list[dict[str, str]], location: Location, camera: Camera
     ) -> None:
+        loc_cam = self._get_loc_cam(location.name, camera)
         if objects and (
             loc_cam not in self._objects or objects != self._objects[loc_cam]
         ):
             self._objects[loc_cam] = objects
             events = await all_objects_to_events(objects)
             self._events[loc_cam] = events
-            await self.update_channel_events(events, loc_cam, camera)
+            await self.update_channel_events(events, location, camera)
 
             pd_data = await self.make_per_day_data(camera, events)
             self._per_day[loc_cam] = pd_data
@@ -218,10 +220,11 @@ class CurrentPoller:
         self._yesterday_prefixes[loc] = new_prefixes
 
     async def update_channel_events(
-        self, events: list[Event], loc_cam: str, camera: Camera
+        self, events: list[Event], location: Location, camera: Camera
     ) -> None:
         if not events:
             return
+        loc_cam = f"{location.name}/{camera.name}"
         for chan in camera.channels:
             ch_events = [e for e in events if e.channel_name == chan.name]
             if not ch_events:
@@ -239,6 +242,22 @@ class CurrentPoller:
                     MessageType.CHANNEL_EVENT,
                     chan_lookup,
                     current_event.__dict__,
+                )
+                _, prev = await self.get_next_prev_event(location.name, current_event)
+                await notify_ws_clients(
+                    Service.CHANNEL,
+                    MessageType.PREV_NEXT,
+                    chan_lookup,
+                    {"next": None, "prev": prev},
+                )
+                channel_names = await self.get_all_channel_names_for_seq_num(
+                    location.name, camera.name, current_event.seq_num_force_int()
+                )
+                await notify_ws_clients(
+                    Service.CHANNEL,
+                    MessageType.ALL_CHANNELS,
+                    chan_lookup,
+                    channel_names,
                 )
 
     async def sieve_out_metadata(
@@ -531,6 +550,14 @@ class CurrentPoller:
                 )
                 yield MessageType.CHANNEL_EVENT, event.__dict__ if event else None
 
+                if event is not None:
+                    _, prev = await self.get_next_prev_event(location.name, event)
+                    yield MessageType.PREV_NEXT, {"next": None, "prev": prev}
+                    channel_names = await self.get_all_channel_names_for_seq_num(
+                        location.name, camera.name, event.seq_num_force_int()
+                    )
+                    yield MessageType.ALL_CHANNELS, channel_names
+
                 if latest_metadata := await self.get_latest_metadata(
                     location.name, camera
                 ):
@@ -551,3 +578,26 @@ class CurrentPoller:
                 ):
                     yield MessageType.LATEST_METADATA, (latest_metadata)
                 yield MessageType.DAY_CHANGE, "from current poller"
+
+    async def get_all_channel_names_for_seq_num(
+        self, location_name: str, camera_name: str, seq_num: int
+    ) -> list[str]:
+        """Get all channel names for a given sequence number.
+        Parameters
+        ----------
+        location_name : `str`
+            The name of the location.
+        camera_name : `str`
+            The name of the camera.
+        seq_num : `int`
+            The sequence number.
+        Returns
+        -------
+        `list` [`str`]
+            A list of channel names for the given sequence number.
+        """
+        loc_cam = f"{location_name}/{camera_name}"
+        events = self._events.get(loc_cam, [])
+        relevant_events = [e for e in events if e.seq_num == seq_num]
+        chan_names = [event.channel_name for event in relevant_events]
+        return chan_names

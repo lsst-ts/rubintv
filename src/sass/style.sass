@@ -209,12 +209,14 @@ section
 	justify-content: flex-start
 	align-items: center
 	margin-bottom: 0.5em
+	gap: 1em
 	h2
 		margin-bottom: 0
 	.media-date
 		margin-right: 0.5em
+		color: #fff
+		text-decoration: underline
 	.media-seqnum
-		margin-right: 0.5em
 		&::before
 			content: "Sequence "
 
@@ -234,10 +236,18 @@ section
 	.button
 		flex-direction: row
 		gap: 0.25em
+		color: #000
+		text-decoration: none
 	.prev:before
 		content: "←"
 	.next:after
 		content: "→"
+
+.other-channels
+	display: flex
+	flex-direction: row
+	gap: 1em
+	margin-bottom: 1em
 
 .metadata-status
 	display: flex
