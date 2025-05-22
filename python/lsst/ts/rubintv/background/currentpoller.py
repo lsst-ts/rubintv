@@ -599,7 +599,5 @@ class CurrentPoller:
         loc_cam = f"{location_name}/{camera_name}"
         events = self._events.get(loc_cam, [])
         relevant_events = [e for e in events if e.seq_num == seq_num]
-        if not relevant_events:
-            return []
         chan_names = [event.channel_name for event in relevant_events]
         return chan_names

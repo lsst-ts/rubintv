@@ -78,7 +78,7 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
 
   function toggleControls(e) {
     e.stopPropagation()
-    setControlsOpen(!controlsOpen)
+    setControlsOpen((controlsOpen) => !controlsOpen)
   }
 
   const handleCheckboxChange = (name) => {

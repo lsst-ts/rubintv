@@ -459,6 +459,4 @@ class HistoricalPoller:
             e for e in events if e.day_obs == date and e.seq_num == seq_num
         ]
         chan_names = [e.channel_name for e in relevant_events]
-        if not chan_names:
-            return []
         return chan_names
