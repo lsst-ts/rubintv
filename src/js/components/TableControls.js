@@ -77,15 +77,6 @@ function TableControls({
       window.removeEventListener("click", handleOutsideClick)
     }
   }, [controlsOpen])
-  let numControlColumns = 2
-  if (allColNames.length > 45) {
-    numControlColumns = 3
-  }
-  const gridStyle = {
-    columnCount: numControlColumns,
-  }
-
-  const columnsToDisplay = allColNames
 
   const handleKeyDown = (e) => {
     if (e.key === "Escape") {
