@@ -29,6 +29,8 @@ const getStatusClass = (status) => {
       return "status-queued"
     case "restarting":
       return "status-restarting"
+    case "guest":
+      return "status-guest"
     default:
       return "status-missing"
   }
@@ -260,6 +262,10 @@ const DetectorStatusVisualization = ({
               <div className="legend-item">
                 <div className="legend-color status-restarting"></div>
                 <span>Restarting</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color status-guest"></div>
+                <span>Guest</span>
               </div>
               <div className="legend-item">
                 <div className="legend-color status-missing"></div>
@@ -509,6 +515,8 @@ const getStatusColor = (status) => {
       return "#ef4444"
     case "restarting":
       return "#a163ac"
+    case "guest":
+      return "#3b82f6"
     default:
       return "#d1d5db"
   }
