@@ -93,6 +93,15 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
       return updatedSelected
     })
   }
+
+  let numControlColumns = 2
+  if (allColNames.length > 45) {
+    numControlColumns = 3
+  }
+  const gridStyle = {
+    columnCount: numControlColumns,
+  }
+
   const panelClass = !controlsOpen ? "table-panel" : "table-panel open"
 
   return (
@@ -102,12 +111,17 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
           className="table-control-button"
           onClick={toggleControls}
           onKeyDown={handleKeyDown}
+          title="Add/Remove Columns"
+          aria-label="Add/Remove Columns"
+          aria-expanded={controlsOpen}
+          aria-controls="table-controls"
+          aria-haspopup="true"
         >
           Add/Remove Columns
         </button>
 
         {controlsOpen && (
-          <div className="table-controls">
+          <div className="table-controls" style={gridStyle}>
             {allColNames.map((title) => (
               <div className="table-control" key={title}>
                 <label htmlFor={title}>

@@ -127,7 +127,7 @@ const OtherChannelLinks = ({ allChannelNames, thisChannel, camera }) => {
   useEffect(() => {
     function handleChannelNamesChange(event) {
       const { data: newChannelNames } = event.detail
-      if (newChannelNames) {
+      if (newChannelNames.length > 0) {
         setChannelNames(newChannelNames)
       }
     }
@@ -158,7 +158,9 @@ const OtherChannelLinks = ({ allChannelNames, thisChannel, camera }) => {
         const channelObj = camera.channels.find(
           (chan) => chan.name === channelName
         )
-        console.log("channelObj", channelObj)
+        if (!channelObj) {
+          return null
+        }
         const chanStyle = {
           backgroundColor: channelObj.colour,
           color: channelObj.text_colour,
