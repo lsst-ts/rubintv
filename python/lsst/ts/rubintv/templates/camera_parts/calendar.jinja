@@ -31,6 +31,9 @@
           {{ month_names[month - 1] }}
         </h5>
         <div class="days">
+          {% for weekday in ["M","T","W","T","F","S","S"]%}
+            <p class="day">{{ weekday }}</p>
+          {% endfor %}
           {% for week in calendar_frame.monthdayscalendar(year, month) %}
               {% for day in week %}
                 {% if day == 0 %}

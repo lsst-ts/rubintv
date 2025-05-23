@@ -30,6 +30,7 @@ import AdminPanels from "../components/AdminPanels"
           { title: "5-on-a-die" },
           { title: "Minimal" },
           { title: "Ultra-minimal" },
+          { title: "All unvingnetted" },
         ],
       },
       {
