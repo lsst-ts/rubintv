@@ -437,6 +437,7 @@ class ServiceTypes(str, Enum):
 
 class ServiceMessageTypes(Enum):
     CHANNEL_EVENT = "event"
+    LATEST_EVENT = "latestEvent"
     CAMERA_TABLE = "channelData"
     CAMERA_METADATA = "metadata"
     LATEST_METADATA = "latestMetadata"

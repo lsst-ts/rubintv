@@ -331,12 +331,12 @@ class CurrentPoller:
                 await notify_ws_clients(
                     Service.CAMERA, MessageType.CAMERA_METADATA, loc_cam, data
                 )
-            await notify_ws_clients(
-                Service.CALENDAR,
-                MessageType.LATEST_METADATA,
-                loc_cam,
-                self.get_last_entry_in_metadata(data),
-            )
+                await notify_ws_clients(
+                    Service.CHANNEL,
+                    MessageType.LATEST_METADATA,
+                    loc_cam,
+                    self.get_last_entry_in_metadata(data),
+                )
 
     async def sieve_out_night_reports(
         self, objects: list[dict[str, str]], location: Location, camera: Camera

@@ -152,10 +152,25 @@ async def attach_simple_service(
 
 
 async def attach_service(
-    client_id: uuid.UUID, service_loc_cam: str, websocket: WebSocket
+    client_id: uuid.UUID, full_service_name: str, websocket: WebSocket
 ) -> None:
-    # Handle simple services that don't need location/camera parsing
-    if service_loc_cam == "historicalStatus":
+    """Attach a client to a service based on the full service name.
+    The full service name is expected to be in the format:
+    "ServiceName Location/Camera[/Channel]".
+    If the service is historicalStatus or detectors, it will attach
+    to a simple service that just needs initial state notification.
+
+    Parameters
+    ----------
+    client_id : uuid.UUID
+        The ID of the client to attach
+    full_service_name : str
+        The full service name in the format
+        "ServiceName Location/Camera[/Channel]"
+    websocket : WebSocket
+        The websocket connection
+    """
+    if full_service_name == "historicalStatus":
         await attach_simple_service(
             client_id,
             websocket,
@@ -164,7 +179,7 @@ async def attach_service(
             "historicalStatus",
         )
         return
-    elif service_loc_cam == "detectors":
+    elif full_service_name == "detectors":
         await attach_simple_service(
             client_id,
             websocket,
@@ -175,20 +190,23 @@ async def attach_service(
         return
 
     try:
-        service_str, loc_cam = service_loc_cam.split(" ")
+        service_str, full_location = full_service_name.split(" ")
         service = Service[service_str.upper()]
     except ValueError:
         logger.error("Bad request", service=service_str, client_id=client_id)
         return
 
     channel_name = ""
-    location_name, camera_name, *extra = loc_cam.split("/")
+    location_name, camera_name, *extra = full_location.split("/")
     locations = websocket.app.state.models.locations
     if not (
         camera := await is_valid_location_camera(location_name, camera_name, locations)
     ):
         logger.error(
-            "No such camera:", service=service, client_id=client_id, camera=loc_cam
+            "No such camera:",
+            service=service,
+            client_id=client_id,
+            camera=full_location,
         )
         return
 
@@ -203,10 +221,23 @@ async def attach_service(
     await notify_new_client(websocket, location, camera, channel_name, service)
 
     async with services_lock:
-        if service_loc_cam in services_clients:
-            services_clients[service_loc_cam].append(client_id)
+        if full_service_name in services_clients:
+            services_clients[full_service_name].append(client_id)
         else:
-            services_clients[service_loc_cam] = [client_id]
+            services_clients[full_service_name] = [client_id]
+
+    # If registering a service with location and camera and channel,
+    # also register a service with just location and camera.
+    if not channel_name:
+        return
+
+    loc_cam_service = f"{service_str} {location_name}/{camera_name}"
+
+    async with services_lock:
+        if loc_cam_service in services_clients:
+            services_clients[loc_cam_service].append(client_id)
+        else:
+            services_clients[loc_cam_service] = [client_id]
 
 
 async def is_valid_client_request(data: dict) -> bool:

@@ -72,6 +72,11 @@ export function TimeSinceLastImageClock(props) {
     // that is sent via a "channel" ws event
     function handleLatestMetadataChange(event) {
       const { data, dataType } = event.detail
+      console.debug(
+        "TimeSinceLastImageClock: handleLatestMetadataChange",
+        dataType,
+        data
+      )
       if (dataType === "latestMetadata") {
         setMetadata(data)
       }

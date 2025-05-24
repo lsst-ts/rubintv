@@ -126,10 +126,11 @@ const OtherChannelLinks = ({ allChannelNames, thisChannel, camera }) => {
 
   useEffect(() => {
     function handleChannelNamesChange(event) {
-      const { data: newChannelNames } = event.detail
-      if (newChannelNames.length > 0) {
-        setChannelNames(newChannelNames)
+      const { data } = event.detail
+      if (!data || !Array.isArray(data)) {
+        return
       }
+      setChannelNames(data)
     }
     window.addEventListener("channel", handleChannelNamesChange)
     return () => {
