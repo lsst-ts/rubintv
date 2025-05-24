@@ -144,7 +144,7 @@ const OtherChannelLinks = ({ allChannelNames, thisChannel, camera }) => {
   )
   const currentUrl = document.location.toString()
   const buildUrl = (channelName) => {
-    if (currentUrl.endsWith(`${thisChannel}/current`)) {
+    if (currentUrl.endsWith(`/current/${thisChannel}`)) {
       return currentUrl.replace(thisChannel, channelName)
     } else {
       return currentUrl.replace(
