@@ -117,6 +117,8 @@ export function RedisPanel({ menus, redisEndpointUrl, redisKeyPrefix }) {
           keyToSend="WITNESS_DETECTOR"
           title="Witness Detector"
         />
+      </div>
+      <div className="admin-panel-part">
         <AdminSendRedisValue
           redisEndpointUrl={redisEndpointUrl}
           redisKeyPrefix={redisKeyPrefix}
@@ -124,6 +126,7 @@ export function RedisPanel({ menus, redisEndpointUrl, redisKeyPrefix }) {
           valueToSend="1"
           title="Reset Head Node"
           size="small"
+          requiresConfirmation={true}
         />
       </div>
     </div>
@@ -182,8 +185,25 @@ export function AdminSendRedisValue({
   keyToSend,
   valueToSend = null,
   size = "",
+  requiresConfirmation = false,
 }) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
+  let showModal = null
+
+  const handleConfirmSubmit = (e) => {
+    e.preventDefault()
+    showModal(
+      <ConfirmationModal
+        title={title}
+        message={`Are you sure you want to send value "${valueToSend}" to key "${keyToSend}"?`}
+        onConfirm={() => {
+          handleSubmit(e)
+          showModal(null)
+        }}
+        onCancel={() => showModal(null)}
+      />
+    )
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -200,13 +220,19 @@ export function AdminSendRedisValue({
       })
   }
 
+  if (requiresConfirmation) {
+    ;({ showModal } = useModal())
+  }
+
+  const handleClick = requiresConfirmation ? handleConfirmSubmit : handleSubmit
+
   return (
     <div className={`redis-command-panel box ${size}`}>
       <div className="redis-command-header box-header">
         <h4 className="redis-command-title box-title">{title}</h4>
         <StatusIndicator status={redisChanged} />
       </div>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleClick}>
         <div className="form-group">
           <label htmlFor="value">Value:</label>
           {!valueToSend && (
