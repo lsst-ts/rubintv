@@ -5,6 +5,7 @@ import json
 from typing import Any, Mapping
 from uuid import UUID
 
+import structlog
 from fastapi import WebSocket
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.websockets_clients import (
@@ -12,12 +13,13 @@ from lsst.ts.rubintv.handlers.websockets_clients import (
     clients_lock,
     services_clients,
     services_lock,
+    websocket_to_client,
 )
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
 from lsst.ts.rubintv.models.models import ServiceTypes as Service
 from lsst.ts.rubintv.models.models import get_current_day_obs
 
-logger = rubintv_logger()
+logger: structlog.stdlib.BoundLogger = rubintv_logger()
 
 
 async def notify_ws_clients(
@@ -67,7 +69,42 @@ async def send_notification(
             }
         )
     except Exception as e:
-        logger.error(f"Failed to send notification to {websocket}: {str(e)}")
+        logger.warning(f"Failed to send notification to {websocket}: {str(e)}")
+        await remove_client_from_services(websocket_to_client.get(websocket, None))
+
+
+async def remove_client_from_services(client_id: UUID | None) -> None:
+    """Remove a client from all services it is subscribed to, clean up empty
+    services and remove the client from the clients dictionary.
+    Parameters
+    ----------
+    client_id : UUID | None
+        The ID of the client to remove. If None, do nothing.
+    """
+    global services_clients
+    if client_id is None:
+        return
+    async with services_lock:
+        for service, clients_set in services_clients.items():
+            if client_id in clients_set:
+                clients_set.remove(client_id)
+                logger.info(
+                    "Removed client from service",
+                    service=service,
+                    client_id=client_id,
+                )
+        # Clean up empty services
+        services_clients[:] = {
+            service: clients_set
+            for service, clients_set in services_clients.items()
+            if clients_set
+        }
+
+    async with clients_lock:
+        if client_id in clients:
+            websocket = clients[client_id]
+            del clients[client_id]
+            del websocket_to_client[websocket]
 
 
 async def get_clients_to_notify(service_cam_id: str) -> list[UUID]:
