@@ -265,7 +265,7 @@ const DetectorStatusVisualization = ({
               </div>
               <div className="legend-item">
                 <div className="legend-color status-guest"></div>
-                <span>Guest</span>
+                <span>Guest payload</span>
               </div>
               <div className="legend-item">
                 <div className="legend-color status-missing"></div>
