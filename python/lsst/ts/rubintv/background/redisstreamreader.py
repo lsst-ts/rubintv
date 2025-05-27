@@ -46,14 +46,10 @@ class StreamReader(Generic[T]):
         self.decoder = decoder
         self.callback = callback
         self._running = False
-        # Track last known messages for each stream
-        self._last_messages: Dict[str, T] = {}
 
     async def _handle_messages(self, stream_key: str, messages: list) -> None:
         """Process latest messages."""
-        stream_state = self._last_messages.setdefault(stream_key, {})  # type: ignore
         friendly_name = self.stream_keys[stream_key]
-        state_changed = False
 
         for message_id, data in messages:
             try:
@@ -85,11 +81,6 @@ class StreamReader(Generic[T]):
                 # Decode the full state update
                 decoded_data = self.decoder(data)
 
-                # Replace entire stream state with new state
-                if decoded_data != stream_state:
-                    self._last_messages[stream_key] = decoded_data
-                    state_changed = True
-
             except Exception:
                 logger.error(
                     f"Error processing message {message_id}",
@@ -97,13 +88,10 @@ class StreamReader(Generic[T]):
                     stream_key=stream_key,
                     data=str(data)[:200] if "data" in locals() else None,
                 )
-
-        # Send update if state changed
-        if state_changed:
-            try:
-                await self.callback(friendly_name, self._last_messages[stream_key])
-            except Exception as e:
-                logger.error(f"Error in callback for {stream_key}: {e}", exc_info=True)
+        try:
+            await self.callback(friendly_name, decoded_data)
+        except Exception as e:
+            logger.error(f"Error in callback for {stream_key}: {e}", exc_info=True)
 
     async def run(self) -> None:
         """Start reading latest messages from streams."""

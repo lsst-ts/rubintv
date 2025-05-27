@@ -83,30 +83,23 @@ class DetectorStatusHandler:
         """Read the latest entry from each stream to get current state."""
         for stream_key, name in self.stream_keys.items():
             try:
-                # Try up to 3 times to get non-initialization data
-                for attempt in range(3):
-                    # Get just the latest entry since we have maxlen=2
-                    entries = await self.redis_client.xrevrange(stream_key, count=1)
-                    if not entries:
-                        logger.warning(
-                            f"No initial state found for stream {stream_key}"
-                        )
-                        break
+                # Get just the latest entry since we have maxlen=2
+                entries = await self.redis_client.xrevrange(stream_key, count=1)
+                if not entries:
+                    logger.warning(f"No initial state found for stream {stream_key}")
+                    break
+                # Get the latest state
+                _, raw_data = entries[0]
+                # Convert the raw data into a dictionary with byte keys
+                data = {
+                    k.encode() if isinstance(k, str) else k: (
+                        v.encode() if isinstance(v, str) else v
+                    )
+                    for k, v in raw_data.items()
+                }
 
-                    # Get the latest state
-                    _, raw_data = entries[0]
-                    # Convert the raw data into a dictionary with byte keys
-                    data = {
-                        k.encode() if isinstance(k, str) else k: (
-                            v.encode() if isinstance(v, str) else v
-                        )
-                        for k, v in raw_data.items()
-                    }
-
-                    # If we got here, we have real data
-                    decoded = _decode_stream_message(data)
-                    await notify_redis_detector_status({name: decoded})
-                    break  # We got good data, no need to retry
+                decoded = _decode_stream_message(data)
+                await notify_redis_detector_status({name: decoded})
 
             except Exception as e:
                 logger.error(
