@@ -81,7 +81,6 @@ async def remove_client_from_services(client_id: UUID | None) -> None:
     client_id : UUID | None
         The ID of the client to remove. If None, do nothing.
     """
-    global services_clients
     if client_id is None:
         return
     async with services_lock:
@@ -93,12 +92,14 @@ async def remove_client_from_services(client_id: UUID | None) -> None:
                     service=service,
                     client_id=client_id,
                 )
-        # Clean up empty services
-        services_clients[:] = {
-            service: clients_set
-            for service, clients_set in services_clients.items()
-            if clients_set
-        }
+        # Remove empty services
+        services_clients.update(
+            {
+                service: clients_set
+                for service, clients_set in services_clients.items()
+                if clients_set
+            }
+        )
 
     async with clients_lock:
         if client_id in clients:
