@@ -138,12 +138,11 @@ const OtherChannelLinks = ({ allChannelNames, thisChannel, camera }) => {
     }
   }, [])
 
-  // Filter out the current channel from the list of all channels
-  const filteredChannels = channelNames.filter(
-    (channel) => channel !== thisChannel
-  )
   const currentUrl = document.location.toString()
   const buildUrl = (channelName) => {
+    if (channelName === thisChannel) {
+      return currentUrl
+    }
     if (currentUrl.endsWith(`/current/${thisChannel}`)) {
       return currentUrl.replace(thisChannel, channelName)
     } else {
@@ -155,27 +154,24 @@ const OtherChannelLinks = ({ allChannelNames, thisChannel, camera }) => {
   }
   return (
     <div className="other-channels">
-      {filteredChannels.map((channelName) => {
-        const channelObj = camera.channels.find(
-          (chan) => chan.name === channelName
-        )
-        if (!channelObj) {
+      {camera.channels.map((channel) => {
+        if (!allChannelNames.includes(channel.name)) {
           return null
         }
         const chanStyle = {
-          backgroundColor: channelObj.colour,
-          color: channelObj.text_colour,
+          backgroundColor: channel.colour,
+          color: channel.text_colour,
         }
         // Construct the URL for each channel
-        const channelUrl = buildUrl(channelName)
+        const channelUrl = buildUrl(channel.name)
         return (
           <a
-            key={channelName}
+            key={channel.name}
             href={channelUrl}
             style={chanStyle}
             className="button"
           >
-            {channelObj.title}
+            {channel.title}
           </a>
         )
       })}
