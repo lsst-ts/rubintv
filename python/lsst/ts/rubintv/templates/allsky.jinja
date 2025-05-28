@@ -12,5 +12,8 @@
 {% endblock content %}
 
 {% block footer_scripts %}
+<script>
+    window.APP_DATA.calendar = {{ calendar | tojson }}
+</script>
 <script src='{{ url_for("static", path="assets/allsky.js") }}'></script>
 {% endblock footer_scripts %}

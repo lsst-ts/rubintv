@@ -59,6 +59,7 @@
   <script>
     window.APP_DATA.eventUrl = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}"
     window.APP_DATA.nightReportLink = {{ nr_link | tojson }}
+    window.APP_DATA.calendar = {{ calendar | tojson }}
   </script>
   <script src='{{ url_for("static", path="assets/camera-table.js") }}'></script>
   {{ super() }}

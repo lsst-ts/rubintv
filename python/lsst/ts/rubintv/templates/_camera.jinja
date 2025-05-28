@@ -32,7 +32,6 @@
     window.APP_DATA.camera = {{ camera|tojson }}
     window.APP_DATA.date = "{{ date }}"
     window.APP_DATA.historicalBusy = {{ historicalBusy|tojson if historicalBusy else "null" }}
-    window.APP_DATA.calendar = {{ calendar | tojson }}
     window.APP_DATA.isHistorical = {{ isHistorical | tojson if isHistorical else "null" }}
   </script>
 {% endblock further %}
