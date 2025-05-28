@@ -84,24 +84,18 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
   }
 
   const handleCheckboxChange = (name) => {
-    console.log("Checkbox change:", { name, currentSelected: selected })
-
-    // Don't use a callback form since we already have the current selected state
     const currentSelected = Array.isArray(selected) ? [...selected] : []
 
     let newSelected
     if (currentSelected.includes(name)) {
       newSelected = currentSelected.filter((attr) => attr !== name)
-      // Prevent empty selection
       if (newSelected.length === 0) {
-        console.log("Preventing empty selection")
         return
       }
     } else {
       newSelected = [...currentSelected, name]
     }
 
-    console.log("New selection:", newSelected)
     storeSelected(newSelected, `${locationName}/${cameraName}`)
     setSelected(newSelected)
   }
