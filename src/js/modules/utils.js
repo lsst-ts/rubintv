@@ -310,3 +310,14 @@ export function interleaveSplit(arr, n) {
   const remainder = arr.slice(chunkSize * n)
   return result.concat(remainder)
 }
+
+export async function getHistoricalData(locationName, cameraName, date) {
+  // Returns the historical data URL for a given location, camera, and date
+  const { homeUrl } = window.APP_DATA
+  const APIUrl = new URL(
+    `api/${locationName}/${cameraName}/date/${date}`,
+    homeUrl
+  )
+  const data = await simpleGet(APIUrl)
+  return data
+}

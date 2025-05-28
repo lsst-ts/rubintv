@@ -7,20 +7,15 @@ import {
   intersect,
   union,
   retrieveSelected as retrieveStoredSelection,
+  getHistoricalData,
 } from "../modules/utils"
 import { cameraType, channelDataType, metadataType } from "./componentPropTypes"
 import { ModalProvider } from "./Modal"
 
-export default function TableApp({
-  camera,
-  initialDate,
-  initialChannelData,
-  initialMetadata,
-  isHistorical,
-}) {
+export default function TableApp({ camera, initialDate, isHistorical }) {
   const [date, setDate] = useState(initialDate)
-  const [channelData, setChannelData] = useState(initialChannelData)
-  const [metadata, setMetadata] = useState(initialMetadata)
+  const [channelData, setChannelData] = useState({})
+  const [metadata, setMetadata] = useState({})
   const [filterOn, setFilterOn] = useState({
     column: "",
     value: "",
@@ -70,6 +65,30 @@ export default function TableApp({
     }
   })
 
+  useEffect(() => {
+    if (!isHistorical) {
+      return
+    }
+    getHistoricalData(locationName, camera.name, date)
+      .then((json) => {
+        console.log("Historical data received", json)
+        const data = JSON.parse(json)
+        for (const key in data) {
+          const notifier = new CustomEvent("camera", {
+            detail: {
+              datestamp: date,
+              data: data[key],
+              dataType: key,
+            },
+          })
+          window.dispatchEvent(notifier)
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching historical data:", error)
+      })
+  }, [])
+
   // Update available columns when metadata changes
   useEffect(() => {
     const newAllColumns = getAllColumnNames(
@@ -103,7 +122,6 @@ export default function TableApp({
     function handleMetadataChange(event) {
       const { data, dataType } = event.detail
       if (dataType === "metadata" && Object.entries(data).length > 0) {
-        console.log("Setting metadata", data)
         setMetadata(data)
       }
     }
@@ -267,9 +285,6 @@ TableApp.propTypes = {
   camera: cameraType,
   /** Date given when first landing on the page. */
   initialDate: PropTypes.string,
-  /**  */
-  initialChannelData: channelDataType,
-  initialMetadata: metadataType,
   /** true if this is a historical page */
   isHistorical: PropTypes.bool,
 }

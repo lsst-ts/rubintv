@@ -14,9 +14,6 @@ import { WebsocketClient } from "../modules/ws-service-client"
     siteLocation,
     locationName,
     camera = {},
-    channelData = {},
-    metadata = {},
-    perDay = {},
     nightReportLink = "",
     date = "",
     isHistorical,
@@ -52,13 +49,7 @@ import { WebsocketClient } from "../modules/ws-service-client"
 
   const tableRoot = createRoot(_getById("table"))
   tableRoot.render(
-    <TableApp
-      camera={camera}
-      initialDate={date}
-      initialChannelData={channelData}
-      initialMetadata={metadata}
-      isHistorical={isHistorical}
-    />
+    <TableApp camera={camera} initialDate={date} isHistorical={isHistorical} />
   )
 
   const perDayRoot = createRoot(_getById("per-day"))
@@ -66,7 +57,6 @@ import { WebsocketClient } from "../modules/ws-service-client"
     <PerDay
       camera={camera}
       initialDate={date}
-      initialPerDay={perDay}
       initialNRLink={nightReportLink}
     />
   )

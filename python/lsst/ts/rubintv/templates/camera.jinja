@@ -57,11 +57,6 @@
 
 {% block footer_scripts %}
   <script>
-  {% if isHistorical %}
-      window.APP_DATA.metadata = {{ metadata | tojson }}
-      window.APP_DATA.channelData = {{ channelData | tojson }}
-      window.APP_DATA.perDay = {{ perDay | tojson }}
-  {% endif %}
     window.APP_DATA.eventUrl = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}"
     window.APP_DATA.nightReportLink = {{ nr_link | tojson }}
   </script>
