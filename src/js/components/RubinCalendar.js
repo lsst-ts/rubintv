@@ -168,6 +168,10 @@ const RubinCalendar = ({
   const [calendarData, setCalendarData] = useState(initialCalendarData)
   const [dayObs, setDayObs] = useState(null)
 
+  if (Object.keys(calendarData).length === 0) {
+    return <div className="error">No historical data found.</div>
+  }
+
   const sortedYears = Object.keys(calendarData).sort((a, b) => a - b)
   const calFrame = new Calendar.Calendar(1)
   const cameraUrl = `${homeUrl}${locationName}/${camera.name}`
@@ -215,6 +219,12 @@ const RubinCalendar = ({
   }, [])
   const yearClass = (year) => {
     return year == yearToDisplay ? "selected year-title" : "year-title"
+  }
+  if (!calendarData || Object.keys(calendarData).length === 0) {
+    return <div className="loading">Loading calendar data...</div>
+  }
+  if (Object.keys(calendarData).length === 0) {
+    return <div className="no-data">No calendar data available</div>
   }
   return (
     <div>

@@ -274,3 +274,18 @@ export async function getHistoricalData(locationName, cameraName, date) {
   const data = await simpleGet(APIUrl)
   return data
 }
+
+export function getMediaProxyUrl(
+  mediaType,
+  locationName,
+  cameraName,
+  channelName,
+  filename
+) {
+  // Returns the URL for a media file (image or video) for a given location and camera
+  const { homeUrl } = window.APP_DATA
+  return new URL(
+    `event_${mediaType}/${locationName}/${cameraName}/${channelName}/${filename}`,
+    homeUrl
+  )
+}
