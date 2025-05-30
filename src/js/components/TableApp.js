@@ -9,7 +9,7 @@ import {
   retrieveSelected as retrieveStoredSelection,
   getHistoricalData,
 } from "../modules/utils"
-import { cameraType, channelDataType, metadataType } from "./componentPropTypes"
+import { cameraType } from "./componentPropTypes"
 import { ModalProvider } from "./Modal"
 
 export default function TableApp({ camera, initialDate, isHistorical }) {
@@ -65,13 +65,14 @@ export default function TableApp({ camera, initialDate, isHistorical }) {
     }
   })
 
+  // Fetch historical data if required.
+  // This effect runs only once when the component mounts.
   useEffect(() => {
     if (!isHistorical) {
       return
     }
     getHistoricalData(locationName, camera.name, date)
       .then((json) => {
-        console.log("Historical data received", json)
         const data = JSON.parse(json)
         for (const key in data) {
           const notifier = new CustomEvent("camera", {
@@ -282,9 +283,9 @@ export default function TableApp({ camera, initialDate, isHistorical }) {
   )
 }
 TableApp.propTypes = {
-  camera: cameraType,
+  camera: cameraType.isRequired,
   /** Date given when first landing on the page. */
-  initialDate: PropTypes.string,
+  initialDate: PropTypes.string.isRequired,
   /** true if this is a historical page */
   isHistorical: PropTypes.bool,
 }

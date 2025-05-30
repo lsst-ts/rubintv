@@ -13,6 +13,7 @@ export default function AboveTableRow({
   metadata,
   isHistorical,
 }) {
+  console.log("AboveTableRow rendered", camera.name, date, isHistorical)
   return (
     <div className="row">
       <h3 id="the-date">
@@ -38,7 +39,7 @@ export default function AboveTableRow({
 }
 AboveTableRow.propTypes = {
   /** the camera object */
-  cameraType: cameraType,
+  camera: cameraType,
   /** the names of all metadata columns */
   allColNames: PropTypes.arrayOf(PropTypes.string),
   /** the names of the currently selected columns to display */

@@ -264,6 +264,14 @@ export const monthNames = [
 export const ymdToDateStr = (year, month, day) =>
   `${year}-${("0" + month).slice(-2)}-${("0" + day).slice(-2)}`
 
+/**
+ *
+ * @param {string} locationName
+ * @param {string} cameraName
+ * @param {string} date
+ * @returns {Promise<string>} - Returns encoded json string of historical
+ * data for a given location, camera, and date.
+ */
 export async function getHistoricalData(locationName, cameraName, date) {
   // Returns the historical data URL for a given location, camera, and date
   const { homeUrl } = window.APP_DATA
@@ -275,6 +283,16 @@ export async function getHistoricalData(locationName, cameraName, date) {
   return data
 }
 
+/**
+ *
+ * @param {string} mediaType
+ * @param {string} locationName
+ * @param {string} cameraName
+ * @param {string} channelName
+ * @param {string} filename
+ * @returns {URL} - Returns the URL for a media file (image or video) for a given
+ * location and camera
+ */
 export function getMediaProxyUrl(
   mediaType,
   locationName,

@@ -32,6 +32,8 @@ export default function AllSky({
     }
   }, [])
 
+  // Fetch historical data if required.
+  // This will only run once when the component mounts.
   useEffect(() => {
     async function fetchHistoricalData() {
       if (isHistorical) {
