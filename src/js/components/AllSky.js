@@ -60,20 +60,17 @@ export default function AllSky({
     <>
       <h3 className="date">
         <span>{date}</span>
-        {isHistorical ? (
-          <span className="historical"> (historical data)</span>
-        ) : (
-          <span className="current"> (current data)</span>
-        )}
       </h3>
       <div className="columns">
         {isHistorical ? (
-          <RubinCalendar
-            selectedDate={date}
-            initialCalendarData={calendar}
-            camera={camera}
-            locationName={locationName}
-          />
+          <section className="calendar half-width">
+            <RubinCalendar
+              selectedDate={date}
+              initialCalendarData={calendar}
+              camera={camera}
+              locationName={locationName}
+            />
+          </section>
         ) : (
           <AllSkyStill still={perDayData.stills} locationName={locationName} />
         )}
