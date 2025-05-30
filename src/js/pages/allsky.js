@@ -56,8 +56,8 @@ import { _getById } from "../modules/utils.js"
     const calendarRoot = createRoot(_getById("calendar"))
     calendarRoot.render(
       <RubinCalendar
-        date={date}
-        initialCalendar={calendar}
+        selectedDate={date}
+        initialCalendarData={calendar}
         camera={camera}
         locationName={locationName}
       />
