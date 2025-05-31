@@ -2,7 +2,7 @@ import React from "react"
 import { createRoot } from "react-dom/client"
 import AllSky from "../components/AllSky.js"
 import { WebsocketClient } from "../modules/ws-service-client.js"
-import { _getById } from "../modules/utils.js"
+import { _getById } from "../modules/utils"
 ;(function () {
   if (window.APP_DATA.historicalBusy) {
     return

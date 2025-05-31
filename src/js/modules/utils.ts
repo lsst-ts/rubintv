@@ -1,41 +1,18 @@
 import { gunzipSync } from "fflate"
+import { homeUrl, imageRoot } from "js/config"
 
-/**
- * @param {any[]} arrayA
- * @param {any[]} arrayB
- */
-export function intersect(arrayA, arrayB) {
-  if (!Array.isArray(arrayA) || !Array.isArray(arrayB)) {
-    throw new TypeError("Both arguments must be arrays", arrayA, arrayB)
-  }
-  if (arrayA.length === 0 || arrayB.length === 0) {
-    return []
-  }
+export function intersect<T>(arrayA: T[], arrayB: T[]): T[] {
   return arrayA.filter((el) => arrayB.includes(el))
 }
 
-/**
- * @param {any[]} arrayA
- * @param {any[]} arrayB
- */
-export function union(arrayA, arrayB) {
-  if (!Array.isArray(arrayA) || !Array.isArray(arrayB)) {
-    throw new TypeError("Both arguments must be arrays", arrayA, arrayB)
-  }
-  if (arrayA.length === 0) {
-    return arrayB
-  }
-  if (arrayB.length === 0) {
-    return arrayA
-  }
+export function union<T>(arrayA: T[], arrayB: T[]): T[] {
   return arrayA.concat(arrayB.filter((el) => !arrayA.includes(el)))
 }
 
-/**
- * @param {RequestInfo | URL} url
- * @param {Object} message
- */
-export async function simplePost(url, message = {}) {
+export async function simplePost(
+  url: RequestInfo | URL,
+  message: object = {}
+): Promise<string> {
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -50,10 +27,10 @@ export async function simplePost(url, message = {}) {
   return data
 }
 
-/**
- * @param {RequestInfo | URL} url
- */
-export async function simpleGet(url, params = {}) {
+export async function simpleGet(
+  url: string | URL,
+  params: Record<string, string> = {}
+): Promise<string> {
   const urlObj = new URL(url)
   Object.entries(params).forEach(([key, value]) => {
     urlObj.searchParams.append(key, value)
@@ -66,18 +43,14 @@ export async function simpleGet(url, params = {}) {
   return data
 }
 
-/**
- * @param {string} tagName
- * @param {string} className
- */
-export function _elWithClass(tagName, className) {
+export function _elWithClass(tagName: string, className: string): HTMLElement {
   return _elWithAttrs(tagName, { class: className })
 }
 
-/**
- * @param {string} tagName
- */
-export function _elWithAttrs(tagName, attrsObj = {}) {
+export function _elWithAttrs(
+  tagName: string,
+  attrsObj: Record<string, string> = {}
+): HTMLElement {
   const el = document.createElement(tagName)
   Object.entries(attrsObj).forEach(([attr, value]) => {
     switch (attr) {
@@ -93,18 +66,14 @@ export function _elWithAttrs(tagName, attrsObj = {}) {
   return el
 }
 
-/**
- * @param {string} idStr
- */
-export function _getById(idStr) {
+export function _getById(idStr: string): HTMLElement | null {
   return document.getElementById(idStr)
 }
 
-/**
- * @param {{ [x: string]: string | number }} attributes
- * @param {string} attrToCheck
- */
-export function indicatorForAttr(attributes, attrToCheck) {
+export function indicatorForAttr(
+  attributes: Record<string, string>,
+  attrToCheck: string
+): string {
   // indicators are in with the attributes. they share the name of the
   // attribute they belong to, but begin with an underscore
   const indicator = `_${attrToCheck}`
@@ -117,25 +86,36 @@ export function indicatorForAttr(attributes, attrToCheck) {
   return flag
 }
 
-export function sanitiseString(str) {
+export function sanitiseString(str: string): string {
   // Substitutes spaces and hyphens are exchanged for underscores.
   // Any non-word characters (any but a-z, A-Z, _) are removed.
   // Capital letters are made small.
-  let sanitised = str.replaceAll(/[\s-]/g, "_")
-  sanitised = sanitised.replaceAll(/[\W]/g, "")
+  let sanitised = str.replace(/[\s-]/g, "_")
+  sanitised = sanitised.replace(/[\W]/g, "")
   return sanitised.toLowerCase()
 }
 
+interface ReplaceOptions {
+  siteLoc?: string
+  controller?: string
+}
+
 export function replaceInString(
-  link,
-  dayObs,
-  seqNum,
-  { siteLoc = "", controller = "" } = {}
-) {
-  const siteLocToDomain = (siteLoc) => {
+  link: string,
+  dayObs: string,
+  seqNum: string,
+  { siteLoc = "", controller = "" }: ReplaceOptions = {}
+): string {
+  interface SiteLocMap {
+    [key: string]: string
+    summit: string
+    base: string
+  }
+
+  const siteLocToDomain = (siteLoc: keyof SiteLocMap | string): string => {
     // Maps site location to domain
     // can only be summit or base
-    const siteLocMap = {
+    const siteLocMap: SiteLocMap = {
       summit: "cp",
       base: "ls",
     }
@@ -153,8 +133,11 @@ export function replaceInString(
 }
 
 // A helper function to mimic Jinja2's groupby
-export function groupBy(array, keyFunction) {
-  const obj = {}
+export function groupBy<T>(
+  array: T[],
+  keyFunction: (item: T) => string
+): [string, T[]][] {
+  const obj: { [key: string]: T[] } = {}
   if (!array || array.length === 0) {
     return []
   }
@@ -170,7 +153,10 @@ export function groupBy(array, keyFunction) {
 
 export const STORAGE_VERSION = "1"
 
-export function retrieveStoredSelection(storageKey, version = STORAGE_VERSION) {
+export function retrieveStoredSelection(
+  storageKey: string,
+  version = STORAGE_VERSION
+) {
   const stored = localStorage.getItem(storageKey)
   if (!stored) return null
 
@@ -195,7 +181,11 @@ export function retrieveStoredSelection(storageKey, version = STORAGE_VERSION) {
   }
 }
 
-export function storeSelected(columns, cameraName, version = STORAGE_VERSION) {
+export function storeSelected(
+  columns: string[],
+  cameraName: string,
+  version = STORAGE_VERSION
+) {
   if (!Array.isArray(columns)) return
   localStorage.setItem(
     cameraName,
@@ -206,7 +196,7 @@ export function storeSelected(columns, cameraName, version = STORAGE_VERSION) {
   )
 }
 
-export function getWebSockURL(name) {
+export function getWebSockURL(name: string): string {
   const protocol = window.location.protocol
   const wsProtocol = protocol === "https:" ? "wss:" : "ws:"
   const hostname = window.location.host
@@ -214,7 +204,7 @@ export function getWebSockURL(name) {
   return `${wsProtocol}//${hostname}/${appName}/${name}/`
 }
 
-export function getStrHashCode(str) {
+export function getStrHashCode(str: string): number {
   let hash = 0,
     i = 0,
     len = str.length
@@ -224,7 +214,7 @@ export function getStrHashCode(str) {
   return hash
 }
 
-export const decodeUnpackWSPayload = (compressed) => {
+export const decodeUnpackWSPayload = (compressed: string): any => {
   let data
   try {
     // Decode Base64 string to Uint8Array
@@ -250,7 +240,7 @@ export const decodeUnpackWSPayload = (compressed) => {
   return data
 }
 
-export const toTimeString = (period) => {
+export const toTimeString = (period: number): string => {
   /*  Takes a length of time in ms and converts to string `"HH:MM:SS"`.
       This allows for negative times to compensate for any bug that
       reckons that past events are yet to happen.
@@ -271,7 +261,7 @@ export const toTimeString = (period) => {
   return period < 0 ? `-${timeString}` : timeString
 }
 
-export function getBaseFromEventUrl(url) {
+export function getBaseFromEventUrl(url: string): string {
   let baseImgUrl = url.split("/").slice(0, -1).join("/")
   if (!baseImgUrl.endsWith("/")) {
     baseImgUrl += "/"
@@ -279,14 +269,14 @@ export function getBaseFromEventUrl(url) {
   return baseImgUrl
 }
 
-export function getMediaType(ext) {
+export function getMediaType(ext: string): "video" | "image" {
   if (["mp4", "mov"].includes(ext)) {
     return "video"
   }
   return "image" // default to image
 }
 
-export const monthNames = [
+export const monthNames: readonly string[] = [
   "January",
   "February",
   "March",
@@ -301,28 +291,18 @@ export const monthNames = [
   "December",
 ]
 
-/**
- * Converts numerical year, month, and day to a string in the format YYYY-MM-DD.
- * The month and day are zero-padded to two digits.
- * @param {number} year
- * @param {number} month
- * @param {number} day
- * @returns {string} - A string in the format YYYY-MM-DD
- */
-export const ymdToDateStr = (year, month, day) =>
-  `${year}-${("0" + month).slice(-2)}-${("0" + day).slice(-2)}`
+export const ymdToDateStr = (
+  year: number,
+  month: number,
+  day: number
+): string => `${year}-${("0" + month).slice(-2)}-${("0" + day).slice(-2)}`
 
-/**
- *
- * @param {string} locationName
- * @param {string} cameraName
- * @param {string} date
- * @returns {Promise<string>} - Returns encoded json string of historical
- * data for a given location, camera, and date.
- */
-export async function getHistoricalData(locationName, cameraName, date) {
-  // Returns the historical data URL for a given location, camera, and date
-  const { homeUrl } = window.APP_DATA
+export async function getHistoricalData(
+  locationName: string,
+  cameraName: string,
+  date: string
+): Promise<string> {
+  // Fetches historical data for a given location, camera, and date.
   const apiUrl = new URL(
     `api/${locationName}/${cameraName}/date/${date}`,
     homeUrl
@@ -331,28 +311,23 @@ export async function getHistoricalData(locationName, cameraName, date) {
   return data
 }
 
-/**
- *
- * @param {string} mediaType
- * @param {string} locationName
- * @param {string} cameraName
- * @param {string} channelName
- * @param {string} filename
- * @returns {URL} - Returns the URL for a media file (image or video) for a given
- * location and camera
- */
 export function getMediaProxyUrl(
-  mediaType,
-  locationName,
-  cameraName,
-  channelName,
-  filename
-) {
-  // Returns the URL for a media file (image or video) for a given location name
+  mediaType: string,
+  locationName: string,
+  cameraName: string,
+  channelName: string,
+  filename: string
+): URL {
+  // Constructs a URL for a media file (image or video) for a given location name,
   // camera name, channel name, and filename.
-  const { homeUrl } = window.APP_DATA
   return new URL(
     `event_${mediaType}/${locationName}/${cameraName}/${channelName}/${filename}`,
     homeUrl
   )
+}
+
+export const getImageAssetUrl = (path: string): string => {
+  const [base, queriesMaybe] = imageRoot.split("?")
+  const queries = queriesMaybe ? "?" + queriesMaybe : ""
+  return new URL(path + queries, base + "/").toString()
 }

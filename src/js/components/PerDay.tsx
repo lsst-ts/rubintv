@@ -1,6 +1,71 @@
 import React, { useState, useEffect } from "react"
-import PropTypes from "prop-types"
-import { cameraType, eventType } from "./componentPropTypes"
+import { homeUrl } from "../config"
+import { getImageAssetUrl } from "../modules/utils"
+
+interface Channel {
+  name: string
+  label?: string
+  title: string
+  icon: string
+  colour: string
+}
+
+interface ExtraButton {
+  name: string
+  title: string
+  linkURL: string
+  logo: string
+  text_colour?: string
+  text_shadow?: boolean
+}
+
+interface Camera {
+  name: string
+  channels: Channel[]
+  extra_buttons: ExtraButton[]
+  night_report_label: string
+}
+
+interface Event {
+  filename: string
+  // Add other event properties as needed
+}
+
+interface ButtonProps {
+  clsName: string
+  url: string
+  bckCol?: string
+  iconUrl?: string
+  logoURL?: string
+  label: string
+  date?: string
+  textColour?: string
+  textShadow?: boolean
+}
+
+interface PerDayChannelsProps {
+  locationName: string
+  camera: Camera
+  date: string
+  perDay: Record<string, Event>
+  isHistorical: boolean
+}
+
+interface NightReportLinkProps {
+  locationName: string
+  camera: Camera
+  date: string
+  nightReportLink: string
+}
+
+interface PerDayProps {
+  locationName: string
+  camera: Camera
+  initialDate: string
+  initialPerDay: Record<string, Event>
+  initialNRLink: string
+  isHistorical: boolean
+}
 
 function Button({
   clsName,
@@ -12,7 +77,7 @@ function Button({
   date,
   textColour,
   textShadow,
-}) {
+}: ButtonProps) {
   const style = {
     backgroundColor: bckCol,
     color: textColour,
@@ -30,32 +95,15 @@ function Button({
     </a>
   )
 }
-Button.propTypes = {
-  clsName: PropTypes.string,
-  url: PropTypes.string,
-  bckCol: PropTypes.string,
-  iconUrl: PropTypes.object,
-  logoURL: PropTypes.object,
-  label: PropTypes.string,
-  date: PropTypes.string,
-  textColour: PropTypes.string,
-  textShadow: PropTypes.string,
-}
 
-function PerDayChannels({ camera, date, perDay }) {
-  const {
-    homeUrl,
-    imagesUrl: imageRoot,
-    isHistorical,
-    locationName,
-  } = window.APP_DATA
+function PerDayChannels({
+  locationName,
+  camera,
+  date,
+  perDay,
+  isHistorical,
+}: PerDayChannelsProps) {
   const channels = camera.channels
-
-  const getImageURL = (path) => {
-    const [base, queriesMaybe] = imageRoot.split("?")
-    const queries = queriesMaybe ? "?" + queriesMaybe : ""
-    return new URL(path + queries, base + "/")
-  }
 
   return (
     perDay &&
@@ -71,7 +119,7 @@ function PerDayChannels({ camera, date, perDay }) {
               const filename = event.filename
               const url = `${homeUrl}event_video/${locationName}/${camera.name}/${channelName}/${filename}`
               const icon = channel.icon === "" ? channelName : channel.icon
-              const iconUrl = getImageURL(`${icon}.svg`)
+              const iconUrl = getImageAssetUrl(`${icon}.svg`)
               return (
                 <li className="channel" key={channelName}>
                   <Button
@@ -88,12 +136,12 @@ function PerDayChannels({ camera, date, perDay }) {
           {!isHistorical &&
             camera.extra_buttons.map(
               ({ name, title, linkURL, logo, text_colour, text_shadow }) => {
-                const logoURL = getImageURL(`logos/${logo}`)
+                const logoURL = getImageAssetUrl(`logos/${logo}`)
                 return (
                   <li className="channel" key={name}>
                     <Button
                       clsName={name}
-                      url={new URL(linkURL, location.href + "/")}
+                      url={new URL(linkURL, location.href + "/").toString()}
                       logoURL={logoURL}
                       label={title}
                       textColour={text_colour}
@@ -108,23 +156,16 @@ function PerDayChannels({ camera, date, perDay }) {
     )
   )
 }
-PerDayChannels.propTypes = {
-  /** The current camera.
-   */
-  camera: cameraType,
-  /** perDay is an object with channel names as keys and single events as
-   * values.
-   */
-  perDay: PropTypes.objectOf(eventType),
-  /** The chosen date. */
-  date: PropTypes.string,
-}
 
-function NightReportLink({ camera, date, nightReportLink }) {
+function NightReportLink({
+  locationName,
+  camera,
+  date,
+  nightReportLink,
+}: NightReportLinkProps) {
   if (nightReportLink === "") {
     return null
   }
-  const { homeUrl, locationName } = window.APP_DATA
 
   let link = `${homeUrl}${locationName}/${camera.name}/night_report/${date}`
   let label = `${camera.night_report_label} for ${date}`
@@ -143,26 +184,26 @@ function NightReportLink({ camera, date, nightReportLink }) {
     </div>
   )
 }
-NightReportLink.propTypes = {
-  camera: cameraType,
-  date: PropTypes.string,
-  nightReportLink: PropTypes.string,
-}
 
-export default function PerDay({ camera, initialDate, initialNRLink }) {
+export default function PerDay({
+  locationName,
+  camera,
+  initialDate,
+  initialNRLink,
+  isHistorical,
+}: PerDayProps) {
   const [date, setDate] = useState(initialDate)
   const [nightReportLink, setNightReportLink] = useState(initialNRLink)
   const [perDay, setPerDay] = useState({})
 
   useEffect(() => {
-    function handleCameraEvent(event) {
+    function handleCameraEvent(event: CustomEvent) {
       const { datestamp, data, dataType } = event.detail
       if (dataType !== "perDay") {
         return
       }
 
       if (datestamp && datestamp !== date) {
-        window.APP_DATA.date = datestamp
         setDate(datestamp)
         setPerDay({})
         setNightReportLink("")
@@ -174,29 +215,29 @@ export default function PerDay({ camera, initialDate, initialNRLink }) {
         setNightReportLink("current")
       }
     }
-    window.addEventListener("camera", handleCameraEvent)
+    window.addEventListener("camera", handleCameraEvent as EventListener)
 
     // Cleanup the event listener on component unmount
     return () => {
-      window.removeEventListener("camera", handleCameraEvent)
+      window.removeEventListener("camera", handleCameraEvent as EventListener)
     }
   }, [date]) // Only reattach the event listener if the date changes
 
   return (
     <>
-      <PerDayChannels camera={camera} date={date} perDay={perDay} />
+      <PerDayChannels
+        locationName={locationName}
+        camera={camera}
+        date={date}
+        perDay={perDay}
+        isHistorical={isHistorical}
+      />
       <NightReportLink
+        locationName={locationName}
         camera={camera}
         date={date}
         nightReportLink={nightReportLink}
       />
     </>
   )
-}
-PerDay.propTypes = {
-  camera: cameraType,
-  initialPerDay: PropTypes.objectOf(eventType),
-  initialDate: PropTypes.string,
-  /** True if a night report event exists for this date. */
-  initialNRLink: PropTypes.string,
 }
