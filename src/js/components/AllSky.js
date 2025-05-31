@@ -13,8 +13,8 @@ export default function AllSky({
   const [date, setDate] = useState(window.APP_DATA.date)
   const [perDayData, setPerDayData] = useState({ stills: {}, movies: {} })
   useEffect(() => {
-    window.addEventListener("camera", (message) => {
-      const { datestamp, data, dataType } = message.detail
+    function handleDataChange(event) {
+      const { datestamp, data, dataType } = event.detail
       if (dataType !== "perDay") {
         return
       }
@@ -26,9 +26,10 @@ export default function AllSky({
         console.log("Updating perDayData", prevData, data)
         return { ...prevData, ...data }
       })
-    })
+    }
+    window.addEventListener("camera", handleDataChange)
     return () => {
-      window.removeEventListener("camera", (message) => {})
+      window.removeEventListener("camera", handleDataChange)
     }
   }, [])
 

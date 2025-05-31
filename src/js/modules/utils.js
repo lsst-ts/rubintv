@@ -275,11 +275,11 @@ export const ymdToDateStr = (year, month, day) =>
 export async function getHistoricalData(locationName, cameraName, date) {
   // Returns the historical data URL for a given location, camera, and date
   const { homeUrl } = window.APP_DATA
-  const APIUrl = new URL(
+  const apiUrl = new URL(
     `api/${locationName}/${cameraName}/date/${date}`,
     homeUrl
   )
-  const data = await simpleGet(APIUrl)
+  const data = await simpleGet(apiUrl)
   return data
 }
 
