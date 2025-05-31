@@ -866,6 +866,8 @@ admin_for:
     - kbechtol
     - bechtol
     - ktl
+    - jfcrenshaw
+    - bpolen
 
   summit:
     - mfl
@@ -880,6 +882,8 @@ admin_for:
     - bechtol
     - ktl
     - tribeiro
+    - jfcrenshaw
+    - bpolen
 
   base: ["*"]
   tucson: ["*"]
