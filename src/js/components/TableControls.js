@@ -101,6 +101,7 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
       setSelected(newSelected)
     }
 
+  console.log("TableControls: allColNames length", allColNames.length)
   let numControlColumns = 2
   if (allColNames.length > 45) {
     numControlColumns = 3
@@ -109,28 +110,29 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
     columnCount: numControlColumns,
   }
 
-  const panelClass = !controlsOpen ? "table-panel" : "table-panel open"
+  const panelContainerClass = !controlsOpen
+    ? "table-controls-container"
+    : "table-controls-container open"
 
   return (
-    <>
-      <div className={panelClass}>
-        <button
-          className="table-control-button"
-          onClick={toggleControls}
-          onKeyDown={handleKeyDown}
-          title="Add/Remove Columns"
-          aria-label="Add/Remove Columns"
-          aria-expanded={controlsOpen}
-          aria-controls="table-controls"
-          aria-haspopup="true"
-        >
-          Add/Remove Columns
-        </button>
-
+    <div className={panelContainerClass} id="table-controls">
+      <button
+        className="table-control-button"
+        onClick={toggleControls}
+        onKeyDown={handleKeyDown}
+        title="Add/Remove Columns"
+        aria-label="Add/Remove Columns"
+        aria-expanded={controlsOpen}
+        aria-controls="table-controls"
+        aria-haspopup="true"
+      >
+        Add/Remove Columns
+      </button>
+      <div className="table-panel">
         {controlsOpen && (
-          <div className="table-controls" style={gridStyle}>
+          <div className="table-options" style={gridStyle}>
             {allColNames.map((title) => (
-              <div className="table-control" key={title}>
+              <div className="table-option" key={title}>
                 <label htmlFor={title}>
                   <input
                     type="checkbox"
@@ -148,7 +150,7 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
           </div>
         )}
       </div>
-    </>
+    </div>
   )
 }
 TableControls.propTypes = {
