@@ -173,6 +173,19 @@ export function retrieveSelected(cameraName) {
   return retrieved && JSON.parse(retrieved)
 }
 
+export const STORAGE_VERSION = "1.0"
+
+export function retrieveStoredSelection(cameraName, version = STORAGE_VERSION) {
+  const storageKey = version ? `${cameraName}_v${version}` : cameraName
+  const retrieved = localStorage.getItem(storageKey)
+  return retrieved ? JSON.parse(retrieved) : null
+}
+
+export function storeSelected(selected, cameraName, version = STORAGE_VERSION) {
+  const storageKey = version ? `${cameraName}_v${version}` : cameraName
+  localStorage.setItem(storageKey, JSON.stringify(selected))
+}
+
 export function getWebSockURL(name) {
   const protocol = window.location.protocol
   const wsProtocol = protocol === "https:" ? "wss:" : "ws:"

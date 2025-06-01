@@ -3,6 +3,7 @@ import PropTypes from "prop-types"
 import Clock, { TimeSinceLastImageClock } from "./Clock"
 import { _getById } from "../modules/utils"
 import { cameraType, metadataType } from "./componentPropTypes"
+import { saveColumnSelection } from "../modules/columnStorage"
 
 export default function AboveTableRow({
   camera,
@@ -83,22 +84,22 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
     setControlsOpen((controlsOpen) => !controlsOpen)
   }
 
-  const handleCheckboxChange = (name) => {
-    const currentSelected = Array.isArray(selected) ? [...selected] : []
+    const handleCheckboxChange = (name) => {
+      const currentSelected = Array.isArray(selected) ? [...selected] : []
 
-    let newSelected
-    if (currentSelected.includes(name)) {
-      newSelected = currentSelected.filter((attr) => attr !== name)
-      if (newSelected.length === 0) {
-        return
+      let newSelected
+      if (currentSelected.includes(name)) {
+        newSelected = currentSelected.filter((attr) => attr !== name)
+        if (newSelected.length === 0) {
+          return
+        }
+      } else {
+        newSelected = [...currentSelected, name]
       }
-    } else {
-      newSelected = [...currentSelected, name]
-    }
 
-    storeSelected(newSelected, `${locationName}/${cameraName}`)
-    setSelected(newSelected)
-  }
+      saveColumnSelection(newSelected, locationName, cameraName)
+      setSelected(newSelected)
+    }
 
   let numControlColumns = 2
   if (allColNames.length > 45) {
@@ -165,10 +166,6 @@ TableControls.propTypes = {
   metadata: metadataType,
   /** true if this is a historical page */
   isHistorical: PropTypes.bool,
-}
-
-function storeSelected(selected, cameraName) {
-  localStorage[cameraName] = JSON.stringify(selected)
 }
 
 export function JumpButtons() {
