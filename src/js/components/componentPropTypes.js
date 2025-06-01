@@ -12,6 +12,7 @@ export const metadatumType = PropTypes.oneOfType([
   PropTypes.string,
   PropTypes.object,
   PropTypes.bool,
+  PropTypes.array,
 ])
 
 /** metadata is in key-value pairs */

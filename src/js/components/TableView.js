@@ -24,10 +24,15 @@ function DictMetadata({ data, seqNum, columnName }) {
   if (typeof data !== "object" || data === null) {
     return null
   }
+  if (Array.isArray(data)) {
+    console.warn(
+      `DictMetadata received an array for seqNum ${seqNum} and columnName ${columnName}. This is unexpected.`
+    )
+  }
   return <FoldoutCell seqNum={seqNum} columnName={columnName} data={data} />
 }
 DictMetadata.propTypes = {
-  data: PropTypes.object,
+  data: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
   seqNum: PropTypes.string,
   columnName: PropTypes.string,
 }
@@ -442,7 +447,7 @@ function FoldoutCell({ seqNum, columnName, data }) {
 FoldoutCell.propTypes = {
   seqNum: PropTypes.string,
   columnName: PropTypes.string,
-  data: PropTypes.object,
+  data: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
 }
 
 function handleCopyButton(date, seqNum, template) {
