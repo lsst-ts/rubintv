@@ -101,7 +101,6 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
       setSelected(newSelected)
     }
 
-  console.log("TableControls: allColNames length", allColNames.length)
   let numControlColumns = 2
   if (allColNames.length > 45) {
     numControlColumns = 3
