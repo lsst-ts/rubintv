@@ -911,6 +911,7 @@ redis_detectors:
     name: aosStep1b
   - key: CLUSTER_STATUS_SPAREWORKERS_SET_0
     name: spareWorkers
-redis_cluster_text:
   - key: CLUSTER_STATUS_OTHER_QUEUES
     name: otherQueues
+  - key: test_stream
+    name: test_stream

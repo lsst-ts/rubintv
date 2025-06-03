@@ -49,21 +49,14 @@ class DetectorStatusHandler:
     def __init__(
         self,
         redis_client: redis.Redis,
-        mapped_keys: list[dict[str, str]],
-        text_keys: list[dict[str, str]],
+        redis_keys: list[dict[str, str]],
     ) -> None:
         self.redis_client = redis_client
         # Convert keys to stream names
-        self.stream_keys = {
-            f"stream:{d['key']}": d["name"] for d in mapped_keys + text_keys
-        }
-        self.mapped_keys = {d["key"]: d["name"] for d in mapped_keys}
-        self.text_keys = {d["key"]: d["name"] for d in text_keys}
+        self.stream_keys = {f"stream:{d['key']}": d["name"] for d in redis_keys}
         logger.info(
             "Initializing DetectorStatusHandler with streams:",
             stream_keys=self.stream_keys,
-            mapped_keys=self.mapped_keys,
-            text_keys=self.text_keys,
         )
         self._running = False
         self.reader: StreamReader[DecodedRedisValue] | None = None

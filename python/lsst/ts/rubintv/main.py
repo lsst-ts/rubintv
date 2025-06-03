@@ -68,8 +68,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     if redis_client:
         redis_subscriber = DetectorStatusHandler(
             redis_client=redis_client,
-            mapped_keys=models.redis_detectors,
-            text_keys=models.redis_cluster_text,
+            redis_keys=models.redis_detectors,
         )
         redis_task = asyncio.create_task(redis_subscriber.run_async())
         app.state.redis_client = redis_client

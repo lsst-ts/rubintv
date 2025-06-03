@@ -2,6 +2,7 @@ import asyncio
 import base64
 import gzip
 import json
+import time
 from typing import Any, Mapping
 from uuid import UUID
 
@@ -52,24 +53,39 @@ async def notify_clients(
 async def send_notification(
     websocket: WebSocket, service: Service, messageType: MessageType, payload: Any
 ) -> None:
+    start_time = time.time()
     datestamp = get_current_day_obs().isoformat()
-    if messageType is MessageType.CAMERA_PD_BACKDATED and payload:
-        # use the day_obs in the backdated event, rather than today
-        datestamp = payload.values()[0].get("day_obs", datestamp)
+
     try:
         payload_string = json.dumps(payload)
         zipped = gzip.compress(bytes(payload_string, "utf-8"))
         encoded = base64.b64encode(zipped).decode("utf-8")
-        await websocket.send_json(
-            {
-                "service": service.value,
-                "dataType": messageType.value,
-                "payload": encoded,
-                "datestamp": datestamp,
-            }
-        )
+
+        message = {
+            "service": service.value,
+            "dataType": messageType.value,
+            "payload": encoded,
+            "datestamp": datestamp,
+        }
+
+        await websocket.send_json(message)
+
+        process_time = time.time() - start_time
+        if process_time > 0.1:  # Log slow operations
+            logger.warning(
+                "Slow websocket notification",
+                process_time=process_time,
+                payload_size=len(payload_string),
+                service=service.value,
+            )
+
     except Exception as e:
-        logger.warning(f"Failed to send notification to {websocket}: {str(e)}")
+        logger.warning(
+            "Failed to send notification",
+            error=str(e),
+            service=service.value,
+            payload_size=len(str(payload)) if payload else 0,
+        )
         await remove_client_from_services(websocket_to_client.get(websocket, None))
 
 
