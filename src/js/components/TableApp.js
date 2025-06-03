@@ -2,17 +2,18 @@ import React, { useState, useEffect, useCallback } from "react"
 import PropTypes from "prop-types"
 import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
+import { _getById, union } from "../modules/utils"
 import {
   _getById,
   union,
   getHistoricalData,
 } from "../modules/utils"
-import { cameraType } from "./componentPropTypes"
-import { ModalProvider } from "./Modal"
 import {
   loadColumnSelection,
   saveColumnSelection,
 } from "../modules/columnStorage"
+import { cameraType, channelDataType, metadataType } from "./componentPropTypes"
+import { ModalProvider } from "./Modal"
 
 export default function TableApp({ 
   camera, 
