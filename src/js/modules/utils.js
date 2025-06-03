@@ -168,22 +168,41 @@ export function groupBy(array, keyFunction) {
   return Object.entries(obj)
 }
 
-export function retrieveSelected(cameraName) {
-  const retrieved = localStorage.getItem(cameraName)
-  return retrieved && JSON.parse(retrieved)
-}
-
-export const STORAGE_VERSION = "1.0"
+export const STORAGE_VERSION = "1"
 
 export function retrieveStoredSelection(cameraName, version = STORAGE_VERSION) {
-  const storageKey = version ? `${cameraName}_v${version}` : cameraName
-  const retrieved = localStorage.getItem(storageKey)
-  return retrieved ? JSON.parse(retrieved) : null
+  const stored = localStorage.getItem(cameraName)
+  if (!stored) return null
+
+  try {
+    // Check if we have versioned data
+    const data = JSON.parse(stored)
+    if (typeof data === "object" && data.version && data.columns) {
+      // We have versioned data
+      return data.columns
+    }
+    // We have legacy unversioned data (just an array)
+    // Store it in the new format and return the columns
+    const columns = Array.isArray(data) ? data : null
+    if (columns) {
+      storeSelected(columns, cameraName, version)
+      return columns
+    }
+    return null
+  } catch (e) {
+    return null
+  }
 }
 
-export function storeSelected(selected, cameraName, version = STORAGE_VERSION) {
-  const storageKey = version ? `${cameraName}_v${version}` : cameraName
-  localStorage.setItem(storageKey, JSON.stringify(selected))
+export function storeSelected(columns, cameraName, version = STORAGE_VERSION) {
+  if (!Array.isArray(columns)) return
+  localStorage.setItem(
+    cameraName,
+    JSON.stringify({
+      version,
+      columns,
+    })
+  )
 }
 
 export function getWebSockURL(name) {

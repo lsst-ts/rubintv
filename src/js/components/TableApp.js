@@ -4,7 +4,6 @@ import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
 import {
   _getById,
-  intersect,
   union,
   getHistoricalData,
 } from "../modules/utils"

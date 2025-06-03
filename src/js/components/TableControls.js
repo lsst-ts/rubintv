@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react"
 import PropTypes from "prop-types"
 import Clock, { TimeSinceLastImageClock } from "./Clock"
-import { _getById } from "../modules/utils"
+import { _getById, storeSelected, STORAGE_VERSION } from "../modules/utils"
 import { cameraType, metadataType } from "./componentPropTypes"
 import { saveColumnSelection } from "../modules/columnStorage"
 
@@ -10,6 +10,7 @@ export default function AboveTableRow({
   allColNames,
   selected,
   setSelected,
+  availableColumns,
   date,
   metadata,
   isHistorical,
@@ -24,6 +25,7 @@ export default function AboveTableRow({
         allColNames={allColNames}
         selected={selected}
         setSelected={setSelected}
+        availableColumns={availableColumns}
       />
       <DownloadMetadataButton
         date={date}
@@ -39,7 +41,7 @@ export default function AboveTableRow({
 }
 AboveTableRow.propTypes = {
   /** the camera object */
-  camera: cameraType,
+  camera: cameraType.isRequired,
   /** the names of all metadata columns */
   allColNames: PropTypes.arrayOf(PropTypes.string),
   /** the names of the currently selected columns to display */
@@ -54,7 +56,13 @@ AboveTableRow.propTypes = {
   isHistorical: PropTypes.bool,
 }
 
-function TableControls({ cameraName, allColNames, selected, setSelected }) {
+function TableControls({
+  cameraName,
+  allColNames,
+  selected,
+  setSelected,
+  availableColumns,
+}) {
   const [controlsOpen, setControlsOpen] = useState(false)
 
   const locationName = window.APP_DATA.locationName
@@ -97,9 +105,9 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
         newSelected = [...currentSelected, name]
       }
 
-      saveColumnSelection(newSelected, locationName, cameraName)
-      setSelected(newSelected)
-    }
+    saveColumnSelection(newSelected, locationName, cameraName)
+    setSelected(newSelected)
+  }
 
   let numControlColumns = 2
   if (allColNames.length > 45) {
@@ -112,6 +120,32 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
   const panelContainerClass = !controlsOpen
     ? "table-controls-container"
     : "table-controls-container open"
+
+  const renderCheckbox = (title) => {
+    const isAvailable = availableColumns.includes(title)
+    const isSelected = selected.includes(title)
+
+    return (
+      <div
+        className={`table-option${!isAvailable ? " unavailable" : ""}`}
+        key={title}
+      >
+        <label htmlFor={title}>
+          <input
+            type="checkbox"
+            id={title}
+            name={title}
+            value={1}
+            checked={isSelected}
+            onChange={() => handleCheckboxChange(title)}
+            onKeyDown={handleKeyDown}
+            disabled={!isAvailable}
+          />
+          {title}
+        </label>
+      </div>
+    )
+  }
 
   return (
     <div className={panelContainerClass} id="table-controls">
@@ -130,22 +164,10 @@ function TableControls({ cameraName, allColNames, selected, setSelected }) {
       <div className="table-panel">
         {controlsOpen && (
           <div className="table-options" style={gridStyle}>
-            {allColNames.map((title) => (
-              <div className="table-option" key={title}>
-                <label htmlFor={title}>
-                  <input
-                    type="checkbox"
-                    id={title}
-                    name={title}
-                    value={1}
-                    checked={selected.includes(title)}
-                    onChange={() => handleCheckboxChange(title)}
-                    onKeyDown={handleKeyDown}
-                  />
-                  {title}
-                </label>
-              </div>
-            ))}
+            {/* Show both available and unavailable selected columns */}
+            {Array.from(new Set([...selected, ...allColNames]))
+              .toSorted((a, b) => a.localeCompare(b))
+              .map(renderCheckbox)}
           </div>
         )}
       </div>
