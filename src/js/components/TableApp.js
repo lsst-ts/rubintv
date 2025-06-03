@@ -128,40 +128,43 @@ export default function TableApp({
     redrawHeaderWidths()
   })
 
-  const handleCameraEvent = useCallback((event) => {
-    const { datestamp, data, dataType } = event.detail
-    // if there's no data, don't update
-    if (Object.entries(data).length === 0) {
-      return
-    }
+  const handleCameraEvent = useCallback(
+    (event) => {
+      const { datestamp, data, dataType } = event.detail
+      // if there's no data, don't update
+      if (Object.entries(data).length === 0) {
+        return
+      }
 
-    if (data.error) {
-      setError(data.error)
-    }
+      if (data.error) {
+        setError(data.error)
+      }
 
-    if (datestamp && datestamp !== date) {
-      window.APP_DATA.date = datestamp
-      const headerDate = _getById("header-date")
-      headerDate.textContent = datestamp
-      headerDate.classList.remove("stale")
-      setDate(datestamp)
-      setMetadata({})
-      setChannelData({})
-    }
+      if (datestamp && datestamp !== date) {
+        window.APP_DATA.date = datestamp
+        const headerDate = _getById("header-date")
+        headerDate.textContent = datestamp
+        headerDate.classList.remove("stale")
+        setDate(datestamp)
+        setMetadata({})
+        setChannelData({})
+      }
 
-    if (dataType === "metadata") {
-      setMetadata(data)
-    } else if (dataType === "channelData") {
-      setChannelData(data)
-    }
-  }, [date])
+      if (dataType === "metadata") {
+        setMetadata(data)
+      } else if (dataType === "channelData") {
+        setChannelData(data)
+      }
+    },
+    [date]
+  )
 
   useEffect(() => {
     window.addEventListener("camera", handleCameraEvent)
     return () => {
       window.removeEventListener("camera", handleCameraEvent)
     }
-  }, [handleCameraEvent])
+  }, [handleCameraEvent]) // Only depends on the memoized handler
 
   if (unfilteredRowsCount == 0) {
     return <h3>There is no data for this day</h3>
