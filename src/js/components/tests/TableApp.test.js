@@ -2,7 +2,7 @@ import "@testing-library/jest-dom"
 import React from "react"
 import { render, act } from "@testing-library/react"
 import TableApp from "../TableApp"
-import { retrieveSelected } from "../../modules/utils"
+import { retrieveStoredSelection } from "../../modules/utils"
 
 /* global jest, describe, it, expect, beforeAll, beforeEach */
 
@@ -16,10 +16,10 @@ Object.defineProperty(window, "localStorage", {
   value: localStorageMock,
 })
 
-// Mock the retrieveSelected utility function
+// Mock the retrieveStoredSelection utility function
 jest.mock("../../modules/utils", () => ({
   ...jest.requireActual("../../modules/utils"),
-  retrieveSelected: jest.fn(),
+  retrieveStoredSelection: jest.fn(),
   _getById: (id) => {
     if (id === "table") {
       return { scrollIntoView: jest.fn() }
@@ -84,7 +84,7 @@ describe("TableApp Column Selection Persistence", () => {
 
   it("maintains column selection across metadata updates", () => {
     // Mock initial stored selection
-    retrieveSelected.mockReturnValue(["colA", "colB", "colC", "colD"])
+    retrieveStoredSelection.mockReturnValue(["colA", "colB", "colC", "colD"])
 
     // Initial render with metadata containing most columns
     render(
@@ -120,7 +120,7 @@ describe("TableApp Column Selection Persistence", () => {
   it("handles camera events and preserves column selection", () => {
     // Mock initial stored selection
     const initialSelection = ["colA", "colB", "colC"]
-    retrieveSelected.mockReturnValue(initialSelection)
+    retrieveStoredSelection.mockReturnValue(initialSelection)
 
     const { container } = render(
       <TableApp
@@ -166,7 +166,7 @@ describe("TableApp Column Selection Persistence", () => {
   it("preserves selected columns even when not in current metadata", () => {
     // Mock initial stored selection with some columns that won't be in initial metadata
     const initialSelection = ["colA", "colB", "colC", "colD", "futureCol"]
-    retrieveSelected.mockReturnValue(initialSelection)
+    retrieveStoredSelection.mockReturnValue(initialSelection)
 
     // Initialize with versioned storage data
     act(() => {
