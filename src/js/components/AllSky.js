@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import PropTypes, { func } from "prop-types"
 import RubinCalendar from "./RubinCalendar"
 import { getMediaProxyUrl, getHistoricalData } from "../modules/utils"
