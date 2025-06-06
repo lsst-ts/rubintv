@@ -5,6 +5,12 @@ import { gunzipSync } from "fflate"
  * @param {any[]} arrayB
  */
 export function intersect(arrayA, arrayB) {
+  if (!Array.isArray(arrayA) || !Array.isArray(arrayB)) {
+    throw new TypeError("Both arguments must be arrays", arrayA, arrayB)
+  }
+  if (arrayA.length === 0 || arrayB.length === 0) {
+    return []
+  }
   return arrayA.filter((el) => arrayB.includes(el))
 }
 
@@ -13,6 +19,15 @@ export function intersect(arrayA, arrayB) {
  * @param {any[]} arrayB
  */
 export function union(arrayA, arrayB) {
+  if (!Array.isArray(arrayA) || !Array.isArray(arrayB)) {
+    throw new TypeError("Both arguments must be arrays", arrayA, arrayB)
+  }
+  if (arrayA.length === 0) {
+    return arrayB
+  }
+  if (arrayB.length === 0) {
+    return arrayA
+  }
   return arrayA.concat(arrayB.filter((el) => !arrayA.includes(el)))
 }
 
@@ -265,48 +280,46 @@ export const ymdToDateStr = (year, month, day) =>
   `${year}-${("0" + month).slice(-2)}-${("0" + day).slice(-2)}`
 
 /**
- * Splits an array into n pieces and interleaves them.
- * Any leftover items (if arr.length isn’t divisible by n) are appended at the end.
  *
- * @param {Array} arr  - The input array.
- * @param {number} n   - How many pieces to split into.
- * @returns {Array}    - The interleaved result.
+ * @param {string} locationName
+ * @param {string} cameraName
+ * @param {string} date
+ * @returns {Promise<string>} - Returns encoded json string of historical
+ * data for a given location, camera, and date.
  */
-export function interleaveSplit(arr, n) {
-  if (!Array.isArray(arr)) {
-    throw new TypeError("First argument must be an array")
-  }
-  if (n <= 1) {
-    // nothing to interleave
-    return arr.slice()
-  }
+export async function getHistoricalData(locationName, cameraName, date) {
+  // Returns the historical data URL for a given location, camera, and date
+  const { homeUrl } = window.APP_DATA
+  const apiUrl = new URL(
+    `api/${locationName}/${cameraName}/date/${date}`,
+    homeUrl
+  )
+  const data = await simpleGet(apiUrl)
+  return data
+}
 
-  const len = arr.length
-  const chunkSize = Math.floor(len / n)
-  if (chunkSize === 0) {
-    // too many pieces: just return original
-    return arr.slice()
-  }
-
-  // build n equal‐sized chunks (dropping any remainder)
-  const chunks = []
-  for (let i = 0; i < n; i++) {
-    const start = i * chunkSize
-    chunks.push(arr.slice(start, start + chunkSize))
-  }
-
-  // interleave by take one element from each chunk in turn
-  const result = []
-  for (let i = 0; i < chunkSize; i++) {
-    for (let j = 0; j < n; j++) {
-      // guard in case some chunks are shorter
-      if (i < chunks[j].length) {
-        result.push(chunks[j][i])
-      }
-    }
-  }
-
-  // append any leftover items that couldn't be chunked
-  const remainder = arr.slice(chunkSize * n)
-  return result.concat(remainder)
+/**
+ *
+ * @param {string} mediaType
+ * @param {string} locationName
+ * @param {string} cameraName
+ * @param {string} channelName
+ * @param {string} filename
+ * @returns {URL} - Returns the URL for a media file (image or video) for a given
+ * location and camera
+ */
+export function getMediaProxyUrl(
+  mediaType,
+  locationName,
+  cameraName,
+  channelName,
+  filename
+) {
+  // Returns the URL for a media file (image or video) for a given location name
+  // camera name, channel name, and filename.
+  const { homeUrl } = window.APP_DATA
+  return new URL(
+    `event_${mediaType}/${locationName}/${cameraName}/${channelName}/${filename}`,
+    homeUrl
+  )
 }

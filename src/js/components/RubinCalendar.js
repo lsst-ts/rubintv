@@ -160,13 +160,17 @@ Year.propTypes = {
 
 const RubinCalendar = ({
   selectedDate,
-  initialCalendarData,
+  initialCalendarData = {},
   camera,
   locationName,
 }) => {
   const [yearToDisplay, setYearToDisplay] = useState(selectedDate.split("-")[0])
   const [calendarData, setCalendarData] = useState(initialCalendarData)
   const [dayObs, setDayObs] = useState(null)
+
+  if (Object.keys(calendarData).length === 0) {
+    return null
+  }
 
   const sortedYears = Object.keys(calendarData).sort((a, b) => a - b)
   const calFrame = new Calendar.Calendar(1)
