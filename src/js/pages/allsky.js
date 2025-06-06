@@ -19,7 +19,7 @@ import { _getById } from "../modules/utils.js"
   const allSkyRoot = createRoot(_getById("allsky"))
   allSkyRoot.render(
     <AllSky
-      date={date}
+      initialDate={date}
       isHistorical={isHistorical}
       locationName={locationName}
       camera={camera}

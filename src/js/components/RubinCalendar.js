@@ -160,7 +160,7 @@ Year.propTypes = {
 
 const RubinCalendar = ({
   selectedDate,
-  initialCalendarData,
+  initialCalendarData = {},
   camera,
   locationName,
 }) => {

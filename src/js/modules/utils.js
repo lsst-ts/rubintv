@@ -5,6 +5,12 @@ import { gunzipSync } from "fflate"
  * @param {any[]} arrayB
  */
 export function intersect(arrayA, arrayB) {
+  if (!Array.isArray(arrayA) || !Array.isArray(arrayB)) {
+    throw new TypeError("Both arguments must be arrays", arrayA, arrayB)
+  }
+  if (arrayA.length === 0 || arrayB.length === 0) {
+    return []
+  }
   return arrayA.filter((el) => arrayB.includes(el))
 }
 
@@ -13,6 +19,15 @@ export function intersect(arrayA, arrayB) {
  * @param {any[]} arrayB
  */
 export function union(arrayA, arrayB) {
+  if (!Array.isArray(arrayA) || !Array.isArray(arrayB)) {
+    throw new TypeError("Both arguments must be arrays", arrayA, arrayB)
+  }
+  if (arrayA.length === 0) {
+    return arrayB
+  }
+  if (arrayB.length === 0) {
+    return arrayA
+  }
   return arrayA.concat(arrayB.filter((el) => !arrayA.includes(el)))
 }
 
@@ -300,7 +315,8 @@ export function getMediaProxyUrl(
   channelName,
   filename
 ) {
-  // Returns the URL for a media file (image or video) for a given location and camera
+  // Returns the URL for a media file (image or video) for a given location name
+  // camera name, channel name, and filename.
   const { homeUrl } = window.APP_DATA
   return new URL(
     `event_${mediaType}/${locationName}/${cameraName}/${channelName}/${filename}`,

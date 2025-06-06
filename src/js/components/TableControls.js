@@ -13,7 +13,6 @@ export default function AboveTableRow({
   metadata,
   isHistorical,
 }) {
-  console.log("AboveTableRow rendered", camera.name, date, isHistorical)
   return (
     <div className="row">
       <h3 id="the-date">

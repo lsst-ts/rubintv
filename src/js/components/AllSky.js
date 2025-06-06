@@ -1,29 +1,36 @@
 import React, { useState, useEffect } from "react"
-import PropTypes from "prop-types"
+import PropTypes, { func } from "prop-types"
 import RubinCalendar from "./RubinCalendar"
 import { getMediaProxyUrl, getHistoricalData } from "../modules/utils"
 import { calendarType, cameraType, eventType } from "./componentPropTypes"
 
 export default function AllSky({
+  initialDate,
   isHistorical,
   locationName,
   camera,
   calendar,
 }) {
-  const [date, setDate] = useState(window.APP_DATA.date)
+  const [date, setDate] = useState(initialDate)
   const [perDayData, setPerDayData] = useState({ stills: {}, movies: {} })
+
+  const dateRef = useRef(initialDate)
+  // Update ref when date changes
+  useEffect(() => {
+    dateRef.current = date
+  }, [date])
+
   useEffect(() => {
     function handleDataChange(event) {
       const { datestamp, data, dataType } = event.detail
       if (dataType !== "perDay") {
         return
       }
-      if (datestamp !== date) {
+      if (datestamp !== dateRef.current) {
         document.getElementById("header-date").textContent = datestamp
         setDate(datestamp)
       }
       setPerDayData((prevData) => {
-        console.log("Updating perDayData", prevData, data)
         return { ...prevData, ...data }
       })
     }
@@ -83,6 +90,7 @@ export default function AllSky({
   )
 }
 AllSky.propTypes = {
+  initialDate: PropTypes.string.isRequired,
   isHistorical: PropTypes.bool,
   locationName: PropTypes.string.isRequired,
   camera: cameraType.isRequired,
