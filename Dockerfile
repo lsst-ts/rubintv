@@ -9,7 +9,7 @@
 # to build the image using conda.
 # TODO: DM-43222.
 
-FROM python:3.13.2-slim-bullseye
+FROM python:3.13.4-slim-bullseye
 
 ENV DEBIAN_FRONTEND=noninteractive
 
