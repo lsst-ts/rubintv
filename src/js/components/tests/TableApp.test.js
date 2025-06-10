@@ -84,7 +84,8 @@ describe("TableApp Column Selection Persistence", () => {
 
   it("maintains column selection across metadata updates", () => {
     // Mock initial stored selection
-    retrieveStoredSelection.mockReturnValue(["colA", "colB", "colC", "colD"])
+    const initialSelection = ["colA", "colB", "colC"]
+    retrieveStoredSelection.mockReturnValue(initialSelection)
 
     // Initial render with metadata containing most columns
     render(

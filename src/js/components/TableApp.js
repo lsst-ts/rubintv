@@ -85,7 +85,7 @@ export default function TableApp({
       .catch((error) => {
         console.error("Error fetching historical data:", error)
       })
-  }, [isHistorical, locationName, camera.name, date])
+  }, [])
 
   // convenience var for showing filterColumn has been set
   const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
@@ -162,7 +162,7 @@ export default function TableApp({
     return () => {
       window.removeEventListener("camera", handleCameraEvent)
     }
-  }, [handleCameraEvent]) // Only depends on the memoized handler
+  }, [handleCameraEvent])
 
   if (unfilteredRowsCount == 0) {
     return <h3>There is no data for this day</h3>
