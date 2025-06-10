@@ -1,6 +1,6 @@
 import asyncio
-from datetime import date
-from typing import Any, AsyncGenerator, Iterable
+from datetime import date, timedelta
+from typing import Any, AsyncGenerator, Iterable, Iterator
 
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.models.models import Camera, Channel, Event, NightReportData
@@ -193,3 +193,25 @@ async def make_table_from_event_list(
 
 def dict_from_list_of_named_objects(a_list: list[Any]) -> dict[str, Any]:
     return {obj.name: obj for obj in a_list if hasattr(obj, "name")}
+
+
+def daterange(start_date: date, end_date: date) -> Iterator[date]:
+    """Generate a range of dates from start_date to end_date (exclusive).
+    Parameters
+    ----------
+    start_date : `date`
+        The start date of the range.
+    end_date : `date`
+        The end date of the range (exclusive).
+    Yields
+    -------
+    `date`
+        Each date in the range from start_date to end_date (exclusive).
+    """
+    if start_date >= end_date:
+        raise ValueError("start_date must be before end_date")
+    if not isinstance(start_date, date) or not isinstance(end_date, date):
+        raise TypeError("start_date and end_date must be of type date")
+    days = int((end_date - start_date).days)
+    for n in range(days):
+        yield start_date + timedelta(n)

@@ -334,22 +334,23 @@ section
 	100%
 		opacity: 0%
 
-.table-panel
-	position: relative
+.table-control-button
 	background: #eee
 	padding: 0.8em 19px
 	border-radius: 20px
+	display: flex
+	border: none
+	cursor: pointer
+	&::after
+		content: "∆"
+		margin-left: 1em
+		transform-origin: 50% 50%
+		transform: rotate(90deg)
+		display: inline-block
+		width: 0.7em
+		transition: 0.3s
 
-.table-control-button::after
-	content: "∆"
-	margin-left: 1em
-	transform-origin: 50% 50%
-	transform: rotate(90deg)
-	display: inline-block
-	width: 0.7em
-	transition: 0.3s
-
-.table-controls
+.table-options
 	display: none
 	max-height: 90vh
 	overflow-y: scroll
@@ -358,7 +359,7 @@ section
 	z-index: 101
 	gap: 0 0.4em
 	padding: 3px
-	margin: 20px -21px
+	margin-top: 0.4em
 	border-top: none
 	background: #fff
 	box-shadow: 3px 2px 6px rgba(0,0,0,0.2)
@@ -369,7 +370,7 @@ section
 		align-items: center
 		user-select: none
 
-.table-control
+.table-option
 	padding: 2px 1em
 	white-space: nowrap
 	&:hover
@@ -378,17 +379,18 @@ section
 		background: #6d6d6d
 		color: #fff
 		border-radius: 0 0 6px
+	&.unavailable
+		opacity: 0.5
+		input[type="checkbox"]
+			opacity: 0.5
+			cursor: not-allowed
 
-.table-panel.open
-	.table-controls
-		display: grid
+.table-controls-container.open
+	.table-options
+		display: block
 	.table-control-button::after
 		transform: rotate(180deg)
 
-.table-control-button
-	display: flex
-	border: none
-	background: inherit
 
 .sorting-indicator
 	position: absolute
@@ -424,13 +426,16 @@ section
 	max-height: calc(100vh - 1.6em)
 	padding: 0 2em
 	overflow-y: scroll
-	
 	.key
 		text-align: left
 	.key::after
 		content: ":"
 		padding-right: 2em
 
+.cell-dict
+	tr:hover
+		background: #333
+		color: #fff
 
 .cell-emoji
 	font-size: 2.2em
