@@ -170,8 +170,8 @@ export function groupBy(array, keyFunction) {
 
 export const STORAGE_VERSION = "1"
 
-export function retrieveStoredSelection(cameraName, version = STORAGE_VERSION) {
-  const stored = localStorage.getItem(cameraName)
+export function retrieveStoredSelection(storageKey, version = STORAGE_VERSION) {
+  const stored = localStorage.getItem(storageKey)
   if (!stored) return null
 
   try {
@@ -185,11 +185,12 @@ export function retrieveStoredSelection(cameraName, version = STORAGE_VERSION) {
     // Store it in the new format and return the columns
     const columns = Array.isArray(data) ? data : null
     if (columns) {
-      storeSelected(columns, cameraName, version)
+      storeSelected(columns, storageKey, version)
       return columns
     }
     return null
   } catch (e) {
+    console.error(`Error parsing stored selection for ${storageKey}:`, e)
     return null
   }
 }
