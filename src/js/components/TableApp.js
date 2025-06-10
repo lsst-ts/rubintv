@@ -2,25 +2,20 @@ import React, { useState, useEffect, useCallback } from "react"
 import PropTypes from "prop-types"
 import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
-import { _getById, union } from "../modules/utils"
-import {
-  _getById,
-  union,
-  getHistoricalData,
-} from "../modules/utils"
+import { _getById, union, getHistoricalData } from "../modules/utils"
 import {
   loadColumnSelection,
   saveColumnSelection,
 } from "../modules/columnStorage"
-import { cameraType, channelDataType, metadataType } from "./componentPropTypes"
+import { cameraType } from "./componentPropTypes"
 import { ModalProvider } from "./Modal"
 
-export default function TableApp({ 
-  camera, 
-  initialDate, 
+export default function TableApp({
+  camera,
+  initialDate,
   isHistorical,
   initialChannelData = {},
-  initialMetadata = {} 
+  initialMetadata = {},
 }) {
   const [date, setDate] = useState(initialDate)
   const [channelData, setChannelData] = useState(initialChannelData)
@@ -46,7 +41,7 @@ export default function TableApp({
       }))
     : []
   const defaultColNames = defaultColumns.map((col) => col.name)
-  const allColNames = getAllColumnNames(metadata, defaultColNames)
+  const availableColumns = getAllColumnNames(metadata, defaultColNames)
 
   // Load selected columns from storage
   const [selected, setSelected] = useState(() => {
@@ -54,10 +49,13 @@ export default function TableApp({
   })
 
   // Save selection changes
-  const handleSetSelected = useCallback((newSelected) => {
-    setSelected(newSelected)
-    saveColumnSelection(newSelected, locationName, camera.name)
-  }, [locationName, camera.name])
+  const handleSetSelected = useCallback(
+    (newSelected) => {
+      setSelected(newSelected)
+      saveColumnSelection(newSelected, locationName, camera.name)
+    },
+    [locationName, camera.name]
+  )
 
   const selectedObjs = selected.map((c) => ({ name: c }))
   const selectedMetaCols = defaultColumns
@@ -184,7 +182,7 @@ export default function TableApp({
         <div className="above-table-sticky">
           <AboveTableRow
             camera={camera}
-            allColNames={allColNames}
+            availableColumns={availableColumns}
             selected={selected}
             setSelected={handleSetSelected}
             date={date}
@@ -233,13 +231,13 @@ TableApp.propTypes = {
 
 function getAllColumnNames(metadata, defaultColNames) {
   // get the set of all data for list of all available attrs
-  const allColNames = Object.values(metadata)
+  const availableColumns = Object.values(metadata)
     .map((obj) => Object.keys(obj))
     .flat()
     .sort()
   // get the set of all data for list of all available attrs
   const uniqueColNames = Array.from(
-    new Set(defaultColNames.concat(allColNames))
+    new Set(defaultColNames.concat(availableColumns))
   )
   // filter out the indicators (first char is '_')
   // and the replacement strings for empty channels

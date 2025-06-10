@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from "react"
 import PropTypes from "prop-types"
 import Clock, { TimeSinceLastImageClock } from "./Clock"
-import { _getById, storeSelected, STORAGE_VERSION } from "../modules/utils"
+import { _getById } from "../modules/utils"
 import { cameraType, metadataType } from "./componentPropTypes"
 import { saveColumnSelection } from "../modules/columnStorage"
 
 export default function AboveTableRow({
   camera,
-  allColNames,
+  availableColumns,
   selected,
   setSelected,
-  availableColumns,
   date,
   metadata,
   isHistorical,
@@ -22,10 +21,9 @@ export default function AboveTableRow({
       </h3>
       <TableControls
         cameraName={camera.name}
-        allColNames={allColNames}
+        availableColumns={availableColumns}
         selected={selected}
         setSelected={setSelected}
-        availableColumns={availableColumns}
       />
       <DownloadMetadataButton
         date={date}
@@ -43,7 +41,7 @@ AboveTableRow.propTypes = {
   /** the camera object */
   camera: cameraType.isRequired,
   /** the names of all metadata columns */
-  allColNames: PropTypes.arrayOf(PropTypes.string),
+  availableColumns: PropTypes.arrayOf(PropTypes.string),
   /** the names of the currently selected columns to display */
   selected: PropTypes.arrayOf(PropTypes.string),
   /** callback function from the parent component TableApp */
@@ -58,10 +56,9 @@ AboveTableRow.propTypes = {
 
 function TableControls({
   cameraName,
-  allColNames,
+  availableColumns,
   selected,
   setSelected,
-  availableColumns,
 }) {
   const [controlsOpen, setControlsOpen] = useState(false)
 
@@ -92,25 +89,25 @@ function TableControls({
     setControlsOpen((controlsOpen) => !controlsOpen)
   }
 
-    const handleCheckboxChange = (name) => {
-      const currentSelected = Array.isArray(selected) ? [...selected] : []
+  const handleCheckboxChange = (name) => {
+    const currentSelected = Array.isArray(selected) ? [...selected] : []
 
-      let newSelected
-      if (currentSelected.includes(name)) {
-        newSelected = currentSelected.filter((attr) => attr !== name)
-        if (newSelected.length === 0) {
-          return
-        }
-      } else {
-        newSelected = [...currentSelected, name]
+    let newSelected
+    if (currentSelected.includes(name)) {
+      newSelected = currentSelected.filter((attr) => attr !== name)
+      if (newSelected.length === 0) {
+        return
       }
+    } else {
+      newSelected = [...currentSelected, name]
+    }
 
     saveColumnSelection(newSelected, locationName, cameraName)
     setSelected(newSelected)
   }
 
   let numControlColumns = 2
-  if (allColNames.length > 45) {
+  if (availableColumns.length > 45) {
     numControlColumns = 3
   }
   const gridStyle = {
@@ -165,7 +162,7 @@ function TableControls({
         {controlsOpen && (
           <div className="table-options" style={gridStyle}>
             {/* Show both available and unavailable selected columns */}
-            {Array.from(new Set([...selected, ...allColNames]))
+            {Array.from(new Set([...selected, ...availableColumns]))
               .toSorted((a, b) => a.localeCompare(b))
               .map(renderCheckbox)}
           </div>
@@ -176,7 +173,7 @@ function TableControls({
 }
 TableControls.propTypes = {
   /** the names of all metadata columns */
-  allColNames: PropTypes.arrayOf(PropTypes.string),
+  availableColumns: PropTypes.arrayOf(PropTypes.string),
   /** the name of the current camera */
   cameraName: PropTypes.string,
   /** the names of the currently selected columns to display */
