@@ -411,16 +411,16 @@ class HistoricalPoller:
         month = max(calendar[year].keys())
         day = max(calendar[year][month].keys())
         most_recent = date(year, month, day)
-        if most_recent == get_current_day_obs():
-            # check there is more than one day in the calendar
-            # if there is only one day, return None
-            flat_calendar = self.flatten_calendar(location, camera)
-            num_days = len(flat_calendar)
-            if num_days <= 1:
-                return None
-            second_most_recent = sorted(flat_calendar.keys())[-2]
-            most_recent = date_str_to_date(second_most_recent)
-        return most_recent
+        if most_recent != get_current_day_obs():
+            return most_recent
+        # check there is more than one day in the calendar
+        # if there is only one day, return None
+        flat_calendar = self.flatten_calendar(location, camera)
+        num_days = len(flat_calendar)
+        if num_days <= 1:
+            return None
+        second_most_recent = sorted(flat_calendar.keys())[-2]
+        return date_str_to_date(second_most_recent)
 
     async def get_most_recent_events(
         self, location: Location, camera: Camera

@@ -180,12 +180,6 @@ TableControls.propTypes = {
   selected: PropTypes.arrayOf(PropTypes.string),
   /** callback function from the parent component TableApp */
   setSelected: PropTypes.func,
-  /** the given date */
-  date: PropTypes.string,
-  /** the current metadata for this camera/date */
-  metadata: metadataType,
-  /** true if this is a historical page */
-  isHistorical: PropTypes.bool,
 }
 
 export function JumpButtons() {
