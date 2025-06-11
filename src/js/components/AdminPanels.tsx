@@ -2,25 +2,10 @@ import React, { useState, useEffect, FormEvent } from "react"
 import DropDownMenu from "./DropDownMenu"
 import { useModal, ConfirmationModal, ModalProvider } from "./Modal"
 import { simplePost, simpleGet } from "../modules/utils"
-
-interface AdminMenuItem {
-  label: string
-  value: string
-  description?: string
-}
-
-interface AdminMenu {
-  key: string
-  title: string
-  items: Array<AdminMenuItem>
-  selectedItem: {
-    label: string
-    value: string
-  } | null
-}
+import { Menu, MenuItem } from "./DropDownMenu"
 
 interface AdminPanelProps {
-  initMenus: Array<AdminMenu>
+  initMenus: Array<Menu>
   initAdmin: {
     username?: string
     email?: string
@@ -32,14 +17,14 @@ interface AdminPanelProps {
 }
 
 interface RedisPanelProps {
-  menus: Array<AdminMenu>
-  setMenus: (menus: Array<AdminMenu>) => void
+  menus: Array<Menu>
+  setMenus: (menus: Array<Menu>) => void
   redisEndpointUrl: string
   redisKeyPrefix: (key: string) => string
 }
 
 interface DropDownMenuContainerProps {
-  menu: AdminMenu
+  menu: Menu
   onItemSelect: (item: any) => Promise<void>
 }
 
@@ -190,14 +175,14 @@ export function DropDownMenuContainer({
   const [redisChanged, updateRedisStatus] = useRedisStatus()
   const [thisMenu, setThisMenu] = useState(menu)
 
-  const handleSelect = (item: AdminMenuItem) => {
+  const handleSelect = (item: MenuItem) => {
     updateRedisStatus("pending")
     onItemSelect(item)
       .then(() => {
         updateRedisStatus("true")
-        setThisMenu((prevMenu: AdminMenu) => ({
+        setThisMenu((prevMenu: Menu) => ({
           ...prevMenu,
-          selectedItem: item as AdminMenuItem,
+          selectedItem: item,
         }))
       })
       .catch((error) => {

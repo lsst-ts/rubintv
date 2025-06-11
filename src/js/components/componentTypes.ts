@@ -54,6 +54,7 @@ export interface Channel {
   title: string
   icon: string
   colour: string
+  text_colour?: string
 }
 
 export interface ChannelData {

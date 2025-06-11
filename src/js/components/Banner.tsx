@@ -1,7 +1,15 @@
 import React from "react"
-import PropTypes from "prop-types"
+import { Camera } from "./componentTypes"
 
-export default function Banner({ siteLocation, locationName, camera }) {
+export default function Banner({
+  siteLocation,
+  locationName,
+  camera,
+}: {
+  siteLocation: string
+  locationName: string
+  camera: Camera
+}) {
   const camName = camera.name
   let banner = ""
   let cls = "banner-text"
@@ -21,11 +29,4 @@ export default function Banner({ siteLocation, locationName, camera }) {
       </div>
     )
   )
-}
-Banner.propTypes = {
-  siteLocation: PropTypes.string,
-  locationName: PropTypes.string,
-  camera: PropTypes.shape({
-    name: PropTypes.string,
-  }),
 }

@@ -1,9 +1,35 @@
 import React, { useState, useEffect } from "react"
-import PropTypes from "prop-types"
 import { TimeSinceLastImageClock } from "./Clock"
 import PrevNext from "./PrevNext"
 import { getBaseFromEventUrl, getMediaType } from "../modules/utils"
-import { eventType, cameraType, metadataType } from "./componentPropTypes"
+import { ExposureEvent, Camera, Metadata } from "./componentTypes"
+
+interface MediaEventProps {
+  initialEvent: ExposureEvent
+  imgUrl: string
+  videoUrl: string
+  camera: Camera
+  dateUrl: string
+  metadata: Metadata
+  eventUrl?: string
+  prevNext?: {
+    prev?: ExposureEvent
+    next?: ExposureEvent
+  }
+  allChannelNames: string[]
+  isCurrent: boolean
+}
+
+interface BundledMediaEvent extends ExposureEvent {
+  mediaType: "image" | "video"
+  src: string
+}
+
+interface OtherChannelLinksProps {
+  allChannelNames: string[]
+  thisChannel: string
+  camera: Camera
+}
 
 // MediaDisplay component to handle the image/video display
 export default function MediaDisplay({
@@ -17,27 +43,30 @@ export default function MediaDisplay({
   prevNext,
   allChannelNames,
   isCurrent = false,
-}) {
+}: MediaEventProps) {
   const [mediaEvent, setMediaEvent] = useState(() =>
     bundleMediaEventData(initialEvent, imgUrl, videoUrl)
   )
 
   useEffect(() => {
-    const handleChannelEvent = (message) => {
-      const { data: event, dataType } = message.detail
-      if (dataType !== "event" || !event) {
+    type EL = EventListener
+    const handleChannelEvent = (message: CustomEvent) => {
+      const { data, dataType } = message.detail
+      if (dataType !== "event" || !data) {
         return
       }
+      const event = data as ExposureEvent
       setMediaEvent({
         ...bundleMediaEventData(event, imgUrl, videoUrl),
       })
     }
 
-    window.addEventListener("channel", handleChannelEvent)
+    window.addEventListener("channel", handleChannelEvent as EL)
     return () => {
-      window.removeEventListener("channel", handleChannelEvent)
+      window.removeEventListener("channel", handleChannelEvent as EL)
     }
   }, [imgUrl, videoUrl])
+
   return (
     <>
       <div className="event-info">
@@ -48,9 +77,15 @@ export default function MediaDisplay({
           <span className="media-seqnum">{mediaEvent.seq_num}</span>
         </h2>
         <PrevNext initialPrevNext={prevNext} eventUrl={eventUrl} />
-        {isCurrent && (
-          <TimeSinceLastImageClock metadata={metadata} camera={camera} />
-        )}
+        {isCurrent && camera.time_since_clock ? (
+          <TimeSinceLastImageClock
+            metadata={metadata}
+            camera={{
+              ...camera,
+              time_since_clock: camera.time_since_clock ?? { label: "" },
+            }}
+          />
+        ) : null}
       </div>
       <div className="event-nav">
         <OtherChannelLinks
@@ -80,35 +115,19 @@ export default function MediaDisplay({
     </>
   )
 }
-MediaDisplay.propTypes = {
-  initialEvent: eventType,
-  imgUrl: PropTypes.string.isRequired,
-  videoUrl: PropTypes.string.isRequired,
-  camera: cameraType,
-  dateUrl: PropTypes.string.isRequired,
-  metadata: metadataType,
-  eventUrl: PropTypes.string,
-  prevNext: PropTypes.shape({
-    prev: eventType,
-    next: eventType,
-  }),
-  allChannelNames: PropTypes.arrayOf(PropTypes.string),
-  isCurrent: PropTypes.bool,
-}
 
 /**
- *
- * @param {Object} mEvent
- * @param {string} imgUrl
- * @param {string} videoUrl
- * @returns {Object}
- * @description This function takes a media event and returns a unified media
+ * This function takes a media event and returns a unified media
  * event object with the correct media type and source URL.
  * It determines the media type based on the file extension and constructs
  * the source URL using the filename and base URL. The media type can be
  * either "image" or "video".
  */
-function bundleMediaEventData(mEvent, imgUrl, videoUrl) {
+function bundleMediaEventData(
+  mEvent: ExposureEvent,
+  imgUrl: string,
+  videoUrl: string
+): BundledMediaEvent {
   const { filename, ext } = mEvent
   const mediaType = getMediaType(ext)
   const url = mediaType === "video" ? videoUrl : imgUrl
@@ -121,29 +140,33 @@ function bundleMediaEventData(mEvent, imgUrl, videoUrl) {
   }
 }
 
-const OtherChannelLinks = ({ allChannelNames, thisChannel, camera }) => {
+const OtherChannelLinks = ({
+  allChannelNames,
+  thisChannel,
+  camera,
+}: OtherChannelLinksProps) => {
   const [channelNames, setChannelNames] = useState(allChannelNames)
 
   useEffect(() => {
-    function handleChannelNamesChange(event) {
-      const { data } = event.detail
-      if (!data || !Array.isArray(data)) {
+    type EL = EventListener
+    function handleChannelNamesChange(event: CustomEvent) {
+      const { data: newChannelNames } = event.detail
+      if (!newChannelNames || !Array.isArray(newChannelNames)) {
         return
       }
-      setChannelNames(data)
+      if (newChannelNames.length > 0) {
+        setChannelNames(newChannelNames)
+      }
     }
-    window.addEventListener("channel", handleChannelNamesChange)
+    window.addEventListener("channel", handleChannelNamesChange as EL)
     return () => {
-      window.removeEventListener("channel", handleChannelNamesChange)
+      window.removeEventListener("channel", handleChannelNamesChange as EL)
     }
-  }, [])
+  }, [channelNames])
 
   const currentUrl = document.location.toString()
-  const buildUrl = (channelName) => {
-    if (channelName === thisChannel) {
-      return currentUrl
-    }
-    if (currentUrl.endsWith(`/current/${thisChannel}`)) {
+  const buildUrl = (channelName: string) => {
+    if (currentUrl.endsWith(`${thisChannel}/current`)) {
       return currentUrl.replace(thisChannel, channelName)
     } else {
       return currentUrl.replace(
@@ -155,7 +178,7 @@ const OtherChannelLinks = ({ allChannelNames, thisChannel, camera }) => {
   return (
     <div className="other-channels">
       {camera.channels.map((channel) => {
-        if (!allChannelNames.includes(channel.name)) {
+        if (!channelNames.includes(channel.name)) {
           return null
         }
         const chanStyle = {
