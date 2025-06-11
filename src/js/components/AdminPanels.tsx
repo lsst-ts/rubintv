@@ -1,14 +1,72 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, FormEvent } from "react"
 import DropDownMenu from "./DropDownMenu"
 import { useModal, ConfirmationModal, ModalProvider } from "./Modal"
 import { simplePost, simpleGet } from "../modules/utils"
-import PropTypes from "prop-types"
+
+interface AdminMenuItem {
+  label: string
+  value: string
+  description?: string
+}
+
+interface AdminMenu {
+  key: string
+  title: string
+  items: Array<AdminMenuItem>
+  selectedItem: {
+    label: string
+    value: string
+  } | null
+}
+
+interface AdminPanelProps {
+  initMenus: Array<AdminMenu>
+  initAdmin: {
+    username?: string
+    email?: string
+    name?: string
+  }
+  redisEndpointUrl: string
+  redisKeyPrefix: (key: string) => string
+  authEndpointUrl: string
+}
+
+interface RedisPanelProps {
+  menus: Array<AdminMenu>
+  setMenus: (menus: Array<AdminMenu>) => void
+  redisEndpointUrl: string
+  redisKeyPrefix: (key: string) => string
+}
+
+interface DropDownMenuContainerProps {
+  menu: AdminMenu
+  onItemSelect: (item: any) => Promise<void>
+}
+
+interface AdminSendRedisValueProps {
+  redisEndpointUrl: string
+  redisKeyPrefix: (key: string) => string
+  keyToSend: string
+  valueToSend?: string | null
+  title?: string
+  size?: string
+  requiresConfirmation?: boolean
+}
+
+interface AdminSendRedisCommandProps {
+  redisEndpointUrl: string
+  redisKeyPrefix: (key: string) => string
+}
+
+interface AdminDangerPanelProps {
+  redisEndpointUrl: string
+}
 
 // Custom hook to handle Redis post success/failure
-function useRedisStatus() {
-  const [redisChanged, setRedisChanged] = useState(null)
+function useRedisStatus(): [string | null, (status: string) => void] {
+  const [redisChanged, setRedisChanged] = useState<string | null>(null)
 
-  const updateRedisStatus = (status) => {
+  const updateRedisStatus = (status: string) => {
     setRedisChanged(status)
     // Only auto-clear if status is "true" or "false"
     if (status === "true" || status === "false") {
@@ -25,7 +83,7 @@ export default function AdminPanels({
   redisEndpointUrl,
   redisKeyPrefix,
   authEndpointUrl,
-}) {
+}: AdminPanelProps) {
   const [admin, setAdmin] = useState(initAdmin)
   const [menus, setMenus] = useState(initMenus)
 
@@ -71,20 +129,13 @@ export default function AdminPanels({
     </ModalProvider>
   )
 }
-AdminPanels.propTypes = {
-  initMenus: PropTypes.array,
-  initAdmin: PropTypes.shape({
-    username: PropTypes.string,
-    email: PropTypes.string,
-    name: PropTypes.string,
-  }),
-  redisEndpointUrl: PropTypes.string,
-  redisKeyPrefix: PropTypes.func,
-  authEndpointUrl: PropTypes.string,
-}
 
-export function RedisPanel({ menus, redisEndpointUrl, redisKeyPrefix }) {
-  const handleItemSelect = async (menuKey, item) => {
+export function RedisPanel({
+  menus,
+  redisEndpointUrl,
+  redisKeyPrefix,
+}: RedisPanelProps) {
+  const handleItemSelect = async (menuKey: string, item: any) => {
     try {
       await simplePost(redisEndpointUrl, { key: menuKey, value: item.value })
       console.log("Redis updated successfully")
@@ -102,7 +153,6 @@ export function RedisPanel({ menus, redisEndpointUrl, redisKeyPrefix }) {
             key={index}
             menu={menu}
             onItemSelect={(item) => handleItemSelect(menu.key, item)}
-            redisEndpointUrl={redisEndpointUrl}
           />
         ))}
       </div>
@@ -132,25 +182,22 @@ export function RedisPanel({ menus, redisEndpointUrl, redisKeyPrefix }) {
     </div>
   )
 }
-RedisPanel.propTypes = {
-  menus: PropTypes.array.isRequired,
-  setMenus: PropTypes.func.isRequired,
-  redisEndpointUrl: PropTypes.string.isRequired,
-  redisKeyPrefix: PropTypes.func.isRequired,
-}
 
-export function DropDownMenuContainer({ menu, onItemSelect }) {
+export function DropDownMenuContainer({
+  menu,
+  onItemSelect,
+}: DropDownMenuContainerProps) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
   const [thisMenu, setThisMenu] = useState(menu)
 
-  const handleSelect = (item) => {
+  const handleSelect = (item: AdminMenuItem) => {
     updateRedisStatus("pending")
     onItemSelect(item)
       .then(() => {
         updateRedisStatus("true")
-        setThisMenu((prevMenu) => ({
+        setThisMenu((prevMenu: AdminMenu) => ({
           ...prevMenu,
-          selectedItem: item,
+          selectedItem: item as AdminMenuItem,
         }))
       })
       .catch((error) => {
@@ -173,10 +220,6 @@ export function DropDownMenuContainer({ menu, onItemSelect }) {
     </div>
   )
 }
-DropDownMenuContainer.propTypes = {
-  menu: PropTypes.object.isRequired,
-  onItemSelect: PropTypes.func.isRequired,
-}
 
 export function AdminSendRedisValue({
   redisEndpointUrl,
@@ -186,30 +229,33 @@ export function AdminSendRedisValue({
   valueToSend = null,
   size = "",
   requiresConfirmation = false,
-}) {
+}: AdminSendRedisValueProps) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
-  let showModal = null
+  let showModal: ((content: any) => void) | null = null
 
-  const handleConfirmSubmit = (e) => {
+  const handleConfirmSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    showModal(
-      <ConfirmationModal
-        title={title}
-        message={`Are you sure you want to send value "${valueToSend}" to key "${keyToSend}"?`}
-        onConfirm={() => {
-          handleSubmit(e)
-          showModal(null)
-        }}
-        onCancel={() => showModal(null)}
-      />
-    )
+    showModal &&
+      showModal(
+        <ConfirmationModal
+          title={title}
+          message={`Are you sure you want to send value "${valueToSend}" to key "${keyToSend}"?`}
+          onConfirm={() => {
+            handleSubmit(e)
+            showModal && showModal(null)
+          }}
+          onCancel={() => showModal && showModal(null)}
+        />
+      )
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    updateRedisStatus("pending") // set pending state
+    updateRedisStatus("pending")
     const key = redisKeyPrefix(keyToSend)
-    const value = e.target.elements.value.value
+    const form = e.target as HTMLFormElement
+    const valueInput = form.elements.namedItem("value") as HTMLInputElement
+    const value = valueInput.value
     simplePost(redisEndpointUrl, { key, value })
       .then(() => {
         updateRedisStatus("true")
@@ -253,19 +299,21 @@ export function AdminSendRedisValue({
     </div>
   )
 }
-AdminSendRedisCommand.propTypes = {
-  redisEndpointUrl: PropTypes.string.isRequired,
-  redisKeyPrefix: PropTypes.func.isRequired,
-}
 
-export function AdminSendRedisCommand({ redisEndpointUrl, redisKeyPrefix }) {
+export function AdminSendRedisCommand({
+  redisEndpointUrl,
+  redisKeyPrefix,
+}: AdminSendRedisCommandProps) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     updateRedisStatus("pending")
-    const key = redisKeyPrefix(e.target.elements.key.value)
-    const value = e.target.elements.value.value
+    const form = e.target as HTMLFormElement
+    const keyInput = form.elements.namedItem("key") as HTMLInputElement
+    const valueInput = form.elements.namedItem("value") as HTMLInputElement
+    const key = redisKeyPrefix(keyInput.value)
+    const value = valueInput.value
     simplePost(redisEndpointUrl, { key, value })
       .then(() => {
         updateRedisStatus("true")
@@ -302,12 +350,12 @@ export function AdminSendRedisCommand({ redisEndpointUrl, redisKeyPrefix }) {
     </div>
   )
 }
-AdminSendRedisCommand.propTypes = {
-  redisEndpointUrl: PropTypes.string.isRequired,
-  redisKeyPrefix: PropTypes.func.isRequired,
-}
 
-export function AdminDangerPanel({ redisEndpointUrl }) {
+export function AdminDangerPanel({
+  redisEndpointUrl,
+}: {
+  redisEndpointUrl: string
+}) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
   const { showModal } = useModal()
 
@@ -323,7 +371,7 @@ export function AdminDangerPanel({ redisEndpointUrl }) {
       })
   }
 
-  const handleClick = (e) => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     showModal(
       <ConfirmationModal
@@ -352,22 +400,23 @@ export function AdminDangerPanel({ redisEndpointUrl }) {
     </div>
   )
 }
-AdminDangerPanel.propTypes = {
-  redisEndpointUrl: PropTypes.string.isRequired,
-}
 
-export function StatusIndicator({ status }) {
-  const statusClass = {
-    pending: "pending indicator",
-    true: "success indicator",
-    false: "fail indicator",
+export function StatusIndicator({ status }: { status: string | null }) {
+  const statusClass = (status: string | null) => {
+    switch (status) {
+      case "true":
+        return "success-indicator"
+      case "false":
+        return "fail-indicator"
+      case "pending":
+        return "pending-indicator"
+      default:
+        return "indicator"
+    }
   }
   return (
-    <div className={statusClass[status] || "indicator"}>
+    <div className={statusClass(status) || "indicator"}>
       <span className="status-icon">●</span>
     </div>
   )
-}
-StatusIndicator.propTypes = {
-  status: PropTypes.string,
 }

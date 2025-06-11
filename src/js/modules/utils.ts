@@ -167,8 +167,7 @@ export function retrieveStoredSelection(
       // We have versioned data
       return data.columns
     }
-    // We have legacy unversioned data (just an array)
-    // Store it in the new format and return the columns
+    // Convert old format to new
     const columns = Array.isArray(data) ? data : null
     if (columns) {
       storeSelected(columns, storageKey, version)
