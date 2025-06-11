@@ -1,7 +1,13 @@
 /* eslint-disable no-prototype-builtins */
 import React, { useState, useEffect } from "react"
 import { toTimeString } from "../modules/utils"
-import { cameraType, metadataType } from "./componentPropTypes"
+import { Metadata, Camera } from "./componentTypes"
+
+interface CameraWithTimeSinceClock extends Camera {
+  time_since_clock: {
+    label: string
+  }
+}
 
 export default function Clock() {
   const [time, setTime] = useState(new Date())
@@ -28,19 +34,23 @@ export default function Clock() {
   )
 }
 
-function getHoursAndMins(time) {
+function getHoursAndMins(time: Date): string {
   const h = padZero(time.getUTCHours())
   const m = padZero(time.getUTCMinutes())
   return h + ":" + m
 }
 
-function padZero(num) {
+function padZero(num: number): string {
   return (num + 100).toString().slice(-2)
 }
 
-export function TimeSinceLastImageClock(props) {
-  const { metadata: propsMeta, camera } = props
-
+export function TimeSinceLastImageClock({
+  metadata: propsMeta,
+  camera,
+}: {
+  metadata: Metadata
+  camera: CameraWithTimeSinceClock
+}) {
   const [isOnline, setIsOnline] = useState(true)
   const [time, setTime] = useState(Date.now())
   const [metadata, setMetadata] = useState(propsMeta)
@@ -49,28 +59,29 @@ export function TimeSinceLastImageClock(props) {
   const TAIDIFF = 37 * 1000
 
   useEffect(() => {
+    type EV = EventListener
     const timerId = setInterval(() => {
       setTime(Date.now())
     }, 1000)
 
-    function handleWSStateChangeEvent(event) {
+    function handleWSStateChange(event: CustomEvent) {
       const { online } = event.detail
       setIsOnline(online)
     }
-    window.addEventListener("ws_status_change", handleWSStateChangeEvent)
+    window.addEventListener("ws_status_change", handleWSStateChange as EV)
 
-    function handleMetadataChange(event) {
+    function handleMetadataChange(event: CustomEvent) {
       const { data, dataType } = event.detail
       if (dataType === "metadata" && Object.entries(data).length > 0) {
         setMetadata(data)
       }
     }
-    window.addEventListener("camera", handleMetadataChange)
+    window.addEventListener("camera", handleMetadataChange as EV)
 
     // Listen for the latest metadata change event
     // This is just one seq_num, not the whole metadata
     // that is sent via a "channel" ws event
-    function handleLatestMetadataChange(event) {
+    function handleLatestMetadataChange(event: CustomEvent) {
       const { data, dataType } = event.detail
       console.debug(
         "TimeSinceLastImageClock: handleLatestMetadataChange",
@@ -81,49 +92,66 @@ export function TimeSinceLastImageClock(props) {
         setMetadata(data)
       }
     }
-    window.addEventListener("channel", handleLatestMetadataChange)
+    window.addEventListener("channel", handleLatestMetadataChange as EV)
 
     return () => {
       clearInterval(timerId)
-      window.removeEventListener("ws_status_change", handleWSStateChangeEvent)
-      window.removeEventListener("camera", handleMetadataChange)
-      window.removeEventListener("channel", handleLatestMetadataChange)
+      window.removeEventListener("ws_status_change", handleWSStateChange as EV)
+      window.removeEventListener("camera", handleMetadataChange as EV)
+      window.removeEventListener("channel", handleLatestMetadataChange as EV)
     }
   }, [])
 
-  let row = {}
-  if (metadata) {
-    const lastSeq = Object.entries(metadata)
-      .map(([seq]) => parseInt(seq))
-      .pop()
-    row = metadata[lastSeq]
-  }
+  const lastSeq = metadata
+    ? Object.keys(metadata)
+        .map(Number)
+        .sort((a, b) => a - b)
+        .pop()
+    : undefined
+
+  const row = lastSeq !== undefined ? metadata[lastSeq] : undefined
+
   if (!row) {
-    return
+    return null
   }
-  let error, timeElapsed
-  if (!row.hasOwnProperty("Date begin")) {
-    error = "Can't ascertain..."
-  } else {
-    let UTCDateString = row["Date begin"]
-    if (!UTCDateString.endsWith("Z")) {
-      UTCDateString += "Z"
-    }
-    const startTime = Date.parse(UTCDateString)
-    const exposureTime = Number(row["Exposure time"] || 0) * 1000
-    const endTime = startTime + exposureTime
-    timeElapsed = time - endTime + TAIDIFF
-  }
+
   const className = ["clock time-since-clock", isOnline ? "" : "offline"].join(
     " "
   )
+  const requiredFields = ["Date begin", "Exposure time"] as const
+  const missingField = requiredFields.find((col) => !(col in row))
+
+  if (missingField) {
+    return (
+      <div className={className}>
+        <div>
+          {isOnline && (
+            <p>
+              <span className="label">{camera.time_since_clock.label}</span>
+              <span>Can't ascertain...</span>
+            </p>
+          )}
+          {!isOnline && <p>Lost comms with app</p>}
+        </div>
+      </div>
+    )
+  }
+
+  let UTCDateString = row["Date begin"] as string
+  if (!UTCDateString.endsWith("Z")) {
+    UTCDateString += "Z"
+  }
+  const startTime = Date.parse(UTCDateString)
+  const exposureTime = row["Exposure time"] as number
+  const endTime = startTime + (exposureTime ? exposureTime * 1000 : 0)
+  const timeElapsed = time - endTime + TAIDIFF
+
   return (
     <div className={className}>
       <div>
         {isOnline && (
           <p>
             <span className="label">{camera.time_since_clock.label}</span>
-            {error && <span>{error}</span>}
             {timeElapsed && (
               <span className="timeElapsed">{toTimeString(timeElapsed)}</span>
             )}
@@ -133,8 +161,4 @@ export function TimeSinceLastImageClock(props) {
       </div>
     </div>
   )
-}
-TimeSinceLastImageClock.propTypes = {
-  metadata: metadataType,
-  camera: cameraType,
 }
