@@ -1,5 +1,4 @@
-import React from "react"
-import PropTypes from "prop-types"
+import React, { useContext } from "react"
 import { FilterDialog } from "./TableFilter"
 import { useModal } from "./Modal"
 import {
@@ -7,26 +6,47 @@ import {
   _elWithAttrs,
   replaceInString,
   _getById,
+  setCameraBaseUrl,
 } from "../modules/utils"
-import { metadatumType } from "./componentPropTypes"
+import {
+  MetadatumType,
+  ChannelData,
+  ExposureEvent,
+  TableContext,
+  TableContextType,
+  Channel,
+  Camera,
+  Metadata,
+  MetadataRow,
+  MetadataColumn,
+  SortingOptions,
+  FilterOptions,
+} from "./componentTypes"
+import { get } from "http"
 
-// get the site location from the global APP_DATA object
-// which is set in the template
-const siteLoc = window.APP_DATA.siteLocation
 // TODO: this should be set in the backend
 // See DM-50192
-const hasCCS = (siteLoc) => {
+const hasCCS = (siteLoc: string) => {
   return ["summit", "base"].includes(siteLoc)
 }
-const siteLocHasCCS = hasCCS(siteLoc)
 
-function MetadataCell({ data, indicator, seqNum, columnName }) {
-  const className = ["grid-cell meta", indicator].join(" ")
-  let toDisplay = data
+function MetadataCell({
+  data,
+  indicator,
+  seqNum,
+  columnName,
+}: {
+  data: MetadatumType
+  indicator: string
+  seqNum: string
+  columnName: string
+}) {
+  let toDisplay: string | React.ReactElement = ""
   let title = ""
+  const className = ["grid-cell meta", indicator].join(" ")
   if (typeof data === "number" && data % 1 !== 0) {
     toDisplay = data.toFixed(2)
-    title = data
+    title = data.toString()
   } else if (typeof data === "boolean") {
     toDisplay = data ? "True" : "False"
   } else if (data && typeof data === "object") {
@@ -40,23 +60,28 @@ function MetadataCell({ data, indicator, seqNum, columnName }) {
     </td>
   )
 }
-MetadataCell.propTypes = {
-  data: metadatumType,
-  indicator: PropTypes.string,
-  seqNum: PropTypes.string,
-  columnName: PropTypes.string,
-}
 
 // Component for individual channel cell
-function ChannelCell({ event, chanName, chanColour, noEventReplacement }) {
-  const eventUrl = window.APP_DATA.eventUrl
+function ChannelCell({
+  event,
+  chanName,
+  chanColour,
+  noEventReplacement,
+}: {
+  event?: ExposureEvent
+  chanName: string
+  chanColour: string
+  noEventReplacement?: string
+}) {
+  const { locationName, camera } = useContext(TableContext) as TableContextType
+  const { getEventUrl } = setCameraBaseUrl(locationName, camera.name)
   return (
     <td className="grid-cell">
       {event && (
         <a
           className={`button button-table ${chanName}`}
           style={{ backgroundColor: chanColour }}
-          href={`${eventUrl}?channel_name=${chanName}&date_str=${event.day_obs}&seq_num=${event.seq_num}`}
+          href={getEventUrl(event)}
           aria-label={chanName}
         ></a>
       )}
@@ -65,13 +90,6 @@ function ChannelCell({ event, chanName, chanColour, noEventReplacement }) {
       )}
     </td>
   )
-}
-ChannelCell.propTypes = {
-  event: PropTypes.object,
-  eventUrl: PropTypes.string,
-  chanName: PropTypes.string,
-  chanColour: PropTypes.string,
-  noEventReplacement: PropTypes.string,
 }
 
 // Component for individual table row
@@ -82,15 +100,30 @@ function TableRow({
   channelRow,
   metadataColumns,
   metadataRow,
+}: {
+  seqNum: string
+  camera: Camera
+  channels: Channel[]
+  channelRow: Record<string, ExposureEvent>
+  metadataColumns: MetadataColumn[]
+  metadataRow: MetadataRow
 }) {
-  const dayObs = window.APP_DATA.date.replaceAll("-", "")
+  const { dayObs, siteLocation } = useContext(TableContext) as TableContextType
+  const siteLocHasCCS = hasCCS(siteLocation)
 
   // Entries in metadata keyed `"@{channel_name}"` will have their
   // values show up in the table instead of a blank space.
-  const noEventReplacements = channels.reduce((obj, chan) => {
-    const chanReplace = metadataRow["@" + chan.name] ?? null
-    return { ...obj, [chan.name]: chanReplace }
-  }, {})
+  const noEventReplacements = (() => {
+    const replacements = channels.reduce((obj, chan) => {
+      const chanReplace = metadataRow["@" + chan.name] as string | undefined
+      if (chanReplace != null) {
+        obj[chan.name] = chanReplace
+      }
+      return obj
+    }, {} as Record<string, string>)
+    // Only return if there is at least one replacement
+    return Object.keys(replacements).length > 0 ? replacements : undefined
+  })()
 
   const metadataCells = metadataColumns.map((md) => {
     const indicator = indicatorForAttr(metadataRow, md.name)
@@ -105,8 +138,8 @@ function TableRow({
   // If this row of metadata contains a value for the
   // channel name "controller", then extract that value
   const controller = metadataRow["controller"]
-    ? metadataRow["controller"]
-    : null
+    ? (metadataRow["controller"] as string)
+    : undefined
 
   return (
     <tr>
@@ -118,9 +151,9 @@ function TableRow({
         <td className="grid-cell copy-to-cb">
           <button
             className="button button-table copy"
-            onClick={() =>
-              handleCopyButton(dayObs, seqNum, camera.copy_row_template, this)
-            }
+            onClick={(e) => {
+              handleCopyButton(dayObs, seqNum, camera.copy_row_template!, e)
+            }}
           ></button>
         </td>
       )}
@@ -128,7 +161,7 @@ function TableRow({
         <td className="grid-cell">
           <a
             href={replaceInString(camera.image_viewer_link, dayObs, seqNum, {
-              siteLoc: siteLoc,
+              siteLocation: siteLocation,
               controller: controller,
             })}
             className="button button-table image-viewer-link"
@@ -141,7 +174,7 @@ function TableRow({
           event={channelRow[chan.name]}
           chanName={chan.name}
           chanColour={chan.colour}
-          noEventReplacement={noEventReplacements[chan.name]}
+          noEventReplacement={noEventReplacements?.[chan.name]}
         />
       ))}
       {metadataCells.map((md) => (
@@ -149,14 +182,6 @@ function TableRow({
       ))}
     </tr>
   )
-}
-TableRow.propTypes = {
-  seqNum: PropTypes.string,
-  camera: PropTypes.object,
-  channels: PropTypes.array,
-  channelRow: PropTypes.object,
-  metadataColumns: PropTypes.array,
-  metadataRow: PropTypes.object,
 }
 
 // Body component for rendering rows of data
@@ -167,6 +192,13 @@ function TableBody({
   metadataColumns,
   metadata,
   sortOn,
+}: {
+  camera: Camera
+  channels: Channel[]
+  channelData: ChannelData
+  metadataColumns: MetadataColumn[]
+  metadata: Metadata
+  sortOn: SortingOptions
 }) {
   const allSeqs = Array.from(
     new Set(Object.keys(channelData).concat(Object.keys(metadata)))
@@ -180,7 +212,7 @@ function TableBody({
         return (
           <TableRow
             key={seqNum}
-            seqNum={seqNum}
+            seqNum={seqNum.toString()}
             camera={camera}
             channels={channels}
             channelRow={channelRow}
@@ -192,41 +224,48 @@ function TableBody({
     </tbody>
   )
 }
-TableBody.propTypes = {
-  camera: PropTypes.object,
-  channels: PropTypes.array,
-  metadataColumns: PropTypes.array,
-  channelData: PropTypes.object,
-  metadata: PropTypes.object,
-  eventUrl: PropTypes.string,
-}
 
 // Function to sort the rows based on the selected column
 // and order (ascending or descending)
-function applySorting(allSeqs, sortOn, metadata, channelData) {
-  return allSeqs.toSorted((a, b) => {
+function applySorting(
+  allSeqs: string[],
+  sortOn: SortingOptions,
+  metadata: Metadata,
+  channelData: ChannelData
+) {
+  const getValue = (seq: number) =>
+    metadata[seq]?.[sortOn.column] ?? channelData[seq]?.[sortOn.column]
+
+  const compare = (a: number, b: number) => {
     if (sortOn.column === "seq") {
       return sortOn.order === "asc" ? a - b : b - a
     }
-    const aValue =
-      metadata[a]?.[sortOn.column] ?? channelData[a]?.[sortOn.column]
-    const bValue =
-      metadata[b]?.[sortOn.column] ?? channelData[b]?.[sortOn.column]
+    const aValue = getValue(a)
+    const bValue = getValue(b)
+
+    // Both strings
     if (typeof aValue === "string" && typeof bValue === "string") {
-      if (aValue === bValue) {
-        // if the compare values are equal, sort by seqNum
-        return sortOn.order === "asc" ? a - b : b - a
-      }
+      if (aValue === bValue) return sortOn.order === "asc" ? a - b : b - a
       return sortOn.order === "asc"
         ? aValue.localeCompare(bValue)
         : bValue.localeCompare(aValue)
     }
-    if (aValue === undefined || bValue === undefined) {
-      // if one of the values is undefined, sort by seqNum
+
+    // If either is undefined or not a number, fallback to seq
+    if (
+      aValue === undefined ||
+      bValue === undefined ||
+      typeof aValue !== "number" ||
+      typeof bValue !== "number"
+    ) {
       return sortOn.order === "asc" ? a - b : b - a
     }
+
+    // Both numbers (or booleans)
     return sortOn.order === "asc" ? aValue - bValue : bValue - aValue
-  })
+  }
+
+  return allSeqs.slice().map(Number).sort(compare)
 }
 
 // Component for individual channel header
@@ -238,10 +277,18 @@ function ChannelHeader({
   unfilteredRowsCount,
   sortOn,
   setSortOn,
+}: {
+  channel: Channel | MetadataColumn
+  filterOn: FilterOptions
+  setFilterOn: (filter: FilterOptions) => void
+  filteredRowsCount: number
+  unfilteredRowsCount: number
+  sortOn: SortingOptions
+  setSortOn: React.Dispatch<React.SetStateAction<SortingOptions>>
 }) {
   const { showModal } = useModal()
 
-  const handleColumnClick = (event, column) => {
+  const handleColumnClick = (event: React.MouseEvent, column: string) => {
     handleSortClick(event, column, setSortOn)
     if (!event.shiftKey) {
       showModal(
@@ -261,34 +308,27 @@ function ChannelHeader({
     ? "meta grid-title sortable"
     : "grid-title"
   const isFilteredOn = filterOn.column === channel.name && filterOn.value !== ""
-  let titleClass = isFilteredOn ? "filtering sideways" : "sideways"
+  const titleClass = isFilteredOn ? "filtering sideways" : "sideways"
   const isSortedOn = sortOn.column === channel.name
   const sortingClass = `sorting-indicator ${sortOn.order}`
 
   const containerProps = {
     className: containerClass,
-  }
+  } as React.PropsWithoutRef<React.HTMLAttributes<HTMLDivElement>>
   if (isMetadataColumn) {
     containerProps.onClick = (event) => handleColumnClick(event, channel.name)
+    containerProps.title = (channel as MetadataColumn).desc
   }
-  if (channel.desc) {
-    containerProps.title = channel.desc
-  }
+  const label =
+    (channel as Channel).label ||
+    (channel as Channel).title ||
+    (channel as MetadataColumn).name
   return (
     <div {...containerProps}>
       {isSortedOn && <div className={sortingClass}></div>}
-      <div className={titleClass}>
-        {channel.label || channel.title || channel.name}
-      </div>
+      <div className={titleClass}>{label}</div>
     </div>
   )
-}
-ChannelHeader.propTypes = {
-  channel: PropTypes.object,
-  filterOn: PropTypes.object,
-  setFilterOn: PropTypes.func,
-  filteredRowsCount: PropTypes.number,
-  unfilteredRowsCount: PropTypes.number,
 }
 
 // Header component for rendering column titles
@@ -301,8 +341,19 @@ export function TableHeader({
   unfilteredRowsCount,
   sortOn,
   setSortOn,
+}: {
+  camera: Camera
+  metadataColumns: MetadataColumn[]
+  filterOn: FilterOptions
+  setFilterOn: (filter: FilterOptions) => void
+  filteredRowsCount: number
+  unfilteredRowsCount: number
+  sortOn: SortingOptions
+  setSortOn: React.Dispatch<React.SetStateAction<SortingOptions>>
 }) {
-  const channelColumns = seqChannels(camera)
+  const { siteLocation } = useContext(TableContext) as TableContextType
+  const siteLocHasCCS = hasCCS(siteLocation)
+  const channelColumns = seqChannels(camera) as (Channel | MetadataColumn)[]
   const columns = channelColumns.concat(metadataColumns)
   const sorting = sortOn.column == "seq"
   const sortingClass = `sorting-indicator ${sortOn.order}`
@@ -338,14 +389,6 @@ export function TableHeader({
     </>
   )
 }
-TableHeader.propTypes = {
-  camera: PropTypes.object,
-  metadataColumns: PropTypes.array,
-  filterOn: PropTypes.object,
-  setFilterOn: PropTypes.func,
-  filteredRowsCount: PropTypes.number,
-  unfilteredRowsCount: PropTypes.number,
-}
 
 export default function TableView({
   camera,
@@ -355,6 +398,16 @@ export default function TableView({
   filterOn,
   filteredRowsCount,
   sortOn,
+  siteLocation,
+}: {
+  camera: Camera
+  channelData: ChannelData
+  metadata: Metadata
+  metadataColumns: MetadataColumn[]
+  filterOn: FilterOptions
+  filteredRowsCount: number
+  sortOn: SortingOptions
+  siteLocation: string
 }) {
   const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
   if (filterColumnSet && filteredRowsCount == 0) {
@@ -377,19 +430,8 @@ export default function TableView({
     </table>
   )
 }
-TableView.propTypes = {
-  camera: PropTypes.object,
-  metadataColumns: PropTypes.array,
-  channelData: PropTypes.object,
-  metadata: PropTypes.object,
-  filterOn: PropTypes.object,
-  filteredRowsCount: PropTypes.number,
-}
 
-function seqChannels(camera) {
-  // Filter out channels that don't have sequential table data
-  // Use the snake_case name for the atrribute `per_day` as
-  // it's from a python object
+function seqChannels(camera: Camera): Channel[] {
   return camera.channels.filter((cam) => !cam.per_day)
 }
 
@@ -397,12 +439,30 @@ function seqChannels(camera) {
  * key/value pairs. The function is called when button in a metadata cell of
  * the table is clicked.
  */
-function FoldoutCell({ seqNum, columnName, data }) {
+function FoldoutCell({
+  seqNum,
+  columnName,
+  data,
+}: {
+  seqNum: string
+  columnName: string
+  data: MetadatumType | Record<string, any>
+}) {
   if (!data || typeof data !== "object") {
     return null
   }
   const { showModal } = useModal()
-  const toDisplay = data.DISPLAY_VALUE
+
+  let toDisplay: string = ""
+  if (Array.isArray(data)) {
+    // If data is an array, we can display it as a list
+    toDisplay = "📖"
+  } else {
+    toDisplay = data.hasOwnProperty("DISPLAY_VALUE")
+      ? data["DISPLAY_VALUE"]
+      : "📖"
+  }
+
   const handleClick = () => {
     const content = (
       <div className="cell-dict-modal">
@@ -432,25 +492,22 @@ function FoldoutCell({ seqNum, columnName, data }) {
     </button>
   )
 }
-FoldoutCell.propTypes = {
-  /** data is usually an object of key/value pairs */
-  // We're allowing arrays too for the time being until the metadata
-  // convention is fully established
-  // See DM-51201 [https://rubinobs.atlassian.net/browse/DM-51201]
-  data: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
-  seqNum: PropTypes.string,
-  columnName: PropTypes.string,
-}
 
-function handleCopyButton(date, seqNum, template) {
-  const dayObs = date.replaceAll("-", "")
+function handleCopyButton(
+  date: string,
+  seqNum: string,
+  template: string,
+  event: React.MouseEvent
+) {
+  const dayObs = date.replace(/-/g, "")
   const dataStr = replaceInString(template, dayObs, seqNum)
   navigator.clipboard.writeText(dataStr)
   const responseMsg = _elWithAttrs("div", {
     class: "copied",
     text: `DataId for ${seqNum} copied to clipboard`,
   })
-  const pos = _getById(`seqNum-${seqNum}`).getBoundingClientRect()
+  const callingElement = event.currentTarget as HTMLElement
+  const pos = callingElement.getBoundingClientRect()
   responseMsg.setAttribute(
     "style",
     `top: ${pos.y - pos.height / 2}px; left: ${pos.x + (pos.width + 8)}px`
@@ -463,13 +520,17 @@ function handleCopyButton(date, seqNum, template) {
 
 export { TableRow }
 
-const handleSortClick = (event, column, setSortOn) => {
+const handleSortClick = (
+  event: React.MouseEvent,
+  column: string,
+  setSortOn: React.Dispatch<React.SetStateAction<SortingOptions>>
+) => {
   event.stopPropagation()
   const isShiftKey = event.shiftKey
   if (isShiftKey) {
     // if shift key pressed, use this column
     // for sorting
-    setSortOn((prev) => {
+    setSortOn((prev: SortingOptions) => {
       if (prev.column === column) {
         return {
           column: column,

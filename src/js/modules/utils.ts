@@ -1,5 +1,6 @@
 import { gunzipSync } from "fflate"
 import { homeUrl, imageRoot } from "js/config"
+import { ExposureEvent, MetadataRow } from "../components/componentTypes"
 
 export function intersect<T>(arrayA: T[], arrayB: T[]): T[] {
   return arrayA.filter((el) => arrayB.includes(el))
@@ -71,7 +72,7 @@ export function _getById(idStr: string): HTMLElement | null {
 }
 
 export function indicatorForAttr(
-  attributes: Record<string, string>,
+  attributes: MetadataRow,
   attrToCheck: string
 ): string {
   // indicators are in with the attributes. they share the name of the
@@ -81,7 +82,7 @@ export function indicatorForAttr(
   // is there an indicator for this attribute?
   if (Object.keys(attributes).includes(indicator)) {
     // if so, get its value
-    flag = attributes[indicator]
+    flag = attributes[indicator] as string
   }
   return flag
 }
@@ -96,7 +97,7 @@ export function sanitiseString(str: string): string {
 }
 
 interface ReplaceOptions {
-  siteLoc?: string
+  siteLocation?: string
   controller?: string
 }
 
@@ -104,7 +105,7 @@ export function replaceInString(
   link: string,
   dayObs: string,
   seqNum: string,
-  { siteLoc = "", controller = "" }: ReplaceOptions = {}
+  { siteLocation = "", controller = "" }: ReplaceOptions = {}
 ): string {
   interface SiteLocMap {
     [key: string]: string
@@ -112,17 +113,17 @@ export function replaceInString(
     base: string
   }
 
-  const siteLocToDomain = (siteLoc: keyof SiteLocMap | string): string => {
+  const siteLocToDomain = (siteLocation: keyof SiteLocMap | string): string => {
     // Maps site location to domain
     // can only be summit or base
     const siteLocMap: SiteLocMap = {
       summit: "cp",
       base: "ls",
     }
-    return siteLocMap[siteLoc] || ""
+    return siteLocMap[siteLocation] || ""
   }
   const formattedLink = link
-    .replace("{siteLoc}", siteLocToDomain(siteLoc))
+    .replace("{siteLoc}", siteLocToDomain(siteLocation))
     .replace(
       /{controller(:default=(\w+))?}/,
       (_, __, defaultValue) => controller || defaultValue || ""
@@ -316,17 +317,30 @@ export function getMediaProxyUrl(
   cameraName: string,
   channelName: string,
   filename: string
-): URL {
+): string {
   // Constructs a URL for a media file (image or video) for a given location name,
   // camera name, channel name, and filename.
   return new URL(
     `event_${mediaType}/${locationName}/${cameraName}/${channelName}/${filename}`,
     homeUrl
-  )
+  ).toString()
 }
 
 export const getImageAssetUrl = (path: string): string => {
   const [base, queriesMaybe] = imageRoot.split("?")
   const queries = queriesMaybe ? "?" + queriesMaybe : ""
   return new URL(path + queries, base + "/").toString()
+}
+
+export const setCameraBaseUrl = (locationName: string, cameraName: string) => {
+  const cameraBaseUrl = new URL(`${locationName}/${cameraName}`, homeUrl)
+  return {
+    getEventUrl: (event: ExposureEvent) => {
+      const { channel_name, day_obs, seq_num } = event
+      return new URL(
+        `event?channel_name=${channel_name}&date_str=${day_obs}&seq_num=${seq_num}`,
+        cameraBaseUrl
+      ).toString()
+    },
+  }
 }

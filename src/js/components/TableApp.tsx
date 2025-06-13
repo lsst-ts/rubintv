@@ -9,36 +9,53 @@ import {
 } from "../modules/columnStorage"
 import { cameraType } from "./componentPropTypes"
 import { ModalProvider } from "./Modal"
+import {
+  TableContext,
+  Camera,
+  ChannelData,
+  Metadata,
+  MetadataColumn,
+  FilterOptions,
+  SortingOptions,
+} from "./componentTypes"
 
 export default function TableApp({
   camera,
+  locationName,
   initialDate,
   isHistorical,
-  initialChannelData = {},
-  initialMetadata = {},
+  siteLocation,
+}: {
+  camera: Camera
+  locationName: string
+  initialDate: string
+  isHistorical: boolean
+  siteLocation: string
 }) {
   const [date, setDate] = useState(initialDate)
-  const [channelData, setChannelData] = useState(initialChannelData)
-  const [metadata, setMetadata] = useState(initialMetadata)
+  const [channelData, setChannelData] = useState({} as ChannelData)
+  const [metadata, setMetadata] = useState({} as Metadata)
   const [filterOn, setFilterOn] = useState({
     column: "",
     value: "",
-  })
+  } as FilterOptions)
+
   const [sortOn, setSortOn] = useState({
     column: "seq",
     order: "desc",
-  })
+  } as SortingOptions)
 
   const [error, setError] = useState(null)
 
-  const locationName = window.APP_DATA.locationName
-
   // Column configuration derived from camera metadata
-  const defaultColumns = camera.metadata_cols
-    ? Object.entries(camera.metadata_cols).map(([name, desc]) => ({
-        name,
-        desc,
-      }))
+  const defaultColumns = camera.metadata_columns
+    ? Object.entries(camera.metadata_columns).map(
+        ([name, desc]) =>
+          ({
+            name,
+            desc,
+          } as MetadataColumn)
+      )
     : []
   const defaultColNames = defaultColumns.map((col) => col.name)
   const availableColumns = getAllColumnNames(metadata, defaultColNames)
@@ -50,17 +67,21 @@ export default function TableApp({
 
   // Save selection changes
   const handleSetSelected = useCallback(
-    (newSelected) => {
+    (newSelected: string[]) => {
       setSelected(newSelected)
       saveColumnSelection(newSelected, locationName, camera.name)
     },
     [locationName, camera.name]
   )
 
-  const selectedObjs = selected.map((c) => ({ name: c }))
+  const selectedObjs = selected.map((c: MetadataColumn[]) => ({ name: c }))
   const selectedMetaCols = defaultColumns
     .filter((col) => selected.includes(col.name))
-    .concat(selectedObjs.filter((o) => !defaultColNames.includes(o.name)))
+    .concat(
+      selectedObjs.filter(
+        (o: MetadataColumn) => !defaultColNames.includes(o.name)
+      )
+    )
 
   // Fetch historical data if required.
   // This effect runs only once when the component mounts.
@@ -100,7 +121,7 @@ export default function TableApp({
         acc[key] = val
       }
       return acc
-    }, {})
+    }, {} as Metadata)
     // reduce the channelData to only the rows that are in the filteredMetadata
     filteredChannelData = Object.entries(channelData).reduce(
       (acc, [key, val]) => {
@@ -109,7 +130,7 @@ export default function TableApp({
         }
         return acc
       },
-      {}
+      {} as ChannelData
     )
   }
 
@@ -127,7 +148,7 @@ export default function TableApp({
   })
 
   const handleCameraEvent = useCallback(
-    (event) => {
+    (event: CustomEvent) => {
       const { datestamp, data, dataType } = event.detail
       // if there's no data, don't update
       if (Object.entries(data).length === 0) {
@@ -139,8 +160,7 @@ export default function TableApp({
       }
 
       if (datestamp && datestamp !== date) {
-        window.APP_DATA.date = datestamp
-        const headerDate = _getById("header-date")
+        const headerDate = _getById("header-date") as HTMLSpanElement
         headerDate.textContent = datestamp
         headerDate.classList.remove("stale")
         setDate(datestamp)
@@ -158,9 +178,10 @@ export default function TableApp({
   )
 
   useEffect(() => {
-    window.addEventListener("camera", handleCameraEvent)
+    type EL = EventListener
+    window.addEventListener("camera", handleCameraEvent as EL)
     return () => {
-      window.removeEventListener("camera", handleCameraEvent)
+      window.removeEventListener("camera", handleCameraEvent as EL)
     }
   }, [handleCameraEvent])
 
@@ -177,44 +198,48 @@ export default function TableApp({
   }
 
   return (
-    <div className="table-container">
-      <ModalProvider>
-        <div className="above-table-sticky">
-          <AboveTableRow
-            camera={camera}
-            availableColumns={availableColumns}
-            selected={selected}
-            setSelected={handleSetSelected}
-            date={date}
-            metadata={metadata}
-            isHistorical={isHistorical}
-            filterOn={filterOn}
-          />
-          <div className="table-header row">
-            <TableHeader
+    <TableContext.Provider
+      value={{ siteLocation, locationName, camera, dayObs: date }}
+    >
+      <div className="table-container">
+        <ModalProvider>
+          <div className="above-table-sticky">
+            <AboveTableRow
               camera={camera}
-              metadataColumns={selectedMetaCols}
-              filterOn={filterOn}
-              setFilterOn={setFilterOn}
-              filteredRowsCount={filteredRowsCount}
-              unfilteredRowsCount={unfilteredRowsCount}
-              sortOn={sortOn}
-              setSortOn={setSortOn}
+              availableColumns={availableColumns}
+              selected={selected}
+              setSelected={handleSetSelected}
+              date={date}
+              metadata={metadata}
+              isHistorical={isHistorical}
             />
+            <div className="table-header row">
+              <TableHeader
+                camera={camera}
+                metadataColumns={selectedMetaCols}
+                filterOn={filterOn}
+                setFilterOn={setFilterOn}
+                filteredRowsCount={filteredRowsCount}
+                unfilteredRowsCount={unfilteredRowsCount}
+                sortOn={sortOn}
+                setSortOn={setSortOn}
+              />
+            </div>
+            <JumpButtons></JumpButtons>
           </div>
-          <JumpButtons></JumpButtons>
-        </div>
-        <TableView
-          camera={camera}
-          channelData={filteredChannelData}
-          metadata={filteredMetadata}
-          metadataColumns={selectedMetaCols}
-          filterOn={filterOn}
-          filteredRowsCount={filteredRowsCount}
-          sortOn={sortOn}
-        />
-      </ModalProvider>
-    </div>
+          <TableView
+            camera={camera}
+            channelData={filteredChannelData}
+            metadata={filteredMetadata}
+            metadataColumns={selectedMetaCols}
+            filterOn={filterOn}
+            filteredRowsCount={filteredRowsCount}
+            sortOn={sortOn}
+            siteLocation={siteLocation}
+          />
+        </ModalProvider>
+      </div>
+    </TableContext.Provider>
   )
 }
 TableApp.propTypes = {
@@ -229,19 +254,13 @@ TableApp.propTypes = {
   initialMetadata: PropTypes.object,
 }
 
-/**
- * Returns a list of all column names from the metadata object.
- *
- * @param {Object} metadata - The metadata object.
- * @param {Array} defaultColNames - The default column names.
- * @returns {Array} - The list of all column names.
- */
-function getAllColumnNames(metadata, defaultColNames) {
+function getAllColumnNames(metadata: Metadata, defaultColNames: string[]) {
   // get the set of all data for list of all available attrs
   const availableColumns = Object.values(metadata)
     .map((obj) => Object.keys(obj))
     .flat()
-    .toSorted((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+    .slice()
+    .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
   // get the set of all data for list of all available attrs
   const uniqueColNames = Array.from(
     new Set(defaultColNames.concat(availableColumns))
@@ -277,16 +296,23 @@ function redrawHeaderWidths() {
     return
   }
   let sum = 0
-  headers.forEach((title, ix) => {
+  for (let ix = 0; ix < headers.length; ix++) {
+    const title = headers[ix] as HTMLElement
     const width = columns[ix] + 2
     title.style.left = `${sum}px`
     sum += width
-  })
+  }
   if (sum > 0) {
-    const sumWidth = `${sum + 1}px`
-    // add another 1px to the sticky elements to allow for any rounding down
-    // of non-integer table widths
-    document.querySelector(".above-table-sticky").style.width = sumWidth
-    document.querySelector(".table-header").style.width = sumWidth
+    const sumWidth = `${Math.ceil(sum)}px`
+    const aboveTable = document.querySelector(
+      ".above-table-sticky"
+    ) as HTMLElement
+    const tableHeader = document.querySelector(".table-header") as HTMLElement
+    if (aboveTable) {
+      aboveTable.style.width = sumWidth
+    }
+    if (tableHeader) {
+      tableHeader.style.width = sumWidth
+    }
   }
 }

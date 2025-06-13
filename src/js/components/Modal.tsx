@@ -1,9 +1,16 @@
 import React, { useState, useEffect, createContext, useContext } from "react"
 import { createPortal } from "react-dom"
-import PropTypes from "prop-types"
+
+interface ModalContextType {
+  modalContent: React.ReactNode | null
+  setModalContent: (content: React.ReactNode | null) => void
+}
 
 // Create a Context for the modal
-const ModalContext = createContext()
+const ModalContext = createContext<ModalContextType>({
+  modalContent: null,
+  setModalContent: () => {},
+})
 
 // Ensure modal-root exists in the DOM
 const modalRoot =
@@ -15,11 +22,11 @@ const modalRoot =
     return root
   })()
 
-export function ModalProvider({ children }) {
-  const [modalContent, setModalContent] = useState(null)
+export function ModalProvider({ children }: { children: React.ReactNode }) {
+  const [modalContent, setModalContent] = useState<React.ReactNode | null>(null)
 
   useEffect(() => {
-    const handleKeyDown = (event) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setModalContent(null)
       }
@@ -50,14 +57,15 @@ export function ModalProvider({ children }) {
     </ModalContext.Provider>
   )
 }
-ModalProvider.propTypes = {
-  children: PropTypes.node,
-}
 
-export function useModal() {
+export function useModal(): {
+  modalContent: React.ReactNode | null
+  showModal: (content: React.ReactNode) => void
+  closeModal: () => void
+} {
   const { modalContent, setModalContent } = useContext(ModalContext)
 
-  const showModal = (content) => {
+  const showModal = (content: any) => {
     setModalContent(content)
   }
 
@@ -84,10 +92,4 @@ export const ConfirmationModal = ({
       <button onClick={onCancel}>No</button>
     </div>
   )
-}
-ConfirmationModal.propTypes = {
-  title: PropTypes.string.isRequired,
-  message: PropTypes.string.isRequired,
-  onConfirm: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired,
 }

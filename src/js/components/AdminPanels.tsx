@@ -82,8 +82,8 @@ export default function AdminPanels({
             email: data.email,
             name: data.name,
           }))
-        } catch (e) {
-          console.error("Error parsing auth API JSON response:", e)
+        } catch (error) {
+          console.error("Error parsing auth API JSON response:", error)
         }
       })
       .catch((error) => console.warn("Error loading auth API:", error.message))

@@ -1,36 +1,30 @@
 import React, { useState, useEffect } from "react"
-import PropTypes from "prop-types"
-import {
-  cameraType,
-  eventType,
-  metadataType,
-  mosaicSingleView,
-} from "./componentPropTypes"
 import { _getById, getStrHashCode } from "../modules/utils"
+import { homeUrl } from "../config"
+import {
+  Camera,
+  MosiacSingleView,
+  MediaType,
+  ExposureEvent,
+} from "./componentTypes"
+
+interface CameraWithMosaicViewMeta extends Camera {
+  mosaic_view_meta: MosiacSingleView[]
+}
 
 const FRAMELENGTH = 0.1
 const BACK = -FRAMELENGTH
 const FORWARD = FRAMELENGTH
 
-class MediaType {
-  static IMAGE = { value: "image" }
-  static VIDEO = { value: "video" }
-
-  static getMediaType(type) {
-    switch (type) {
-      case "image":
-        return this.IMAGE
-      case "video":
-        return this.VIDEO
-      default:
-        return null
-    }
-  }
-}
-
 const commonColumns = ["seqNum"]
 
-export default function MosaicView({ locationName, camera }) {
+export default function MosaicView({
+  locationName,
+  camera,
+}: {
+  locationName: string
+  camera: CameraWithMosaicViewMeta
+}) {
   const [historicalBusy, setHistoricalBusy] = useState(null)
   const [currentMeta, setCurrentMeta] = useState({})
   const [views, setViews] = useState(initialViews)
@@ -38,12 +32,12 @@ export default function MosaicView({ locationName, camera }) {
   function initialViews() {
     let videoCount = 0
     const views = camera.mosaic_view_meta.map((view) => {
-      const isVideo = view.mediaType === MediaType.VIDEO.value
+      const isVideo = view.mediaType === "video"
       videoCount += isVideo ? 1 : 0
       return {
         ...view,
-        mediaType: MediaType.getMediaType(view.mediaType),
-        latestEvent: {},
+        mediaType: view.mediaType,
+        latestEvent: undefined,
         // only apply 'selected == true' to first video
         selected: isVideo && videoCount == 1 ? true : false,
       }
@@ -54,12 +48,12 @@ export default function MosaicView({ locationName, camera }) {
   function hasMultipleVideos() {
     // Is there more than one video?
     const vids = camera.mosaic_view_meta.filter(
-      ({ mediaType }) => mediaType === MediaType.VIDEO
+      ({ mediaType }) => mediaType === "video"
     )
     return vids.length > 1 ? true : false
   }
 
-  function selectView(thisView) {
+  function selectView(thisView: MosiacSingleView) {
     setViews((prevViews) =>
       prevViews.map((view) =>
         view.channel === thisView.channel
@@ -70,11 +64,15 @@ export default function MosaicView({ locationName, camera }) {
   }
 
   useEffect(() => {
-    window.addEventListener("camera", handleMetadataChange)
-    window.addEventListener("historicalStatus", handleHistoricalStateChange)
-    window.addEventListener("channel", handleChannelEvent)
+    type EV = EventListener
+    window.addEventListener("camera", handleMetadataChange as EV)
+    window.addEventListener(
+      "historicalStatus",
+      handleHistoricalStateChange as EV
+    )
+    window.addEventListener("channel", handleChannelEvent as EV)
 
-    function handleMetadataChange(event) {
+    function handleMetadataChange(event: CustomEvent) {
       const { data, dataType } = event.detail
       if (Object.entries(data).length < 1 || dataType !== "metadata") {
         return
@@ -82,14 +80,20 @@ export default function MosaicView({ locationName, camera }) {
       setCurrentMeta(data)
     }
 
-    function handleHistoricalStateChange(event) {
+    function handleHistoricalStateChange(event: CustomEvent) {
       const { data: historicalBusy } = event.detail
       setHistoricalBusy(historicalBusy)
     }
 
-    function handleChannelEvent(event) {
+    /**
+     * Handle the channel event to update the views with the latest event data.
+     * This is triggered when a new event occurs on a channel.
+     */
+    function handleChannelEvent(event: CustomEvent) {
       const { data } = event.detail
-      if (!data) {
+
+      if (!data || Object.keys(data).length < 1) {
+        console.warn("No data received in channel event")
         return
       }
       const { channel_name: chanName } = data
@@ -101,12 +105,12 @@ export default function MosaicView({ locationName, camera }) {
     }
 
     return () => {
-      window.removeEventListener("camera", handleMetadataChange)
+      window.removeEventListener("camera", handleMetadataChange as EV)
       window.removeEventListener(
         "historicalStatus",
-        handleHistoricalStateChange
+        handleHistoricalStateChange as EV
       )
-      window.removeEventListener("channel", handleChannelEvent)
+      window.removeEventListener("channel", handleChannelEvent as EV)
     }
   }, [])
 
@@ -130,10 +134,6 @@ export default function MosaicView({ locationName, camera }) {
     </div>
   )
 }
-MosaicView.propTypes = {
-  locationName: PropTypes.string,
-  camera: cameraType,
-}
 
 function ChannelViewListItem({
   locationName,
@@ -142,24 +142,24 @@ function ChannelViewListItem({
   currentMeta,
   selectView,
   isSelectable,
+}: {
+  locationName: string
+  camera: CameraWithMosaicViewMeta
+  view: MosiacSingleView
+  currentMeta: Record<string, Record<string, string>>
+  selectView: (view: MosiacSingleView) => void
+  isSelectable: boolean
 }) {
   const channel = camera.channels.find(({ name }) => name === view.channel)
   if (!channel) {
     return <h3>Channel {view.channel} not found</h3>
   }
-  const {
-    selected,
-    mediaType,
-    latestEvent: { day_obs: dayObs },
-  } = view
-  const clsName = [
-    "view",
-    `view-${mediaType.value}`,
-    selected ? "selected" : null,
-  ]
+  const { selected, mediaType } = view
+  const dayObs = view.latestEvent?.day_obs
+  const clsName = ["view", `view-${mediaType}`, selected ? "selected" : null]
     .join(" ")
     .trimEnd()
-  const clickHandler = isSelectable ? () => selectView(view) : null
+  const clickHandler = isSelectable ? () => selectView(view) : undefined
   return (
     <li className={clsName} onClick={clickHandler}>
       <h3 className="channel">
@@ -176,43 +176,36 @@ function ChannelViewListItem({
     </li>
   )
 }
-ChannelViewListItem.propTypes = {
-  locationName: PropTypes.string,
-  camera: cameraType,
-  view: mosaicSingleView,
-  currentMeta: metadataType,
-  selectView: PropTypes.func,
-  isSelectable: PropTypes.bool,
-}
 
-function ChannelMedia({ locationName, camera, event, mediaType }) {
-  const { filename } = event
-  if (!filename) return <ChannelMediaPlaceholder />
+function ChannelMedia({
+  locationName,
+  camera,
+  event,
+  mediaType,
+}: {
+  locationName: string
+  camera: CameraWithMosaicViewMeta
+  event: ExposureEvent | undefined
+  mediaType: MediaType
+}) {
+  if (!event || !event.filename) return <ChannelMediaPlaceholder />
   const mediaURL = buildMediaURI(
     locationName,
     camera.name,
     event.channel_name,
-    filename
+    event.filename
   )
   switch (mediaType) {
-    case MediaType.VIDEO:
+    case "video":
       return <ChannelVideo mediaURL={mediaURL} />
-    case MediaType.IMAGE:
+    case "image":
     default:
       return <ChannelImage mediaURL={mediaURL} />
   }
 }
-ChannelMedia.propTypes = {
-  locationName: PropTypes.string,
-  camera: cameraType,
-  event: eventType,
-  mediaType: PropTypes.shape({
-    value: PropTypes.string,
-  }),
-}
 
-function ChannelImage({ mediaURL }) {
-  const imgSrc = new URL(`event_image/${mediaURL}`, window.APP_DATA.homeUrl)
+function ChannelImage({ mediaURL }: { mediaURL: string }) {
+  const imgSrc = new URL(`event_image/${mediaURL}`, homeUrl).toString()
   return (
     <div className="viewImage">
       <a href={imgSrc}>
@@ -221,13 +214,10 @@ function ChannelImage({ mediaURL }) {
     </div>
   )
 }
-ChannelImage.propTypes = {
-  mediaURL: PropTypes.string,
-}
 
-function ChannelVideo({ mediaURL }) {
+function ChannelVideo({ mediaURL }: { mediaURL: string }) {
   const [isLoaded, setIsLoaded] = useState(false)
-  const videoSrc = new URL(`event_video/${mediaURL}`, window.APP_DATA.homeUrl)
+  const videoSrc = new URL(`event_video/${mediaURL}`, homeUrl).toString()
   const vidID = `v_${getStrHashCode(mediaURL)}`
   return (
     <div className="viewVideo">
@@ -252,9 +242,6 @@ function ChannelVideo({ mediaURL }) {
     </div>
   )
 }
-ChannelVideo.propTypes = {
-  mediaURL: PropTypes.string,
-}
 
 function ChannelMediaPlaceholder() {
   return (
@@ -264,17 +251,23 @@ function ChannelMediaPlaceholder() {
   )
 }
 
-function ChannelMetadata({ view, metadata }) {
-  const {
-    channel,
-    metaColumns: viewColumns,
-    latestEvent: { seq_num: seqNum },
-  } = view
-  if (viewColumns.length == 0) {
+function ChannelMetadata({
+  view,
+  metadata,
+}: {
+  view: MosiacSingleView
+  metadata: Record<string, Record<string, string>>
+}) {
+  const { channel, metaColumns: viewColumns, latestEvent } = view
+  if (
+    viewColumns.length == 0 ||
+    !latestEvent ||
+    latestEvent.seq_num === undefined
+  ) {
     return
   }
   const columns = [...commonColumns, ...viewColumns]
-  const metadatum = metadata[seqNum] || {}
+  const metadatum = metadata[latestEvent.seq_num] || {}
   return (
     <table className="viewMeta" id={`table-${channel}`}>
       <tbody>
@@ -293,16 +286,20 @@ function ChannelMetadata({ view, metadata }) {
     </table>
   )
 }
-ChannelMetadata.propTypes = {
-  view: mosaicSingleView,
-  metadata: metadataType,
-}
 
-const buildMediaURI = (locationName, cameraName, channelName, filename) =>
-  `${locationName}/${cameraName}/${channelName}/${filename}`
+const buildMediaURI = (
+  locationName: string,
+  cameraName: string,
+  channelName: string,
+  filename: string
+) => `${locationName}/${cameraName}/${channelName}/${filename}`
 
-function frameStep(vidID, timeDelta) {
-  const video = _getById(vidID)
+function frameStep(vidID: string, timeDelta: number) {
+  const video = _getById(vidID) as HTMLVideoElement
+  if (!video) {
+    console.warn(`Video with ID ${vidID} not found`)
+    return
+  }
   pauseVideo(video)
   const currentTime = video.currentTime
   const duration = video.duration
@@ -320,7 +317,7 @@ function frameStep(vidID, timeDelta) {
 
 window.onkeydown = videoControl
 
-function videoControl(e) {
+function videoControl(e: KeyboardEvent) {
   const video = document.querySelector(".view-video.selected video")
   if (!video) {
     return
@@ -340,7 +337,7 @@ function videoControl(e) {
   }
 }
 
-function pauseVideo(video) {
+function pauseVideo(video: HTMLVideoElement) {
   if (!video.paused) {
     video.pause()
   }

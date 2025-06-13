@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from "react"
-import PropTypes from "prop-types"
-import { calendarType, cameraType } from "./componentPropTypes"
+import { CalendarData, Camera } from "./componentTypes"
 import Calendar from "calendar"
 import { monthNames, ymdToDateStr } from "../modules/utils"
-
-const homeUrl = window.APP_DATA.homeUrl
+import { homeUrl } from "../config"
 
 const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
@@ -17,6 +15,14 @@ const Day = ({
   selectedDate,
   cameraUrl,
   noSeqNum,
+}: {
+  day: number
+  dateStr: string
+  calendarData: CalendarData[number][number]
+  dayObs?: string | null
+  selectedDate: Date
+  cameraUrl: string
+  noSeqNum?: boolean
 }) => {
   let hasData = false
   let isSelected = false
@@ -28,7 +34,7 @@ const Day = ({
   if (dayObs === dateStr) {
     currentDayClassList.push("today")
   }
-  if (dateStr == selectedDate) {
+  if (dateStringToDate(dateStr) == selectedDate) {
     isSelected = true
     currentDayClassList.push("selected")
   }
@@ -70,6 +76,16 @@ const Month = ({
   calendarFrame,
   selectedDate,
   dayObs,
+}: {
+  year: number
+  month: number
+  isSelected: boolean
+  calendarData: CalendarData
+  cameraUrl: string
+  noSeqNum: boolean
+  calendarFrame: Calendar.Calendar
+  selectedDate: Date
+  dayObs?: string | null
 }) => {
   return (
     <div className={`month ${isSelected ? "selected" : ""}`}>
@@ -82,7 +98,7 @@ const Month = ({
         ))}
       </div>
       <div className="days">
-        {calendarFrame.monthDays(parseInt(year), month - 1).map((week) =>
+        {calendarFrame.monthDays(year, month - 1).map((week) =>
           week.map((day, dayIndex) => {
             const dateStr = ymdToDateStr(year, month, day)
             return (
@@ -103,16 +119,14 @@ const Month = ({
     </div>
   )
 }
-Month.propTypes = {
-  year: PropTypes.string.isRequired,
-  month: PropTypes.number.isRequired,
-  isSelected: PropTypes.bool.isRequired,
-  calendarData: PropTypes.object.isRequired,
-  cameraUrl: PropTypes.string.isRequired,
-  noSeqNum: PropTypes.bool.isRequired,
-  calendarFrame: PropTypes.object.isRequired,
-  selectedDate: PropTypes.string.isRequired,
-  dayObs: PropTypes.string,
+
+const dateStringToDate = (dateStr: string): Date => {
+  const parts = dateStr.split("-")
+  return new Date(
+    parseInt(parts[0]),
+    parseInt(parts[1]) - 1,
+    parseInt(parts[2])
+  )
 }
 
 // Year component renders a year and its months
@@ -125,6 +139,15 @@ const Year = ({
   cameraUrl,
   noSeqNum,
   dayObs,
+}: {
+  year: number
+  yearToDisplay: number
+  selectedDate: Date
+  calendarData: CalendarData
+  calendarFrame: Calendar.Calendar
+  cameraUrl: string
+  noSeqNum: boolean
+  dayObs?: string | null
 }) => {
   return (
     <div
@@ -132,12 +155,12 @@ const Year = ({
       id={`year-${year}`}
     >
       {Object.keys(calendarData[year])
+        .map(Number)
         .sort((a, b) => a - b)
         .reverse()
-        .map((monthStr) => {
-          const month = parseInt(monthStr)
+        .map((month) => {
           const isSelected =
-            year == yearToDisplay && month == selectedDate.month
+            year == yearToDisplay && month == selectedDate.getMonth() + 1
           return (
             <Month
               key={month}
@@ -156,24 +179,21 @@ const Year = ({
     </div>
   )
 }
-Year.propTypes = {
-  year: PropTypes.string.isRequired,
-  yearToDisplay: PropTypes.string.isRequired,
-  dayObs: PropTypes.string,
-  selectedDate: PropTypes.string.isRequired,
-  calendarData: calendarType.isRequired,
-  calendarFrame: PropTypes.object.isRequired,
-  cameraUrl: PropTypes.string.isRequired,
-  noSeqNum: PropTypes.bool.isRequired,
-}
 
 const RubinCalendar = ({
   selectedDate,
-  initialCalendarData = {},
+  initialCalendarData = {} as CalendarData,
   camera,
   locationName,
+}: {
+  selectedDate: string
+  initialCalendarData: CalendarData
+  camera: Camera
+  locationName: string
 }) => {
-  const [yearToDisplay, setYearToDisplay] = useState(selectedDate.split("-")[0])
+  const [yearToDisplay, setYearToDisplay] = useState(
+    parseInt(selectedDate.split("-")[0])
+  )
   const [calendarData, setCalendarData] = useState(initialCalendarData)
   const [dayObs, setDayObs] = useState(null)
 
@@ -181,31 +201,35 @@ const RubinCalendar = ({
     return null
   }
 
-  const sortedYears = Object.keys(calendarData).sort((a, b) => a - b)
+  const sortedYears = Object.keys(calendarData)
+    .map(Number)
+    .sort((a, b) => a - b)
   const calFrame = new Calendar.Calendar(1)
   const cameraUrl = `${homeUrl}${locationName}/${camera.name}`
   const noSeqNum = camera.name === "allsky"
 
-  const handleYearClick = (year) => {
+  const handleYearClick = (year: number) => {
     setYearToDisplay(year)
   }
 
   useEffect(() => {
-    const yearEl = document.querySelector(".year.selected")
-    const monthEl = document.querySelector(".month.selected")
+    const yearEl = document.querySelector(".year.selected") as HTMLElement
+    const monthEl = document.querySelector(".month.selected") as HTMLElement
     if (yearEl && monthEl) {
       yearEl.scrollLeft = monthEl.offsetLeft - yearEl.offsetLeft
     }
   }, [yearToDisplay])
 
   useEffect(() => {
-    const handleCalendarEvent = (event) => {
+    const handleCalendarEvent = (event: CustomEvent) => {
       const { dataType, data, datestamp } = event.detail
       if (dataType === "dayChange") {
         setDayObs(datestamp)
       }
       if (dataType === "latestMetadata") {
-        const [year, month, day] = datestamp.split("-").map((x) => parseInt(x))
+        const [year, month, day] = datestamp
+          .split("-")
+          .map((x: string) => parseInt(x))
         const seqNum = parseInt(Object.keys(data)[0])
         setCalendarData((prevCalendarData) => {
           const newCalendar = { ...prevCalendarData }
@@ -221,12 +245,15 @@ const RubinCalendar = ({
         setDayObs(datestamp)
       }
     }
-    window.addEventListener("calendar", handleCalendarEvent)
+    window.addEventListener("calendar", handleCalendarEvent as EventListener)
     return () => {
-      window.removeEventListener("calendar", handleCalendarEvent)
+      window.removeEventListener(
+        "calendar",
+        handleCalendarEvent as EventListener
+      )
     }
   }, [])
-  const yearClass = (year) => {
+  const yearClass = (year: number) => {
     return year == yearToDisplay ? "selected year-title" : "year-title"
   }
   return (
@@ -255,7 +282,7 @@ const RubinCalendar = ({
             year={yr}
             yearToDisplay={yearToDisplay}
             dayObs={dayObs}
-            selectedDate={selectedDate}
+            selectedDate={dateStringToDate(selectedDate)}
             calendarData={calendarData}
             calendarFrame={calFrame}
             cameraUrl={cameraUrl}
@@ -265,12 +292,6 @@ const RubinCalendar = ({
       </div>
     </div>
   )
-}
-RubinCalendar.propTypes = {
-  selectedDate: PropTypes.string.isRequired,
-  initialCalendarData: calendarType.isRequired,
-  camera: cameraType.isRequired,
-  locationName: PropTypes.string.isRequired,
 }
 
 export default RubinCalendar

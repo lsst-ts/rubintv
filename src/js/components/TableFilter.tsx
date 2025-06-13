@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from "react"
+import React, { KeyboardEvent, useEffect, useRef } from "react"
 import PropTypes from "prop-types"
 import { useModal } from "./Modal"
+import { FilterOptions } from "./componentTypes"
 
 export function FilterDialog({
   column,
@@ -8,22 +9,30 @@ export function FilterDialog({
   filterOn,
   filteredRowsCount,
   unfilteredRowsCount,
+}: {
+  column: string
+  setFilterOn: (filter: FilterOptions) => void
+  filterOn: FilterOptions
+  filteredRowsCount: number
+  unfilteredRowsCount: number
 }) {
   const placeholder = `Enter ${column}...`
-  const inputRef = useRef(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
+    if (!inputRef.current) return
     inputRef.current.focus()
   }, [])
 
   const { closeModal } = useModal()
 
   const handleApply = () => {
+    if (!inputRef.current) return
     const value = inputRef.current.value.trim()
     setFilterOn({ column, value })
     closeModal()
   }
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleApply()
     }

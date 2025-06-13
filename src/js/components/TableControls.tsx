@@ -1,9 +1,15 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useContext, KeyboardEvent } from "react"
 import PropTypes from "prop-types"
 import Clock, { TimeSinceLastImageClock } from "./Clock"
-import { _getById } from "../modules/utils"
+import { _getById, getImageAssetUrl } from "../modules/utils"
 import { cameraType, metadataType } from "./componentPropTypes"
 import { saveColumnSelection } from "../modules/columnStorage"
+import {
+  Camera,
+  Metadata,
+  TableContext,
+  TableContextType,
+} from "./componentTypes"
 
 export default function AboveTableRow({
   camera,
@@ -13,6 +19,14 @@ export default function AboveTableRow({
   date,
   metadata,
   isHistorical,
+}: {
+  camera: Camera
+  availableColumns: string[]
+  selected: string[]
+  setSelected: (selected: string[]) => void
+  date: string
+  metadata: Metadata
+  isHistorical: boolean
 }) {
   return (
     <div className="row">
@@ -32,7 +46,13 @@ export default function AboveTableRow({
       />
       <Clock />
       {camera.time_since_clock && !isHistorical && (
-        <TimeSinceLastImageClock camera={camera} metadata={metadata} />
+        <TimeSinceLastImageClock
+          metadata={metadata}
+          camera={{
+            ...camera,
+            time_since_clock: camera.time_since_clock ?? { label: "" },
+          }}
+        />
       )}
     </div>
   )
@@ -59,15 +79,22 @@ function TableControls({
   availableColumns,
   selected,
   setSelected,
+}: {
+  cameraName: string
+  availableColumns: string[]
+  selected: string[]
+  setSelected: (selected: string[]) => void
 }) {
   const [controlsOpen, setControlsOpen] = useState(false)
-
-  const locationName = window.APP_DATA.locationName
-
+  const { locationName } = useContext(TableContext) as TableContextType
   // Handle clicks outside to close the panel
   useEffect(() => {
-    function handleOutsideClick(e) {
-      if (controlsOpen && !e.target.closest(".table-panel")) {
+    function handleOutsideClick(e: MouseEvent) {
+      if (
+        controlsOpen &&
+        (!(e.target instanceof HTMLElement) ||
+          !e.target.closest(".table-panel"))
+      ) {
         setControlsOpen(false)
       }
     }
@@ -78,18 +105,18 @@ function TableControls({
     }
   }, [controlsOpen])
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === "Escape") {
       setControlsOpen(false)
     }
   }
 
-  function toggleControls(e) {
+  function toggleControls(e: React.MouseEvent<HTMLButtonElement>) {
     e.stopPropagation()
     setControlsOpen((controlsOpen) => !controlsOpen)
   }
 
-  const handleCheckboxChange = (name) => {
+  const handleCheckboxChange = (name: string) => {
     const currentSelected = Array.isArray(selected) ? [...selected] : []
 
     let newSelected
@@ -118,7 +145,7 @@ function TableControls({
     ? "table-controls-container"
     : "table-controls-container open"
 
-  const renderCheckbox = (title) => {
+  const renderCheckbox = (title: string) => {
     const isAvailable = availableColumns.includes(title)
     const isSelected = selected.includes(title)
 
@@ -163,7 +190,8 @@ function TableControls({
           <div className="table-options" style={gridStyle}>
             {/* Show both available and unavailable selected columns */}
             {Array.from(new Set([...selected, ...availableColumns]))
-              .toSorted((a, b) => a.localeCompare(b))
+              .slice()
+              .sort((a, b) => a.localeCompare(b))
               .map(renderCheckbox)}
           </div>
         )}
@@ -183,28 +211,37 @@ TableControls.propTypes = {
 }
 
 export function JumpButtons() {
-  const { pathPrefix } = window.APP_DATA
+  const table = _getById("table") as HTMLTableElement
+  const jumpArrowImage = getImageAssetUrl("jump-arrow.svg")
   return (
     <div className="jump-buttons">
       <button
-        onClick={() => _getById("table").scrollIntoView()}
+        onClick={() => table.scrollIntoView()}
         className="jump-button to-top"
         title="to top"
       >
-        <img src={pathPrefix + "/static/images/jump-arrow.svg"} />
+        <img src={jumpArrowImage} />
       </button>
       <button
-        onClick={() => _getById("table").scrollIntoView(false)}
+        onClick={() => table.scrollIntoView(false)}
         className="jump-button to-bottom"
         title="to bottom"
       >
-        <img src={pathPrefix + "/static/images/jump-arrow.svg"} />
+        <img src={jumpArrowImage} />
       </button>
     </div>
   )
 }
 
-function DownloadMetadataButton({ date, cameraName, metadata }) {
+function DownloadMetadataButton({
+  date,
+  cameraName,
+  metadata,
+}: {
+  date: string
+  cameraName: string
+  metadata: Metadata
+}) {
   return (
     <button
       className="button button-small download-metadata"
@@ -220,12 +257,16 @@ DownloadMetadataButton.propTypes = {
   metadata: PropTypes.object,
 }
 
-function downloadMetadata(date, cameraName, metadata) {
+function downloadMetadata(
+  date: string,
+  cameraName: string,
+  metadata: Metadata
+) {
   const a = document.createElement("a")
   const blob = new Blob([JSON.stringify(metadata)])
-  const url = window.URL.createObjectURL(blob)
+  const url = URL.createObjectURL(blob)
   a.href = url
   a.download = `${cameraName}_${date}.json`
   a.click()
-  URL.revokeObjectURL(blob.name)
+  URL.revokeObjectURL(url)
 }

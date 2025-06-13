@@ -1,42 +1,46 @@
+import { createContext } from "react"
 /** A single item of metadata is either a string, number or nested object of
  * key-value pairs. In the case of the latter, if one of the keys is
  * 'DISPLAY_VALUE', it's value is a UTF-8 encoded character to display as an
  * icon in a button in the table */
-type MetadatumType =
+export type MetadatumType =
   | string
   | number
   | boolean
   | { DISPLAY_VALUE?: string; [key: string]: any }
   | any[]
 
-export interface Metadatum {
+export interface MetadataRow {
   [key: string]: MetadatumType
 }
 
 export interface Metadata {
-  [key: string]: Metadatum
+  [key: string]: MetadataRow
 }
 
-/** An ExposureEvent takes the shape:
- * {
-    key: <reference for object in S3 bucket>
-    hash: <hash of object given by S3>
-    camera_name: <name of associated camera>
-    day_obs: <date of event in format 'YYYY-MM-DD'>
-    channel_name: <name of associated channel>
-    seq_num: <sequence number of event>
-    filename: <filename of the event>
-    ext: <file extension>
-  } */
-export interface ExposureEvent {
+export interface MetadataColumn {
+  name: string
+  desc: string
+}
+
+export interface MediaData {
   key: string
   hash: string
   camera_name: string
   day_obs: string
   channel_name: string
-  seq_num: number | string
   filename: string
   ext: string
+}
+
+export interface ExposureEvent extends MediaData {
+  seq_num: number | string
+}
+
+export interface ProcessingLocation {
+  name: string
+  title: string
+  cameras: Camera[]
 }
 
 export interface Camera {
@@ -45,37 +49,46 @@ export interface Camera {
   channels: Channel[]
   location: string
   metadata?: Metadata
+  copy_row_template?: string
+  metadata_columns?: Record<string, string>
+  image_viewer_link?: string
   time_since_clock?: { label: string }
-}
-
-export interface Channel {
-  name: string
-  label?: string
-  title: string
-  icon: string
-  colour: string
-  text_colour?: string
-}
-
-export interface ChannelData {
-  [key: string]: ExposureEvent[]
-}
-
-export interface NightReportData {
-  key: string
-  hash: string
-  camera: string
-  day_obs: string
-  group: string
-  filename: string
-  ext: string
+  mosaic_view_meta?: Array<MosiacSingleView>
 }
 
 export interface MosiacSingleView {
   channel: string
   metaColumns: string[]
-  latestImage: string
-  latestMetadata: Metadata
+  mediaType: MediaType
+  latestEvent?: ExposureEvent
+  selected: boolean
+}
+
+export type MediaType = "image" | "video"
+
+export interface Channel {
+  name: string
+  title: string
+  label?: string
+  icon: string
+  colour: string
+  text_colour?: string
+  per_day?: boolean
+}
+
+export interface ChannelData {
+  [key: string]: {
+    [key: string]: ExposureEvent
+  }
+}
+
+export interface NightReportType {
+  plots?: NightReportPlot[]
+  text?: Record<string, string>
+}
+
+export interface NightReportPlot extends MediaData {
+  group: string
 }
 
 export interface CalendarData {
@@ -84,4 +97,30 @@ export interface CalendarData {
       [key: number]: number
     }
   }
+}
+
+export interface PrevNextType {
+  prev: ExposureEvent | null
+  next: ExposureEvent | null
+}
+
+export interface TableContextType {
+  siteLocation: string
+  locationName: string
+  camera: Camera
+  dayObs: string
+}
+
+export const TableContext = createContext<TableContextType | undefined>(
+  undefined
+)
+
+export interface SortingOptions {
+  column: string
+  order: "asc" | "desc"
+}
+
+export interface FilterOptions {
+  column: string
+  value: string | number | boolean
 }

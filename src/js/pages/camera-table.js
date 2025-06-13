@@ -49,7 +49,13 @@ import { WebsocketClient } from "../modules/ws-service-client"
 
   const tableRoot = createRoot(_getById("table"))
   tableRoot.render(
-    <TableApp camera={camera} initialDate={date} isHistorical={isHistorical} />
+    <TableApp
+      camera={camera}
+      initialDate={date}
+      isHistorical={isHistorical}
+      locationName={locationName}
+      siteLocation={siteLocation}
+    />
   )
 
   const perDayRoot = createRoot(_getById("per-day"))

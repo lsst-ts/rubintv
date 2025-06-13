@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from "react"
-import PropTypes, { func } from "prop-types"
 import RubinCalendar from "./RubinCalendar"
 import { getMediaProxyUrl, getHistoricalData } from "../modules/utils"
-import { calendarType, cameraType, eventType } from "./componentPropTypes"
+import { CalendarData, Camera, ExposureEvent } from "./componentTypes"
 
 export default function AllSky({
   initialDate,
@@ -10,9 +9,18 @@ export default function AllSky({
   locationName,
   camera,
   calendar,
+}: {
+  initialDate: string
+  isHistorical?: boolean
+  locationName: string
+  camera: Camera
+  calendar?: CalendarData
 }) {
   const [date, setDate] = useState(initialDate)
-  const [perDayData, setPerDayData] = useState({ stills: {}, movies: {} })
+  const [perDayData, setPerDayData] = useState({
+    stills: {} as ExposureEvent,
+    movies: {} as ExposureEvent,
+  })
 
   const dateRef = useRef(initialDate)
   // Update ref when date changes
@@ -21,22 +29,26 @@ export default function AllSky({
   }, [date])
 
   useEffect(() => {
-    function handleDataChange(event) {
+    type EL = EventListener
+    function handleDataChange(event: CustomEvent) {
       const { datestamp, data, dataType } = event.detail
       if (dataType !== "perDay") {
         return
       }
       if (datestamp !== dateRef.current) {
-        document.getElementById("header-date").textContent = datestamp
+        const headerDate = document.getElementById("header-date") as HTMLElement
+        if (headerDate) {
+          headerDate.textContent = datestamp
+        }
         setDate(datestamp)
       }
       setPerDayData((prevData) => {
         return { ...prevData, ...data }
       })
     }
-    window.addEventListener("camera", handleDataChange)
+    window.addEventListener("camera", handleDataChange as EL)
     return () => {
-      window.removeEventListener("camera", handleDataChange)
+      window.removeEventListener("camera", handleDataChange as EL)
     }
   }, [])
 
@@ -76,7 +88,7 @@ export default function AllSky({
           <section className="calendar half-width">
             <RubinCalendar
               selectedDate={date}
-              initialCalendarData={calendar}
+              initialCalendarData={calendar || {}}
               camera={camera}
               locationName={locationName}
             />
@@ -89,25 +101,26 @@ export default function AllSky({
     </>
   )
 }
-AllSky.propTypes = {
-  initialDate: PropTypes.string.isRequired,
-  isHistorical: PropTypes.bool,
-  locationName: PropTypes.string.isRequired,
-  camera: cameraType.isRequired,
-  calendar: calendarType,
-}
 
-function AllSkyStill({ still, locationName }) {
+function AllSkyStill({
+  still,
+  locationName,
+}: {
+  still: ExposureEvent | null
+  locationName: string
+}) {
   if (!still || Object.keys(still).length === 0) {
     return null
   }
+
   const imgUrl = getMediaProxyUrl(
     "image",
     locationName,
     still.camera_name,
     "stills",
     still.filename
-  )
+  ).toString()
+
   return (
     <section className="allsky-current-image">
       <div className="current-still">
@@ -122,12 +135,14 @@ function AllSkyStill({ still, locationName }) {
     </section>
   )
 }
-AllSkyStill.propTypes = {
-  still: eventType,
-  locationName: PropTypes.string.isRequired,
-}
 
-function AllSkyMovie({ movie, locationName }) {
+function AllSkyMovie({
+  movie,
+  locationName,
+}: {
+  movie: ExposureEvent | null
+  locationName: string
+}) {
   if (!movie || Object.keys(movie).length === 0) {
     return null
   }
@@ -137,7 +152,7 @@ function AllSkyMovie({ movie, locationName }) {
     movie.camera_name,
     "movies",
     movie.filename
-  )
+  ).toString()
   return (
     <section className="allsky-current-movie">
       <div className="current-movie">
@@ -154,8 +169,4 @@ function AllSkyMovie({ movie, locationName }) {
       </div>
     </section>
   )
-}
-AllSkyMovie.propTypes = {
-  movie: eventType,
-  locationName: PropTypes.string.isRequired,
 }
