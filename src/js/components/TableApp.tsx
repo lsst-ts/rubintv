@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react"
-import PropTypes from "prop-types"
 import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
 import { _getById, union, getHistoricalData } from "../modules/utils"
@@ -7,7 +6,6 @@ import {
   loadColumnSelection,
   saveColumnSelection,
 } from "../modules/columnStorage"
-import { cameraType } from "./componentPropTypes"
 import { ModalProvider } from "./Modal"
 import {
   TableContext,
@@ -241,17 +239,6 @@ export default function TableApp({
       </div>
     </TableContext.Provider>
   )
-}
-TableApp.propTypes = {
-  camera: cameraType.isRequired,
-  /** Date given when first landing on the page. */
-  initialDate: PropTypes.string.isRequired,
-  /** true if this is a historical page */
-  isHistorical: PropTypes.bool,
-  /** Initial channel data */
-  initialChannelData: PropTypes.object,
-  /** Initial metadata */
-  initialMetadata: PropTypes.object,
 }
 
 function getAllColumnNames(metadata: Metadata, defaultColNames: string[]) {

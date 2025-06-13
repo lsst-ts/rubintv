@@ -1,8 +1,6 @@
 import React, { useEffect, useState, useContext, KeyboardEvent } from "react"
-import PropTypes from "prop-types"
 import Clock, { TimeSinceLastImageClock } from "./Clock"
 import { _getById, getImageAssetUrl } from "../modules/utils"
-import { cameraType, metadataType } from "./componentPropTypes"
 import { saveColumnSelection } from "../modules/columnStorage"
 import {
   Camera,
@@ -56,22 +54,6 @@ export default function AboveTableRow({
       )}
     </div>
   )
-}
-AboveTableRow.propTypes = {
-  /** the camera object */
-  camera: cameraType.isRequired,
-  /** the names of all metadata columns */
-  availableColumns: PropTypes.arrayOf(PropTypes.string),
-  /** the names of the currently selected columns to display */
-  selected: PropTypes.arrayOf(PropTypes.string),
-  /** callback function from the parent component TableApp */
-  setSelected: PropTypes.func,
-  /** the given date */
-  date: PropTypes.string,
-  /** the current metadata for this camera/date */
-  metadata: metadataType,
-  /** true if this is a historical page */
-  isHistorical: PropTypes.bool,
 }
 
 function TableControls({
@@ -199,16 +181,6 @@ function TableControls({
     </div>
   )
 }
-TableControls.propTypes = {
-  /** the names of all metadata columns */
-  availableColumns: PropTypes.arrayOf(PropTypes.string),
-  /** the name of the current camera */
-  cameraName: PropTypes.string,
-  /** the names of the currently selected columns to display */
-  selected: PropTypes.arrayOf(PropTypes.string),
-  /** callback function from the parent component TableApp */
-  setSelected: PropTypes.func,
-}
 
 export function JumpButtons() {
   const table = _getById("table") as HTMLTableElement
@@ -250,11 +222,6 @@ function DownloadMetadataButton({
       Download Metadata
     </button>
   )
-}
-DownloadMetadataButton.propTypes = {
-  cameraName: PropTypes.string,
-  date: PropTypes.string,
-  metadata: PropTypes.object,
 }
 
 function downloadMetadata(
