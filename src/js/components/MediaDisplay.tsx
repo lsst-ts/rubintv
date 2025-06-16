@@ -2,20 +2,25 @@ import React, { useState, useEffect } from "react"
 import { TimeSinceLastImageClock } from "./Clock"
 import PrevNext from "./PrevNext"
 import { getBaseFromEventUrl, getMediaType } from "../modules/utils"
-import { ExposureEvent, Camera, Metadata } from "./componentTypes"
+import {
+  ExposureEvent,
+  Camera,
+  Metadata,
+  PrevNextType,
+  TableContext,
+  TableContextType,
+} from "./componentTypes"
 
 interface MediaEventProps {
+  locationName: string
   initialEvent: ExposureEvent
   imgUrl: string
   videoUrl: string
   camera: Camera
   dateUrl: string
   metadata: Metadata
-  eventUrl?: string
-  prevNext?: {
-    prev?: ExposureEvent
-    next?: ExposureEvent
-  }
+  eventUrl: string
+  prevNext: PrevNextType
   allChannelNames: string[]
   isCurrent: boolean
 }
@@ -33,6 +38,7 @@ interface OtherChannelLinksProps {
 
 // MediaDisplay component to handle the image/video display
 export default function MediaDisplay({
+  locationName,
   initialEvent,
   imgUrl,
   videoUrl,
@@ -68,7 +74,16 @@ export default function MediaDisplay({
   }, [imgUrl, videoUrl])
 
   return (
-    <>
+    <TableContext.Provider
+      value={
+        {
+          camera,
+          siteLocation: "",
+          locationName: locationName,
+          dayObs: mediaEvent.day_obs,
+        } as TableContextType
+      }
+    >
       <div className="event-info">
         <h2>
           <a href={dateUrl} className="media-date">
@@ -112,7 +127,7 @@ export default function MediaDisplay({
         )}
         <p className="desc">{mediaEvent.filename}</p>
       </a>
-    </>
+    </TableContext.Provider>
   )
 }
 

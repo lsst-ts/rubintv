@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, StrictMode } from "react"
 import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
 import { _getById, union, getHistoricalData } from "../modules/utils"
@@ -196,48 +196,50 @@ export default function TableApp({
   }
 
   return (
-    <TableContext.Provider
-      value={{ siteLocation, locationName, camera, dayObs: date }}
-    >
-      <div className="table-container">
-        <ModalProvider>
-          <div className="above-table-sticky">
-            <AboveTableRow
-              camera={camera}
-              availableColumns={availableColumns}
-              selected={selected}
-              setSelected={handleSetSelected}
-              date={date}
-              metadata={metadata}
-              isHistorical={isHistorical}
-            />
-            <div className="table-header row">
-              <TableHeader
+    <StrictMode>
+      <TableContext.Provider
+        value={{ siteLocation, locationName, camera, dayObs: date }}
+      >
+        <div className="table-container">
+          <ModalProvider>
+            <div className="above-table-sticky">
+              <AboveTableRow
                 camera={camera}
-                metadataColumns={selectedMetaCols}
-                filterOn={filterOn}
-                setFilterOn={setFilterOn}
-                filteredRowsCount={filteredRowsCount}
-                unfilteredRowsCount={unfilteredRowsCount}
-                sortOn={sortOn}
-                setSortOn={setSortOn}
+                availableColumns={availableColumns}
+                selected={selected}
+                setSelected={handleSetSelected}
+                date={date}
+                metadata={metadata}
+                isHistorical={isHistorical}
               />
+              <div className="table-header row">
+                <TableHeader
+                  camera={camera}
+                  metadataColumns={selectedMetaCols}
+                  filterOn={filterOn}
+                  setFilterOn={setFilterOn}
+                  filteredRowsCount={filteredRowsCount}
+                  unfilteredRowsCount={unfilteredRowsCount}
+                  sortOn={sortOn}
+                  setSortOn={setSortOn}
+                />
+              </div>
+              <JumpButtons></JumpButtons>
             </div>
-            <JumpButtons></JumpButtons>
-          </div>
-          <TableView
-            camera={camera}
-            channelData={filteredChannelData}
-            metadata={filteredMetadata}
-            metadataColumns={selectedMetaCols}
-            filterOn={filterOn}
-            filteredRowsCount={filteredRowsCount}
-            sortOn={sortOn}
-            siteLocation={siteLocation}
-          />
-        </ModalProvider>
-      </div>
-    </TableContext.Provider>
+            <TableView
+              camera={camera}
+              channelData={filteredChannelData}
+              metadata={filteredMetadata}
+              metadataColumns={selectedMetaCols}
+              filterOn={filterOn}
+              filteredRowsCount={filteredRowsCount}
+              sortOn={sortOn}
+              siteLocation={siteLocation}
+            />
+          </ModalProvider>
+        </div>
+      </TableContext.Provider>
+    </StrictMode>
   )
 }
 
