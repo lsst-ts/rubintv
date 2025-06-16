@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useContext } from "react"
 import { PrevNextType } from "./componentTypes"
-import { TableContext, TableContextType } from "./componentTypes"
+import { RubinTVTableContext, RubinTVContextType } from "./componentTypes"
 import { setCameraBaseUrl } from "../modules/utils"
 
 export default function PrevNext({
@@ -13,7 +13,9 @@ export default function PrevNext({
   if (!prevNext) {
     return null
   }
-  const { locationName, camera } = useContext(TableContext) as TableContextType
+  const { locationName, camera } = useContext(
+    RubinTVTableContext
+  ) as RubinTVContextType
   const { getEventUrl } = setCameraBaseUrl(locationName, camera.name)
   const left = useRef<HTMLAnchorElement>(null)
   const right = useRef<HTMLAnchorElement>(null)

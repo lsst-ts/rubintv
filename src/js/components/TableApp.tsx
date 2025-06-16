@@ -8,7 +8,7 @@ import {
 } from "../modules/columnStorage"
 import { ModalProvider } from "./Modal"
 import {
-  TableContext,
+  RubinTVTableContext,
   Camera,
   ChannelData,
   Metadata,
@@ -197,7 +197,7 @@ export default function TableApp({
 
   return (
     <StrictMode>
-      <TableContext.Provider
+      <RubinTVTableContext.Provider
         value={{ siteLocation, locationName, camera, dayObs: date }}
       >
         <div className="table-container">
@@ -238,7 +238,7 @@ export default function TableApp({
             />
           </ModalProvider>
         </div>
-      </TableContext.Provider>
+      </RubinTVTableContext.Provider>
     </StrictMode>
   )
 }

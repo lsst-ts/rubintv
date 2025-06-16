@@ -5,8 +5,8 @@ import { saveColumnSelection } from "../modules/columnStorage"
 import {
   Camera,
   Metadata,
-  TableContext,
-  TableContextType,
+  RubinTVTableContext,
+  RubinTVContextType,
 } from "./componentTypes"
 
 export default function AboveTableRow({
@@ -68,7 +68,7 @@ function TableControls({
   setSelected: (selected: string[]) => void
 }) {
   const [controlsOpen, setControlsOpen] = useState(false)
-  const { locationName } = useContext(TableContext) as TableContextType
+  const { locationName } = useContext(RubinTVTableContext) as RubinTVContextType
   // Handle clicks outside to close the panel
   useEffect(() => {
     function handleOutsideClick(e: MouseEvent) {

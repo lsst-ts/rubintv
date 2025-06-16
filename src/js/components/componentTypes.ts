@@ -104,16 +104,16 @@ export interface PrevNextType {
   next: ExposureEvent | null
 }
 
-export interface TableContextType {
+export interface RubinTVContextType {
   siteLocation: string
   locationName: string
   camera: Camera
   dayObs: string
 }
 
-export const TableContext = createContext<TableContextType | undefined>(
-  undefined
-)
+export const RubinTVTableContext = createContext<
+  RubinTVContextType | undefined
+>(undefined)
 
 export interface SortingOptions {
   column: string

@@ -7,8 +7,8 @@ import {
   Camera,
   Metadata,
   PrevNextType,
-  TableContext,
-  TableContextType,
+  RubinTVTableContext,
+  RubinTVContextType,
 } from "./componentTypes"
 
 interface MediaEventProps {
@@ -74,14 +74,14 @@ export default function MediaDisplay({
   }, [imgUrl, videoUrl])
 
   return (
-    <TableContext.Provider
+    <RubinTVTableContext.Provider
       value={
         {
           camera,
           siteLocation: "",
           locationName: locationName,
           dayObs: mediaEvent.day_obs,
-        } as TableContextType
+        } as RubinTVContextType
       }
     >
       <div className="event-info">
@@ -127,7 +127,7 @@ export default function MediaDisplay({
         )}
         <p className="desc">{mediaEvent.filename}</p>
       </a>
-    </TableContext.Provider>
+    </RubinTVTableContext.Provider>
   )
 }
 

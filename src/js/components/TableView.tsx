@@ -12,8 +12,8 @@ import {
   MetadatumType,
   ChannelData,
   ExposureEvent,
-  TableContext,
-  TableContextType,
+  RubinTVTableContext,
+  RubinTVContextType,
   Channel,
   Camera,
   Metadata,
@@ -22,7 +22,6 @@ import {
   SortingOptions,
   FilterOptions,
 } from "./componentTypes"
-import { get } from "http"
 
 // TODO: this should be set in the backend
 // See DM-50192
@@ -73,7 +72,9 @@ function ChannelCell({
   chanColour: string
   noEventReplacement?: string
 }) {
-  const { locationName, camera } = useContext(TableContext) as TableContextType
+  const { locationName, camera } = useContext(
+    RubinTVTableContext
+  ) as RubinTVContextType
   const { getEventUrl } = setCameraBaseUrl(locationName, camera.name)
   return (
     <td className="grid-cell">
@@ -108,7 +109,9 @@ function TableRow({
   metadataColumns: MetadataColumn[]
   metadataRow: MetadataRow
 }) {
-  const { dayObs, siteLocation } = useContext(TableContext) as TableContextType
+  const { dayObs, siteLocation } = useContext(
+    RubinTVTableContext
+  ) as RubinTVContextType
   const siteLocHasCCS = hasCCS(siteLocation)
 
   // Entries in metadata keyed `"@{channel_name}"` will have their
@@ -351,7 +354,7 @@ export function TableHeader({
   sortOn: SortingOptions
   setSortOn: React.Dispatch<React.SetStateAction<SortingOptions>>
 }) {
-  const { siteLocation } = useContext(TableContext) as TableContextType
+  const { siteLocation } = useContext(RubinTVTableContext) as RubinTVContextType
   const siteLocHasCCS = hasCCS(siteLocation)
   const channelColumns = seqChannels(camera) as (Channel | MetadataColumn)[]
   const columns = channelColumns.concat(metadataColumns)
