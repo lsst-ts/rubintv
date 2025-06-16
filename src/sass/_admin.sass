@@ -35,24 +35,15 @@
         .indicator
             font-size: 0.6em
             .status-icon
-                display: flex
-                justify-content: center
-                align-items: center
-                width: 1.7em
-                height: 1.7em
-                border-radius: 50%
                 color: #555
                 background-color: transparent
                 transition: all 0.3s ease
-            &.success .status-icon
-                background-color: #0f0
-            &.fail .status-icon
-                background-color: #f00
-            &.transition .status-icon
-                transform: scale(1.2)
-                opacity: 0.8
-            &.pending .status-icon
-                background-color: #ff0
+            &-success .status-icon
+                color: #0f0
+            &-fail .status-icon
+                color: #f00
+            &-pending .status-icon
+                color: #ff0
                 animation: pulse 1s infinite
 
 // pulse animation for pending status

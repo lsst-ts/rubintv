@@ -1,4 +1,5 @@
-@use 'filter_colours'
+@use "sass:color"
+@use "filter_colours"
 
 @function map-collect($maps...)
   $collection: ()
@@ -8,7 +9,7 @@
 
 $light: #eee
 $dark: #555
-$darker: darken($dark, 10%)
+$darker: color.adjust($dark, $lightness: -10%)
 
 body
   background-color: $dark

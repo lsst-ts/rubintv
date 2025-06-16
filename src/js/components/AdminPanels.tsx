@@ -390,17 +390,17 @@ export function StatusIndicator({ status }: { status: string | null }) {
   const statusClass = (status: string | null) => {
     switch (status) {
       case "true":
-        return "success-indicator"
+        return "indicator-success"
       case "false":
-        return "fail-indicator"
+        return "indicator-fail"
       case "pending":
-        return "pending-indicator"
+        return "indicator-pending"
       default:
         return "indicator"
     }
   }
   return (
-    <div className={statusClass(status) || "indicator"}>
+    <div className={statusClass(status)}>
       <span className="status-icon">●</span>
     </div>
   )
