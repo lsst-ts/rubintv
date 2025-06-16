@@ -207,7 +207,7 @@ class CurrentPoller:
             self._events[loc_cam] = events
             await self.update_channel_events(events, location, camera)
 
-            pd_events = await self.filter_pd_events(camera, events)
+            pd_events = await self.filter_per_day_events(camera, events)
             pd_data = await self.per_day_events_to_dicts(pd_events)
             self._per_day[loc_cam] = pd_data
             await notify_ws_clients(
@@ -422,7 +422,7 @@ class CurrentPoller:
             self._night_reports[loc_cam] = night_report
         return
 
-    async def filter_pd_events(
+    async def filter_per_day_events(
         self, camera: Camera, events: list[Event]
     ) -> list[Event]:
         """Filter the events to only include those that are per-day
