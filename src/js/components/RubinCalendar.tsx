@@ -226,11 +226,10 @@ const RubinCalendar = ({
       if (dataType === "dayChange") {
         setDayObs(datestamp)
       }
-      if (dataType === "latestMetadata") {
+      if (dataType === "latestMetadata" || dataType === "perDay") {
         const [year, month, day] = datestamp
           .split("-")
           .map((x: string) => parseInt(x))
-        const seqNum = parseInt(Object.keys(data)[0])
         setCalendarData((prevCalendarData) => {
           const newCalendar = { ...prevCalendarData }
           if (!newCalendar[year]) {
@@ -239,7 +238,12 @@ const RubinCalendar = ({
           if (!newCalendar[year][month]) {
             newCalendar[year][month] = {}
           }
-          newCalendar[year][month][day] = seqNum
+          if (noSeqNum) {
+            newCalendar[year][month][day] = 1
+          } else {
+            const seqNum = parseInt(Object.keys(data)[0])
+            newCalendar[year][month][day] = seqNum
+          }
           return newCalendar
         })
         setDayObs(datestamp)
