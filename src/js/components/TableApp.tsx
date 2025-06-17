@@ -30,6 +30,7 @@ export default function TableApp({
   isHistorical: boolean
   siteLocation: string
 }) {
+  const [hasReceivedData, setHasReceivedData] = useState(false)
   const [date, setDate] = useState(initialDate)
   const [channelData, setChannelData] = useState({} as ChannelData)
   const [metadata, setMetadata] = useState({} as Metadata)
@@ -148,6 +149,7 @@ export default function TableApp({
   const handleCameraEvent = useCallback(
     (event: CustomEvent) => {
       const { datestamp, data, dataType } = event.detail
+      setHasReceivedData(true)
       // if there's no data, don't update
       if (Object.entries(data).length === 0) {
         return
@@ -183,8 +185,16 @@ export default function TableApp({
     }
   }, [handleCameraEvent])
 
-  if (unfilteredRowsCount == 0) {
+  if (unfilteredRowsCount == 0 && hasReceivedData) {
     return <h3>There is no data for this day</h3>
+  } else if (!hasReceivedData) {
+    const colours = camera.channels.map((c) => c.colour)
+    return (
+      <div className="loading-container">
+        <LoadingBar colours={colours} />
+        <h3>Loading data for {date}...</h3>
+      </div>
+    )
   }
 
   if (error) {
@@ -240,6 +250,31 @@ export default function TableApp({
         </div>
       </RubinTVTableContext.Provider>
     </StrictMode>
+  )
+}
+
+function LoadingBar({
+  colours = ["#b0e0e6", "#87ceeb", "#4682b4", "#87ceeb"],
+}: {
+  colours: string[]
+}) {
+  // Create a gradient for the loading bar based on the channel colours
+  let gradientStops: string[] = []
+  colours.forEach((colour, index) => {
+    gradientStops.push(
+      `${colour} ${Math.round(index * (100 / colours.length))}%`
+    )
+  })
+  gradientStops.push(`${colours[0]} 100%`)
+  const gradient = `linear-gradient(90deg, ${gradientStops.join(", ")})`
+  console.log("Loading bar gradient:", gradient)
+  return (
+    <div className="loading-bar-container">
+      <div
+        style={{ background: gradient, backgroundSize: "25% 100%" }}
+        className="loading-bar-animated"
+      ></div>
+    </div>
   )
 }
 
