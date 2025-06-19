@@ -1,690 +1,683 @@
 @use "fonts"
-
 @use "reset"
-
 @use "buttons"
-
 @use "colours"
-
 @use "calendar"
-
 @use "clock"
-
 @use "modal"
-
 @use "admin"
+@use "detector"
 
 .flr
-    display: flex
-    flex-direction: row
-    flex-wrap: wrap
-    gap: 1em
+  display: flex
+  flex-direction: row
+  flex-wrap: wrap
+  gap: 1em
 
 .resp
-    width: 100%
-    height: auto
+  width: 100%
+  height: auto
 
 .behind
-    position: relative
-    z-index: -1
-    margin-top: -7vh
-    margin-bottom: -9vh
+  position: relative
+  z-index: -1
+  margin-top: -7vh
+  margin-bottom: -9vh
 
 .center-text
-    text-align: center
+  text-align: center
 
 a
-    text-decoration: none
-    display: inline-block
+  text-decoration: none
+  display: inline-block
 
-    &:hover
-        text-decoration: underline
+  &:hover
+    text-decoration: underline
 
 .inline-block
-    display: inline-block
+  display: inline-block
 
 html
-    font-family: "Rubik", sans-serif
-    font-size: 16px
+  font-family: "Rubik", sans-serif
+  font-size: 16px
+  font-weight: 300
+
+header
+  h1, h2, h3, h4, h5, h6
     font-weight: 300
 
 header
-    h1, h2, h3, h4, h5, h6
-        font-weight: 300
-
-header
-    padding: 16px 30px 20px
-
-    a .inline
-        text-decoration: underline
-        display: inline-block
+  padding: 16px 30px 20px
+a
+  text-decoration: underline
+  display: inline-block
 
 .header-wrap
-    gap: 1em
-    display: flex
-    align-items: stretch
+  gap: 1em
+  display: flex
+  align-items: stretch
 
-    & > div
-        display: flex
-        flex-direction: column
+  & > div
+    display: flex
+    flex-direction: column
 
 .header-messages
-    justify-content: center
+  justify-content: center
 
 .header-page-titles, .header-banner
-    margin-top: 12.5px
+  margin-top: 12.5px
 
 .header-page-buttons
-    flex-direction: row !important
-    justify-content: flex-start
-    align-items: flex-end
+  flex-direction: row !important
+  justify-content: flex-start
+  align-items: flex-end
 
 .header-banner
-    flex-grow: 1
-    align-items: center
-    justify-content: end
-    font-size: 16px
+  flex-grow: 1
+  align-items: center
+  justify-content: end
+  font-size: 16px
 
 .banner-text
-    padding: 0.4em
-    border-radius: 20px
-    margin-bottom: 0
-    background: rgba(0, 0, 0, 0.3)
+  padding: 0.4em
+  border-radius: 20px
+  margin-bottom: 0
+  background: rgba(0, 0, 0, 0.3)
 
-    &.summit
-        background: rgba(87, 196, 48, 0.3)
+  &.summit
+    background: rgba(87, 196, 48, 0.3)
 
     &.usdf
-        background: rgba(196, 48, 173, 0.3)
+      background: rgba(196, 48, 173, 0.3)
 
 .header-site-titles
-    align-items: center
+  align-items: center
 
 .page-title
-    font-weight: 400
-    font-size: 35px
-    margin: 0
+  font-weight: 400
+  font-size: 35px
+  margin: 0
 
 .page-subtitle
-    margin-top: auto
-    margin-bottom: 0.2em
+  margin-top: auto
+  margin-bottom: 0.2em
 
 .site-title
-    font-size: 11.4px
-    margin-top: 8px
+  font-size: 11.4px
+  margin-top: 8px
 
 .logo
-    display: block
-    width: 120px
-    height: auto
-    padding: 12.5px
-    box-sizing: border-box
-    background-color: #fff
+  display: block
+  width: 120px
+  height: auto
+  padding: 12.5px
+  box-sizing: border-box
+  background-color: #fff
 
-    img
-        width: 100%
-        height: auto
+  img
+    width: 100%
+    height: auto
 
     h1
-        margin: 0
+      margin: 0
 
-        a
-            display: inline-block
-            font-size: 1em
+      a
+        display: inline-block
+        font-size: 1em
 
 .breadcrumb
-    display: flex
-    flex-direction: row
-    justify-content: flex-start
-    gap: 4px
-    padding: 0.6em 30px
-    background-color: #4f4f4f
+  display: flex
+  flex-direction: row
+  justify-content: flex-start
+  gap: 4px
+  padding: 0.6em 30px
+  background-color: #4f4f4f
 
-    a
-        text-decoration: underline
-        color: #fff
+  a
+    text-decoration: underline
+    color: #fff
 
 main
-    padding: 2em 30px 25px
+  padding: 2em 30px 25px
 
 .full-overlay
-    position: fixed
-    top: 0
-    left: 0
-    right: 0
-    bottom: 0
-    z-index: 23
-    background: rgba(0, 0, 0, 0.2)
-    display: flex
-    justify-content: center
-    align-items: center
+  position: fixed
+  top: 0
+  left: 0
+  right: 0
+  bottom: 0
+  z-index: 23
+  background: rgba(0, 0, 0, 0.2)
+  display: flex
+  justify-content: center
+  align-items: center
 
 .stale
-    color: #ff0000
+  color: #ff0000
 
 h2
-    font-size: 1.7em
-    margin-bottom: 0.4em
+  font-size: 1.7em
+  margin-bottom: 0.4em
 
 h3
-    font-size: 1.4em
-    margin-bottom: 0.5em
+  font-size: 1.4em
+  margin-bottom: 0.5em
 
 section
-    padding-bottom: 2em
+  padding-bottom: 2em
 
 .columns
-    display: flex
-    flex-direction: row
-    gap: 2em
-    margin-bottom: 2em
+  display: flex
+  flex-direction: row
+  gap: 2em
+  margin-bottom: 2em
 
 #per-image-menu
-    flex-basis: 70%
+  flex-basis: 70%
 
 .allsky-current-image, .allsky-current-movie
-    flex-basis: 50%
+  flex-basis: 50%
 
 .allsky-current-movie
-    position: relative
+  position: relative
 
 @media screen and (max-width: 1165px)
-    .allsky-current-movie
-        .button.historical
-            top: -68px
-            right: 32px
-            width: 8.6em
-            height: 5.3em
+  .allsky-current-movie
+    .button.historical
+      top: -68px
+      right: 32px
+      width: 8.6em
+      height: 5.3em
 
 .current-movie
-    flex-basis: 50%
+  flex-basis: 50%
 
 .historical.current-movie
-    align-self: flex-start
-    position: sticky
-    top: 3em
+  align-self: flex-start
+  position: sticky
+  top: 3em
 
 .video-with-overlay
-    position: relative
+  position: relative
 
-    img
-        position: absolute
-        top: 0
-        left: 0
-        pointer-events: none
-
-.per-day-channels
-    margin-bottom: 1em
-
-    > *
-        margin-right: 1em
-
-.event-info
-    display: flex
-    flex-direction: row
-    justify-content: flex-start
-    align-items: center
-    margin-bottom: 0.5em
-    gap: 1em
-
-    h2
-        margin-bottom: 0
-
-    .media-date
-        margin-right: 0.5em
-        color: #fff
-        text-decoration: underline
-
-    .media-seqnum
-        &::before
-            content: "Sequence "
-
-.event-link
-    color: #fff
-    text-decoration-color: #fff
-
-    p
-        margin-top: 0.8em
-
-#prev-next-nav
-    margin-left: 1em
-
-.prev-next-buttons
-    display: flex
-    flex-direction: row
-    gap: 0.5em
-
-    .button
-        flex-direction: row
-        gap: 0.25em
-        color: #000
-        text-decoration: none
-
-    .prev:before
-        content: "←"
-
-    .next:after
-        content: "→"
-
-.other-channels
-    display: flex
-    flex-direction: row
-    gap: 1em
-    margin-bottom: 1em
-
-.metadata-status
-    display: flex
-    align-items: center
-
-#channel-day-data
-    width: max-content
-
-#the-date
-    font-size: 2.2em
-
-.above-table-sticky
-    min-width: 100%
-    padding-top: 1em
-    position: sticky
-
-    // fix for Chrome
-    top: -1px
-    z-index: 23
-
-    .row
-        display: flex
-        flex-direction: row
-        align-items: center
-        gap: 1em
-
-    .table-header
-        min-width: 100%
-        gap: 0
-        height: 9em
-        align-items: flex-end
-
-    h3
-        margin-bottom: 0
-
-.table-container
-    width: 100%
-
-.camera-table
-    font-family: "Red Hat Mono", monospace
-    border-spacing: 2px
-    margin-top: -2px
-    border-collapse: separate
-
-.grid-title
-    position: absolute
-    font-size: 14px
-    cursor: pointer
-    user-select: none
-
-.sideways
-    transform: rotate(330deg)
-    transform-origin: 0 0
-    white-space: nowrap
-    margin-bottom: 2px
-    user-select: none
-
-.filtering
-    background:#ff0
-
-    color: #000
-    border-radius: 5px
-    padding: 2px
-
-.grid-cell
-    min-width: 40px
-    font-size: 0.8em
-    padding: 0.3em
-    vertical-align: middle
-    height: 42px
-    box-sizing: border-box
-
-    &.seq
-        text-align: right
-
-.copy-to-cb
-    padding-left: 0.7em
-    padding-right: 0.7em
-
-.copied
-    position: fixed
-    padding: 0.5em
-    border-radius: 6px
-    animation: fadeout 0.8s linear 0.5s
-    z-index: 303
-
-@keyframes fadeout
-    0%
-        opacity: 100%
-
-    100%
-        opacity: 0%
-
-.table-control-button
-    background: #eee
-    padding: 0.8em 19px
-    border-radius: 20px
-    display: flex
-    border: none
-    cursor: pointer
-
-    &::after
-        content: "∆"
-        margin-left: 1em
-        transform-origin: 50% 50%
-        transform: rotate(90deg)
-        display: inline-block
-        width: 0.7em
-        transition: 0.3s
-
-.table-options
-    display: none
-    max-height: 90vh
-    overflow-y: scroll
-    grid-template-columns: 1fr 1fr
-    position: absolute
-    z-index: 101
-    gap: 0 0.4em
-    padding: 3px
-    margin-top: 0.4em
-    border-top: none
-    background: #fff
-    box-shadow: 3px 2px 6px rgba(0, 0, 0, 0.2)
-
-    label
-        padding: 3px 0px
-        display: flex
-        flex-direction: row
-        align-items: center
-        user-select: none
-
-.table-option
-    padding: 2px 1em
-    white-space: nowrap
-
-    &:hover
-        background: #ddd
-
-    &.toggle
-        background: #6d6d6d
-        color: #fff
-        border-radius: 0 0 6px
-
-    &.unavailable
-        opacity: 0.5
-
-        input[type="checkbox"]
-            opacity: 0.5
-            cursor: not-allowed
-
-.table-controls-container.open
-    .table-options
-        display: block
-
-    .table-control-button::after
-        transform: rotate(180deg)
-
-.sorting-indicator
-    position: absolute
-    bottom: -5px
-    left: 0px
-    width: 20px
-    height: 12px
-    background-image: url(../images/sorting-indicator.svg)
-    background-size: contain
-    background-repeat: no-repeat
-    background-position: center
-
-    &.asc
-        transform: rotate(180deg)
-
-.jump-buttons
-    position: absolute
-    width: 30px
-    height: 86px
-    display: flex
-    flex-direction: column
-    justify-content: space-between
-    left: -30px
-    gap: 2px
-
-    .jump-button
-        height: 42px
-        width: 30px
-        border: none
-        padding: 4px
-
-    .to-bottom
-        transform: rotate(180deg)
-
-.cell-dict-modal
-    max-height: calc(100vh - 1.6em)
-    padding: 0 2em
-    overflow-y: scroll
-
-    .key
-        text-align: left
-
-    .key::after
-        content: ":"
-        padding-right: 2em
-
-.cell-dict
-    tr:hover
-        background: #333
-        color: #fff
-
-.cell-emoji
-    font-size: 2.2em
-    opacity: 0.5
-
-.admin-access
-    margin-top: 3em
-
-#historicalReset
-    display: flex
-    align-items: center
-
-    .pending, .done
-        margin-left: 2px
-        height: 20px
-        width: 20px
-
-        img
-            height: 100%
-
-    .hidden
-        display: none
-
-#night-report
-    .disabled
-        display: none !important
-
-.dashboard
-    display: flex
-    font-family: "Red Hat Mono", monospace
-    gap: 0.5em
-
-    ul
-        width: 100%
-        list-style: none
-        margin-bottom: 1em
-
-    li
-        box-sizing: border-box
-        border: 1px #555 solid
-        border-radius: 6px
-        padding: 11px 18px
-        margin-bottom: 6px
-        background-color: #fff
-
-    .dashboard-text
-        width: 100%
-        color: #000
-
-.tab-titles
-    display: flex
-    flex-direction: row
-    flex-wrap: wrap
-    border-bottom: 1px solid #ddd
-    width: fit-content
-
-.tab-title
-    padding: 1em 1em 0.7em 1em
-    cursor: pointer
-    padding: 0.5em 1em 0.7em 1em
-    cursor: pointer
-    background: #b0b0b0
-    border-radius: 0px 11px 0 0
-    border: 1px solid transparent
-    border-bottom: none
-    margin-right: 2px
-
-    &:last-of-type
-        margin-right: 0
-
-    &.selected
-        background: #fff
-        border-color: #666
-
-.tab-content:not(.selected)
-    display: none
-
-.plots-grid
-    display: grid
-    grid-template-columns: repeat(2, 1fr)
-    gap: 1em
-
-.plot
-    display: flex
-    flex-direction: column
-
-    img
-        width: 100%
-        height: auto
-
-    figcaption
-        margin-top: 0.5em
-
-.in-memoriam
-    display: flex
-    flex-direction: row
-    width: max-content
-    color: #000
-
-    &:hover
-        text-decoration: none
-
-        p
-            background: #fff
-
-    p
-        font-size: 0.8em
-        margin-left: -1em
-        margin-right: -1em
-        padding: 1em
-        text-align: center
-        background: #eee
-        transition: 0.3s
-        border-radius: 20px
-        border: 3px solid #578147
-
-    img
-        height: 48px
-        width: auto
-        z-index: 2
-        margin-top: auto
-        margin-bottom: 0
-        transform: scale(-1, 1)
-
-        &:first-of-type
-            transform: scale(1)
-            margin-top: 0
-            margin-bottom: auto
-
-.site-host-display
-    z-index: 24
+  img
     position: absolute
     top: 0
-    padding: 9px
-    background-color: aquamarine
-    border-radius: 0 0 6px 6px
-    font-size: 1.8em
-    color: #222
-    opacity: 0.7
+    left: 0
     pointer-events: none
 
-    &.development
-        background-color: burlywood
+.per-day-channels
+  margin-bottom: 1em
+
+  > *
+    margin-right: 1em
+
+.event-info
+  display: flex
+  flex-direction: row
+  justify-content: flex-start
+  align-items: center
+  margin-bottom: 0.5em
+  gap: 1em
+
+  h2
+    margin-bottom: 0
+
+    .media-date
+      margin-right: 0.5em
+      color: #fff
+      text-decoration: underline
+
+    .media-seqnum
+      &::before
+        content: "Sequence "
+
+.event-link
+  color: #fff
+  text-decoration-color: #fff
+
+  p
+    margin-top: 0.8em
+
+#prev-next-nav
+  margin-left: 1em
+
+.prev-next-buttons
+  display: flex
+  flex-direction: row
+  gap: 0.5em
+
+  .button
+    flex-direction: row
+    gap: 0.25em
+    color: #000
+    text-decoration: none
+
+    .prev:before
+      content: "←"
+
+    .next:after
+      content: "→"
+
+.other-channels
+  display: flex
+  flex-direction: row
+  gap: 1em
+  margin-bottom: 1em
+
+.metadata-status
+  display: flex
+  align-items: center
+
+#channel-day-data
+  width: max-content
+
+#the-date
+  font-size: 2.2em
+
+.above-table-sticky
+  min-width: 100%
+  padding-top: 1em
+  position: sticky
+
+    // fix for Chrome
+  top: -1px
+  z-index: 23
+
+  .row
+    display: flex
+    flex-direction: row
+    align-items: center
+    gap: 1em
+
+    .table-header
+      min-width: 100%
+      gap: 0
+      height: 9em
+      align-items: flex-end
+
+    h3
+      margin-bottom: 0
+
+.table-container
+  width: 100%
+
+.camera-table
+  font-family: "Red Hat Mono", monospace
+  border-spacing: 2px
+  margin-top: -2px
+  border-collapse: separate
+
+.grid-title
+  position: absolute
+  font-size: 14px
+  cursor: pointer
+  user-select: none
+
+.sideways
+  transform: rotate(330deg)
+  transform-origin: 0 0
+  white-space: nowrap
+  margin-bottom: 2px
+  user-select: none
+
+.filtering
+  background: #ff0
+
+  color: #000
+  border-radius: 5px
+  padding: 2px
+
+.grid-cell
+  min-width: 40px
+  font-size: 0.8em
+  padding: 0.3em
+  vertical-align: middle
+  height: 42px
+  box-sizing: border-box
+
+  &.seq
+    text-align: right
+
+.copy-to-cb
+  padding-left: 0.7em
+  padding-right: 0.7em
+
+.copied
+  position: fixed
+  padding: 0.5em
+  border-radius: 6px
+  animation: fadeout 0.8s linear 0.5s
+  z-index: 303
+
+@keyframes fadeout
+  0%
+    opacity: 100%
+
+  100%
+    opacity: 0%
+
+.table-control-button
+  background: #eee
+  padding: 0.8em 19px
+  border-radius: 20px
+  display: flex
+  border: none
+  cursor: pointer
+
+  &::after
+    content: "∆"
+    margin-left: 1em
+    transform-origin: 50% 50%
+    transform: rotate(90deg)
+    display: inline-block
+    width: 0.7em
+    transition: 0.3s
+
+.table-options
+  display: none
+  max-height: 90vh
+  overflow-y: scroll
+  grid-template-columns: 1fr 1fr
+  position: absolute
+  z-index: 101
+  gap: 0 0.4em
+  padding: 3px
+  margin-top: 0.4em
+  border-top: none
+  background: #fff
+  box-shadow: 3px 2px 6px rgba(0, 0, 0, 0.2)
+
+  label
+    padding: 3px 0px
+    display: flex
+    flex-direction: row
+    align-items: center
+    user-select: none
+
+.table-option
+  padding: 2px 1em
+  white-space: nowrap
+
+  &:hover
+    background: #ddd
+
+    &.toggle
+      background: #6d6d6d
+      color: #fff
+      border-radius: 0 0 6px
+
+    &.unavailable
+      opacity: 0.5
+
+      input[type="checkbox"]
+        opacity: 0.5
+        cursor: not-allowed
+
+.table-controls-container.open
+  .table-options
+    display: block
+
+    .table-control-button::after
+      transform: rotate(180deg)
+
+.sorting-indicator
+  position: absolute
+  bottom: -5px
+  left: 0px
+  width: 20px
+  height: 12px
+  background-image: url(../images/sorting-indicator.svg)
+  background-size: contain
+  background-repeat: no-repeat
+  background-position: center
+
+  &.asc
+    transform: rotate(180deg)
+
+.jump-buttons
+  position: absolute
+  width: 30px
+  height: 86px
+  display: flex
+  flex-direction: column
+  justify-content: space-between
+  left: -30px
+  gap: 2px
+
+  .jump-button
+    height: 42px
+    width: 30px
+    border: none
+    padding: 4px
+
+    .to-bottom
+      transform: rotate(180deg)
+
+.cell-dict-modal
+  max-height: calc(100vh - 1.6em)
+  padding: 0 2em
+  overflow-y: scroll
+
+  .key
+    text-align: left
+
+    .key::after
+      content: ":"
+      padding-right: 2em
+
+.cell-dict
+  tr:hover
+    background: #333
+    color: #fff
+
+.cell-emoji
+  font-size: 2.2em
+  opacity: 0.5
+
+.admin-access
+  margin-top: 3em
+
+#historicalReset
+  display: flex
+  align-items: center
+
+  .pending, .done
+    margin-left: 2px
+    height: 20px
+    width: 20px
+
+    img
+      height: 100%
+
+    .hidden
+      display: none
+
+#night-report
+  .disabled
+    display: none !important
+
+.dashboard
+  display: flex
+  font-family: "Red Hat Mono", monospace
+  gap: 0.5em
+
+  ul
+    width: 100%
+    list-style: none
+    margin-bottom: 1em
+
+    li
+      box-sizing: border-box
+      border: 1px #555 solid
+      border-radius: 6px
+      padding: 11px 18px
+      margin-bottom: 6px
+      background-color: #fff
+
+    .dashboard-text
+      width: 100%
+      color: #000
+
+.tab-titles
+  display: flex
+  flex-direction: row
+  flex-wrap: wrap
+  border-bottom: 1px solid #ddd
+  width: fit-content
+
+.tab-title
+  padding: 1em 1em 0.7em 1em
+  cursor: pointer
+  padding: 0.5em 1em 0.7em 1em
+  cursor: pointer
+  background: #b0b0b0
+  border-radius: 0px 11px 0 0
+  border: 1px solid transparent
+  border-bottom: none
+  margin-right: 2px
+
+  &:last-of-type
+    margin-right: 0
+
+    &.selected
+      background: #fff
+      border-color: #666
+
+.tab-content:not(.selected)
+  display: none
+
+.plots-grid
+  display: grid
+  grid-template-columns: repeat(2, 1fr)
+  gap: 1em
+
+.plot
+  display: flex
+  flex-direction: column
+
+  img
+    width: 100%
+    height: auto
+
+    figcaption
+      margin-top: 0.5em
+
+.in-memoriam
+  display: flex
+  flex-direction: row
+  width: max-content
+  color: #000
+  text-decoration: none
+
+  &:hover
+    text-decoration: none
+    p
+      background: #fff
+
+  p
+    font-size: 0.8em
+    margin-left: -1em
+    margin-right: -1em
+    padding: 1em
+    text-align: center
+    background: #eee
+    transition: 0.3s
+    border-radius: 20px
+    border: 3px solid #578147
+
+  img
+    height: 48px
+    width: auto
+    z-index: 2
+    margin-top: auto
+    margin-bottom: 0
+    transform: scale(-1, 1)
+
+    &:first-of-type
+      transform: scale(1)
+      margin-top: 0
+      margin-bottom: auto
+
+.site-host-display
+  z-index: 24
+  position: absolute
+  top: 0
+  padding: 9px
+  background-color: aquamarine
+  border-radius: 0 0 6px 6px
+  font-size: 1.8em
+  color: #222
+  opacity: 0.7
+  pointer-events: none
+
+  &.development
+    background-color: burlywood
 
 #mosaic-view
-    .viewsArea
-        width: 100%
+  .viewsArea
+    width: 100%
 
     .views
-        width: 100%
-        display: flex
-        flex-wrap: nowrap
-        justify-content: space-between
-        gap: 1em
-        align-items: flex-start
+      width: 100%
+      display: flex
+      flex-wrap: nowrap
+      justify-content: space-between
+      gap: 1em
+      align-items: flex-start
 
         // Only videos can be selected. If there is only
         // one, there is no need to highlight the selection.
         // Only apply .selected if there is at least one
         // .view-video element within .views that does
         // not have the .selected class.
-        &:has(.view-video:not(.selected)) .selected
-            box-shadow: 0 0 13px rgba(255, 255, 255, 0.3)
+      &:has(.view-video:not(.selected)) .selected
+        box-shadow: 0 0 13px rgba(255, 255, 255, 0.3)
 
     .view
-        width: 100%
-        padding: 1em
-        background-color: rgba(0, 0, 0, 0.2)
-        transition: 0.3s box-shadow
+      width: 100%
+      padding: 1em
+      background-color: rgba(0, 0, 0, 0.2)
+      transition: 0.3s box-shadow
 
     .viewImage
-        width: 100%
+      width: 100%
 
     .viewMeta
-        width: 100%
-        margin-top: 1em
-        border-collapse: separate
-        border-spacing: 0 0.1em
+      width: 100%
+      margin-top: 1em
+      border-collapse: separate
+      border-spacing: 0 0.1em
 
     .colName
-        width: min-content
+      width: min-content
 
     .colValue
-        font-family: "Red Hat Mono", monospace
+      font-family: "Red Hat Mono", monospace
 
     .placeholder
-        background: rgba(0, 0, 0, 0.3)
-        display: flex
-        justify-content: center
-        align-items: center
-        aspect-ratio: 1.66
+      background: rgba(0, 0, 0, 0.3)
+      display: flex
+      justify-content: center
+      align-items: center
+      aspect-ratio: 1.66
 
 .loading-bar-container
-    width: 100%
-    height: 0.2em
-    background: #eee
-    overflow: hidden
-    border-radius: 0.5em
-    margin-bottom: 1.5em
+  width: 100%
+  height: 0.2em
+  background: #eee
+  overflow: hidden
+  border-radius: 0.5em
+  margin-bottom: 1.5em
 
 .loading-bar-animated
-    width: 200%
-    height: 100%
-    animation: loading-bar-move 4s linear infinite
+  width: 200%
+  height: 100%
+  animation: loading-bar-move 4s linear infinite
 
 @keyframes loading-bar-move
-    0%
-        background-position: 0% 0%
+  0%
+    background-position: 0% 0%
 
-    100%
-        background-position: (-100%) 0%
+  100%
+    background-position: (-100%) 0%

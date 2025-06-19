@@ -1,14 +1,25 @@
-import React, { createContext, useContext, memo, useMemo } from "react"
+import React, { useContext, memo, useMemo } from "react"
 import { useState, useEffect, useRef } from "react"
 import detectorMap from "../data/detectorMap.json"
 import cwfsMap from "../data/cwfsMap.json"
 import { simplePost } from "../modules/utils"
 import { ModalProvider, useModal, ConfirmationModal } from "./Modal"
+import {
+  DetectorMap,
+  DetectorKey,
+  WorkerGroup,
+  WorkerStatus,
+  StatusSet,
+  RedisEndpointContext,
+} from "./componentTypes"
+import {
+  RESET_PREFIX,
+  getStatusClass,
+  getStatusColor,
+  createPlaceholders,
+} from "../utils/detectorUtils"
 
-const RESET_PREFIX = "RUBINTV_CONTROL_RESET_"
-const RedisEndpointContext = createContext(null)
-
-const useRedisEndpoint = () => {
+export const useRedisEndpoint = () => {
   const context = useContext(RedisEndpointContext)
   if (context === null) {
     throw new Error(
@@ -18,81 +29,54 @@ const useRedisEndpoint = () => {
   return context
 }
 
-// Get status class name
-const getStatusClass = (status) => {
-  switch (status) {
-    case "free":
-      return "status-free"
-    case "busy":
-      return "status-busy"
-    case "queued":
-      return "status-queued"
-    case "restarting":
-      return "status-restarting"
-    case "guest":
-      return "status-guest"
-    default:
-      return "status-missing"
-  }
-}
-
-const createPlaceholders = (count) => {
-  const placeholders = {}
-  for (let i = 0; i < count; i++) {
-    placeholders[i] = { status: "missing" }
-  }
-  return placeholders
-}
-
 const DetectorSection = ({
   title,
   map,
   statuses,
   redisKey,
   size = "large",
+}: {
+  title: string
+  map: DetectorMap
+  statuses: StatusSet
+  redisKey: string
+  size?: "small" | "large"
 }) => {
   return (
     <div className={`detector-section detector-section-${size}`}>
       <h2 className="detector-title">{title}</h2>
-      <DetectorCanvas
-        detectorMap={map}
-        detectorStatuses={statuses}
-        size={size}
-      />
+      <DetectorCanvas detectorMap={map} detectorStatuses={statuses} />
       <ResetButton redisKey={redisKey} />
     </div>
   )
 }
 
-const Cells = memo(({ statuses, prefix }) => {
-  let activeWorkerCells = useMemo(() => {
-    const cells = { ...statuses }
-    const { numWorkers } = statuses
-    if (numWorkers && numWorkers > 0) {
-      delete cells.numWorkers
-      const cellsToAdd = createPlaceholders(numWorkers)
-      return {
-        ...cellsToAdd,
-        ...cells,
+const Cells = memo(
+  ({ statuses, prefix }: { statuses: WorkerGroup; prefix: string }) => {
+    let activeWorkerCells = useMemo(() => {
+      const cells = { ...statuses.workers }
+      const { numWorkers } = statuses
+      if (numWorkers && numWorkers > 0) {
+        const cellsToAdd = createPlaceholders(numWorkers)
+        return {
+          ...cellsToAdd,
+          ...cells,
+        }
       }
-    }
-    return cells
-  }, [statuses])
+      return cells
+    }, [statuses])
 
-  return (
-    <div className={`${prefix}-cells`}>
-      {Object.entries(activeWorkerCells).map(([i, status]) => (
-        <Cell
-          key={`${prefix}-${i}`}
-          prefix={prefix}
-          index={i}
-          status={status}
-        />
-      ))}
-    </div>
-  )
-})
-const Cell = ({ prefix, index, status }) => {
+    return (
+      <div className={`${prefix}-cells`}>
+        {Object.entries(activeWorkerCells).map(([i, status]) => (
+          <Cell key={`${prefix}-${i}`} status={status as WorkerStatus} />
+        ))}
+      </div>
+    )
+  }
+)
+
+const Cell = ({ status }: { status: WorkerStatus }) => {
   return (
     <div className={`detector-cell ${getStatusClass(status.status)}`}>
       {status.status === "queued" && (
@@ -104,7 +88,7 @@ const Cell = ({ prefix, index, status }) => {
   )
 }
 
-const ResetButton = ({ redisKey }) => {
+const ResetButton = ({ redisKey }: { redisKey: string }) => {
   const [status, setStatus] = useState("")
   const { url: redisEndpointUrl, admin } = useRedisEndpoint()
   const { showModal, closeModal } = useModal()
@@ -112,7 +96,7 @@ const ResetButton = ({ redisKey }) => {
   // Only show reset button if admin
   if (!admin) return null
 
-  const showStatusDelay = (status) => {
+  const showStatusDelay = (status: string) => {
     setStatus(status)
     setTimeout(() => {
       setStatus("")
@@ -163,6 +147,10 @@ const DetectorStatusVisualization = ({
   detectorKeys,
   redisEndpointUrl,
   admin,
+}: {
+  detectorKeys: DetectorKey[]
+  redisEndpointUrl: string
+  admin: boolean
 }) => {
   // redisKeys is a map of detector section names to their respective
   // keys in the Redis database
@@ -185,14 +173,13 @@ const DetectorStatusVisualization = ({
   const [otherQueues, setOtherQueues] = useState({})
 
   useEffect(() => {
-    function handleDetectorEvent(event) {
+    type EL = EventListener
+    function handleDetectorEvent(event: CustomEvent) {
       const { data, dataType } = event.detail
 
       if (dataType !== "detectorStatus") {
         return
       }
-      console.log("Received detector status update:", data)
-      // If we get here, treat it as a batch update
       const {
         sfmSet0,
         sfmSet1,
@@ -206,7 +193,6 @@ const DetectorStatusVisualization = ({
         otherQueues,
       } = data
 
-      // Only update the detectors that have new data
       setMainDetectorStatuses((prev) => ({
         ...prev,
         ...(sfmSet0 && { sfmSet0 }),
@@ -232,12 +218,10 @@ const DetectorStatusVisualization = ({
       }
     }
 
-    // Add event listener for detector status updates
-    window.addEventListener("detectors", handleDetectorEvent)
+    window.addEventListener("detectors", handleDetectorEvent as EL)
 
-    // Cleanup listener on unmount
     return () => {
-      window.removeEventListener("detectors", handleDetectorEvent)
+      window.removeEventListener("detectors", handleDetectorEvent as EL)
     }
   }, [])
 
@@ -347,7 +331,8 @@ const DetectorStatusVisualization = ({
   )
 }
 
-const OtherQueuesSection = ({ otherQueues }) => {
+const OtherQueuesSection = ({ otherQueues }: { otherQueues: WorkerGroup }) => {
+  const { text } = otherQueues
   return (
     <div className="other-queues-section">
       <div className="other-queues">
@@ -360,8 +345,9 @@ const OtherQueuesSection = ({ otherQueues }) => {
             </tr>
           </thead>
           <tbody>
-            {Object.entries(otherQueues)
-              .toSorted()
+            {Object.entries(text || {})
+              .slice()
+              .sort()
               .map(
                 ([key, value]) =>
                   value.toString() != "" && (
@@ -378,7 +364,15 @@ const OtherQueuesSection = ({ otherQueues }) => {
   )
 }
 
-const Step1bSection = ({ title, statuses, redisKey }) => {
+const Step1bSection = ({
+  title,
+  statuses,
+  redisKey,
+}: {
+  title: string
+  statuses: StatusSet["sfmStep1b"] | StatusSet["aosStep1b"]
+  redisKey: string
+}) => {
   return (
     <div className="step1b-section">
       <h2 className="detector-title">{title}</h2>
@@ -392,134 +386,129 @@ const Step1bSection = ({ title, statuses, redisKey }) => {
   )
 }
 
-const DetectorCanvas = memo(({ detectorMap, detectorStatuses, size }) => {
-  const canvasRef = useRef(null)
-  const containerRef = useRef(null)
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+const DetectorCanvas = memo(
+  ({
+    detectorMap,
+    detectorStatuses,
+  }: {
+    detectorMap: DetectorMap
+    detectorStatuses: WorkerGroup
+  }) => {
+    const canvasRef = useRef<HTMLCanvasElement | null>(null)
+    const containerRef = useRef<HTMLDivElement | null>(null)
+    const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
 
-  useEffect(() => {
-    const updateDimensions = () => {
+    useEffect(() => {
+      const updateDimensions = () => {
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect()
+          const width = rect.width
+          const height = rect.width // Keep square aspect ratio
+          setDimensions({ width, height })
+        }
+      }
+
+      const resizeObserver = new ResizeObserver(updateDimensions)
       if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        const width = rect.width
-        const height = rect.width // Keep square aspect ratio
-        setDimensions({ width, height })
+        resizeObserver.observe(containerRef.current)
       }
-    }
 
-    const resizeObserver = new ResizeObserver(updateDimensions)
-    resizeObserver.observe(containerRef.current)
-    return () => resizeObserver.disconnect()
-  }, [])
+      return () => resizeObserver.disconnect()
+    }, [])
 
-  useEffect(() => {
-    if (!canvasRef.current || !dimensions.width) return
+    useEffect(() => {
+      if (!canvasRef.current || !dimensions.width) return
 
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext("2d")
-    const dpr = window.devicePixelRatio || 1
+      const canvas = canvasRef.current
+      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D
+      const dpr = window.devicePixelRatio || 1
 
-    canvas.width = dimensions.width * dpr
-    canvas.height = dimensions.height * dpr
-    ctx.scale(dpr, dpr)
+      canvas.width = dimensions.width * dpr
+      canvas.height = dimensions.height * dpr
+      ctx.scale(dpr, dpr)
 
-    // Calculate scaling factors
-    let minX = Infinity,
-      maxX = -Infinity,
-      minY = Infinity,
-      maxY = -Infinity
-    Object.values(detectorMap).forEach((detector) => {
-      if (!detector?.corners) return
-      Object.values(detector.corners).forEach((corner) => {
-        minX = Math.min(minX, corner[0])
-        maxX = Math.max(maxX, corner[0])
-        minY = Math.min(minY, corner[1])
-        maxY = Math.max(maxY, corner[1])
+      // Calculate scaling factors
+      let minX = Infinity,
+        maxX = -Infinity,
+        minY = Infinity,
+        maxY = -Infinity
+      Object.values(detectorMap).forEach((detector) => {
+        if (!detector?.corners) return
+        Object.values(detector.corners).forEach((corner) => {
+          minX = Math.min(minX, corner[0])
+          maxX = Math.max(maxX, corner[0])
+          minY = Math.min(minY, corner[1])
+          maxY = Math.max(maxY, corner[1])
+        })
       })
-    })
 
-    const padding = dimensions.width * 0.1
-    const dataWidth = maxX - minX
-    const dataHeight = maxY - minY
-    const scale = Math.min(
-      (dimensions.width - 2 * padding) / dataWidth,
-      (dimensions.height - 2 * padding) / dataHeight
+      const padding = dimensions.width * 0.1
+      const dataWidth = maxX - minX
+      const dataHeight = maxY - minY
+      const scale = Math.min(
+        (dimensions.width - 2 * padding) / dataWidth,
+        (dimensions.height - 2 * padding) / dataHeight
+      )
+
+      const toCanvasX = (x: number) => (x - minX) * scale + padding
+      const toCanvasY = (y: number) => (maxY - y) * scale + padding
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      // Update stroke style to match Sass border color
+      ctx.strokeStyle = "#374151"
+      ctx.lineWidth = 1 * dpr
+
+      Object.entries(detectorMap).forEach(([id, detector]) => {
+        const status = (detectorStatuses.workers &&
+          (detectorStatuses.workers[id] as WorkerStatus)) || {
+          status: "unknown",
+          queue_length: 0,
+        }
+
+        ctx.globalAlpha = 0.9
+
+        const { upperLeft, upperRight, lowerLeft, lowerRight } =
+          detector.corners
+
+        // Draw detector cell
+        ctx.beginPath()
+        ctx.moveTo(...[toCanvasX(upperLeft[0]), toCanvasY(upperLeft[1])])
+        ctx.lineTo(...[toCanvasX(upperRight[0]), toCanvasY(upperRight[1])])
+        ctx.lineTo(...[toCanvasX(lowerRight[0]), toCanvasY(lowerRight[1])])
+        ctx.lineTo(...[toCanvasX(lowerLeft[0]), toCanvasY(lowerLeft[1])])
+        ctx.closePath()
+
+        // Fill based on status
+        ctx.fillStyle = getStatusColor(status.status)
+        ctx.fill()
+        ctx.stroke()
+
+        // Reset alpha for text
+        ctx.globalAlpha = 1
+        if (status.status === "queued") {
+          const centerX = toCanvasX((upperLeft[0] + lowerRight[0]) / 2)
+          const centerY = toCanvasY((upperLeft[1] + lowerRight[1]) / 2)
+          const cellWidth = toCanvasX(upperRight[0]) - toCanvasX(upperLeft[0])
+          const fontSize = Math.max(14, Math.min(cellWidth / 3, 14))
+
+          ctx.fillStyle = "white" // Match Sass queue length color
+          ctx.font = `bold ${fontSize}px Arial` // Match Sass font weight
+          ctx.textAlign = "center"
+          ctx.textBaseline = "middle"
+          if (status.queue_length !== undefined) {
+            ctx.fillText(status.queue_length.toString(), centerX, centerY)
+          }
+        }
+      })
+    }, [detectorMap, detectorStatuses, dimensions])
+
+    return (
+      <div ref={containerRef} className="detector-canvas">
+        <canvas ref={canvasRef} />
+      </div>
     )
-
-    const toCanvasX = (x) => (x - minX) * scale + padding
-    const toCanvasY = (y) => (maxY - y) * scale + padding
-
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-    // Update stroke style to match Sass border color
-    ctx.strokeStyle = "#374151"
-    ctx.lineWidth = 1 * dpr
-
-    // Draw detectors with opacity to match Sass
-    Object.entries(detectorMap).forEach(([id, detector]) => {
-      if (!detector?.corners) return
-      const status = detectorStatuses[id] || {
-        status: "unknown",
-        queue_length: 0,
-      }
-
-      ctx.globalAlpha = 0.9 // Match Sass opacity
-
-      const { upperLeft, upperRight, lowerLeft, lowerRight } = detector.corners
-
-      // Draw detector cell
-      ctx.beginPath()
-      ctx.moveTo(...[toCanvasX(upperLeft[0]), toCanvasY(upperLeft[1])])
-      ctx.lineTo(...[toCanvasX(upperRight[0]), toCanvasY(upperRight[1])])
-      ctx.lineTo(...[toCanvasX(lowerRight[0]), toCanvasY(lowerRight[1])])
-      ctx.lineTo(...[toCanvasX(lowerLeft[0]), toCanvasY(lowerLeft[1])])
-      ctx.closePath()
-
-      // Fill based on status
-      ctx.fillStyle = getStatusColor(status.status)
-      ctx.fill()
-      ctx.stroke()
-
-      // Reset alpha for text
-      ctx.globalAlpha = 1
-      if (status.status === "queued") {
-        const centerX = toCanvasX((upperLeft[0] + lowerRight[0]) / 2)
-        const centerY = toCanvasY((upperLeft[1] + lowerRight[1]) / 2)
-        const cellWidth = toCanvasX(upperRight[0]) - toCanvasX(upperLeft[0])
-        const fontSize = Math.max(14, Math.min(cellWidth / 3, 14))
-
-        ctx.fillStyle = "white" // Match Sass queue length color
-        ctx.font = `bold ${fontSize}px Arial` // Match Sass font weight
-        ctx.textAlign = "center"
-        ctx.textBaseline = "middle"
-        ctx.fillText(status.queue_length.toString(), centerX, centerY)
-      }
-    })
-  }, [detectorMap, detectorStatuses, dimensions])
-
-  return (
-    <div ref={containerRef} className="detector-canvas">
-      <canvas ref={canvasRef} />
-    </div>
-  )
-})
-
-const getStatusColor = (status) => {
-  switch (status) {
-    case "free":
-      return "#22c55e" // Match Sass colors
-    case "busy":
-      return "#eab308"
-    case "queued":
-      return "#ef4444"
-    case "restarting":
-      return "#a163ac"
-    case "guest":
-      return "#3b82f6"
-    default:
-      return "#d1d5db"
   }
-}
+)
 
 export default DetectorStatusVisualization

@@ -124,3 +124,41 @@ export interface FilterOptions {
   column: string
   value: string | number | boolean
 }
+
+export interface DetectorKey {
+  name: string
+  key: string
+}
+
+export interface DetectorMap {
+  [key: string]: {
+    corners: {
+      lowerLeft: number[]
+      lowerRight: number[]
+      upperRight: number[]
+      upperLeft: number[]
+    }
+  }
+}
+
+export interface WorkerStatus {
+  status: string
+  queue_length?: number
+}
+
+export interface WorkerGroup {
+  workers?: { [workerId: string]: WorkerStatus }
+  numWorkers?: number
+  text?: Record<string, string>
+}
+
+export interface StatusSet {
+  [key: string]: WorkerGroup
+}
+
+export interface RedisEndpoint {
+  url: string
+  admin: boolean
+}
+
+export const RedisEndpointContext = createContext<RedisEndpoint | null>(null)
