@@ -478,20 +478,24 @@ section
 .admin-access
   margin-top: 3em
 
-#historicalReset
+.historical-reset
   display: flex
   align-items: center
-
-  .pending, .done
-    margin-left: 2px
-    height: 20px
-    width: 20px
-
+  width: fit-content
+  .status
+    height: 16px
     img
       height: 100%
-
-    .hidden
-      display: none
+  button
+    background: #fff
+    display: flex
+    flex-direction: row
+    align-items: center
+    gap: 6px
+    transition: width 0.8s
+    &:disabled
+      cursor: not-allowed
+      opacity: 0.5
 
 #night-report
   .disabled

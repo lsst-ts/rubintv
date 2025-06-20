@@ -42,6 +42,16 @@ export class WebsocketClient {
     }
   }
 
+  close() {
+    if (this.ws) {
+      this.ws.close()
+      this.ws = null
+    }
+    this.connectionID = null
+    this.subscriptions = []
+    this.online = false
+  }
+
   #getSubscriptionPayload(subscriptionType, servicePageType, pageID) {
     let payload
     if (subscriptionType === "historicalStatus") {

@@ -1,11 +1,10 @@
-import { listenForHistoricalReset } from "../modules/historical-reset.js"
 import React from "react"
 import { createRoot } from "react-dom/client"
 import AdminPanels from "../components/AdminPanels"
+import HistoricalReset from "../components/HistoricalReset"
+
 ;(function () {
   window.addEventListener("DOMContentLoaded", () => {
-    listenForHistoricalReset()
-
     const { admin, homeUrl, baseUrl } = window.APP_DATA
 
     const redisKeyPrefix = (key) => {
@@ -60,13 +59,16 @@ import AdminPanels from "../components/AdminPanels"
     const adminPanels = document.getElementById("admin-panels")
     const adminPanelsRoot = createRoot(adminPanels)
     adminPanelsRoot.render(
-      <AdminPanels
-        initMenus={menus}
-        initAdmin={admin}
-        redisEndpointUrl={redisEndpointUrl}
-        redisKeyPrefix={redisKeyPrefix}
-        authEndpointUrl={authEndpointUrl}
-      />
+      <>
+        <AdminPanels
+          initMenus={menus}
+          initAdmin={admin}
+          redisEndpointUrl={redisEndpointUrl}
+          redisKeyPrefix={redisKeyPrefix}
+          authEndpointUrl={authEndpointUrl}
+        />
+        <HistoricalReset />
+      </>
     )
   })
 })()
