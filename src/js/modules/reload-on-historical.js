@@ -1,5 +1,5 @@
-import { _getById } from "./modules/utils"
-import { WebsocketClient } from "./modules/ws-service-client"
+import { _getById } from "./utils"
+import { WebsocketClient } from "./ws-service-client"
 /*
 Listens for the status of the historical poller via an event from the websocket
 client if the #historicalBusy element shows that historical data for the site

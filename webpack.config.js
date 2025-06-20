@@ -24,8 +24,7 @@ const pagesWithHistory = [
     [page]: [
       `./src/js/pages/${page}.js`,
       "./src/js/modules/ws-service-client.js",
-      "./src/js/reload-on-historical.js",
-      "./src/js/modules/calendar-controls.js",
+      "./src/js/modules/reload-on-historical.js",
     ],
   }),
   {}

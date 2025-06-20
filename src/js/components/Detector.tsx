@@ -17,7 +17,7 @@ import {
   getStatusClass,
   getStatusColor,
   createPlaceholders,
-} from "../utils/detectorUtils"
+} from "../modules/detectorUtils"
 
 export const useRedisEndpoint = () => {
   const context = useContext(RedisEndpointContext)
