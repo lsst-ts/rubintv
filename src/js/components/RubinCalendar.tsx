@@ -26,7 +26,7 @@ const Day = ({
 }) => {
   let hasData = false
   let isSelected = false
-  let currentDayClassList = ["day"]
+  const currentDayClassList = ["day"]
   if (calendarData && calendarData[day] !== undefined) {
     hasData = true
     currentDayClassList.push("obs")

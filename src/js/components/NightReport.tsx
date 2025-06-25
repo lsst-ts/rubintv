@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"
-import { NightReportPlot, NightReportType } from "./componentTypes"
+import { NightReportPlot, NightReportType, Camera } from "./componentTypes"
 import { groupBy, sanitiseString } from "../modules/utils"
 
 // Helper component for rendering multiline text with double-space as &nbsp;&nbsp;
@@ -11,7 +11,7 @@ function MultilineText({ text }: { text: string }) {
         .split("\n")
         .map((line, idx) =>
           line ? (
-            <p key={idx}>{line.replace(/  /g, "\u00A0\u00A0")}</p>
+            <p key={idx}>{line.replace(/ {2}/g, "\u00A0\u00A0")}</p>
           ) : (
             <br key={idx} />
           )
@@ -144,7 +144,7 @@ function NightReportPlots({
 }: {
   tab: PlotTabType | undefined
   selected: string
-  camera: any
+  camera: Camera
   locationName: string
   homeUrl: string
 }) {
@@ -220,7 +220,7 @@ function NightReport({
 }: {
   initialNightReport: NightReportType
   initialDate: string
-  camera: any
+  camera: Camera
   locationName: string
   homeUrl: string
 }) {
@@ -229,7 +229,7 @@ function NightReport({
 
   const tabs = getTabs(nightReport)
   const [selected, setSelected] = useState(() => {
-    let tabIds = tabs.map((tab) => tab.id)
+    const tabIds = tabs.map((tab) => tab.id)
     let storedSelected = localStorage.getItem("night-report-selected")
     if (!storedSelected || !tabIds.includes(storedSelected)) {
       storedSelected = tabIds[0]
@@ -306,6 +306,6 @@ type BaseTab<T extends string, D> = {
 }
 
 type TextTabType = BaseTab<"text", Record<string, string>>
-type PlotTabType = BaseTab<"plot", any> // Replace 'any' with a more specific type if possible
+type PlotTabType = BaseTab<"plot", NightReportPlot[]>
 
 type TabType = TextTabType | PlotTabType

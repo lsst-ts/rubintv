@@ -1,4 +1,3 @@
-/* eslint-disable no-prototype-builtins */
 import React, { useState, useEffect } from "react"
 import { toTimeString } from "../modules/utils"
 import { Metadata, Camera } from "./componentTypes"
@@ -128,7 +127,7 @@ export function TimeSinceLastImageClock({
           {isOnline && (
             <p>
               <span className="label">{camera.time_since_clock.label}</span>
-              <span>Can't ascertain...</span>
+              <span>Can&#39;t ascertain...</span>
             </p>
           )}
           {!isOnline && <p>Lost comms with app</p>}

@@ -25,7 +25,6 @@ export default function MosaicView({
   locationName: string
   camera: CameraWithMosaicViewMeta
 }) {
-  const [historicalBusy, setHistoricalBusy] = useState(null)
   const [currentMeta, setCurrentMeta] = useState({})
   const [views, setViews] = useState(initialViews)
 
@@ -66,10 +65,6 @@ export default function MosaicView({
   useEffect(() => {
     type EV = EventListener
     window.addEventListener("camera", handleMetadataChange as EV)
-    window.addEventListener(
-      "historicalStatus",
-      handleHistoricalStateChange as EV
-    )
     window.addEventListener("channel", handleChannelEvent as EV)
 
     function handleMetadataChange(event: CustomEvent) {
@@ -78,11 +73,6 @@ export default function MosaicView({
         return
       }
       setCurrentMeta(data)
-    }
-
-    function handleHistoricalStateChange(event: CustomEvent) {
-      const { data: historicalBusy } = event.detail
-      setHistoricalBusy(historicalBusy)
     }
 
     /**
@@ -106,10 +96,6 @@ export default function MosaicView({
 
     return () => {
       window.removeEventListener("camera", handleMetadataChange as EV)
-      window.removeEventListener(
-        "historicalStatus",
-        handleHistoricalStateChange as EV
-      )
       window.removeEventListener("channel", handleChannelEvent as EV)
     }
   }, [])

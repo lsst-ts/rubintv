@@ -7,8 +7,8 @@ export type MetadatumType =
   | string
   | number
   | boolean
-  | { DISPLAY_VALUE?: string; [key: string]: any }
-  | any[]
+  | Record<string, string>
+  | string[]
 
 export interface MetadataRow {
   [key: string]: MetadatumType
@@ -54,6 +54,7 @@ export interface Camera {
   image_viewer_link?: string
   time_since_clock?: { label: string }
   mosaic_view_meta?: Array<MosiacSingleView>
+  night_report_label?: string
 }
 
 export interface MosiacSingleView {

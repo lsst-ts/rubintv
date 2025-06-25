@@ -9,6 +9,7 @@ export interface Menu {
 
 export interface MenuItem {
   title: string
+  value: string
 }
 
 interface DropDownMenuProps {

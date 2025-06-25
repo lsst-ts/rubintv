@@ -2,7 +2,6 @@ import React from "react"
 import { Camera } from "./componentTypes"
 
 export default function Banner({
-  siteLocation,
   locationName,
   camera,
 }: {

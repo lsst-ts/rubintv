@@ -5,7 +5,6 @@ import {
   indicatorForAttr,
   _elWithAttrs,
   replaceInString,
-  _getById,
   setCameraBaseUrl,
 } from "../modules/utils"
 import {
@@ -42,17 +41,40 @@ function MetadataCell({
 }) {
   let toDisplay: string | React.ReactElement = ""
   let title = ""
-  const className = ["grid-cell meta", indicator].join(" ")
-  if (typeof data === "number" && data % 1 !== 0) {
-    toDisplay = data.toFixed(2)
-    title = data.toString()
-  } else if (typeof data === "boolean") {
-    toDisplay = data ? "True" : "False"
-  } else if (data && typeof data === "object") {
-    toDisplay = (
-      <FoldoutCell data={data} seqNum={seqNum} columnName={columnName} />
-    )
+  const className = ["grid-cell meta", indicator].join(" ").trim()
+  switch (typeof data) {
+    case "string":
+      toDisplay = data
+      break
+    case "number":
+      if (data % 1 !== 0) {
+        toDisplay = data.toFixed(2)
+        title = data.toString()
+      } else {
+        toDisplay = data.toString()
+      }
+      break
+    case "undefined":
+      toDisplay = ""
+      title = "No data"
+      break
+    case "object":
+      if (data === null) {
+        toDisplay = ""
+        title = "No data"
+      }
+      // Otherwise, show the FoldoutCell component
+      toDisplay = (
+        <FoldoutCell data={data} seqNum={seqNum} columnName={columnName} />
+      )
+      break
+    case "boolean":
+      toDisplay = data ? "True" : "False"
+      break
+    default:
+      toDisplay = "Unknown type"
   }
+
   return (
     <td className={className} title={title}>
       {toDisplay}
@@ -306,7 +328,7 @@ function ChannelHeader({
     }
   }
 
-  const isMetadataColumn = !channel.hasOwnProperty("title")
+  const isMetadataColumn = !Object.keys(channel).includes("title")
   const containerClass = isMetadataColumn
     ? "meta grid-title sortable"
     : "grid-title"
@@ -401,7 +423,6 @@ export default function TableView({
   filterOn,
   filteredRowsCount,
   sortOn,
-  siteLocation,
 }: {
   camera: Camera
   channelData: ChannelData
@@ -449,7 +470,7 @@ function FoldoutCell({
 }: {
   seqNum: string
   columnName: string
-  data: MetadatumType | Record<string, any>
+  data: MetadatumType
 }) {
   if (!data || typeof data !== "object") {
     return null
@@ -461,7 +482,7 @@ function FoldoutCell({
     // If data is an array, we can display it as a list
     toDisplay = "📖"
   } else {
-    toDisplay = data.hasOwnProperty("DISPLAY_VALUE")
+    toDisplay = Object.keys(data).includes("DISPLAY_VALUE")
       ? data["DISPLAY_VALUE"]
       : "📖"
   }

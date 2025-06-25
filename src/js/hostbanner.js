@@ -15,10 +15,12 @@ window.addEventListener("DOMContentLoaded", () => {
     const text = document.createTextNode(display.join(" "))
     displayEl.appendChild(text)
     const header = _getById("header-banner")
-    header && header.append(displayEl)
+    if (header) {
+      header.append(displayEl)
+    }
   }
 
-  if (!!window.SharedWorker) {
+  if (window.SharedWorker) {
     const heartbeatWorker = new SharedWorker(
       new URL("./modules/heartbeat-worker", import.meta.url)
     )

@@ -65,7 +65,7 @@ export function useModal(): {
 } {
   const { modalContent, setModalContent } = useContext(ModalContext)
 
-  const showModal = (content: any) => {
+  const showModal = (content: React.ReactNode) => {
     setModalContent(content)
   }
 
@@ -81,6 +81,11 @@ export const ConfirmationModal = ({
   message = "Are you sure?",
   onConfirm = () => {},
   onCancel = () => {},
+}: {
+  title?: string
+  message?: string
+  onConfirm?: () => void
+  onCancel?: () => void
 }) => {
   return (
     <div>

@@ -1,5 +1,5 @@
 import { gunzipSync } from "fflate"
-import { homeUrl, imageRoot } from "js/config"
+import { homeUrl, imageRoot } from "../config"
 import { ExposureEvent, MetadataRow } from "../components/componentTypes"
 
 export function intersect<T>(arrayA: T[], arrayB: T[]): T[] {
@@ -206,15 +206,15 @@ export function getWebSockURL(name: string): string {
 
 export function getStrHashCode(str: string): number {
   let hash = 0,
-    i = 0,
-    len = str.length
+    i = 0
+  const len = str.length
   while (i < len) {
     hash = ((hash << 5) - hash + str.charCodeAt(i++)) << 0
   }
   return hash
 }
 
-export const decodeUnpackWSPayload = (compressed: string): any => {
+export const decodeUnpackWSPayload = (compressed: string): string => {
   let data
   try {
     // Decode Base64 string to Uint8Array
@@ -233,6 +233,7 @@ export const decodeUnpackWSPayload = (compressed: string): any => {
     const textDecoder = new TextDecoder()
     data = JSON.parse(textDecoder.decode(decompressed))
   } catch (error) {
+    console.error("Error decompressing payload:", error)
     data = {
       error: "Couldn't decompress payload",
     }

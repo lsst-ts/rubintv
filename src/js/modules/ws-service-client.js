@@ -29,10 +29,6 @@ export class WebsocketClient {
       servicePageType,
       pageID
     )
-    const eventType = this.#getSubscriptionEventType(
-      subscriptionType,
-      servicePageType
-    )
 
     // Add the subscription to the Map
     this.subscriptions.push(subscriptionPayload)
@@ -63,13 +59,7 @@ export class WebsocketClient {
     return payload
   }
 
-  #getSubscriptionEventType(subscriptionType, servicePageType) {
-    return subscriptionType === "historicalStatus"
-      ? subscriptionType
-      : servicePageType
-  }
-
-  handleClose(e) {
+  handleClose() {
     console.log("Lost services websocket connection. Retrying")
     this.online = false
     window.dispatchEvent(
@@ -77,7 +67,7 @@ export class WebsocketClient {
     )
   }
 
-  handleOpen(e) {
+  handleOpen() {
     this.online = true
     window.dispatchEvent(
       new CustomEvent("ws_status_change", { detail: { online: true } })
@@ -102,7 +92,7 @@ export class WebsocketClient {
     let data
     try {
       data = JSON.parse(messageEvent.data)
-    } catch (error) {
+    } catch {
       const valid = this.setConnectionID(messageEvent.data)
       if (valid) {
         this.sendSubscriptionMessages()

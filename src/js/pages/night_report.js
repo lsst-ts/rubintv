@@ -18,7 +18,6 @@ import NightReport from "../components/NightReport"
   } = window.APP_DATA
 
   if (!isHistorical) {
-    // eslint-disable-next-line no-unused-vars
     const ws = new WebsocketClient()
     ws.subscribe("service", "nightreport", locationName, camera.name)
   }

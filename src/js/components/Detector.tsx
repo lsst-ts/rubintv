@@ -53,7 +53,7 @@ const DetectorSection = ({
 
 const Cells = memo(
   ({ statuses, prefix }: { statuses: WorkerGroup; prefix: string }) => {
-    let activeWorkerCells = useMemo(() => {
+    const activeWorkerCells = useMemo(() => {
       const cells = { ...statuses.workers }
       const { numWorkers } = statuses
       if (numWorkers && numWorkers > 0) {
@@ -75,8 +75,9 @@ const Cells = memo(
     )
   }
 )
+Cells.displayName = "Cells"
 
-const Cell = ({ status }: { status: WorkerStatus }) => {
+function Cell({ status }: { status: WorkerStatus }) {
   return (
     <div className={`detector-cell ${getStatusClass(status.status)}`}>
       {status.status === "queued" && (
@@ -510,5 +511,6 @@ const DetectorCanvas = memo(
     )
   }
 )
+DetectorCanvas.displayName = "DetectorCanvas"
 
 export default DetectorStatusVisualization

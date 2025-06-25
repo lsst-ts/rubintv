@@ -127,7 +127,7 @@ function AllSkyStill({
         <div className="subheader">
           <h3>Image {still.seq_num}</h3>
         </div>
-        <a target="_blank" href={imgUrl}>
+        <a target="_blank" rel="noreferrer" href={imgUrl}>
           <img className="resp" src={imgUrl} />
         </a>
         <div className="desc">{still.filename}</div>

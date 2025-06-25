@@ -123,7 +123,7 @@ describe("TableApp Column Selection Persistence", () => {
     const initialSelection = ["colA", "colB", "colC"]
     retrieveStoredSelection.mockReturnValue(initialSelection)
 
-    const { container } = render(
+    render(
       <TableApp
         camera={camera}
         initialDate="2024-01-01"

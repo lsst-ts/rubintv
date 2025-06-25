@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, use } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { WebsocketClient } from "js/modules/ws-service-client"
 import { simplePost } from "js/modules/utils"
 
@@ -20,7 +20,7 @@ export default function HistoricalReset() {
     }
   }, [])
 
-  const handleReset = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleReset = () => {
     simplePost("api/historical_reset")
       .then(() => {
         setResetState("resetting")
@@ -29,14 +29,6 @@ export default function HistoricalReset() {
         console.error(`Couldn't reload historical data: ${err}`)
         setResetState("idle")
       })
-  }
-
-  const mockHandleReset = () => {
-    // This function is for testing purposes only
-    setResetState("resetting")
-    setTimeout(() => {
-      setResetState("reset")
-    }, 2000) // Simulate a reset after 2 seconds
   }
 
   useEffect(() => {
@@ -58,7 +50,7 @@ export default function HistoricalReset() {
       <button
         className="button"
         id="historicalReset"
-        onClick={mockHandleReset}
+        onClick={handleReset}
         disabled={resetState === "resetting"}
       >
         Reset Historical Data

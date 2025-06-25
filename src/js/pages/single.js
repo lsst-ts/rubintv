@@ -22,7 +22,6 @@ import MediaDisplay from "../components/MediaDisplay"
   } = window.APP_DATA
   const channel = initEvent.channel_name
 
-  // eslint-disable-next-line no-unused-vars
   if (isCurrent) {
     const ws = new WebsocketClient()
     ws.subscribe("service", "channel", locationName, camera.name, channel)

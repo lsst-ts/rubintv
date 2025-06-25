@@ -1,4 +1,4 @@
-import React, { useState, useEffect, FormEvent } from "react"
+import React, { useState, useEffect } from "react"
 import DropDownMenu from "./DropDownMenu"
 import { useModal, ConfirmationModal, ModalProvider } from "./Modal"
 import { simplePost, simpleGet } from "../modules/utils"
@@ -25,7 +25,7 @@ interface RedisPanelProps {
 
 interface DropDownMenuContainerProps {
   menu: Menu
-  onItemSelect: (item: any) => Promise<void>
+  onItemSelect: (item: MenuItem) => Promise<void>
 }
 
 interface AdminSendRedisValueProps {
@@ -41,10 +41,6 @@ interface AdminSendRedisValueProps {
 interface AdminSendRedisCommandProps {
   redisEndpointUrl: string
   redisKeyPrefix: (key: string) => string
-}
-
-interface AdminDangerPanelProps {
-  redisEndpointUrl: string
 }
 
 // Custom hook to handle Redis post success/failure
@@ -120,7 +116,7 @@ export function RedisPanel({
   redisEndpointUrl,
   redisKeyPrefix,
 }: RedisPanelProps) {
-  const handleItemSelect = async (menuKey: string, item: any) => {
+  const handleItemSelect = async (menuKey: string, item: MenuItem) => {
     try {
       await simplePost(redisEndpointUrl, { key: menuKey, value: item.value })
       console.log("Redis updated successfully")
@@ -216,18 +212,20 @@ export function AdminSendRedisValue({
   requiresConfirmation = false,
 }: AdminSendRedisValueProps) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
-  let showModal: ((content: any) => void) | null = null
+  let showModal: ((content: React.ReactNode) => void) | null = null
 
   const handleConfirmSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    showModal &&
+    if (showModal)
       showModal(
         <ConfirmationModal
           title={title}
           message={`Are you sure you want to send value "${valueToSend}" to key "${keyToSend}"?`}
           onConfirm={() => {
             handleSubmit(e)
-            showModal && showModal(null)
+            if (showModal) {
+              showModal(null)
+            }
           }}
           onCancel={() => showModal && showModal(null)}
         />

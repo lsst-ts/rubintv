@@ -259,7 +259,7 @@ function LoadingBar({
   colours: string[]
 }) {
   // Create a gradient for the loading bar based on the channel colours
-  let gradientStops: string[] = []
+  const gradientStops: string[] = []
   colours.forEach((colour, index) => {
     gradientStops.push(
       `${colour} ${Math.round(index * (100 / colours.length))}%`
@@ -267,7 +267,6 @@ function LoadingBar({
   })
   gradientStops.push(`${colours[0]} 100%`)
   const gradient = `linear-gradient(90deg, ${gradientStops.join(", ")})`
-  console.log("Loading bar gradient:", gradient)
   return (
     <div className="loading-bar-container">
       <div
