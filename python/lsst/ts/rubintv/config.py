@@ -41,8 +41,6 @@ class Configuration(BaseSettings):
         json_schema_extra={"title": "URL prefix for application"},
     )
 
-    # No default value for this, as it is set in the environment
-    # but not at GHA.
     ra_redis_host: str = Field(
         default="localhost",
         validation_alias="RA_REDIS_HOST",
