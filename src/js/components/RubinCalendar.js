@@ -77,7 +77,7 @@ const Month = ({
       <div className="weekdays">
         {weekdays.map((day, index) => (
           <p key={index} className="day-name">
-            {day.substring(0, 3)}
+            {day}
           </p>
         ))}
       </div>
