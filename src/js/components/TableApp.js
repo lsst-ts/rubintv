@@ -229,12 +229,19 @@ TableApp.propTypes = {
   initialMetadata: PropTypes.object,
 }
 
+/**
+ * Returns a list of all column names from the metadata object.
+ *
+ * @param {Object} metadata - The metadata object.
+ * @param {Array} defaultColNames - The default column names.
+ * @returns {Array} - The list of all column names.
+ */
 function getAllColumnNames(metadata, defaultColNames) {
   // get the set of all data for list of all available attrs
   const availableColumns = Object.values(metadata)
     .map((obj) => Object.keys(obj))
     .flat()
-    .sort()
+    .toSorted((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
   // get the set of all data for list of all available attrs
   const uniqueColNames = Array.from(
     new Set(defaultColNames.concat(availableColumns))

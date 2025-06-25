@@ -29,6 +29,7 @@ locations:
     logo: SLAC_Logo.svg
     camera_groups:
       Nightly Validation: [ lsstcam, lsstcam_aos, ra_performance ]
+    has_cluster_status: True
 
   - name: base-usdf
     title: Base
@@ -83,6 +84,7 @@ locations:
       Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, ra_performance]
       Cameras: [ fake_auxtel ]
       Telescopes: [ tma ]
+    has_cluster_status: True
 
   - name: tucson
     title: Tucson
@@ -106,6 +108,8 @@ locations:
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
       Deprecated Cameras: [ comcam, comcam_aos ]
+    has_cluster_status: True
+    
 
 cameras:
   - name: lsstcam
@@ -176,7 +180,7 @@ cameras:
     time_since_clock:
       label: Time since last refocus
     channels:
-      - name: focal_plane_mosaic_aos
+      - name: fp_pairing_plot
         title: Post-ISR mosaic
         colour: "#6fe9ba"
       - name: fp_donut_gallery
@@ -208,7 +212,6 @@ cameras:
 
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
       {seqNum}}, \"detector\": 0}"
-
 
   - name: tma
     title: TMA
@@ -863,6 +866,8 @@ admin_for:
     - kbechtol
     - bechtol
     - ktl
+    - jfcrenshaw
+    - bpolen
 
   summit:
     - mfl
@@ -877,6 +882,8 @@ admin_for:
     - bechtol
     - ktl
     - tribeiro
+    - jfcrenshaw
+    - bpolen
 
   base: ["*"]
   tucson: ["*"]
@@ -884,3 +891,27 @@ admin_for:
   local: ["*"]
   test: ["*"]
   gha: ["*"]
+
+redis_detectors:
+  - key: CLUSTER_STATUS_SFM_SET_0
+    name: sfmSet0
+  - key: CLUSTER_STATUS_SFM_SET_1
+    name: sfmSet1
+  - key: CLUSTER_STATUS_AOS_SET_0
+    name: aosSet0
+  - key: CLUSTER_STATUS_AOS_SET_1
+    name: aosSet1
+  - key: CLUSTER_STATUS_AOS_SET_2
+    name: aosSet2
+  - key: CLUSTER_STATUS_AOS_SET_3
+    name: aosSet3
+  - key: CLUSTER_STATUS_SFM_STEP1B_SET_0
+    name: sfmStep1b
+  - key: CLUSTER_STATUS_AOS_STEP1B_SET_0
+    name: aosStep1b
+  - key: CLUSTER_STATUS_SPAREWORKERS_SET_0
+    name: spareWorkers
+  - key: CLUSTER_STATUS_OTHER_QUEUES
+    name: otherQueues
+  - key: test_stream
+    name: test_stream

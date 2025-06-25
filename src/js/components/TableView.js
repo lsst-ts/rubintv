@@ -387,7 +387,10 @@ TableView.propTypes = {
 }
 
 function seqChannels(camera) {
-  return camera.channels.filter((cam) => !cam.perDay)
+  // Filter out channels that don't have sequential table data
+  // Use the snake_case name for the atrribute `per_day` as
+  // it's from a python object
+  return camera.channels.filter((cam) => !cam.per_day)
 }
 
 /** Generate a modal window for displaying a metadata object of

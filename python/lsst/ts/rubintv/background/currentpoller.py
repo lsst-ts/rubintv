@@ -33,6 +33,7 @@ class CurrentPoller:
 
     # min time between polls
     MIN_INTERVAL = 1
+    RUNNING_LOG_PERIOD = 10  # loops
 
     def __init__(
         self,
@@ -52,6 +53,7 @@ class CurrentPoller:
         self._night_reports: dict[str, NightReport] = {}
         self.test_mode = test_mode
         self._test_iterations = 1
+        self._count_loops = 0
 
         self.completed_first_poll = False
         self.completed_first_poll_event = first_pass_event
@@ -99,6 +101,7 @@ class CurrentPoller:
                     loc_prefixes.append(prefix)
 
     async def poll_buckets_for_todays_data(self, test_day: str = "") -> None:
+        time_total = 0.0
         while True:
             timer_start = time()
             try:
@@ -144,7 +147,14 @@ class CurrentPoller:
                         break
 
                 elapsed = time() - timer_start
-                logger.debug("Current - time taken:", elapsed=elapsed)
+                time_total += elapsed
+                self._count_loops += 1
+                if self._count_loops % self.RUNNING_LOG_PERIOD == 0:
+                    logger.info(
+                        "CurrentPoller loop",
+                        average_time=time_total / self.RUNNING_LOG_PERIOD,
+                    )
+                    time_total = 0.0
                 if elapsed < self.MIN_INTERVAL:
                     await sleep(self.MIN_INTERVAL - elapsed)
 
@@ -331,12 +341,12 @@ class CurrentPoller:
                 await notify_ws_clients(
                     Service.CAMERA, MessageType.CAMERA_METADATA, loc_cam, data
                 )
-            await notify_ws_clients(
-                Service.CALENDAR,
-                MessageType.LATEST_METADATA,
-                loc_cam,
-                self.get_last_entry_in_metadata(data),
-            )
+                await notify_ws_clients(
+                    Service.CHANNEL,
+                    MessageType.LATEST_METADATA,
+                    loc_cam,
+                    self.get_last_entry_in_metadata(data),
+                )
 
     async def sieve_out_night_reports(
         self, objects: list[dict[str, str]], location: Location, camera: Camera

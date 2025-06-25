@@ -1,0 +1,194 @@
+.detector-container
+  padding: 1rem
+  display: flex
+  flex-direction: column
+  gap: 2rem
+
+.main-detectors, .aos-detectors
+  display: flex
+  gap: 2rem
+
+
+.spareworkers
+  &-section
+    position: relative
+    margin-bottom: 2em
+    .reset-button
+      bottom: -28px
+      right: auto
+      left: 0
+  &-cells
+    display: flex
+    gap: 0.2rem
+    flex-wrap: wrap
+    justify-content: start
+
+
+.step1b
+  &-section
+    position: relative
+    max-width: 20%
+    display: flex
+    flex-direction: column
+  &-canvas
+    display: flex
+    align-items: center
+    height: 100%
+    align-items: center
+    justify-content: center
+    border: 1px solid #ccc
+  &-cells
+    display: grid
+    grid-template-rows: repeat(5, 36px)
+    grid-auto-flow: column
+    justify-content: start
+    gap: 0.2rem
+  
+
+
+.step1b-cells, .spareworkers-cells
+  .detector-cell
+      height: 36px
+      aspect-ratio: 1
+      border-radius: 3px
+      position: relative
+      text-align: center
+      align-content: center
+      &-content
+        color: white
+
+.detector
+  &-container
+    padding: 1rem
+    display: flex
+    flex-direction: column
+    gap: 2rem
+
+  &-grid
+    display: flex
+    gap: 2rem
+    margin-bottom: 1rem
+
+  &-row
+    display: flex
+    gap: 2rem
+
+  &-section
+    position: relative
+  &-section-large
+    flex: 1
+    max-width: 40%
+  &-section-small
+    flex: 1
+    max-width: 20%
+    &.detector-title
+      font-size: 0.9rem
+
+  &-title
+    font-size: 1.25rem
+    margin-bottom: 1rem
+
+  &-canvas
+    position: relative
+    border: 1px solid #ccc
+    width: 100%
+    aspect-ratio: 1
+    canvas
+      display: block
+      width: 100%
+      height: 100%
+      image-rendering: -webkit-optimize-contrast
+      image-rendering: crisp-edges
+
+.queue-length
+  color: black
+  font-weight: bold
+
+.status
+  &-free
+    background-color: #22c55e
+  &-busy
+    background-color: #eab308
+  &-queued
+    background-color: #ef4444
+  &-missing
+    background-color: #d1d5db
+  &-restarting
+    background-color: #a163ac
+  &-guest
+    background-color: #3b82f6
+
+.reset-button
+    position: absolute
+    bottom: -1.2em
+    right: 0.4rem
+    padding: 0.2rem 0.4rem
+    background-color: #f97316
+    color: white
+    border: none
+    cursor: pointer
+    border-radius: 0.25rem
+    font-size: 0.6rem
+    &:hover
+      background-color: #ea580c
+    &.success
+      background-color: #22c55e
+      &:hover
+        background-color: #16a34a
+    &.error
+      background-color: #ef4444
+      &:hover
+        background-color: #dc2626
+
+.legend
+  margin-top: 1rem
+
+  &-title
+    font-weight: bold
+
+  &-items
+    display: flex
+    gap: 1rem
+    margin-top: 0.5rem
+    justify-content: flex-start
+
+  &-item
+    display: flex
+    align-items: center
+
+  &-color
+    width: 1rem
+    height: 1rem
+    margin-right: 0.5rem
+
+.other-queues
+  table
+    border-collapse: collapse
+    margin-top: 1rem
+    th, td
+      padding: 0.5rem
+      text-align: left
+      min-width: 250px
+    th
+      background-color: #f9f9f9
+      font-weight: bold
+      color: #333
+      text-align: left
+    td
+      text-align: left
+      color: #fff
+      font-size: 0.9rem
+    // alternate row colors
+    tr:nth-child(even)
+      background-color: #464646
+    tr:nth-child(odd)
+      background-color: #4d4c4c
+
+  
+.loading-message,
+.error-message
+  padding: 1rem
+  text-align: center
+
+.error-message
+  color: #ef4444
