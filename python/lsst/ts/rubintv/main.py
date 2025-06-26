@@ -13,11 +13,13 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
 
-import redis.asyncio as redis  # type: ignore
+import redis.asyncio as redis  # type: ignore[import]
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from redis.exceptions import ConnectionError, TimeoutError  # type: ignore[import]
 
 from . import __version__
+from .background.clusterstatushandler import DetectorStatusHandler
 from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
 from .config import config, rubintv_logger
@@ -58,13 +60,29 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     # initialise the background bucket pollers
     hp = HistoricalPoller(models.locations)
 
+    # initialise the redis client
+    redis_client = None
+    redis_subscriber = None
+    if config.ra_redis_host:
+        redis_client = await _makeRedis()
+    if redis_client:
+        redis_subscriber = DetectorStatusHandler(
+            redis_client=redis_client,
+            redis_keys=models.redis_detectors,
+        )
+        redis_task = asyncio.create_task(redis_subscriber.run_async())
+        app.state.redis_client = redis_client
+        app.state.redis_subscriber = redis_subscriber
+    else:
+        redis_task = None
+        logger.error("Redis client not created. Redis is not available.")
+        app.state.redis_client = None
+        app.state.redis_subscriber = None
+
     # inject app state
     app.state.models = models
     app.state.historical = hp
     app.state.s3_clients = {}
-    if config.ra_redis_host:
-        redis_client = await _makeRedis()
-        app.state.redis_client = redis_client
     for location in models.locations:
         app.state.s3_clients[location.name] = S3Client(
             location.profile_name, location.bucket_name, location.endpoint_url
@@ -83,12 +101,22 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     else:
         yield
 
+    if redis_task and redis_subscriber is not None:
+        await redis_subscriber.stop_async()
+        redis_task.cancel()
+        try:
+            await redis_task
+        except asyncio.CancelledError:
+            pass
+
     historical_polling.cancel()
     today_polling.cancel()
 
-    # types-redis doesn't include aclose but mypy complains if I don't
-    # ignore it
-    await redis_client.aclose()  # type: ignore [attr-defined]
+    if redis_client is not None:
+        try:
+            await redis_client.aclose()  # type: ignore
+        except (ConnectionError, TimeoutError) as e:
+            logger.error(f"Redis connection error: {e}")
 
     for c in clients.values():
         await c.close()
@@ -111,13 +139,12 @@ async def startup_current_poller(models: ModelsInitiator, app: FastAPI) -> async
     return asyncio.create_task(cp.poll_buckets_for_todays_data())
 
 
-async def _makeRedis() -> redis.Redis:
-    """Create a redis connection.
-
+async def _makeRedis() -> redis.Redis | None:
+    """Create a Redis client.
     Returns
     -------
-    Redis:
-        The redis connection.
+    redis.Redis | None
+        The Redis client or None if the connection fails.
     """
     SOCKET_TIMEOUT = 3
     host: str = config.ra_redis_host
@@ -126,9 +153,11 @@ async def _makeRedis() -> redis.Redis:
     redis_client = await redis.Redis(
         host=host, password=password, port=port, socket_timeout=SOCKET_TIMEOUT
     )
-    # Redis never complains even if it can't connect
-    # until you try to do something with it.
-    logger.info(f"(Possibly) connected to Redis at {host}:{port}")
+    try:
+        await redis_client.ping()
+    except (ConnectionError, TimeoutError) as e:
+        logger.error(f"Redis connection error: {e}")
+        return None
     return redis_client
 
 

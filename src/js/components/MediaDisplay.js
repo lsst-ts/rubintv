@@ -11,14 +11,17 @@ export default function MediaDisplay({
   imgUrl,
   videoUrl,
   camera,
+  dateUrl,
   metadata,
   eventUrl,
   prevNext,
+  allChannelNames,
   isCurrent = false,
 }) {
   const [mediaEvent, setMediaEvent] = useState(() =>
-    unifyMediaEvent(initialEvent, imgUrl, videoUrl)
+    bundleMediaEventData(initialEvent, imgUrl, videoUrl)
   )
+
   useEffect(() => {
     const handleChannelEvent = (message) => {
       const { data: event, dataType } = message.detail
@@ -26,7 +29,7 @@ export default function MediaDisplay({
         return
       }
       setMediaEvent({
-        ...unifyMediaEvent(event, imgUrl, videoUrl),
+        ...bundleMediaEventData(event, imgUrl, videoUrl),
       })
     }
 
@@ -39,14 +42,22 @@ export default function MediaDisplay({
     <>
       <div className="event-info">
         <h2>
-          <span className="media-date">{mediaEvent.day_obs}</span>
+          <a href={dateUrl} className="media-date">
+            {mediaEvent.day_obs}
+          </a>
           <span className="media-seqnum">{mediaEvent.seq_num}</span>
         </h2>
-        {isCurrent ? (
+        <PrevNext initialPrevNext={prevNext} eventUrl={eventUrl} />
+        {isCurrent && (
           <TimeSinceLastImageClock metadata={metadata} camera={camera} />
-        ) : (
-          <PrevNext prevNext={prevNext} eventUrl={eventUrl} />
         )}
+      </div>
+      <div className="event-nav">
+        <OtherChannelLinks
+          allChannelNames={allChannelNames}
+          thisChannel={mediaEvent.channel_name}
+          camera={camera}
+        />
       </div>
       <a
         className="event-link"
@@ -74,12 +85,14 @@ MediaDisplay.propTypes = {
   imgUrl: PropTypes.string.isRequired,
   videoUrl: PropTypes.string.isRequired,
   camera: cameraType,
+  dateUrl: PropTypes.string.isRequired,
   metadata: metadataType,
   eventUrl: PropTypes.string,
   prevNext: PropTypes.shape({
     prev: eventType,
     next: eventType,
   }),
+  allChannelNames: PropTypes.arrayOf(PropTypes.string),
   isCurrent: PropTypes.bool,
 }
 
@@ -95,7 +108,7 @@ MediaDisplay.propTypes = {
  * the source URL using the filename and base URL. The media type can be
  * either "image" or "video".
  */
-function unifyMediaEvent(mEvent, imgUrl, videoUrl) {
+function bundleMediaEventData(mEvent, imgUrl, videoUrl) {
   const { filename, ext } = mEvent
   const mediaType = getMediaType(ext)
   const url = mediaType === "video" ? videoUrl : imgUrl
@@ -106,4 +119,62 @@ function unifyMediaEvent(mEvent, imgUrl, videoUrl) {
     mediaType,
     src,
   }
+}
+
+const OtherChannelLinks = ({ allChannelNames, thisChannel, camera }) => {
+  const [channelNames, setChannelNames] = useState(allChannelNames)
+
+  useEffect(() => {
+    function handleChannelNamesChange(event) {
+      const { data } = event.detail
+      if (!data || !Array.isArray(data)) {
+        return
+      }
+      setChannelNames(data)
+    }
+    window.addEventListener("channel", handleChannelNamesChange)
+    return () => {
+      window.removeEventListener("channel", handleChannelNamesChange)
+    }
+  }, [])
+
+  const currentUrl = document.location.toString()
+  const buildUrl = (channelName) => {
+    if (channelName === thisChannel) {
+      return currentUrl
+    }
+    if (currentUrl.endsWith(`/current/${thisChannel}`)) {
+      return currentUrl.replace(thisChannel, channelName)
+    } else {
+      return currentUrl.replace(
+        `channel_name=${thisChannel}`,
+        `channel_name=${channelName}`
+      )
+    }
+  }
+  return (
+    <div className="other-channels">
+      {camera.channels.map((channel) => {
+        if (!allChannelNames.includes(channel.name)) {
+          return null
+        }
+        const chanStyle = {
+          backgroundColor: channel.colour,
+          color: channel.text_colour,
+        }
+        // Construct the URL for each channel
+        const channelUrl = buildUrl(channel.name)
+        return (
+          <a
+            key={channel.name}
+            href={channelUrl}
+            style={chanStyle}
+            className="button"
+          >
+            {channel.title}
+          </a>
+        )
+      })}
+    </div>
+  )
 }

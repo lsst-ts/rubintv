@@ -1,22 +1,21 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import PropTypes from "prop-types"
 import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
+import { _getById, union, getHistoricalData } from "../modules/utils"
 import {
-  _getById,
-  intersect,
-  union,
-  retrieveSelected as retrieveStoredSelection,
-} from "../modules/utils"
-import { cameraType, channelDataType, metadataType } from "./componentPropTypes"
+  loadColumnSelection,
+  saveColumnSelection,
+} from "../modules/columnStorage"
+import { cameraType } from "./componentPropTypes"
 import { ModalProvider } from "./Modal"
 
 export default function TableApp({
   camera,
   initialDate,
-  initialChannelData,
-  initialMetadata,
   isHistorical,
+  initialChannelData = {},
+  initialMetadata = {},
 }) {
   const [date, setDate] = useState(initialDate)
   const [channelData, setChannelData] = useState(initialChannelData)
@@ -34,34 +33,59 @@ export default function TableApp({
 
   const locationName = window.APP_DATA.locationName
 
-  // if they exist, convert metadata_cols into array of objects
-  // from name: description to {name, desc}
-  let defaultColumns
-  if (camera.metadata_cols) {
-    defaultColumns = Object.entries(camera.metadata_cols).map(
-      ([name, desc]) => ({ name, desc })
-    )
-  } else {
-    defaultColumns = []
-  }
+  // Column configuration derived from camera metadata
+  const defaultColumns = camera.metadata_cols
+    ? Object.entries(camera.metadata_cols).map(([name, desc]) => ({
+        name,
+        desc,
+      }))
+    : []
   const defaultColNames = defaultColumns.map((col) => col.name)
-  const allColNames = getAllColumnNames(metadata, defaultColNames)
+  const availableColumns = getAllColumnNames(metadata, defaultColNames)
 
+  // Load selected columns from storage
   const [selected, setSelected] = useState(() => {
-    const storedColNames = retrieveStoredSelection(
-      `${locationName}/${camera.name}`
-    )
-    if (storedColNames) {
-      const intersectingColNames = intersect(storedColNames, allColNames)
-      return intersectingColNames
-    }
-    return defaultColNames
+    return loadColumnSelection(locationName, camera.name, defaultColNames)
   })
+
+  // Save selection changes
+  const handleSetSelected = useCallback(
+    (newSelected) => {
+      setSelected(newSelected)
+      saveColumnSelection(newSelected, locationName, camera.name)
+    },
+    [locationName, camera.name]
+  )
 
   const selectedObjs = selected.map((c) => ({ name: c }))
   const selectedMetaCols = defaultColumns
     .filter((col) => selected.includes(col.name))
     .concat(selectedObjs.filter((o) => !defaultColNames.includes(o.name)))
+
+  // Fetch historical data if required.
+  // This effect runs only once when the component mounts.
+  useEffect(() => {
+    if (!isHistorical) {
+      return
+    }
+    getHistoricalData(locationName, camera.name, date)
+      .then((json) => {
+        const data = JSON.parse(json)
+        for (const key in data) {
+          const notifier = new CustomEvent("camera", {
+            detail: {
+              datestamp: date,
+              data: data[key],
+              dataType: key,
+            },
+          })
+          window.dispatchEvent(notifier)
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching historical data:", error)
+      })
+  }, [])
 
   // convenience var for showing filterColumn has been set
   const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
@@ -102,41 +126,43 @@ export default function TableApp({
     redrawHeaderWidths()
   })
 
-  function handleCameraEvent(event) {
-    const { datestamp, data, dataType } = event.detail
-    // if there's no data, don't update
-    if (Object.entries(data).length === 0) {
-      return
-    }
+  const handleCameraEvent = useCallback(
+    (event) => {
+      const { datestamp, data, dataType } = event.detail
+      // if there's no data, don't update
+      if (Object.entries(data).length === 0) {
+        return
+      }
 
-    if (data.error) {
-      setError(data.error)
-    }
+      if (data.error) {
+        setError(data.error)
+      }
 
-    if (datestamp && datestamp !== date) {
-      window.APP_DATA.date = datestamp
-      const headerDate = _getById("header-date")
-      headerDate.textContent = datestamp
-      headerDate.classList.remove("stale")
-      setDate(datestamp)
-      setMetadata({})
-      setChannelData({})
-    }
+      if (datestamp && datestamp !== date) {
+        window.APP_DATA.date = datestamp
+        const headerDate = _getById("header-date")
+        headerDate.textContent = datestamp
+        headerDate.classList.remove("stale")
+        setDate(datestamp)
+        setMetadata({})
+        setChannelData({})
+      }
 
-    if (dataType === "metadata") {
-      setMetadata(data)
-    } else if (dataType === "channelData") {
-      setChannelData(data)
-    }
-  }
+      if (dataType === "metadata") {
+        setMetadata(data)
+      } else if (dataType === "channelData") {
+        setChannelData(data)
+      }
+    },
+    [date]
+  )
 
   useEffect(() => {
     window.addEventListener("camera", handleCameraEvent)
-    // Cleanup the event listener on component unmount
     return () => {
       window.removeEventListener("camera", handleCameraEvent)
     }
-  }, [date]) // Only reattach the event listener if the date changes
+  }, [handleCameraEvent])
 
   if (unfilteredRowsCount == 0) {
     return <h3>There is no data for this day</h3>
@@ -156,9 +182,9 @@ export default function TableApp({
         <div className="above-table-sticky">
           <AboveTableRow
             camera={camera}
-            allColNames={allColNames}
+            availableColumns={availableColumns}
             selected={selected}
-            setSelected={setSelected}
+            setSelected={handleSetSelected}
             date={date}
             metadata={metadata}
             isHistorical={isHistorical}
@@ -192,25 +218,33 @@ export default function TableApp({
   )
 }
 TableApp.propTypes = {
-  camera: cameraType,
+  camera: cameraType.isRequired,
   /** Date given when first landing on the page. */
-  initialDate: PropTypes.string,
-  /**  */
-  initialChannelData: channelDataType,
-  initialMetadata: metadataType,
+  initialDate: PropTypes.string.isRequired,
   /** true if this is a historical page */
   isHistorical: PropTypes.bool,
+  /** Initial channel data */
+  initialChannelData: PropTypes.object,
+  /** Initial metadata */
+  initialMetadata: PropTypes.object,
 }
 
+/**
+ * Returns a list of all column names from the metadata object.
+ *
+ * @param {Object} metadata - The metadata object.
+ * @param {Array} defaultColNames - The default column names.
+ * @returns {Array} - The list of all column names.
+ */
 function getAllColumnNames(metadata, defaultColNames) {
   // get the set of all data for list of all available attrs
-  const allColNames = Object.values(metadata)
+  const availableColumns = Object.values(metadata)
     .map((obj) => Object.keys(obj))
     .flat()
-    .sort()
+    .toSorted((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
   // get the set of all data for list of all available attrs
   const uniqueColNames = Array.from(
-    new Set(defaultColNames.concat(allColNames))
+    new Set(defaultColNames.concat(availableColumns))
   )
   // filter out the indicators (first char is '_')
   // and the replacement strings for empty channels

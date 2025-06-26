@@ -185,3 +185,56 @@ async def test_request_invalid_dates(
         url = f"/{app_name}/{url_frag}"
         res = await client.get(url)
         assert res.is_success
+
+
+@pytest.mark.asyncio
+async def test_slac_redirect(
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
+) -> None:
+    """Test that the SLAC redirect works"""
+    client, _, _ = mocked_client
+    # Test with no path
+    response = await client.get(f"/{app_name}/slac")
+    assert response.status_code == 301
+    assert response.headers["Location"].endswith(f"/{app_name}/usdf")
+    # Test with a trailing slash
+    response = await client.get(f"/{app_name}/slac/")
+    assert response.status_code == 301
+    assert response.headers["Location"].endswith(f"/{app_name}/usdf/")
+    # Test with a path
+    response = await client.get(f"/{app_name}/slac/lsstcam")
+    assert response.status_code == 301
+    assert response.headers["Location"].endswith(f"/{app_name}/usdf/lsstcam")
+    # Test with a path and no trailing slash
+    response = await client.get(f"/{app_name}/slac/lsstcam/")
+    assert response.status_code == 301
+    assert response.headers["Location"].endswith(f"/{app_name}/usdf/lsstcam/")
+    # Test with a deeper path
+    response = await client.get(f"/{app_name}/slac/lsstcam/2023-10-01")
+    assert response.status_code == 301
+    assert response.headers["Location"].endswith(f"/{app_name}/usdf/lsstcam/2023-10-01")
+
+
+@pytest.mark.asyncio
+async def test_get_event_from_type_and_visit(
+    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
+) -> None:
+    """Test that the event from type and visit endpoint works"""
+    client, _, data_mocker = mocked_client
+
+    day_obs_with_hyphens = get_current_day_obs().isoformat()
+    day_obs = day_obs_with_hyphens.replace("-", "")
+
+    for location in m.locations:
+        for camera in location.cameras:
+            for seq_chan in camera.seq_channels():
+                events = data_mocker.get_mocked_events(location, camera, seq_chan)
+                for event in events:
+                    visit = day_obs + f"{event.seq_num:05}"
+                    event_type = event.channel_name
+                    url = (
+                        f"/{app_name}/{location.name}/{camera.name}/event?"
+                        f"type={event_type}&visit={visit}"
+                    )
+                    response = await client.get(url)
+                    assert response.is_success

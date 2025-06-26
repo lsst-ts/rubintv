@@ -4,7 +4,7 @@ const CssMinimizerPlugin = require("css-minimizer-webpack-plugin")
 const TerserPlugin = require("terser-webpack-plugin")
 const { DuplicatesPlugin } = require("inspectpack/plugin")
 
-const pagesWithoutHistory = ["admin"].reduce(
+const pagesWithoutHistory = ["admin", "detectors"].reduce(
   (pages, page) => ({
     ...pages,
     [page]: [`./src/js/pages/${page}.js`],
@@ -46,18 +46,36 @@ module.exports = {
   output: {
     filename: "[name].js",
     path: path.resolve(__dirname, "assets"),
+    chunkFilename: "[name].[chunkhash].js",
   },
   plugins: [
     new MiniCssExtractPlugin({ filename: "[name].css" }),
     new DuplicatesPlugin({
-      // Emit compilation warning or error? (Default: `false`)
       emitErrors: false,
-      // Display full duplicates information? (Default: `false`)
       verbose: false,
     }),
   ],
   optimization: {
     minimizer: ["...", new TerserPlugin(), new CssMinimizerPlugin()],
+    splitChunks: {
+      chunks: "all",
+      minSize: 20000,
+      minChunks: 1,
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: "vendors",
+          chunks: "all",
+        },
+        common: {
+          name: "common",
+          minChunks: 2,
+          chunks: "all",
+          priority: -20,
+          reuseExistingChunk: true,
+        },
+      },
+    },
   },
   resolve: {
     extensions: [".js", ".jsx"],

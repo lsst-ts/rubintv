@@ -1,12 +1,13 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import PropTypes from "prop-types"
 import Clock, { TimeSinceLastImageClock } from "./Clock"
-import { _getById, interleaveSplit } from "../modules/utils"
+import { _getById } from "../modules/utils"
 import { cameraType, metadataType } from "./componentPropTypes"
+import { saveColumnSelection } from "../modules/columnStorage"
 
 export default function AboveTableRow({
   camera,
-  allColNames,
+  availableColumns,
   selected,
   setSelected,
   date,
@@ -16,11 +17,11 @@ export default function AboveTableRow({
   return (
     <div className="row">
       <h3 id="the-date">
-        <span className="date">{date}</span>
+        Data for day: <span className="date">{date}</span>
       </h3>
       <TableControls
         cameraName={camera.name}
-        allColNames={allColNames}
+        availableColumns={availableColumns}
         selected={selected}
         setSelected={setSelected}
       />
@@ -37,10 +38,10 @@ export default function AboveTableRow({
   )
 }
 AboveTableRow.propTypes = {
+  /** the camera object */
+  camera: cameraType.isRequired,
   /** the names of all metadata columns */
-  allColNames: PropTypes.arrayOf(PropTypes.string),
-  /** the current camera */
-  camera: cameraType,
+  availableColumns: PropTypes.arrayOf(PropTypes.string),
   /** the names of the currently selected columns to display */
   selected: PropTypes.arrayOf(PropTypes.string),
   /** callback function from the parent component TableApp */
@@ -53,100 +54,132 @@ AboveTableRow.propTypes = {
   isHistorical: PropTypes.bool,
 }
 
-function TableControls({ cameraName, allColNames, selected, setSelected }) {
+function TableControls({
+  cameraName,
+  availableColumns,
+  selected,
+  setSelected,
+}) {
   const [controlsOpen, setControlsOpen] = useState(false)
 
   const locationName = window.APP_DATA.locationName
 
-  let numControlColumns = 2
-  if (allColNames.length > 45) {
-    numControlColumns = 3
-  }
-  const gridStyle = {
-    gridTemplateColumns: `repeat(${numControlColumns}, 1fr)`,
-  }
+  // Handle clicks outside to close the panel
+  useEffect(() => {
+    function handleOutsideClick(e) {
+      if (controlsOpen && !e.target.closest(".table-panel")) {
+        setControlsOpen(false)
+      }
+    }
 
-  const columnsToDisplay = interleaveSplit(allColNames, numControlColumns)
+    window.addEventListener("click", handleOutsideClick)
+    return () => {
+      window.removeEventListener("click", handleOutsideClick)
+    }
+  }, [controlsOpen])
 
-  // allow escape from the table to close the controls
-  const handleKeyDown = (event) => {
-    if (event.key === "Escape") {
+  const handleKeyDown = (e) => {
+    if (e.key === "Escape") {
       setControlsOpen(false)
     }
   }
 
-  const handleCheckboxChange = (name) => {
-    setSelected((prevSelected) => {
-      let updatedSelected
-      if (prevSelected.includes(name)) {
-        updatedSelected = prevSelected.filter((attr) => attr !== name)
-      } else {
-        updatedSelected = [...prevSelected, name]
-      }
-      storeSelected(updatedSelected, `${locationName}/${cameraName}`)
-      return updatedSelected
-    })
+  function toggleControls(e) {
+    e.stopPropagation()
+    setControlsOpen((controlsOpen) => !controlsOpen)
   }
-  const panelClass = !controlsOpen ? "table-panel" : "table-panel open"
+
+  const handleCheckboxChange = (name) => {
+    const currentSelected = Array.isArray(selected) ? [...selected] : []
+
+    let newSelected
+    if (currentSelected.includes(name)) {
+      newSelected = currentSelected.filter((attr) => attr !== name)
+      if (newSelected.length === 0) {
+        return
+      }
+    } else {
+      newSelected = [...currentSelected, name]
+    }
+
+    saveColumnSelection(newSelected, locationName, cameraName)
+    setSelected(newSelected)
+  }
+
+  let numControlColumns = 2
+  if (availableColumns.length > 45) {
+    numControlColumns = 3
+  }
+  const gridStyle = {
+    columnCount: numControlColumns,
+  }
+
+  const panelContainerClass = !controlsOpen
+    ? "table-controls-container"
+    : "table-controls-container open"
+
+  const renderCheckbox = (title) => {
+    const isAvailable = availableColumns.includes(title)
+    const isSelected = selected.includes(title)
+
+    return (
+      <div
+        className={`table-option${!isAvailable ? " unavailable" : ""}`}
+        key={title}
+      >
+        <label htmlFor={title}>
+          <input
+            type="checkbox"
+            id={title}
+            name={title}
+            value={1}
+            checked={isSelected}
+            onChange={() => handleCheckboxChange(title)}
+            onKeyDown={handleKeyDown}
+            disabled={!isAvailable}
+          />
+          {title}
+        </label>
+      </div>
+    )
+  }
 
   return (
-    <>
-      <div className={panelClass}>
-        <button
-          className="table-control-button"
-          onClick={() => setControlsOpen(!controlsOpen)}
-          onKeyDown={handleKeyDown}
-          title="Add/Remove Columns"
-          aria-label="Add/Remove Columns"
-          aria-expanded={controlsOpen}
-          aria-controls="table-controls"
-          aria-haspopup="true"
-        >
-          Add/Remove Columns
-        </button>
-
+    <div className={panelContainerClass} id="table-controls">
+      <button
+        className="table-control-button"
+        onClick={toggleControls}
+        onKeyDown={handleKeyDown}
+        title="Add/Remove Columns"
+        aria-label="Add/Remove Columns"
+        aria-expanded={controlsOpen}
+        aria-controls="table-controls"
+        aria-haspopup="true"
+      >
+        Add/Remove Columns
+      </button>
+      <div className="table-panel">
         {controlsOpen && (
-          <div className="table-controls" style={gridStyle}>
-            {columnsToDisplay.map((title) => (
-              <div className="table-control" key={title}>
-                <label htmlFor={title}>
-                  <input
-                    type="checkbox"
-                    id={title}
-                    name={title}
-                    value={1}
-                    checked={selected.includes(title)}
-                    onChange={() => handleCheckboxChange(title)}
-                  />
-                  {title}
-                </label>
-              </div>
-            ))}
+          <div className="table-options" style={gridStyle}>
+            {/* Show both available and unavailable selected columns */}
+            {Array.from(new Set([...selected, ...availableColumns]))
+              .toSorted((a, b) => a.localeCompare(b))
+              .map(renderCheckbox)}
           </div>
         )}
       </div>
-    </>
+    </div>
   )
 }
 TableControls.propTypes = {
   /** the names of all metadata columns */
-  allColNames: PropTypes.arrayOf(PropTypes.string),
+  availableColumns: PropTypes.arrayOf(PropTypes.string),
   /** the name of the current camera */
   cameraName: PropTypes.string,
   /** the names of the currently selected columns to display */
   selected: PropTypes.arrayOf(PropTypes.string),
   /** callback function from the parent component TableApp */
   setSelected: PropTypes.func,
-  /** the given date */
-  date: PropTypes.string,
-  /** the current metadata for this camera/date */
-  metadata: metadataType,
-  /** true if this is a historical page */
-  isHistorical: PropTypes.bool,
-}
-
-function storeSelected(selected, cameraName) {
-  localStorage[cameraName] = JSON.stringify(selected)
 }
 
 export function JumpButtons() {

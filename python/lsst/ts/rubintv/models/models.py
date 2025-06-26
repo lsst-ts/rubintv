@@ -206,6 +206,7 @@ class Location(HasButton):
     cameras: list[Camera] = []
     services: list[str] = []
     is_teststand: bool = False
+    has_cluster_status: bool = False
 
 
 @dataclass
@@ -423,16 +424,20 @@ class Heartbeat:
         }
 
 
-class ServiceTypes(Enum):
+class ServiceTypes(str, Enum):
+    """The types of services provided by RubinTV."""
+
     CAMERA = "camera"
     CHANNEL = "channel"
     NIGHTREPORT = "nightreport"
     HISTORICALSTATUS = "historicalStatus"
     CALENDAR = "calendar"
+    DETECTORS = "detectors"
 
 
 class ServiceMessageTypes(Enum):
     CHANNEL_EVENT = "event"
+    LATEST_EVENT = "latestEvent"
     CAMERA_TABLE = "channelData"
     CAMERA_METADATA = "metadata"
     LATEST_METADATA = "latestMetadata"
@@ -441,6 +446,9 @@ class ServiceMessageTypes(Enum):
     NIGHT_REPORT = "nightReport"
     HISTORICAL_STATUS = "historicalStatus"
     DAY_CHANGE = "dayChange"
+    PREV_NEXT = "prevNext"
+    ALL_CHANNELS = "allChannels"
+    DETECTOR_STATUS = "detectorStatus"
 
 
 class KeyValue(BaseModel):

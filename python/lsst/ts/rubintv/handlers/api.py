@@ -4,6 +4,7 @@ from typing import Annotated
 
 import redis.exceptions  # type: ignore
 from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi.responses import RedirectResponse
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
 from lsst.ts.rubintv.config import rubintv_logger
@@ -21,6 +22,7 @@ from lsst.ts.rubintv.models.models import (
     NightReport,
 )
 from lsst.ts.rubintv.models.models_helpers import find_first
+from lsst.ts.rubintv.s3client import S3Client
 
 api_router = APIRouter()
 """FastAPI router for all external handlers."""
@@ -57,9 +59,7 @@ async def redis_post(request: Request, message: KeyValue) -> dict:
             response = await redis_client.flushdb()
             logger.info("Redis database cleared")
         except Exception as e:
-            logger.error(f"Failed to clear Redis database: {e}")
             raise HTTPException(500, f"Failed to clear Redis database: {e}")
-        return {"response": response}
     else:
         logger.info("Setting Redis key", extra={"key": key, "value": value})
         try:
@@ -67,13 +67,26 @@ async def redis_post(request: Request, message: KeyValue) -> dict:
         except redis.exceptions.ResponseError:
             raise HTTPException(500, "Failed to set Redis key: No response")
         except redis.exceptions.TimeoutError:
-            logger.error("Failed to set Redis key: Timeout")
             raise HTTPException(500, "Failed to set Redis key: Timeout")
         except redis.exceptions.ConnectionError:
             raise HTTPException(500, "Failed to set Redis key: Connection error")
         except redis.exceptions.RedisError as e:
             raise HTTPException(500, f"Failed to set Redis key: {e}")
-        return {"response": response}
+    return {"response": response}
+
+
+@api_router.get("/slac", response_class=RedirectResponse)
+async def redirect_slac_no_slash(request: Request) -> RedirectResponse:
+    new_url = request.url.replace(path="/rubintv/usdf")
+    return RedirectResponse(url=str(new_url), status_code=301)
+
+
+@api_router.get("/slac/{path:path}", response_class=RedirectResponse)
+async def redirect_slac(path: str | None, request: Request) -> RedirectResponse:
+    old_path = request.url.path
+    new_path = old_path.replace("/slac", "/usdf", 1)
+    new_url = request.url.replace(path=new_path)
+    return RedirectResponse(url=str(new_url), status_code=301)
 
 
 @api_router.get("/{location_name}", response_model=Location)
@@ -161,16 +174,63 @@ async def get_specific_channel_event(
     camera_name: str,
     key: Annotated[
         str,
-        Query(pattern=r"(\w+)\/([\d-]+)\/(\w+)\/(\d{6}|final)\/([\w-]+)\.(\w+)$"),
+        Query(pattern=r"(\w+)\/([\d-]+)\/(\w+)\/(\d{6}|final)\/([\w-]+)(\.\w+)?$"),
     ],
     request: Request,
 ) -> Event | None:
+    """Get a specific event from the camera.
+    If the key has no file extension, it will be looked up in the bucket.
+
+    Parameters
+    ----------
+    location_name : str
+        Location name.
+    camera_name : str
+        Camera name.
+    request : Request
+        the request object.
+    key : str
+        Checked against a regex for valid key patterns, either the whole
+        key or the key without the file extension.
+
+    Returns
+    -------
+    Event | None
+        The event object if found, None if not found or the camera is
+        offline.
+
+    Raises
+    ------
+    HTTPException
+        404: If the location or camera is not found.
+    """
+    allowed_extensions = ["png", "jpg", "jpeg", "mp4"]
     _, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online or not key:
         return None
+    has_ext = any(key.endswith(f".{ext}") for ext in allowed_extensions)
+    if not has_ext:
+        # There is no file extension given, so we need to establish it
+        # by looking it up in the bucket
+        s3_client: S3Client = request.app.state.s3_clients[location_name]
+        if not s3_client:
+            raise HTTPException(status_code=404, detail="Location not found.")
+        # Check if the key exists in the bucket
+        objects = await s3_client.async_list_objects(key)
+        if not objects:
+            raise HTTPException(status_code=404, detail="Key not found.")
+        # Get the first object that matches the key
+        for obj in objects:
+            if obj["key"].startswith(key):
+                key = obj["key"]
+                break
+        else:
+            raise HTTPException(status_code=404, detail="Key not found.")
     event = Event(key=key)
-    if event.ext not in ["png", "jpg", "jpeg", "mp4"]:
-        return None
+    if event.ext not in allowed_extensions:
+        raise HTTPException(
+            status_code=400, detail=f"Invalid file extension: {event.ext}"
+        )
     return event
 
 

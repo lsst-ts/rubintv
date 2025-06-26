@@ -24,6 +24,8 @@ from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
 from lsst.ts.rubintv.models.models import ServiceTypes as Service
 from lsst.ts.rubintv.models.models import get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import (
+    date_str_to_date,
+    daterange,
     make_table_from_event_list,
     objects_to_events,
     objects_to_ngt_report_data,
@@ -44,7 +46,15 @@ class HistoricalPoller:
     CHECK_NEW_DAY_PERIOD = 5
 
     def __init__(
-        self, locations: list[Location], test_mode: bool = False, prefix_extra: str = ""
+        self,
+        locations: list[Location],
+        test_mode: bool = False,
+        prefix_extra: str = "",
+        # test_date_start and test_date_end will be used in writing tests.
+        # This needs an overhaul of the test suite to use these parameters:
+        # see DM-44273
+        test_date_start: str | None = None,
+        test_date_end: str | None = None,
     ) -> None:
         self._clients: dict[str, S3Client] = {}
         self._metadata: dict[str, bytes] = {}
@@ -66,6 +76,8 @@ class HistoricalPoller:
         self.cam_year_rgx = re.compile(r"(\w+)\/([\d]{4})-[\d]{2}-[\d]{2}")
 
         self.test_mode = test_mode
+        self.test_date_start = test_date_start and date_str_to_date(test_date_start)
+        self.test_date_end = test_date_end and date_str_to_date(test_date_end)
         self.prefix_extra = prefix_extra
 
     async def clear_all_data(self) -> None:
@@ -125,12 +137,14 @@ class HistoricalPoller:
 
     async def _refresh_location_store(self, location: Location) -> None:
         try:
-            up_to_date_objects = await self._get_objects(location)
+            up_to_date_objects = await self._get_objects_for_location(location)
             await self.filter_convert_store_objects(up_to_date_objects, location)
         except Exception as e:
             logger.error(e)
 
-    async def _get_objects(self, location: Location) -> list[dict[str, str]]:
+    async def _get_objects_for_location(
+        self, location: Location
+    ) -> list[dict[str, str]]:
         """Downloads objects from the bucket for each online camera for the
         location.
 
@@ -142,19 +156,49 @@ class HistoricalPoller:
         objects = []
         for cam in location.cameras:
             if cam.online:
-                prefix = cam.name + "/" + self.prefix_extra
-                logger.info(
-                    "Listing objects for:",
-                    location=location.name,
-                    prefix=prefix,
-                )
-                try:
-                    client: S3Client = self._clients[location.name]
-                    one_load = await client.async_list_objects(prefix=prefix)
-                    objects.extend(one_load)
-                    logger.info("Found:", num_objects=len(one_load))
-                except Exception as e:
-                    logger.error(e)
+                prefixes = []
+                if self.test_date_start and self.test_date_end:
+                    for aDate in daterange(
+                        self.test_date_start,
+                        self.test_date_end,
+                    ):
+                        date_str = aDate.isoformat()
+                        prefixes.append(f"{cam.name}/{date_str}/{self.prefix_extra}")
+                else:
+                    prefixes.append(cam.name + "/" + self.prefix_extra)
+
+                for prefix in prefixes:
+                    try:
+                        objects.extend(
+                            await self._get_objects_for_prefix(location, prefix)
+                        )
+                    except Exception as e:
+                        logger.error(e)
+        return objects
+
+    async def _get_objects_for_prefix(
+        self, location: Location, prefix: str
+    ) -> list[dict[str, str]]:
+        """Downloads objects from the bucket for the given prefix.
+
+        Parameters
+        ----------
+        location : `Location`
+            The location to get objects for.
+        prefix : `str`
+            The prefix to filter objects by.
+
+        Returns
+        -------
+        objects :  `list` [`dict` [`str`, `str`]]
+            A list of dicts representing bucket objects.
+        """
+        logger.info(
+            "Fetching objects for prefix:", location=location.name, prefix=prefix
+        )
+        client: S3Client = self._clients[location.name]
+        objects = await client.async_list_objects(prefix=prefix)
+        logger.info("Found:", num_objects=len(objects), prefix=prefix)
         return objects
 
     async def filter_convert_store_objects(
@@ -340,6 +384,22 @@ class HistoricalPoller:
             return {}
         return pickle.loads(zlib.decompress(compressed))
 
+    def flatten_calendar(self, location: Location, camera: Camera) -> dict[str, int]:
+        """Flatten the calendar for a given location and camera.
+
+        Returns a dict with keys as date strings and values as the number of
+        events for that date.
+        """
+        loc_cam = f"{location.name}/{camera.name}"
+        calendar = self._calendar.get(loc_cam, {})
+        flat_calendar = {}
+        for year in calendar:
+            for month in calendar[year]:
+                for day, seq_num in calendar[year][month].items():
+                    date_str = f"{year}-{month:02d}-{day:02d}"
+                    flat_calendar[date_str] = seq_num
+        return flat_calendar
+
     async def get_most_recent_day(
         self, location: Location, camera: Camera
     ) -> date | None:
@@ -351,18 +411,16 @@ class HistoricalPoller:
         month = max(calendar[year].keys())
         day = max(calendar[year][month].keys())
         most_recent = date(year, month, day)
-        if most_recent == get_current_day_obs():
-            # check there is more than one day in the calendar
-            # if there is only one day, return None
-            if len(calendar[year][month]) == 1:
-                return None
-            # return the second most recent day
-            if len(calendar[year][month]) > 1:
-                day = max(
-                    d for d in calendar[year][month].keys() if d != most_recent.day
-                )
-                most_recent = date(year, month, day)
-        return most_recent
+        if most_recent != get_current_day_obs():
+            return most_recent
+        # check there is more than one day in the calendar
+        # if there is only one day, return None
+        flat_calendar = self.flatten_calendar(location, camera)
+        num_days = len(flat_calendar)
+        if num_days <= 1:
+            return None
+        second_most_recent = sorted(flat_calendar.keys())[-2]
+        return date_str_to_date(second_most_recent)
 
     async def get_most_recent_events(
         self, location: Location, camera: Camera
@@ -430,3 +488,33 @@ class HistoricalPoller:
         """
         loc_cam = f"{location.name}/{camera.name}"
         return self._calendar.get(loc_cam, {})
+
+    async def get_all_channel_names_for_date_and_seq_num(
+        self, location: Location, camera: Camera, date: str, seq_num: int
+    ) -> list[str]:
+        """Returns a list of Events for the given date and seq_num.
+
+        Parameters
+        ----------
+        camera : `Camera`
+            The given Camera.
+        date : `str`
+            The given date.
+        seq_num : `int`
+            The given sequence number.
+
+        Returns
+        -------
+        chan_names : `list` [`str`]
+            A list of channel names for the given date and seq_num.
+        """
+        loc_cam = f"{location.name}/{camera.name}"
+        compressed = self._compressed_events.get(loc_cam, None)
+        if compressed is None:
+            return []
+        events: list[Event] = pickle.loads(zlib.decompress(compressed))
+        relevant_events = [
+            e for e in events if e.day_obs == date and e.seq_num == seq_num
+        ]
+        chan_names = [e.channel_name for e in relevant_events]
+        return chan_names

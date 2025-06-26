@@ -138,14 +138,14 @@ async def test_process_channel_objects(
     objects = rubin_data_mocker.seq_objs[loc_cam]
 
     # Call the method under test
-    await current_poller.process_channel_objects(objects, loc_cam, camera)
+    await current_poller.process_channel_objects(objects, location, camera)
 
     # Expected events
     expected_events = rubin_data_mocker.events[loc_cam]
 
     # Assertions
     mock_update_channel_events.assert_called_once_with(
-        expected_events, "summit-usdf/auxtel", camera
+        expected_events, location, camera
     )
     mock_make_per_day_data.assert_called()
     mock_notify_ws_clients.assert_called()
@@ -164,8 +164,7 @@ async def test_update_channel_events(
 
     await current_poller.clear_todays_data()
     assert current_poller._most_recent_events == {}
-    loc_cam = f"{location.name}/{camera.name}"
-    await current_poller.update_channel_events(events, loc_cam, camera)
+    await current_poller.update_channel_events(events, location, camera)
     assert current_poller._most_recent_events != {}
     mock_notify_ws_clients.assert_called()
 

@@ -6,6 +6,8 @@ import { monthNames, ymdToDateStr } from "../modules/utils"
 
 const homeUrl = window.APP_DATA.homeUrl
 
+const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
 // Day component renders an individual day
 const Day = ({
   day,
@@ -72,6 +74,13 @@ const Month = ({
   return (
     <div className={`month ${isSelected ? "selected" : ""}`}>
       <h5 className="month-title">{monthNames[month - 1]}</h5>
+      <div className="weekdays">
+        {weekdays.map((day, index) => (
+          <p key={index} className="day-name">
+            {day}
+          </p>
+        ))}
+      </div>
       <div className="days">
         {calendarFrame.monthDays(parseInt(year), month - 1).map((week) =>
           week.map((day, dayIndex) => {
@@ -160,13 +169,17 @@ Year.propTypes = {
 
 const RubinCalendar = ({
   selectedDate,
-  initialCalendarData,
+  initialCalendarData = {},
   camera,
   locationName,
 }) => {
   const [yearToDisplay, setYearToDisplay] = useState(selectedDate.split("-")[0])
   const [calendarData, setCalendarData] = useState(initialCalendarData)
   const [dayObs, setDayObs] = useState(null)
+
+  if (Object.keys(calendarData).length === 0) {
+    return null
+  }
 
   const sortedYears = Object.keys(calendarData).sort((a, b) => a - b)
   const calFrame = new Calendar.Calendar(1)

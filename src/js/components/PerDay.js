@@ -149,15 +149,10 @@ NightReportLink.propTypes = {
   nightReportLink: PropTypes.string,
 }
 
-export default function PerDay({
-  camera,
-  initialDate,
-  initialPerDay,
-  initialNRLink,
-}) {
+export default function PerDay({ camera, initialDate, initialNRLink }) {
   const [date, setDate] = useState(initialDate)
-  const [perDay, setPerDay] = useState(initialPerDay)
   const [nightReportLink, setNightReportLink] = useState(initialNRLink)
+  const [perDay, setPerDay] = useState({})
 
   useEffect(() => {
     function handleCameraEvent(event) {

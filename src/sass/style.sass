@@ -1,3 +1,4 @@
+@import "fonts"
 @import "reset"
 @import "buttons"
 @import "colours"
@@ -5,6 +6,7 @@
 @import "clock"
 @import "modal"
 @import "admin"
+@import "detector"
 
 .flr
 	display: flex
@@ -83,7 +85,7 @@ header
 	background: rgba(0,0,0,0.3)
 	&.summit
 		background: rgba(87, 196, 48, 0.3)
-	&.slac
+	&.usdf
 		background: rgba(196, 48, 173, 0.3)
 
 .header-site-titles
@@ -209,12 +211,14 @@ section
 	justify-content: flex-start
 	align-items: center
 	margin-bottom: 0.5em
+	gap: 1em
 	h2
 		margin-bottom: 0
 	.media-date
 		margin-right: 0.5em
+		color: #fff
+		text-decoration: underline
 	.media-seqnum
-		margin-right: 0.5em
 		&::before
 			content: "Sequence "
 
@@ -234,10 +238,18 @@ section
 	.button
 		flex-direction: row
 		gap: 0.25em
+		color: #000
+		text-decoration: none
 	.prev:before
 		content: "←"
 	.next:after
 		content: "→"
+
+.other-channels
+	display: flex
+	flex-direction: row
+	gap: 1em
+	margin-bottom: 1em
 
 .metadata-status
 	display: flex
@@ -323,22 +335,23 @@ section
 	100%
 		opacity: 0%
 
-.table-panel
-	position: relative
+.table-control-button
 	background: #eee
 	padding: 0.8em 19px
 	border-radius: 20px
+	display: flex
+	border: none
+	cursor: pointer
+	&::after
+		content: "∆"
+		margin-left: 1em
+		transform-origin: 50% 50%
+		transform: rotate(90deg)
+		display: inline-block
+		width: 0.7em
+		transition: 0.3s
 
-.table-control-button::after
-	content: "∆"
-	margin-left: 1em
-	transform-origin: 50% 50%
-	transform: rotate(90deg)
-	display: inline-block
-	width: 0.7em
-	transition: 0.3s
-
-.table-controls
+.table-options
 	display: none
 	max-height: 90vh
 	overflow-y: scroll
@@ -347,7 +360,7 @@ section
 	z-index: 101
 	gap: 0 0.4em
 	padding: 3px
-	margin: 20px -21px
+	margin-top: 0.4em
 	border-top: none
 	background: #fff
 	box-shadow: 3px 2px 6px rgba(0,0,0,0.2)
@@ -358,7 +371,7 @@ section
 		align-items: center
 		user-select: none
 
-.table-control
+.table-option
 	padding: 2px 1em
 	white-space: nowrap
 	&:hover
@@ -367,17 +380,18 @@ section
 		background: #6d6d6d
 		color: #fff
 		border-radius: 0 0 6px
+	&.unavailable
+		opacity: 0.5
+		input[type="checkbox"]
+			opacity: 0.5
+			cursor: not-allowed
 
-.table-panel.open
-	.table-controls
-		display: grid
+.table-controls-container.open
+	.table-options
+		display: block
 	.table-control-button::after
 		transform: rotate(180deg)
 
-.table-control-button
-	display: flex
-	border: none
-	background: inherit
 
 .sorting-indicator
 	position: absolute
@@ -413,13 +427,16 @@ section
 	max-height: calc(100vh - 1.6em)
 	padding: 0 2em
 	overflow-y: scroll
-	
 	.key
 		text-align: left
 	.key::after
 		content: ":"
 		padding-right: 2em
 
+.cell-dict
+	tr:hover
+		background: #333
+		color: #fff
 
 .cell-emoji
 	font-size: 2.2em

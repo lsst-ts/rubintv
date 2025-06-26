@@ -20,18 +20,6 @@ const hasCCS = (siteLoc) => {
 }
 const siteLocHasCCS = hasCCS(siteLoc)
 
-function DictMetadata({ data, seqNum, columnName }) {
-  if (typeof data !== "object" || data === null) {
-    return null
-  }
-  return <FoldoutCell seqNum={seqNum} columnName={columnName} data={data} />
-}
-DictMetadata.propTypes = {
-  data: PropTypes.object,
-  seqNum: PropTypes.string,
-  columnName: PropTypes.string,
-}
-
 function MetadataCell({ data, indicator, seqNum, columnName }) {
   const className = ["grid-cell meta", indicator].join(" ")
   let toDisplay = data
@@ -43,7 +31,7 @@ function MetadataCell({ data, indicator, seqNum, columnName }) {
     toDisplay = data ? "True" : "False"
   } else if (data && typeof data === "object") {
     toDisplay = (
-      <DictMetadata data={data} seqNum={seqNum} columnName={columnName} />
+      <FoldoutCell data={data} seqNum={seqNum} columnName={columnName} />
     )
   }
   return (
@@ -68,8 +56,8 @@ function ChannelCell({ event, chanName, chanColour, noEventReplacement }) {
         <a
           className={`button button-table ${chanName}`}
           style={{ backgroundColor: chanColour }}
-          href={`${eventUrl}?key=${event.key}`}
-          aria-label={chanName} // Add accessible name
+          href={`${eventUrl}?channel_name=${chanName}&date_str=${event.day_obs}&seq_num=${event.seq_num}`}
+          aria-label={chanName}
         ></a>
       )}
       {!event && noEventReplacement && (
@@ -399,15 +387,20 @@ TableView.propTypes = {
 }
 
 function seqChannels(camera) {
-  return camera.channels.filter((cam) => !cam.perDay)
+  // Filter out channels that don't have sequential table data
+  // Use the snake_case name for the atrribute `per_day` as
+  // it's from a python object
+  return camera.channels.filter((cam) => !cam.per_day)
 }
 
 /** Generate a modal window for displaying a metadata object of
  * key/value pairs. The function is called when button in a metadata cell of
  * the table is clicked.
  */
-
 function FoldoutCell({ seqNum, columnName, data }) {
+  if (!data || typeof data !== "object") {
+    return null
+  }
   const { showModal } = useModal()
   const toDisplay = data.DISPLAY_VALUE
   const handleClick = () => {
@@ -440,9 +433,13 @@ function FoldoutCell({ seqNum, columnName, data }) {
   )
 }
 FoldoutCell.propTypes = {
+  /** data is usually an object of key/value pairs */
+  // We're allowing arrays too for the time being until the metadata
+  // convention is fully established
+  // See DM-51201 [https://rubinobs.atlassian.net/browse/DM-51201]
+  data: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
   seqNum: PropTypes.string,
   columnName: PropTypes.string,
-  data: PropTypes.object,
 }
 
 function handleCopyButton(date, seqNum, template) {

@@ -6,9 +6,9 @@ export default function Banner({ siteLocation, locationName, camera }) {
   let banner = ""
   let cls = "banner-text"
   if (camName === "lsstcam" || camName === "lsstcam_aos") {
-    if (locationName === "slac") {
+    if (locationName === "usdf") {
       banner = "USDF Nightly Validation Processing"
-      cls += " slac"
+      cls += " usdf"
     } else {
       banner = "Summit Quicklook Processing"
       cls += " summit"
