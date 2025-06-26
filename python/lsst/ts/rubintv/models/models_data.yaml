@@ -28,7 +28,7 @@ locations:
     endpoint_url: https://sdfembs3.sdf.slac.stanford.edu
     logo: SLAC_Logo.svg
     camera_groups:
-      Nightly Validation: [ lsstcam, lsstcam_aos, ra_performance ]
+      Nightly Validation: [ lsstcam, lsstcam_aos, lsstcam_guider, ra_performance ]
     has_cluster_status: True
 
   - name: base-usdf
@@ -41,7 +41,7 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, ra_performance ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, lsstcam_guider, ra_performance ]
       Cameras: [ fake_auxtel ]
       Telescopes: [ tma ]
     services: [ auxtel, tma ]
@@ -67,8 +67,8 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, ra_performance ]
-      Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, lsstcam_guider, ra_performance ]
+      Other Cameras: [ allsky, dream, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
       Deprecated Cameras: [ comcam, comcam_aos ]
@@ -81,7 +81,7 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, ra_performance]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, lsstcam_guider, ra_performance]
       Cameras: [ fake_auxtel ]
       Telescopes: [ tma ]
     has_cluster_status: True
@@ -103,8 +103,8 @@ locations:
     profile_name: summit-data-summit
     bucket_name: rubintv
     camera_groups:
-      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, ra_performance ]
-      Other Cameras: [ allsky, startracker_narrow, startracker_wide, startracker_fast ]
+      Telescope Mounted: [ auxtel, lsstcam, lsstcam_aos, lsstcam_guider, ra_performance ]
+      Other Cameras: [ allsky, dream, startracker_narrow, startracker_wide, startracker_fast ]
       Telescopes: [ tma ]
       Simulated Cameras: [ comcam_sim, comcam_sim_aos ]
       Deprecated Cameras: [ comcam, comcam_aos ]
@@ -200,6 +200,19 @@ cameras:
         colour: "#d27549"
 
 
+  - name: lsstcam_guider
+    title: LSSTCam guider
+    online: True
+    logo: LSSTCamGuider.jpg
+    text_colour: "#fff0"
+    time_since_clock:
+      label: Time since last refocus
+    channels:
+      - name: placeholder
+        title: Place holder
+        colour: "#e7597b"
+
+
   - name: ra_performance
     title: Rapid Analysis Performance
     online: True
@@ -212,6 +225,19 @@ cameras:
 
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
       {seqNum}}, \"detector\": 0}"
+
+  - name: dream
+    title: DREAM
+    online: True
+    logo: DREAM.jpg
+    text_colour: "#fff0"
+    channels:
+      - name: extinction_map
+        title: Extinction Map
+        colour: "#e9c37e"
+
+    time_since_clock:
+      label: Time since last image
 
   - name: tma
     title: TMA
@@ -644,6 +670,12 @@ metadata_cols:
     Image type:
       The image type, e.g. bias, dark, flat etc
 
+  lsstcam_guider:
+    Exposure time:
+      The image exposure time
+    Image type:
+      The image type, e.g. bias, dark, flat etc
+
   ts8:
     Run number:
       The run number, as taken from the exposure record's science_program field
@@ -856,6 +888,9 @@ metadata_cols:
     Image type:
       The image type, e.g. bias, dark, flat etc
 
+  dream:
+    Local time:
+    UTC:
 
 admin_for:
   usdf-k8s:
