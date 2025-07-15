@@ -119,7 +119,7 @@ function AllSkyStill({
     still.camera_name,
     "stills",
     still.filename
-  ).toString()
+  )
 
   return (
     <section className="allsky-current-image">
@@ -152,7 +152,7 @@ function AllSkyMovie({
     movie.camera_name,
     "movies",
     movie.filename
-  ).toString()
+  )
   return (
     <section className="allsky-current-movie">
       <div className="current-movie">

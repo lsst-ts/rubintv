@@ -7,7 +7,6 @@ export default function PrevNext({
   initialPrevNext,
 }: {
   initialPrevNext: PrevNextType
-  eventUrl: string
 }) {
   const [prevNext, setPrevNext] = useState(initialPrevNext)
   if (!prevNext) {

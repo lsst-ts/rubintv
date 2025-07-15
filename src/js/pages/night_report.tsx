@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client"
 import { _getById } from "../modules/utils"
 import { WebsocketClient } from "../modules/ws-service-client"
 import NightReport from "../components/NightReport"
+import { Camera, NightReportType } from "js/components/componentTypes"
 ;(function () {
   if (window.APP_DATA.historicalBusy) {
     return
@@ -10,8 +11,8 @@ import NightReport from "../components/NightReport"
 
   const {
     locationName,
-    camera = {},
-    nightReport = {},
+    camera = {} as Camera,
+    nightReport = {} as NightReportType,
     date = "",
     homeUrl = "",
     isHistorical,
@@ -19,13 +20,18 @@ import NightReport from "../components/NightReport"
 
   if (!isHistorical) {
     const ws = new WebsocketClient()
-    ws.subscribe("service", "nightreport", locationName, camera.name)
+    ws.subscribe("nightreport", locationName, camera.name)
   }
-  const tableRoot = createRoot(_getById("night-report"))
+  const nightReportElement = _getById("night-report")
+  if (!nightReportElement) {
+    console.error("Night report element not found")
+    return
+  }
+  const tableRoot = createRoot(nightReportElement)
   tableRoot.render(
     <NightReport
       initialNightReport={nightReport}
-      camera={camera}
+      camera={camera as Camera}
       locationName={locationName}
       initialDate={date}
       homeUrl={homeUrl}

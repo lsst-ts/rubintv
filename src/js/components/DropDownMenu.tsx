@@ -4,12 +4,12 @@ export interface Menu {
   key: string
   title: string
   items: Array<MenuItem>
-  selectedItem: MenuItem | null
+  selectedItem?: MenuItem | null
 }
 
 export interface MenuItem {
   title: string
-  value: string
+  value?: string
 }
 
 interface DropDownMenuProps {

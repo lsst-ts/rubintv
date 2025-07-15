@@ -7,7 +7,7 @@ const { DuplicatesPlugin } = require("inspectpack/plugin")
 const pagesWithoutHistory = ["admin", "detectors"].reduce(
   (pages, page) => ({
     ...pages,
-    [page]: [`./src/js/pages/${page}.js`],
+    [page]: [`./src/js/pages/${page}.tsx`],
   }),
   {}
 )
@@ -22,9 +22,9 @@ const pagesWithHistory = [
   (pages, page) => ({
     ...pages,
     [page]: [
-      `./src/js/pages/${page}.js`,
-      "./src/js/modules/ws-service-client.js",
-      "./src/js/modules/reload-on-historical.js",
+      `./src/js/pages/${page}.tsx`,
+      "./src/js/modules/ws-service-client.ts",
+      "./src/js/modules/reload-on-historical.ts",
     ],
   }),
   {}
@@ -38,7 +38,7 @@ module.exports = {
   },
   entry: {
     style: "./src/sass/style.sass",
-    hostbanner: "./src/js/hostbanner.js",
+    hostbanner: "./src/js/hostbanner.ts",
     ...pagesWithoutHistory,
     ...pagesWithHistory,
   },

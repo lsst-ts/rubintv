@@ -10,4 +10,4 @@ function buildHomeUrl() {
 
 export const homeUrl = buildHomeUrl()
 export const apiUrl = `${homeUrl}api/`
-export const imageRoot = `${homeUrl}static/images/`
+export const imagesUrl = `${homeUrl}static/images/`

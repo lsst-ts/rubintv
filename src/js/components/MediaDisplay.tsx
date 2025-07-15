@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react"
 import { TimeSinceLastImageClock } from "./Clock"
 import PrevNext from "./PrevNext"
-import { getBaseFromEventUrl, getMediaType } from "../modules/utils"
+import {
+  getBaseFromEventUrl,
+  getMediaType,
+  getMediaProxyUrl,
+  getCameraPageForDateUrl,
+} from "../modules/utils"
 import {
   ExposureEvent,
   Camera,
@@ -13,13 +18,8 @@ import {
 
 interface MediaEventProps {
   locationName: string
-  initialEvent: ExposureEvent
-  imgUrl: string
-  videoUrl: string
   camera: Camera
-  dateUrl: string
-  metadata: Metadata
-  eventUrl: string
+  initEvent: ExposureEvent | null
   prevNext: PrevNextType
   allChannelNames: string[]
   isCurrent: boolean
@@ -39,20 +39,18 @@ interface OtherChannelLinksProps {
 // MediaDisplay component to handle the image/video display
 export default function MediaDisplay({
   locationName,
-  initialEvent,
-  imgUrl,
-  videoUrl,
   camera,
-  dateUrl,
-  metadata,
-  eventUrl,
+  initEvent,
   prevNext,
   allChannelNames,
   isCurrent = false,
 }: MediaEventProps) {
-  const [mediaEvent, setMediaEvent] = useState(() =>
-    bundleMediaEventData(initialEvent, imgUrl, videoUrl)
-  )
+  const [mediaEvent, setMediaEvent] = useState<BundledMediaEvent | null>(() => {
+    if (!initEvent) {
+      return null
+    }
+    return bundleMediaEventData(initEvent, locationName)
+  })
 
   useEffect(() => {
     type EL = EventListener
@@ -62,17 +60,25 @@ export default function MediaDisplay({
         return
       }
       const event = data as ExposureEvent
-      setMediaEvent({
-        ...bundleMediaEventData(event, imgUrl, videoUrl),
-      })
+      const bundledEvent = bundleMediaEventData(event, locationName)
+      setMediaEvent(bundledEvent)
     }
 
     window.addEventListener("channel", handleChannelEvent as EL)
     return () => {
       window.removeEventListener("channel", handleChannelEvent as EL)
     }
-  }, [imgUrl, videoUrl])
+  }, [])
 
+  if (!mediaEvent) {
+    return null
+  }
+
+  const dateUrl = getCameraPageForDateUrl(
+    locationName,
+    camera.name,
+    mediaEvent.day_obs
+  )
   return (
     <RubinTVTableContext.Provider
       value={
@@ -91,10 +97,10 @@ export default function MediaDisplay({
           </a>
           <span className="media-seqnum">{mediaEvent.seq_num}</span>
         </h2>
-        <PrevNext initialPrevNext={prevNext} eventUrl={eventUrl} />
+        <PrevNext initialPrevNext={prevNext} />
         {isCurrent && camera.time_since_clock ? (
           <TimeSinceLastImageClock
-            metadata={metadata}
+            metadata={{} as Metadata}
             camera={{
               ...camera,
               time_since_clock: camera.time_since_clock ?? { label: "" },
@@ -140,12 +146,17 @@ export default function MediaDisplay({
  */
 function bundleMediaEventData(
   mEvent: ExposureEvent,
-  imgUrl: string,
-  videoUrl: string
+  locationName: string
 ): BundledMediaEvent {
   const { filename, ext } = mEvent
   const mediaType = getMediaType(ext)
-  const url = mediaType === "video" ? videoUrl : imgUrl
+  const url = getMediaProxyUrl(
+    mediaType,
+    locationName,
+    mEvent.camera_name,
+    mEvent.channel_name,
+    filename
+  )
   const baseImgUrl = getBaseFromEventUrl(url)
   const src = new URL(filename, baseImgUrl).toString()
   return {

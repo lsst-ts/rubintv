@@ -4,21 +4,23 @@ import { useModal, ConfirmationModal, ModalProvider } from "./Modal"
 import { simplePost, simpleGet } from "../modules/utils"
 import { Menu, MenuItem } from "./DropDownMenu"
 
+export interface AdminInfo {
+  username?: string
+  email?: string
+  name?: string
+}
+
 interface AdminPanelProps {
-  initMenus: Array<Menu>
-  initAdmin: {
-    username?: string
-    email?: string
-    name?: string
-  }
+  initMenus: Menu[]
+  initAdmin: AdminInfo
   redisEndpointUrl: string
   redisKeyPrefix: (key: string) => string
   authEndpointUrl: string
 }
 
 interface RedisPanelProps {
-  menus: Array<Menu>
-  setMenus: (menus: Array<Menu>) => void
+  menus: Menu[]
+  setMenus: (menus: Menu[]) => void
   redisEndpointUrl: string
   redisKeyPrefix: (key: string) => string
 }

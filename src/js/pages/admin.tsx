@@ -2,18 +2,18 @@ import React from "react"
 import { createRoot } from "react-dom/client"
 import AdminPanels from "../components/AdminPanels"
 import HistoricalReset from "../components/HistoricalReset"
-
+import { Menu } from "../components/DropDownMenu"
 ;(function () {
   window.addEventListener("DOMContentLoaded", () => {
     const { admin, homeUrl, baseUrl } = window.APP_DATA
 
-    const redisKeyPrefix = (key) => {
+    const redisKeyPrefix = (key: string) => {
       const suffix = key.replace(/[^a-zA-Z0-9_]/g, "_").toUpperCase()
       return `RUBINTV_CONTROL_${suffix}`
     }
     const redisEndpointUrl = new URL("api/redis", homeUrl).toString()
 
-    const menus = [
+    const menus: Menu[] = [
       {
         title: "AOS Pipeline",
         key: "RUBINTV_CONTROL_AOS_PIPELINE",
@@ -57,18 +57,20 @@ import HistoricalReset from "../components/HistoricalReset"
     ).toString()
 
     const adminPanels = document.getElementById("admin-panels")
-    const adminPanelsRoot = createRoot(adminPanels)
-    adminPanelsRoot.render(
-      <>
-        <AdminPanels
-          initMenus={menus}
-          initAdmin={admin}
-          redisEndpointUrl={redisEndpointUrl}
-          redisKeyPrefix={redisKeyPrefix}
-          authEndpointUrl={authEndpointUrl}
-        />
-        <HistoricalReset />
-      </>
-    )
+    if (adminPanels) {
+      const adminPanelsRoot = createRoot(adminPanels)
+      adminPanelsRoot.render(
+        <>
+          <AdminPanels
+            initMenus={menus}
+            initAdmin={admin}
+            redisEndpointUrl={redisEndpointUrl}
+            redisKeyPrefix={redisKeyPrefix}
+            authEndpointUrl={authEndpointUrl}
+          />
+          <HistoricalReset />
+        </>
+      )
+    }
   })
 })()

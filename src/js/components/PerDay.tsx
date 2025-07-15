@@ -22,8 +22,8 @@ interface ExtraButton {
 interface Camera {
   name: string
   channels: Channel[]
-  extra_buttons: ExtraButton[]
-  night_report_label: string
+  extra_buttons?: ExtraButton[]
+  night_report_label?: string
 }
 
 interface Event {
@@ -62,7 +62,6 @@ interface PerDayProps {
   locationName: string
   camera: Camera
   initialDate: string
-  initialPerDay: Record<string, Event>
   initialNRLink: string
   isHistorical: boolean
 }
@@ -134,6 +133,7 @@ function PerDayChannels({
               )
             })}
           {!isHistorical &&
+            camera.extra_buttons &&
             camera.extra_buttons.map(
               ({ name, title, linkURL, logo, text_colour, text_shadow }) => {
                 const logoURL = getImageAssetUrl(`logos/${logo}`)
@@ -171,7 +171,7 @@ function NightReportLink({
   let label = `${camera.night_report_label} for ${date}`
   if (nightReportLink === "current") {
     link = `${homeUrl}${locationName}/${camera.name}/night_report`
-    label = camera.night_report_label
+    label = camera.night_report_label ? camera.night_report_label : ""
   }
 
   return (

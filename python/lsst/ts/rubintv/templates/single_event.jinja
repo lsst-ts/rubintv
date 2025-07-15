@@ -32,31 +32,14 @@
 {% endblock content %}
 
 {% block further %}
-{{ super() }}
-{% if event %}
-  {% set img_url = url_for('event_image',
-                  location_name=location.name,
-                  camera_name=camera.name,
-                  channel_name=channel.name,
-                  filename=event.filename) %}
-  {% set video_url = url_for('event_video',
-                  location_name=location.name,
-                  camera_name=camera.name,
-                  channel_name=channel.name,
-                  filename=event.filename) %}
-  {% set metadata = event.metadata %}
-  {% set prevnext = event.prevnext %}
+  {{ super() }}
   <script>
-    window.APP_DATA.isCurrent = {{isCurrent|tojson if isCurrent else "false"}};
-    window.APP_DATA.initEvent = {{event|tojson if event else "null"}};
-    window.APP_DATA.metadata = {{metadata|tojson if metadata else "null"}};
-    window.APP_DATA.imgUrl = "{{ img_url }}";
-    window.APP_DATA.videoUrl = "{{ video_url }}";
+    window.APP_DATA.event = {{ event|tojson if event else "null" }};
+    window.APP_DATA.isCurrent = {{"true" if isCurrent else "false"}};
     window.APP_DATA.prevNext = {{ prevNext|tojson if prevNext else "null"}};
     window.APP_DATA.allChannelNames = {{ allChannelNames|tojson}};
-    window.APP_DATA.eventUrl = "{{ url_for('single_event', location_name=location.name, camera_name=camera.name) }}";
+    window.APP_DATA.channel = {{ channel|tojson }};
   </script>
-{% endif %}
 {% endblock further %}
 
 {% block footer_scripts %}

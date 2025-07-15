@@ -2,10 +2,26 @@ import ReconnectingWebSocket from "reconnecting-websocket"
 import { validate } from "uuid"
 import { decodeUnpackWSPayload, getWebSockURL } from "./utils"
 
-// TODO - Simplify this class since subscriptionType is no longer rqrd.
-// See DM-46449
+interface WebsocketClientInterface {
+  connectionID: string | null
+  ws: ReconnectingWebSocket | null
+  subscriptions: Array<Record<string, string>>
+  online: boolean
+  subscribe: (
+    servicePageType: string,
+    location?: string | null,
+    camera?: string | null,
+    channel?: string | null
+  ) => void
+  close: () => void
+}
 
-export class WebsocketClient {
+export class WebsocketClient implements WebsocketClientInterface {
+  connectionID: string | null
+  ws: ReconnectingWebSocket | null
+  subscriptions: Array<Record<string, string>>
+  online: boolean
+
   constructor() {
     this.connectionID = null
     this.ws = new ReconnectingWebSocket(getWebSockURL("ws/data"))
@@ -17,15 +33,13 @@ export class WebsocketClient {
   }
 
   subscribe(
-    subscriptionType,
-    servicePageType = null,
-    location = null,
-    camera = null,
-    channel = null
-  ) {
+    servicePageType: string,
+    location: string | null = null,
+    camera: string | null = null,
+    channel: string | null = null
+  ): void {
     const pageID = [location, camera, channel].filter((el) => el).join("/")
     const subscriptionPayload = this.#getSubscriptionPayload(
-      subscriptionType,
       servicePageType,
       pageID
     )
@@ -48,10 +62,14 @@ export class WebsocketClient {
     this.online = false
   }
 
-  #getSubscriptionPayload(subscriptionType, servicePageType, pageID) {
+  #getSubscriptionPayload(
+    servicePageType: string,
+    pageID: string
+  ): Record<string, string> {
+    // Create the payload based on the servicePageType and pageID
     let payload
-    if (subscriptionType === "historicalStatus") {
-      payload = { message: subscriptionType }
+    if (servicePageType === "historicalStatus") {
+      payload = { message: servicePageType }
     } else {
       const message = [servicePageType, pageID].join(" ").trim()
       payload = { message }
@@ -74,7 +92,7 @@ export class WebsocketClient {
     )
   }
 
-  handleMessage(messageEvent) {
+  handleMessage(messageEvent: MessageEvent) {
     if (!this.online) {
       this.online = true
       window.dispatchEvent(
@@ -102,7 +120,8 @@ export class WebsocketClient {
       }
     }
 
-    if (!data.dataType || !Object.hasOwn(data, "payload")) {
+    if (!data.dataType || !Object.keys(data).includes("payload")) {
+      console.debug("Invalid message format:", data)
       return
     }
 
@@ -114,7 +133,7 @@ export class WebsocketClient {
     window.dispatchEvent(new CustomEvent(data.service, { detail }))
   }
 
-  setConnectionID(messageData) {
+  setConnectionID(messageData: string): string | null {
     const id = messageData
     if (validate(id)) {
       this.connectionID = id
@@ -125,12 +144,16 @@ export class WebsocketClient {
   }
 
   sendSubscriptionMessages() {
+    if (!this.ws || !this.connectionID) {
+      console.warn("WebSocket is not connected or connection ID is missing.")
+      return
+    }
     this.subscriptions.forEach((subscriptionPayload) => {
       const message = {
         ...subscriptionPayload,
         clientID: this.connectionID,
       }
-      this.ws.send(JSON.stringify(message))
+      this.ws!.send(JSON.stringify(message))
     })
   }
 }

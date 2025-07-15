@@ -1,7 +1,7 @@
 import React from "react"
 import { createRoot } from "react-dom/client"
 import AllSky from "../components/AllSky"
-import { WebsocketClient } from "../modules/ws-service-client.js"
+import { WebsocketClient } from "../modules/ws-service-client"
 import { _getById } from "../modules/utils"
 ;(function () {
   if (window.APP_DATA.historicalBusy) {
@@ -11,12 +11,17 @@ import { _getById } from "../modules/utils"
 
   const ws = new WebsocketClient()
   if (!isHistorical) {
-    ws.subscribe("service", "camera", locationName, camera.name)
+    ws.subscribe("camera", locationName, camera.name, null)
   } else {
-    ws.subscribe("service", "calendar", locationName, camera.name)
+    ws.subscribe("calendar", locationName, camera.name, null)
   }
 
-  const allSkyRoot = createRoot(_getById("allsky"))
+  const allsky = _getById("allsky")
+  if (!allsky) {
+    console.error("AllSky element not found")
+    return
+  }
+  const allSkyRoot = createRoot(allsky)
   allSkyRoot.render(
     <AllSky
       initialDate={date}

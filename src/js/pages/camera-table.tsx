@@ -6,6 +6,7 @@ import Banner from "../components/Banner"
 import RubinCalendar from "../components/RubinCalendar"
 import { _getById } from "../modules/utils"
 import { WebsocketClient } from "../modules/ws-service-client"
+import { Camera } from "../components/componentTypes"
 ;(function () {
   if (window.APP_DATA.historicalBusy) {
     return
@@ -13,14 +14,19 @@ import { WebsocketClient } from "../modules/ws-service-client"
   const {
     siteLocation,
     locationName,
-    camera = {},
+    camera = {} as Camera,
     nightReportLink = "",
     date = "",
     isHistorical,
     calendar,
   } = window.APP_DATA
 
-  const bannerRoot = createRoot(_getById("header-banner"))
+  const banner = _getById("header-banner")
+  if (!banner) {
+    console.error("Header banner element not found")
+    return
+  }
+  const bannerRoot = createRoot(banner)
   bannerRoot.render(
     <Banner
       siteLocation={siteLocation}
@@ -31,12 +37,17 @@ import { WebsocketClient } from "../modules/ws-service-client"
 
   if (!isHistorical) {
     const ws = new WebsocketClient()
-    ws.subscribe("service", "camera", locationName, camera.name)
+    ws.subscribe("camera", locationName, camera.name)
   } else {
     const ws = new WebsocketClient()
-    ws.subscribe("service", "calendar", locationName, camera.name)
+    ws.subscribe("calendar", locationName, camera.name)
 
-    const calendarRoot = createRoot(_getById("calendar"))
+    const calendarElement = _getById("camera")
+    if (!calendarElement) {
+      console.error("Camera element not found")
+      return
+    }
+    const calendarRoot = createRoot(calendarElement)
     calendarRoot.render(
       <RubinCalendar
         selectedDate={date}
@@ -47,7 +58,12 @@ import { WebsocketClient } from "../modules/ws-service-client"
     )
   }
 
-  const tableRoot = createRoot(_getById("table"))
+  const table = _getById("table")
+  if (!table) {
+    console.error("Table element not found")
+    return
+  }
+  const tableRoot = createRoot(table)
   tableRoot.render(
     <TableApp
       camera={camera}
@@ -58,12 +74,19 @@ import { WebsocketClient } from "../modules/ws-service-client"
     />
   )
 
-  const perDayRoot = createRoot(_getById("per-day"))
+  const perDayElement = _getById("per-day")
+  if (!perDayElement) {
+    console.error("Per Day element not found")
+    return
+  }
+  const perDayRoot = createRoot(perDayElement)
   perDayRoot.render(
     <PerDay
       camera={camera}
       initialDate={date}
       initialNRLink={nightReportLink}
+      locationName={locationName}
+      isHistorical={isHistorical}
     />
   )
 })()

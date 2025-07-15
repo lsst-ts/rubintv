@@ -1,6 +1,16 @@
 import { gunzipSync } from "fflate"
-import { homeUrl, imageRoot } from "../config"
+import { homeUrl, imagesUrl } from "../config"
 import { ExposureEvent, MetadataRow } from "../components/componentTypes"
+
+export function isEmpty(obj: Record<string, unknown>): boolean {
+  for (const prop in obj) {
+    if (Object.hasOwn(obj, prop)) {
+      return false
+    }
+  }
+
+  return true
+}
 
 export function intersect<T>(arrayA: T[], arrayB: T[]): T[] {
   return arrayA.filter((el) => arrayB.includes(el))
@@ -328,13 +338,13 @@ export function getMediaProxyUrl(
 }
 
 export const getImageAssetUrl = (path: string): string => {
-  const [base, queriesMaybe] = imageRoot.split("?")
+  const [base, queriesMaybe] = imagesUrl.split("?")
   const queries = queriesMaybe ? "?" + queriesMaybe : ""
   return new URL(path + queries, base + "/").toString()
 }
 
 export const setCameraBaseUrl = (locationName: string, cameraName: string) => {
-  const cameraBaseUrl = new URL(`${locationName}/${cameraName}`, homeUrl)
+  const cameraBaseUrl = new URL(`${locationName}/${cameraName}/`, homeUrl)
   return {
     getEventUrl: (event: ExposureEvent) => {
       const { channel_name, day_obs, seq_num } = event
@@ -344,4 +354,16 @@ export const setCameraBaseUrl = (locationName: string, cameraName: string) => {
       ).toString()
     },
   }
+}
+
+export const getCameraPageForDateUrl = (
+  locationName: string,
+  cameraName: string,
+  date: string
+): string => {
+  // Constructs a URL for the camera page for a specific date.
+  return new URL(
+    `${locationName}/${cameraName}/date/${date}`,
+    homeUrl
+  ).toString()
 }

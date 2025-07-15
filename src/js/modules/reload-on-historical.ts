@@ -1,4 +1,5 @@
 import { WebsocketClient } from "./ws-service-client"
+
 /*
 Listens for the status of the historical poller via an event from the websocket
 client if the #historicalBusy element shows that historical data for the site
@@ -11,7 +12,8 @@ window.addEventListener("load", () => {
   }
   const ws = new WebsocketClient()
   ws.subscribe("historicalStatus")
-  window.addEventListener("historicalStatus", (message) => {
+  window.addEventListener("historicalStatus", (event: Event) => {
+    const message = event as CustomEvent
     const isBusy = message.detail.data
     if (!isBusy) {
       window.location.reload()

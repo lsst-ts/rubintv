@@ -8,7 +8,7 @@ import {
   ExposureEvent,
 } from "./componentTypes"
 
-interface CameraWithMosaicViewMeta extends Camera {
+export interface CameraWithMosaicViewMeta extends Camera {
   mosaic_view_meta: MosiacSingleView[]
 }
 
