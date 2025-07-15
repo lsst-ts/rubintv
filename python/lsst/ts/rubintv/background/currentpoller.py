@@ -155,6 +155,7 @@ class CurrentPoller:
                         average_time=time_total / self.RUNNING_LOG_PERIOD,
                     )
                     time_total = 0.0
+                    self._count_loops = 0
                 if elapsed < self.MIN_INTERVAL:
                     await sleep(self.MIN_INTERVAL - elapsed)
 
