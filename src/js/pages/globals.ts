@@ -32,6 +32,7 @@ declare global {
       channel: Channel
       event: ExposureEvent | null
       allChannelNames: string[]
+      isStale: boolean
     }
   }
 }

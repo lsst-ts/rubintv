@@ -40,6 +40,7 @@
     "inspectpack": "^4.7.1",
     "jest": "^30.0.2",
     "jest-environment-jsdom": "^30.0.2",
+    "jest-fetch-mock": "^3.0.3",
     "mini-css-extract-plugin": "^2.9.2",
     "postcss-loader": "^8.1.1",
     "sass": "^1.89.2",

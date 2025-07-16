@@ -23,12 +23,14 @@ export default function TableApp({
   initialDate,
   isHistorical,
   siteLocation,
+  isStale,
 }: {
   camera: Camera
   locationName: string
   initialDate: string
   isHistorical: boolean
   siteLocation: string
+  isStale: boolean
 }) {
   const [hasReceivedData, setHasReceivedData] = useState(false)
   const [date, setDate] = useState(initialDate)
@@ -84,8 +86,9 @@ export default function TableApp({
 
   // Fetch historical data if required.
   // This effect runs only once when the component mounts.
+  // It fetches data if the page is historical or stale.
   useEffect(() => {
-    if (!isHistorical) {
+    if (!isHistorical && !isStale) {
       return
     }
     getHistoricalData(locationName, camera.name, date)
@@ -149,11 +152,11 @@ export default function TableApp({
   const handleCameraEvent = useCallback(
     (event: CustomEvent) => {
       const { datestamp, data, dataType } = event.detail
-      setHasReceivedData(true)
       // if there's no data, don't update
       if (Object.entries(data).length === 0) {
         return
       }
+      setHasReceivedData(true)
 
       if (data.error) {
         setError(data.error)
@@ -162,6 +165,7 @@ export default function TableApp({
       if (datestamp && datestamp !== date) {
         const headerDate = _getById("header-date") as HTMLSpanElement
         headerDate.textContent = datestamp
+        // if the date has changed, update the header
         headerDate.classList.remove("stale")
         setDate(datestamp)
         setMetadata({})

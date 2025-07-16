@@ -398,6 +398,7 @@ export function TableHeader({
         <div className="grid-title sideways">CCS Image Viewer</div>
       )}
       {columns.map((channel) => {
+        console.log("Rendering Channel header", channel)
         return (
           <ChannelHeader
             key={channel.name}

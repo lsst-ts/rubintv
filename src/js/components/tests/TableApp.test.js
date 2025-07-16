@@ -20,20 +20,6 @@ Object.defineProperty(window, "localStorage", {
 jest.mock("../../modules/utils", () => ({
   ...jest.requireActual("../../modules/utils"),
   retrieveStoredSelection: jest.fn(),
-  _getById: (id) => {
-    if (id === "table") {
-      return { scrollIntoView: jest.fn() }
-    }
-    if (id === "header-date") {
-      return {
-        textContent: "",
-        classList: {
-          remove: jest.fn(),
-        },
-      }
-    }
-    return null
-  },
 }))
 
 // Mock necessary window properties and DOM elements
@@ -56,6 +42,10 @@ beforeAll(() => {
   const table = document.createElement("div")
   table.setAttribute("id", "table")
   document.body.appendChild(table)
+
+  document.getElementById("header-date").textContent = ""
+  document.getElementById("header-date").classList.add = jest.fn()
+  document.getElementById("header-date").classList.remove = jest.fn()
 })
 
 describe("TableApp Column Selection Persistence", () => {
@@ -223,5 +213,159 @@ describe("TableApp Column Selection Persistence", () => {
       version: "1",
       columns: expect.arrayContaining(initialSelection),
     })
+  })
+})
+
+describe("TableApp Loading and Historical Data Behavior", () => {
+  const camera = {
+    name: "testcam",
+    metadata_columns: {
+      colA: "description A",
+      colB: "description B",
+    },
+    channels: [{ colour: "#123456", name: "Channel 1" }],
+  }
+
+  beforeEach(() => {
+    window.localStorage.clear()
+  })
+
+  it("shows loading state until data is introduced via camera event (isHistorical=false, isStale=false)", () => {
+    const { container } = render(
+      <TableApp
+        camera={camera}
+        locationName="test-location"
+        initialDate="2024-01-01"
+        isHistorical={false}
+        siteLocation="site"
+        isStale={false}
+      />
+    )
+    // Loading state should be visible
+    expect(
+      container.querySelector(".loading-bar-container")
+    ).toBeInTheDocument()
+
+    // Simulate camera event with data
+    act(() => {
+      const event = new CustomEvent("camera", {
+        detail: {
+          datestamp: "2024-01-01",
+          data: { 1: { colA: "foo", colB: "bar" } },
+          dataType: "metadata",
+        },
+      })
+      window.dispatchEvent(event)
+      const event2 = new CustomEvent("camera", {
+        detail: {
+          datestamp: "2024-01-01",
+          data: { 1: { value: 42 } },
+          dataType: "channelData",
+        },
+      })
+      window.dispatchEvent(event2)
+    })
+    // Loading state should be gone
+    expect(
+      container.querySelector(".loading-bar-container")
+    ).not.toBeInTheDocument()
+    // Table should be rendered (header or other content)
+    expect(document.querySelector(".table-header")).toBeInTheDocument()
+  })
+
+  it("shows loading state and updates for historical data (isHistorical=true)", () => {
+    const { container } = render(
+      <TableApp
+        camera={camera}
+        locationName="test-location"
+        initialDate="2024-01-01"
+        isHistorical={true}
+        siteLocation="site"
+        isStale={false}
+      />
+    )
+    // Loading state should be visible
+    expect(
+      container.querySelector(".loading-bar-container")
+    ).toBeInTheDocument()
+
+    // Simulate camera event with data
+    act(() => {
+      const event = new CustomEvent("camera", {
+        detail: {
+          datestamp: "2024-01-01",
+          data: { 1: { colA: "foo", colB: "bar" } },
+          dataType: "metadata",
+        },
+      })
+      window.dispatchEvent(event)
+      const event2 = new CustomEvent("camera", {
+        detail: {
+          datestamp: "2024-01-01",
+          data: { 1: { value: 42 } },
+          dataType: "channelData",
+        },
+      })
+      window.dispatchEvent(event2)
+    })
+    // Loading state should be gone
+    expect(
+      container.querySelector(".loading-bar-container")
+    ).not.toBeInTheDocument()
+    // Table should be rendered
+    expect(document.querySelector(".table-header")).toBeInTheDocument()
+  })
+
+  it("shows loading state for stale historical data and clears 'stale' class on new date", () => {
+    const { container } = render(
+      <TableApp
+        camera={camera}
+        locationName="test-location"
+        initialDate="2024-01-01"
+        isHistorical={true}
+        siteLocation="site"
+        isStale={true}
+      />
+    )
+    // Loading state should be visible
+    expect(
+      container.querySelector(".loading-bar-container")
+    ).toBeInTheDocument()
+
+    // Simulate camera event with no data (no data for current day)
+    act(() => {
+      const event = new CustomEvent("camera", {
+        detail: {
+          datestamp: "2024-01-01",
+          data: {},
+          dataType: "metadata",
+        },
+      })
+      window.dispatchEvent(event)
+    })
+    // Still loading, as no data
+    expect(
+      container.querySelector(".loading-bar-container")
+    ).toBeInTheDocument()
+
+    // Simulate camera event with new date (data for a new day)
+    act(() => {
+      const event = new CustomEvent("camera", {
+        detail: {
+          datestamp: "2024-01-02",
+          data: { 1: { colA: "foo", colB: "bar" } },
+          dataType: "metadata",
+        },
+      })
+      window.dispatchEvent(event)
+    })
+    // Loading state should be gone
+    expect(
+      container.querySelector(".loading-bar-container")
+    ).not.toBeInTheDocument()
+    // The 'stale' class should be removed from header-date
+    expect(
+      document.getElementById("header-date").classList.remove
+    ).toHaveBeenCalledWith("stale")
   })
 })

@@ -19,6 +19,7 @@ import { Camera } from "../components/componentTypes"
     date = "",
     isHistorical,
     calendar,
+    isStale = false,
   } = window.APP_DATA
 
   const banner = _getById("header-banner")
@@ -35,16 +36,16 @@ import { Camera } from "../components/componentTypes"
     />
   )
 
-  if (!isHistorical) {
+  if (!isHistorical || isStale) {
     const ws = new WebsocketClient()
     ws.subscribe("camera", locationName, camera.name)
   } else {
     const ws = new WebsocketClient()
     ws.subscribe("calendar", locationName, camera.name)
 
-    const calendarElement = _getById("camera")
+    const calendarElement = _getById("calendar")
     if (!calendarElement) {
-      console.error("Camera element not found")
+      console.error("Calendar element not found")
       return
     }
     const calendarRoot = createRoot(calendarElement)
@@ -66,11 +67,12 @@ import { Camera } from "../components/componentTypes"
   const tableRoot = createRoot(table)
   tableRoot.render(
     <TableApp
+      siteLocation={siteLocation}
+      locationName={locationName}
       camera={camera}
       initialDate={date}
+      isStale={isStale}
       isHistorical={isHistorical}
-      locationName={locationName}
-      siteLocation={siteLocation}
     />
   )
 

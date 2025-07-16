@@ -24,7 +24,7 @@ export async function simplePost(
   url: RequestInfo | URL,
   message: object = {}
 ): Promise<string> {
-  const res = await fetch(url, {
+  const res = await fetch(url.toString(), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -46,7 +46,7 @@ export async function simpleGet(
   Object.entries(params).forEach(([key, value]) => {
     urlObj.searchParams.append(key, value)
   })
-  const res = await fetch(urlObj)
+  const res = await fetch(urlObj.toString())
   if (!res.ok) {
     throw new Error(`HTTP error for ${url}: ${res.status}`)
   }
@@ -318,7 +318,7 @@ export async function getHistoricalData(
     `api/${locationName}/${cameraName}/date/${date}`,
     homeUrl
   )
-  const data = await simpleGet(apiUrl)
+  const data = await simpleGet(apiUrl.toString())
   return data
 }
 
