@@ -1,4 +1,10 @@
-import React, { useState, useEffect, createContext, useContext } from "react"
+import React, {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  useRef,
+} from "react"
 import { createPortal } from "react-dom"
 
 interface ModalContextType {
@@ -12,18 +18,24 @@ const ModalContext = createContext<ModalContextType>({
   setModalContent: () => {},
 })
 
-// Ensure modal-root exists in the DOM
-const modalRoot =
-  document.getElementById("modal-root") ||
-  (() => {
-    const root = document.createElement("div")
-    root.id = "modal-root"
-    document.body.appendChild(root)
-    return root
-  })()
-
 export function ModalProvider({ children }: { children: React.ReactNode }) {
   const [modalContent, setModalContent] = useState<React.ReactNode | null>(null)
+  const modalRootRef = useRef<HTMLElement | null>(null)
+
+  // Create or get modal-root element lazily
+  const getModalRoot = () => {
+    if (!modalRootRef.current) {
+      modalRootRef.current =
+        document.getElementById("modal-root") ||
+        (() => {
+          const root = document.createElement("div")
+          root.id = "modal-root"
+          document.body.appendChild(root)
+          return root
+        })()
+    }
+    return modalRootRef.current
+  }
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -52,7 +64,7 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
               {modalContent}
             </div>
           </div>,
-          modalRoot
+          getModalRoot()
         )}
     </ModalContext.Provider>
   )
