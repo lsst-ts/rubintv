@@ -67,6 +67,7 @@
     "singleQuote": false
   },
   "jest": {
+    "collectCoverage": true,
     "setupFilesAfterEnv": [
       "<rootDir>/jest.setup.js"
     ],

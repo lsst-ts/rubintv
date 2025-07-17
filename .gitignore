@@ -164,3 +164,6 @@ eslint.config.mjs
 
 # local scripts
 local_scripts/
+
+# jest
+coverage/
