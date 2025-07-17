@@ -215,6 +215,91 @@ describe("TableApp Column Selection Persistence", () => {
     })
   })
 })
+describe("TableApp Column Visibility and Disabling", () => {
+  const camera = {
+    name: "testcam",
+    metadata_columns: {
+      colA: "description A",
+      colB: "description B",
+      futureCol: "description Future",
+    },
+    channels: [],
+  }
+
+  beforeEach(() => {
+    // Clear localStorage before each test
+    window.localStorage.clear()
+    // Reset the mock for retrieveStoredSelection
+    retrieveStoredSelection.mockClear()
+  })
+
+  it("disables and hides previously selected columns not present in current metadata", () => {
+    // Mock initial stored selection with a column not in initial metadata
+    const initialSelection = ["colA", "colB", "futureCol"]
+    retrieveStoredSelection.mockReturnValue(initialSelection)
+
+    render(
+      <TableApp
+        camera={{
+          name: "testcam",
+          metadata_columns: {
+            colA: "description A",
+            colB: "description B",
+          },
+          channels: [],
+        }}
+        initialDate="2024-01-01"
+        initialChannelData={{}}
+        initialMetadata={{
+          123: { colA: "valueA", colB: "valueB" },
+        }}
+        isHistorical={false}
+        locationName="test-location"
+        siteLocation="site"
+        isStale={false}
+      />
+    )
+
+    // Simulate camera event with only colA and colB in metadata (futureCol missing)
+    act(() => {
+      const metadataEvent = new CustomEvent("camera", {
+        detail: {
+          datestamp: "2024-01-01",
+          dataType: "metadata",
+          data: {
+            123: { colA: "valueA", colB: "valueB" },
+          },
+        },
+      })
+      window.dispatchEvent(metadataEvent)
+    })
+
+    // Check that the table header does NOT contain "futureCol"
+    const tableHeader = document.querySelector(".table-header")
+    expect(tableHeader).not.toBeNull()
+    expect(tableHeader).not.toHaveTextContent("futureCol")
+
+    // Check that the column option for "futureCol" exists and is disabled
+    // (Assuming your column options are rendered as checkboxes or similar in a control panel)
+    const tableControlButton = document.querySelector(".table-control-button")
+    expect(tableControlButton).toBeInTheDocument()
+    act(() => {
+      tableControlButton.click()
+    })
+
+    const colAOption = document.querySelector(
+      'input[type="checkbox"][name="colA"]'
+    )
+    expect(colAOption).toBeInTheDocument()
+    expect(colAOption).not.toBeDisabled()
+
+    const futureColOption = document.querySelector(
+      'input[type="checkbox"][name="futureCol"]'
+    )
+    expect(futureColOption).toBeInTheDocument()
+    expect(futureColOption).toBeDisabled()
+  })
+})
 
 describe("TableApp Loading and Historical Data Behavior", () => {
   const camera = {

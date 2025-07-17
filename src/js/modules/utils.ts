@@ -167,7 +167,7 @@ export const STORAGE_VERSION = "1"
 export function retrieveStoredSelection(
   storageKey: string,
   version = STORAGE_VERSION
-) {
+): string[] | null {
   const stored = localStorage.getItem(storageKey)
   if (!stored) return null
 

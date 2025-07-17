@@ -20,7 +20,7 @@ export interface Metadata {
 
 export interface MetadataColumn {
   name: string
-  desc: string
+  desc?: string
 }
 
 export interface MediaData {

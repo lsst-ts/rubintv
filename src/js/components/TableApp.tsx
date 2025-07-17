@@ -75,12 +75,13 @@ export default function TableApp({
     [locationName, camera.name]
   )
 
-  const selectedObjs = selected.map((c: MetadataColumn[]) => ({ name: c }))
-  const selectedMetaCols = defaultColumns
+  const selectedObjs = selected.map((columnName) => ({ name: columnName }))
+  const metaColumnsToDisplay = defaultColumns
     .filter((col) => selected.includes(col.name))
     .concat(
       selectedObjs.filter(
-        (o: MetadataColumn) => !defaultColNames.includes(o.name)
+        (o: MetadataColumn) =>
+          !defaultColNames.includes(o.name) && availableColumns.includes(o.name)
       )
     )
 
@@ -229,7 +230,7 @@ export default function TableApp({
               <div className="table-header row">
                 <TableHeader
                   camera={camera}
-                  metadataColumns={selectedMetaCols}
+                  metadataColumns={metaColumnsToDisplay}
                   filterOn={filterOn}
                   setFilterOn={setFilterOn}
                   filteredRowsCount={filteredRowsCount}
@@ -244,7 +245,7 @@ export default function TableApp({
               camera={camera}
               channelData={filteredChannelData}
               metadata={filteredMetadata}
-              metadataColumns={selectedMetaCols}
+              metadataColumns={metaColumnsToDisplay}
               filterOn={filterOn}
               filteredRowsCount={filteredRowsCount}
               sortOn={sortOn}
@@ -330,7 +331,7 @@ function redrawHeaderWidths() {
     sum += width
   }
   if (sum > 0) {
-    const sumWidth = `${Math.ceil(sum)}px`
+    const sumWidth = `${Math.ceil(sum) + 2}px`
     const aboveTable = document.querySelector(
       ".above-table-sticky"
     ) as HTMLElement

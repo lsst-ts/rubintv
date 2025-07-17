@@ -12,7 +12,7 @@ export function loadColumnSelection(
   locationName: string,
   cameraName: string,
   defaultColumns: string[]
-) {
+): string[] {
   const storageKey = getStorageKey(locationName, cameraName)
   const storedColumns = retrieveStoredSelection(storageKey, STORAGE_VERSION)
   const columns = storedColumns || defaultColumns
