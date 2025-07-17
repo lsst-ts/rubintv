@@ -41,7 +41,7 @@ function MetadataCell({
 }) {
   let toDisplay: string | React.ReactElement = ""
   let title = ""
-  const className = ["grid-cell meta", indicator].join(" ").trim()
+  const classNames = ["grid-cell meta", indicator]
   switch (typeof data) {
     case "string":
       toDisplay = data
@@ -50,6 +50,7 @@ function MetadataCell({
       if (data % 1 !== 0) {
         toDisplay = data.toFixed(2)
         title = data.toString()
+        classNames.push("align-right")
       } else {
         toDisplay = data.toString()
       }
@@ -74,6 +75,8 @@ function MetadataCell({
     default:
       toDisplay = "Unknown type"
   }
+
+  const className = classNames.join(" ").trim()
 
   return (
     <td className={className} title={title}>
