@@ -66,6 +66,21 @@ describe("Modal", () => {
     expect(modalRoot).toBeInTheDocument()
   })
 
+  it("does not create modal-root if it already exists", () => {
+    // Create modal-root manually
+    const existingRoot = document.createElement("div")
+    existingRoot.id = "modal-root"
+    document.body.appendChild(existingRoot)
+    render(
+      <ModalProvider>
+        <TestComponent />
+      </ModalProvider>
+    )
+    const modalRoot = document.getElementById("modal-root")
+    expect(modalRoot).toBe(existingRoot)
+    expect(modalRoot.childNodes.length).toBe(0) // Ensure no children initially
+  })
+
   it("opens modal when showModal is called", () => {
     render(
       <ModalProvider>

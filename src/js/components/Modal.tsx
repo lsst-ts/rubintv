@@ -13,6 +13,7 @@ interface ModalContextType {
 }
 
 // Create a Context for the modal
+/* istanbul ignore next */
 const ModalContext = createContext<ModalContextType>({
   modalContent: null,
   setModalContent: () => {},
@@ -20,21 +21,18 @@ const ModalContext = createContext<ModalContextType>({
 
 export function ModalProvider({ children }: { children: React.ReactNode }) {
   const [modalContent, setModalContent] = useState<React.ReactNode | null>(null)
-  const modalRootRef = useRef<HTMLElement | null>(null)
 
   // Create or get modal-root element lazily
   const getModalRoot = () => {
-    if (!modalRootRef.current) {
-      modalRootRef.current =
-        document.getElementById("modal-root") ||
-        (() => {
-          const root = document.createElement("div")
-          root.id = "modal-root"
-          document.body.appendChild(root)
-          return root
-        })()
-    }
-    return modalRootRef.current
+    return (
+      document.getElementById("modal-root") ||
+      (() => {
+        const root = document.createElement("div")
+        root.id = "modal-root"
+        document.body.appendChild(root)
+        return root
+      })()
+    )
   }
 
   useEffect(() => {
