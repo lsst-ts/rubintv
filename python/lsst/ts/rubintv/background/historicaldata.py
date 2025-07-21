@@ -323,7 +323,7 @@ class HistoricalPoller:
             report = [
                 nr
                 for nr in self._nr_metadata[location.name]
-                if nr.camera == camera.name and nr.day_obs == date_str
+                if nr.camera_name == camera.name and nr.day_obs == date_str
             ]
         return report
 

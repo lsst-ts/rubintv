@@ -299,7 +299,7 @@ class NightReportData:
     hash: `str`
         The md5 hash of the blob. This is used to keep plot images up-to-date
         onsite.
-    camera: `str`
+    camera_name: `str`
         The name of the camera the report belongs to.
     day_obs: `str`
         A hyphenated string representing the date i.e. ``"2023-12-31"``
