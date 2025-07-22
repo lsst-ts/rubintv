@@ -13,7 +13,7 @@ function attachWsListeners(ws: ReconnectingWebSocket): void {
   }
 
   ws.onerror = (error): void => {
-    console.error("WebSocket error:", error)
+    console.error("WebSocket error:", error.message)
   }
 
   ws.onclose = (): void => {

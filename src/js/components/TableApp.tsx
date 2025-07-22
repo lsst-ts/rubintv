@@ -85,6 +85,14 @@ export default function TableApp({
       )
     )
 
+  function setDateAndUpdateHeader(newDate: string) {
+    setDate(newDate)
+    // Update header directly
+    const headerDate = _getById("header-date") as HTMLSpanElement
+    headerDate.textContent = newDate
+    headerDate.classList.remove("stale")
+  }
+
   // Fetch historical data if required.
   // This effect runs only once when the component mounts.
   // It fetches data if the page is historical or stale.
@@ -95,19 +103,14 @@ export default function TableApp({
     getHistoricalData(locationName, camera.name, date)
       .then((json) => {
         const data = JSON.parse(json)
-        for (const key in data) {
-          const notifier = new CustomEvent("camera", {
-            detail: {
-              datestamp: date,
-              data: data[key],
-              dataType: key,
-            },
-          })
-          window.dispatchEvent(notifier)
-        }
+        if (data.metadata) setMetadata(data.metadata)
+        if (data.channelData) setChannelData(data.channelData)
+        setDateAndUpdateHeader(data.datestamp)
+        setHasReceivedData(true)
       })
       .catch((error) => {
         console.error("Error fetching historical data:", error)
+        setError(error.message || "Failed to fetch historical data")
       })
   }, [])
 
@@ -164,11 +167,7 @@ export default function TableApp({
       }
 
       if (datestamp && datestamp !== date) {
-        const headerDate = _getById("header-date") as HTMLSpanElement
-        headerDate.textContent = datestamp
-        // if the date has changed, update the header
-        headerDate.classList.remove("stale")
-        setDate(datestamp)
+        setDateAndUpdateHeader(datestamp)
         setMetadata({})
         setChannelData({})
       }

@@ -1,8 +1,8 @@
 import "@testing-library/jest-dom"
 import React from "react"
-import { render, act } from "@testing-library/react"
+import { render, act, screen, fireEvent } from "@testing-library/react"
 import TableApp from "../TableApp"
-import { retrieveStoredSelection } from "../../modules/utils"
+import { retrieveStoredSelection, getHistoricalData } from "../../modules/utils"
 
 /* global jest, describe, it, expect, beforeAll, beforeEach */
 
@@ -16,11 +16,43 @@ Object.defineProperty(window, "localStorage", {
   value: localStorageMock,
 })
 
-// Mock the retrieveStoredSelection utility function
+// Mock utility functions
 jest.mock("../../modules/utils", () => ({
   ...jest.requireActual("../../modules/utils"),
   retrieveStoredSelection: jest.fn(),
+  getHistoricalData: jest.fn(() => {
+    return Promise.resolve({
+      data: {},
+      metadata: {},
+      channels: [],
+      datestamp: "2024-01-01",
+    })
+  }),
 }))
+
+// Inject metadata via "camera" event
+const metadataEvent = (metadata, datestamp = "2024-01-01") => {
+  const mdEvent = new CustomEvent("camera", {
+    detail: {
+      datestamp,
+      dataType: "metadata",
+      data: metadata,
+    },
+  })
+  window.dispatchEvent(mdEvent)
+}
+
+// Inject channelData via "camera" event
+const channelDataEvent = (channelData) => {
+  const cdEvent = new CustomEvent("camera", {
+    detail: {
+      datestamp: "2024-01-01",
+      dataType: "channelData",
+      data: channelData,
+    },
+  })
+  window.dispatchEvent(cdEvent)
+}
 
 // Mock necessary window properties and DOM elements
 beforeAll(() => {
@@ -77,17 +109,13 @@ describe("TableApp Column Selection Persistence", () => {
     const initialSelection = ["colA", "colB", "colC"]
     retrieveStoredSelection.mockReturnValue(initialSelection)
 
+    const initialMetadata = {
+      123: { colA: "valueA", colB: "valueB", colC: "valueC" },
+    }
+
     // Initial render with metadata containing most columns
     render(
-      <TableApp
-        camera={camera}
-        initialDate="2024-01-01"
-        initialChannelData={{}}
-        initialMetadata={{
-          123: { colA: "valueA", colB: "valueB", colC: "valueC" },
-        }}
-        isHistorical={false}
-      />
+      <TableApp camera={camera} initialDate="2024-01-01" isHistorical={false} />
     )
 
     // Force selected columns update via TableControls
@@ -114,16 +142,15 @@ describe("TableApp Column Selection Persistence", () => {
     retrieveStoredSelection.mockReturnValue(initialSelection)
 
     render(
-      <TableApp
-        camera={camera}
-        initialDate="2024-01-01"
-        initialChannelData={{}}
-        initialMetadata={{
-          123: { colA: "valueA", colB: "valueB", colC: "valueC" },
-        }}
-        isHistorical={false}
-      />
+      <TableApp camera={camera} initialDate="2024-01-01" isHistorical={false} />
     )
+
+    act(() => {
+      // Simulate camera event with initial metadata
+      metadataEvent({
+        123: { colA: "valueA", colB: "valueB", colC: "valueC" },
+      })
+    })
 
     // Force initial storage
     act(() => {
@@ -171,16 +198,15 @@ describe("TableApp Column Selection Persistence", () => {
     })
 
     render(
-      <TableApp
-        camera={camera}
-        initialDate="2024-01-01"
-        initialChannelData={{}}
-        initialMetadata={{
-          123: { colA: "valueA", colB: "valueB" },
-        }}
-        isHistorical={false}
-      />
+      <TableApp camera={camera} initialDate="2024-01-01" isHistorical={false} />
     )
+
+    // Simulate camera event with metadata that does not include all selected columns
+    act(() => {
+      metadataEvent({
+        123: { colA: "valueA", colB: "valueB" },
+      })
+    })
 
     // Verify storage contains versioned data with all columns
     const storedData = JSON.parse(
@@ -193,16 +219,9 @@ describe("TableApp Column Selection Persistence", () => {
 
     // Simulate metadata update with new columns
     act(() => {
-      const metadataEvent = new CustomEvent("camera", {
-        detail: {
-          datestamp: "2024-01-01",
-          dataType: "metadata",
-          data: {
-            124: { colA: "newA", colD: "newD", futureCol: "finally" },
-          },
-        },
+      metadataEvent({
+        124: { colA: "newA", colD: "newD", futureCol: "finally" },
       })
-      window.dispatchEvent(metadataEvent)
     })
 
     // Verify storage still maintains all selected columns in versioned format
@@ -214,7 +233,61 @@ describe("TableApp Column Selection Persistence", () => {
       columns: expect.arrayContaining(initialSelection),
     })
   })
+
+  it("saves column selection to localStorage", () => {
+    const initialSelection = ["colA", "colB"]
+    retrieveStoredSelection.mockReturnValue(initialSelection)
+
+    const { container } = render(
+      <TableApp
+        camera={camera}
+        initialDate="2024-01-01"
+        isHistorical={false}
+        locationName="test-location"
+        siteLocation="site"
+        isStale={false}
+      />
+    )
+
+    // Simulate camera event with initial metadata
+    act(() => {
+      metadataEvent({
+        123: { colA: "valueA", colB: "valueB", colC: "valueC" },
+      })
+    })
+
+    // Open the column selection controls
+    const tableControlButton = container.querySelector(".table-control-button")
+    expect(tableControlButton).toBeInTheDocument()
+
+    act(() => {
+      fireEvent.click(tableControlButton)
+    })
+
+    // Select an additional column (colC)
+    const colCCheckbox = container.querySelector('input[name="colC"]')
+    expect(colCCheckbox).toBeInTheDocument()
+
+    act(() => {
+      fireEvent.click(colCCheckbox)
+    })
+
+    // Verify that localStorage.setItem was called with the updated selection
+    expect(window.localStorage.setItem).toHaveBeenCalledWith(
+      "test-location/testcam",
+      expect.stringContaining("colC")
+    )
+
+    // Verify the stored data contains the new selection
+    const storedData = JSON.parse(
+      window.localStorage.getItem("test-location/testcam")
+    )
+    expect(storedData.columns).toEqual(
+      expect.arrayContaining(["colA", "colB", "colC"])
+    )
+  })
 })
+
 describe("TableApp Column Visibility and Disabling", () => {
   const camera = {
     name: "testcam",
@@ -249,10 +322,6 @@ describe("TableApp Column Visibility and Disabling", () => {
           channels: [],
         }}
         initialDate="2024-01-01"
-        initialChannelData={{}}
-        initialMetadata={{
-          123: { colA: "valueA", colB: "valueB" },
-        }}
         isHistorical={false}
         locationName="test-location"
         siteLocation="site"
@@ -262,16 +331,9 @@ describe("TableApp Column Visibility and Disabling", () => {
 
     // Simulate camera event with only colA and colB in metadata (futureCol missing)
     act(() => {
-      const metadataEvent = new CustomEvent("camera", {
-        detail: {
-          datestamp: "2024-01-01",
-          dataType: "metadata",
-          data: {
-            123: { colA: "valueA", colB: "valueB" },
-          },
-        },
+      metadataEvent({
+        123: { colA: "valueA", colB: "valueB" },
       })
-      window.dispatchEvent(metadataEvent)
     })
 
     // Check that the table header does NOT contain "futureCol"
@@ -284,7 +346,7 @@ describe("TableApp Column Visibility and Disabling", () => {
     const tableControlButton = document.querySelector(".table-control-button")
     expect(tableControlButton).toBeInTheDocument()
     act(() => {
-      tableControlButton.click()
+      fireEvent.click(tableControlButton)
     })
 
     const colAOption = document.querySelector(
@@ -316,7 +378,7 @@ describe("TableApp Loading and Historical Data Behavior", () => {
   })
 
   it("shows loading state until data is introduced via camera event (isHistorical=false, isStale=false)", () => {
-    const { container } = render(
+    render(
       <TableApp
         camera={camera}
         locationName="test-location"
@@ -328,38 +390,26 @@ describe("TableApp Loading and Historical Data Behavior", () => {
     )
     // Loading state should be visible
     expect(
-      container.querySelector(".loading-bar-container")
+      screen.getByText("Loading data for", { exact: false })
     ).toBeInTheDocument()
 
     // Simulate camera event with data
     act(() => {
-      const event = new CustomEvent("camera", {
-        detail: {
-          datestamp: "2024-01-01",
-          data: { 1: { colA: "foo", colB: "bar" } },
-          dataType: "metadata",
-        },
+      metadataEvent({
+        data: { 1: { colA: "foo", colB: "bar" } },
       })
-      window.dispatchEvent(event)
-      const event2 = new CustomEvent("camera", {
-        detail: {
-          datestamp: "2024-01-01",
-          data: { 1: { value: 42 } },
-          dataType: "channelData",
-        },
-      })
-      window.dispatchEvent(event2)
+      channelDataEvent({ 1: { value: 42 } })
     })
     // Loading state should be gone
     expect(
-      container.querySelector(".loading-bar-container")
+      screen.queryByText("Loading data for", { exact: false })
     ).not.toBeInTheDocument()
     // Table should be rendered (header or other content)
     expect(document.querySelector(".table-header")).toBeInTheDocument()
   })
 
   it("shows loading state and updates for historical data (isHistorical=true)", () => {
-    const { container } = render(
+    render(
       <TableApp
         camera={camera}
         locationName="test-location"
@@ -371,38 +421,26 @@ describe("TableApp Loading and Historical Data Behavior", () => {
     )
     // Loading state should be visible
     expect(
-      container.querySelector(".loading-bar-container")
+      screen.getByText("Loading data for", { exact: false })
     ).toBeInTheDocument()
 
     // Simulate camera event with data
     act(() => {
-      const event = new CustomEvent("camera", {
-        detail: {
-          datestamp: "2024-01-01",
-          data: { 1: { colA: "foo", colB: "bar" } },
-          dataType: "metadata",
-        },
+      metadataEvent({
+        data: { 1: { colA: "foo", colB: "bar" } },
       })
-      window.dispatchEvent(event)
-      const event2 = new CustomEvent("camera", {
-        detail: {
-          datestamp: "2024-01-01",
-          data: { 1: { value: 42 } },
-          dataType: "channelData",
-        },
-      })
-      window.dispatchEvent(event2)
+      channelDataEvent({ 1: { value: 42 } })
     })
     // Loading state should be gone
     expect(
-      container.querySelector(".loading-bar-container")
+      screen.queryByText("Loading data for", { exact: false })
     ).not.toBeInTheDocument()
     // Table should be rendered
     expect(document.querySelector(".table-header")).toBeInTheDocument()
   })
 
   it("shows loading state for stale historical data and clears 'stale' class on new date", () => {
-    const { container } = render(
+    render(
       <TableApp
         camera={camera}
         locationName="test-location"
@@ -414,43 +452,193 @@ describe("TableApp Loading and Historical Data Behavior", () => {
     )
     // Loading state should be visible
     expect(
-      container.querySelector(".loading-bar-container")
+      screen.getByText("Loading data for", { exact: false })
     ).toBeInTheDocument()
 
     // Simulate camera event with no data (no data for current day)
     act(() => {
-      const event = new CustomEvent("camera", {
-        detail: {
-          datestamp: "2024-01-01",
-          data: {},
-          dataType: "metadata",
-        },
-      })
-      window.dispatchEvent(event)
+      metadataEvent({})
     })
+
     // Still loading, as no data
     expect(
-      container.querySelector(".loading-bar-container")
+      screen.getByText("Loading data for", { exact: false })
     ).toBeInTheDocument()
 
     // Simulate camera event with new date (data for a new day)
     act(() => {
-      const event = new CustomEvent("camera", {
-        detail: {
-          datestamp: "2024-01-02",
-          data: { 1: { colA: "foo", colB: "bar" } },
-          dataType: "metadata",
-        },
+      metadataEvent({
+        data: { 1: { colA: "foo", colB: "bar" } },
+        datestamp: "2024-01-02",
       })
-      window.dispatchEvent(event)
     })
     // Loading state should be gone
     expect(
-      container.querySelector(".loading-bar-container")
+      screen.queryByText("Loading data for", { exact: false })
     ).not.toBeInTheDocument()
     // The 'stale' class should be removed from header-date
     expect(
       document.getElementById("header-date").classList.remove
     ).toHaveBeenCalledWith("stale")
+  })
+
+  it("fetches historical data", async () => {
+    // Set up the mock before rendering
+    getHistoricalData.mockResolvedValue(
+      JSON.stringify({
+        channelData: { 1: { colA: "foo", colB: "bar" } },
+        metadata: { 1: { colA: "foo", colB: "bar" } },
+        channels: [],
+      })
+    )
+
+    render(
+      <TableApp
+        camera={camera}
+        locationName="test-location"
+        initialDate="2024-01-01"
+        isHistorical={true}
+        siteLocation="site"
+        isStale={false}
+      />
+    )
+
+    // Wait for the promise to resolve and effects to complete
+    await act(async () => {
+      // Allow time for the promise to resolve
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(getHistoricalData).toHaveBeenCalledWith(
+      "test-location",
+      "testcam",
+      "2024-01-01"
+    )
+
+    // Check if the table header is rendered with the expected content
+    const tableHeader = document.querySelector(".table-header")
+    expect(tableHeader).toBeInTheDocument()
+  })
+})
+
+describe("TableApp filtering and sorting", () => {
+  const camera = {
+    name: "testcam",
+    metadata_columns: {
+      colA: "description A",
+      colB: "description B",
+    },
+    channels: [],
+  }
+
+  beforeEach(() => {
+    window.localStorage.clear()
+  })
+
+  it("filters rows based on search input", () => {
+    render(
+      <TableApp
+        camera={camera}
+        initialDate="2024-01-01"
+        isHistorical={false}
+        locationName="test-location"
+        siteLocation="site"
+        isStale={false}
+      />
+    )
+
+    // Simulate camera event with data
+    act(() => {
+      metadataEvent({
+        123: { colA: "valueA", colB: "valueB" },
+        124: { colA: "valueC", colB: "valueD" },
+      })
+      channelDataEvent({ 1: { value: 42 } })
+    })
+
+    // Check if both rows are rendered initially
+    expect(screen.getByText("valueA")).toBeInTheDocument()
+    expect(screen.getByText("valueC")).toBeInTheDocument()
+
+    // Simulate filtering
+    act(() => {
+      const metaColumntitle = screen.getByText("colA")
+      fireEvent.click(metaColumntitle)
+    })
+
+    expect(screen.getByText("Filter on", { exact: false })).toBeInTheDocument()
+
+    act(() => {
+      // Simulate typing in the filter input
+      const searchInput = screen.getByPlaceholderText("Enter", { exact: false })
+      searchInput.value = "valueA"
+      const applyButton = screen.getByText("Apply")
+      fireEvent.click(applyButton)
+    })
+
+    // Only the row with valueA should be visible now
+    expect(screen.getByText("valueA")).toBeInTheDocument()
+    expect(screen.queryByText("valueC")).not.toBeInTheDocument()
+  })
+
+  it("sorts rows based on column header clicks", () => {
+    render(
+      <TableApp
+        camera={camera}
+        initialDate="2024-01-01"
+        isHistorical={false}
+        locationName="test-location"
+        siteLocation="site"
+        isStale={false}
+      />
+    )
+
+    // Simulate camera event with data
+    act(() => {
+      metadataEvent({
+        125: { colA: "cherry" },
+        124: { colA: "apple" },
+        123: { colA: "banana" },
+      })
+    })
+
+    // Check if all rows are rendered initially
+    expect(screen.getByText("banana")).toBeInTheDocument()
+    expect(screen.getByText("apple")).toBeInTheDocument()
+    expect(screen.getByText("cherry")).toBeInTheDocument()
+
+    let sortedRows = screen.getAllByRole("row")
+    expect(sortedRows[0].textContent).toContain("cherry")
+    expect(sortedRows[1].textContent).toContain("apple")
+    expect(sortedRows[2].textContent).toContain("banana")
+
+    // Click on the column header to sort by colA with shift key
+    const colAHeader = screen.getByText("colA")
+    act(() => {
+      fireEvent.click(colAHeader, {
+        shiftKey: true,
+        bubbles: true,
+      })
+    })
+
+    // Check if rows are sorted by colA
+    sortedRows = screen.getAllByRole("row")
+    expect(sortedRows[0].textContent).toContain("apple")
+    expect(sortedRows[1].textContent).toContain("banana")
+    expect(sortedRows[2].textContent).toContain("cherry")
+
+    // Click again to reverse the sort order
+    act(() => {
+      // Simulate shift+click more directly
+      fireEvent.click(colAHeader, {
+        shiftKey: true,
+        bubbles: true,
+      })
+    })
+    // Check if rows are sorted in reverse order
+    sortedRows = screen.getAllByRole("row")
+    expect(sortedRows[0].textContent).toContain("cherry")
+    expect(sortedRows[1].textContent).toContain("banana")
+    expect(sortedRows[2].textContent).toContain("apple")
   })
 })
