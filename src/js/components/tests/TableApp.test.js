@@ -260,17 +260,13 @@ describe("TableApp Column Selection Persistence", () => {
     const tableControlButton = container.querySelector(".table-control-button")
     expect(tableControlButton).toBeInTheDocument()
 
-    act(() => {
-      fireEvent.click(tableControlButton)
-    })
+    fireEvent.click(tableControlButton)
 
     // Select an additional column (colC)
     const colCCheckbox = container.querySelector('input[name="colC"]')
     expect(colCCheckbox).toBeInTheDocument()
 
-    act(() => {
-      fireEvent.click(colCCheckbox)
-    })
+    fireEvent.click(colCCheckbox)
 
     // Verify that localStorage.setItem was called with the updated selection
     expect(window.localStorage.setItem).toHaveBeenCalledWith(
@@ -345,9 +341,7 @@ describe("TableApp Column Visibility and Disabling", () => {
     // (Assuming your column options are rendered as checkboxes or similar in a control panel)
     const tableControlButton = document.querySelector(".table-control-button")
     expect(tableControlButton).toBeInTheDocument()
-    act(() => {
-      fireEvent.click(tableControlButton)
-    })
+    fireEvent.click(tableControlButton)
 
     const colAOption = document.querySelector(
       'input[type="checkbox"][name="colA"]'
@@ -560,21 +554,16 @@ describe("TableApp filtering and sorting", () => {
     expect(screen.getByText("valueA")).toBeInTheDocument()
     expect(screen.getByText("valueC")).toBeInTheDocument()
 
-    // Simulate filtering
-    act(() => {
-      const metaColumntitle = screen.getByText("colA")
-      fireEvent.click(metaColumntitle)
-    })
+    const metaColumntitle = screen.getByText("colA")
+    fireEvent.click(metaColumntitle)
 
     expect(screen.getByText("Filter on", { exact: false })).toBeInTheDocument()
 
-    act(() => {
-      // Simulate typing in the filter input
-      const searchInput = screen.getByPlaceholderText("Enter", { exact: false })
-      searchInput.value = "valueA"
-      const applyButton = screen.getByText("Apply")
-      fireEvent.click(applyButton)
-    })
+    // Simulate typing in the filter input
+    const searchInput = screen.getByPlaceholderText("Enter", { exact: false })
+    searchInput.value = "valueA"
+    const applyButton = screen.getByText("Apply")
+    fireEvent.click(applyButton)
 
     // Only the row with valueA should be visible now
     expect(screen.getByText("valueA")).toBeInTheDocument()
@@ -614,11 +603,9 @@ describe("TableApp filtering and sorting", () => {
 
     // Click on the column header to sort by colA with shift key
     const colAHeader = screen.getByText("colA")
-    act(() => {
-      fireEvent.click(colAHeader, {
-        shiftKey: true,
-        bubbles: true,
-      })
+    fireEvent.click(colAHeader, {
+      shiftKey: true,
+      bubbles: true,
     })
 
     // Check if rows are sorted by colA
@@ -628,12 +615,10 @@ describe("TableApp filtering and sorting", () => {
     expect(sortedRows[2].textContent).toContain("cherry")
 
     // Click again to reverse the sort order
-    act(() => {
-      // Simulate shift+click more directly
-      fireEvent.click(colAHeader, {
-        shiftKey: true,
-        bubbles: true,
-      })
+    // Simulate shift+click more directly
+    fireEvent.click(colAHeader, {
+      shiftKey: true,
+      bubbles: true,
     })
     // Check if rows are sorted in reverse order
     sortedRows = screen.getAllByRole("row")

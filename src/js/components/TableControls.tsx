@@ -69,9 +69,21 @@ function TableControls({
 }) {
   const [controlsOpen, setControlsOpen] = useState(false)
   const { locationName } = useContext(RubinTVTableContext) as RubinTVContextType
+
+  selected = Array.isArray(selected) ? selected : []
+  availableColumns = Array.isArray(availableColumns) ? availableColumns : []
+
   // Handle clicks outside to close the panel
   useEffect(() => {
     function handleOutsideClick(e: MouseEvent) {
+      console.debug("handleOutsideClick", {
+        controlsOpen,
+        target: e.target,
+        closest:
+          e.target instanceof HTMLElement
+            ? e.target.closest(".table-panel")
+            : null,
+      })
       if (
         controlsOpen &&
         (!(e.target instanceof HTMLElement) ||
@@ -81,9 +93,9 @@ function TableControls({
       }
     }
 
-    window.addEventListener("click", handleOutsideClick)
+    document.addEventListener("click", handleOutsideClick)
     return () => {
-      window.removeEventListener("click", handleOutsideClick)
+      document.removeEventListener("click", handleOutsideClick)
     }
   }, [controlsOpen])
 

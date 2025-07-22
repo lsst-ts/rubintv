@@ -18,6 +18,7 @@ import {
 } from "../../modules/detectorUtils"
 import { RedisEndpointContext } from "../componentTypes"
 import "jest-canvas-mock"
+import { mock } from "node:test"
 
 /* global jest, describe, it, expect, beforeEach, beforeAll, afterEach */
 
@@ -39,13 +40,16 @@ jest.mock("../../modules/detectorUtils", () => ({
   }),
 }))
 
+const mockShowModal = jest.fn()
+const mockCloseModal = jest.fn()
+
 jest.mock("../Modal", () => ({
   ModalProvider: ({ children }) => (
     <div data-testid="modal-provider">{children}</div>
   ),
   useModal: () => ({
-    showModal: jest.fn(),
-    closeModal: jest.fn(),
+    showModal: mockShowModal,
+    closeModal: mockCloseModal,
   }),
   ConfirmationModal: ({ title, message, onConfirm, onCancel }) => (
     <div data-testid="confirmation-modal">
@@ -118,6 +122,8 @@ describe("Detector Components", () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    mockShowModal.mockClear()
+    mockCloseModal.mockClear()
   })
 
   describe("DetectorStatusVisualization", () => {
@@ -260,17 +266,6 @@ describe("Detector Components", () => {
       const mockSimplePost = simplePost
       mockSimplePost.mockResolvedValue(true)
 
-      const mockShowModal = jest.fn()
-      const mockCloseModal = jest.fn()
-
-      jest.doMock("../Modal", () => ({
-        ...jest.requireActual("../Modal"),
-        useModal: () => ({
-          showModal: mockShowModal,
-          closeModal: mockCloseModal,
-        }),
-      }))
-
       render(
         <ModalProvider>
           <RedisEndpointContext.Provider
@@ -281,9 +276,8 @@ describe("Detector Components", () => {
         </ModalProvider>
       )
 
-      fireEvent.click(screen.getByText("Restart Workers"))
-      screen.debug()
-      // expect(mockShowModal).toHaveBeenCalled()
+      fireEvent.click(screen.getByText(/restart workers/i))
+      expect(mockShowModal).toHaveBeenCalled()
     })
   })
 

@@ -68,7 +68,9 @@
     "singleQuote": false
   },
   "jest": {
-    "setupFiles": ["jest-canvas-mock"],
+    "setupFiles": [
+      "jest-canvas-mock"
+    ],
     "collectCoverage": true,
     "setupFilesAfterEnv": [
       "<rootDir>/jest.setup.js"
