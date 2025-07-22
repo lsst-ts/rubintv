@@ -19,6 +19,8 @@ import {
   createPlaceholders,
 } from "../modules/detectorUtils"
 
+export { DetectorCanvas, Cell, ResetButton, OtherQueuesSection, Cells }
+
 export const useRedisEndpoint = () => {
   const context = useContext(RedisEndpointContext)
   if (context === null) {
@@ -177,7 +179,7 @@ const DetectorStatusVisualization = ({
     type EL = EventListener
     function handleDetectorEvent(event: CustomEvent) {
       const { data, dataType } = event.detail
-
+      console.debug(`Received detector event: ${dataType}`, data)
       if (dataType !== "detectorStatus") {
         return
       }
