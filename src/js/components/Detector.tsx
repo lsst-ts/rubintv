@@ -179,7 +179,6 @@ const DetectorStatusVisualization = ({
     type EL = EventListener
     function handleDetectorEvent(event: CustomEvent) {
       const { data, dataType } = event.detail
-      console.debug(`Received detector event: ${dataType}`, data)
       if (dataType !== "detectorStatus") {
         return
       }

@@ -21,12 +21,14 @@ jest.mock("../../modules/utils", () => ({
   ...jest.requireActual("../../modules/utils"),
   retrieveStoredSelection: jest.fn(),
   getHistoricalData: jest.fn(() => {
-    return Promise.resolve({
-      data: {},
-      metadata: {},
-      channels: [],
-      datestamp: "2024-01-01",
-    })
+    return Promise.resolve(
+      JSON.stringify({
+        data: {},
+        metadata: {},
+        channels: [],
+        datestamp: "2024-01-01",
+      })
+    )
   }),
 }))
 
@@ -260,13 +262,17 @@ describe("TableApp Column Selection Persistence", () => {
     const tableControlButton = container.querySelector(".table-control-button")
     expect(tableControlButton).toBeInTheDocument()
 
-    fireEvent.click(tableControlButton)
+    act(() => {
+      fireEvent.click(tableControlButton)
+    })
 
     // Select an additional column (colC)
     const colCCheckbox = container.querySelector('input[name="colC"]')
     expect(colCCheckbox).toBeInTheDocument()
 
-    fireEvent.click(colCCheckbox)
+    act(() => {
+      fireEvent.click(colCCheckbox)
+    })
 
     // Verify that localStorage.setItem was called with the updated selection
     expect(window.localStorage.setItem).toHaveBeenCalledWith(
@@ -341,7 +347,10 @@ describe("TableApp Column Visibility and Disabling", () => {
     // (Assuming your column options are rendered as checkboxes or similar in a control panel)
     const tableControlButton = document.querySelector(".table-control-button")
     expect(tableControlButton).toBeInTheDocument()
-    fireEvent.click(tableControlButton)
+
+    act(() => {
+      fireEvent.click(tableControlButton)
+    })
 
     const colAOption = document.querySelector(
       'input[type="checkbox"][name="colA"]'
@@ -562,8 +571,11 @@ describe("TableApp filtering and sorting", () => {
     // Simulate typing in the filter input
     const searchInput = screen.getByPlaceholderText("Enter", { exact: false })
     searchInput.value = "valueA"
-    const applyButton = screen.getByText("Apply")
-    fireEvent.click(applyButton)
+
+    act(() => {
+      const applyButton = screen.getByText("Apply")
+      fireEvent.click(applyButton)
+    })
 
     // Only the row with valueA should be visible now
     expect(screen.getByText("valueA")).toBeInTheDocument()

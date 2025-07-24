@@ -76,14 +76,6 @@ function TableControls({
   // Handle clicks outside to close the panel
   useEffect(() => {
     function handleOutsideClick(e: MouseEvent) {
-      console.debug("handleOutsideClick", {
-        controlsOpen,
-        target: e.target,
-        closest:
-          e.target instanceof HTMLElement
-            ? e.target.closest(".table-panel")
-            : null,
-      })
       if (
         controlsOpen &&
         (!(e.target instanceof HTMLElement) ||

@@ -109,7 +109,7 @@ export default function TableApp({
         setHasReceivedData(true)
       })
       .catch((error) => {
-        console.error("Error fetching historical data:", error)
+        console.error("Error fetching historical data:", error.message)
         setError(error.message || "Failed to fetch historical data")
       })
   }, [])
