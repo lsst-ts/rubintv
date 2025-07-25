@@ -522,6 +522,36 @@ describe("TableApp Loading and Historical Data Behavior", () => {
     const tableHeader = document.querySelector(".table-header")
     expect(tableHeader).toBeInTheDocument()
   })
+
+  it.only("shows the correct date in the header", () => {
+    render(
+      <TableApp
+        camera={camera}
+        initialDate="2024-01-01"
+        isHistorical={false}
+        locationName="test-location"
+        siteLocation="site"
+        isStale={false}
+      />
+    )
+
+    // Check if the header date is set correctly
+    const headerDate = document.getElementById("header-date")
+    expect(headerDate).toBeInTheDocument()
+    // Initially, the header date should be empty
+    expect(headerDate.textContent).toBe("")
+
+    act(() => {
+      metadataEvent(
+        {
+          123: { colA: "valueA", colB: "valueB" },
+        },
+        "2024-01-02"
+      )
+    })
+    // After metadata event, the header date should be updated
+    expect(headerDate.textContent).toBe("2024-01-02")
+  })
 })
 
 describe("TableApp filtering and sorting", () => {

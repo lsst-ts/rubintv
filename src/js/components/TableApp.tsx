@@ -34,6 +34,7 @@ export default function TableApp({
 }) {
   const [hasReceivedData, setHasReceivedData] = useState(false)
   const [date, setDate] = useState(initialDate)
+  console.log("TableApp: initialDate", initialDate)
   const [channelData, setChannelData] = useState({} as ChannelData)
   const [metadata, setMetadata] = useState({} as Metadata)
   const [filterOn, setFilterOn] = useState({
@@ -105,7 +106,7 @@ export default function TableApp({
         const data = JSON.parse(json)
         if (data.metadata) setMetadata(data.metadata)
         if (data.channelData) setChannelData(data.channelData)
-        setDateAndUpdateHeader(data.datestamp)
+        setDateAndUpdateHeader(data.date)
         setHasReceivedData(true)
       })
       .catch((error) => {
@@ -155,6 +156,7 @@ export default function TableApp({
 
   const handleCameraEvent = useCallback(
     (event: CustomEvent) => {
+      console.log("TableApp: date has changed to:", event.detail.datestamp)
       const { datestamp, data, dataType } = event.detail
       // if there's no data, don't update
       if (Object.entries(data).length === 0) {
