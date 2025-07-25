@@ -34,7 +34,6 @@ export default function TableApp({
 }) {
   const [hasReceivedData, setHasReceivedData] = useState(false)
   const [date, setDate] = useState(initialDate)
-  console.log("TableApp: initialDate", initialDate)
   const [channelData, setChannelData] = useState({} as ChannelData)
   const [metadata, setMetadata] = useState({} as Metadata)
   const [filterOn, setFilterOn] = useState({

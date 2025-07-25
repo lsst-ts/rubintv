@@ -68,10 +68,11 @@ module.exports = {
         },
         common: {
           name: "common",
-          minChunks: 2,
+          minChunks: 1,
           chunks: "all",
           priority: -20,
           reuseExistingChunk: true,
+          enforce: true,
         },
       },
     },

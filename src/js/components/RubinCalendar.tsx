@@ -35,7 +35,6 @@ const Day = ({
     currentDayClassList.push("today")
   }
   if (dateStr == selectedDate) {
-    console.debug("Day component: date is selected", dateStr, selectedDate)
     isSelected = true
     currentDayClassList.push("selected")
   }
