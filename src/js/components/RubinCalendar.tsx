@@ -20,7 +20,7 @@ const Day = ({
   dateStr: string
   calendarData: CalendarData[number][number]
   dayObs?: string | null
-  selectedDate: Date
+  selectedDate: string // formatted as "yyyy-mm-dd"
   cameraUrl: string
   noSeqNum?: boolean
 }) => {
@@ -34,7 +34,8 @@ const Day = ({
   if (dayObs === dateStr) {
     currentDayClassList.push("today")
   }
-  if (dateStringToDate(dateStr) == selectedDate) {
+  if (dateStr == selectedDate) {
+    console.debug("Day component: date is selected", dateStr, selectedDate)
     isSelected = true
     currentDayClassList.push("selected")
   }
@@ -87,6 +88,11 @@ const Month = ({
   selectedDate: Date
   dayObs?: string | null
 }) => {
+  const selectedDateStr = ymdToDateStr(
+    selectedDate.getFullYear(),
+    selectedDate.getMonth() + 1,
+    selectedDate.getDate()
+  )
   return (
     <div className={`month ${isSelected ? "selected" : ""}`}>
       <h5 className="month-title">{monthNames[month - 1]}</h5>
@@ -108,7 +114,7 @@ const Month = ({
                 day={day}
                 calendarData={calendarData[year][month]}
                 dayObs={dayObs}
-                selectedDate={selectedDate}
+                selectedDate={selectedDateStr}
                 noSeqNum={noSeqNum}
                 cameraUrl={cameraUrl}
               />

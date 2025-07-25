@@ -86,12 +86,16 @@ export default function TableApp({
       )
     )
 
-  function setDateAndUpdateHeader(newDate: string) {
+  function setDateAndUpdateHeader(newDate: string, stale = false) {
     setDate(newDate)
     // Update header directly
     const headerDate = _getById("header-date") as HTMLSpanElement
     headerDate.textContent = newDate
-    headerDate.classList.remove("stale")
+    if (stale) {
+      headerDate.classList.add("stale")
+    } else {
+      headerDate.classList.remove("stale")
+    }
   }
 
   // Fetch historical data if required.
@@ -106,7 +110,7 @@ export default function TableApp({
         const data = JSON.parse(json)
         if (data.metadata) setMetadata(data.metadata)
         if (data.channelData) setChannelData(data.channelData)
-        setDateAndUpdateHeader(data.date)
+        setDateAndUpdateHeader(data.date, isStale)
         setHasReceivedData(true)
       })
       .catch((error) => {
@@ -156,7 +160,6 @@ export default function TableApp({
 
   const handleCameraEvent = useCallback(
     (event: CustomEvent) => {
-      console.log("TableApp: date has changed to:", event.detail.datestamp)
       const { datestamp, data, dataType } = event.detail
       // if there's no data, don't update
       if (Object.entries(data).length === 0) {

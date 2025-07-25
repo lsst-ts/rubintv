@@ -7,7 +7,7 @@
 
 {% block pagesubtitle %}
   {% if not historicalBusy %}
-    {% if isHistorical %}
+    {% if isHistorical and not isStale %}
       Historical
     {% else %}
       Latest
