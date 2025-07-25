@@ -6,6 +6,7 @@ import {
   getMediaType,
   getMediaProxyUrl,
   getCameraPageForDateUrl,
+  getDocumentLocation,
 } from "../modules/utils"
 import {
   ExposureEvent,
@@ -190,7 +191,7 @@ const OtherChannelLinks = ({
     }
   }, [channelNames])
 
-  const currentUrl = document.location.toString()
+  const currentUrl = getDocumentLocation()
   const buildUrl = (channelName: string) => {
     if (currentUrl.endsWith(`${thisChannel}/current`)) {
       return currentUrl.replace(thisChannel, channelName)

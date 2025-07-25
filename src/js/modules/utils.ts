@@ -322,6 +322,10 @@ export async function getHistoricalData(
   return data
 }
 
+export const getDocumentLocation = (): string => {
+  return document.location.toString()
+}
+
 export function getMediaProxyUrl(
   mediaType: string,
   locationName: string,
