@@ -67,12 +67,17 @@ export default function AllSky({
           )
           return
         }
-        const { perDay } = JSON.parse(json)
-        if (!perDay || Object.keys(perDay).length === 0) {
-          console.error("No perDay data found for", date)
-          return
+        try {
+          const { perDay } = JSON.parse(json)
+          if (!perDay || Object.keys(perDay).length === 0) {
+            console.error("No perDay data found for", date)
+            return
+          }
+          setPerDayData(perDay)
+        } catch (error) {
+          console.error("Error parsing historical data JSON:", error)
+          console.error("Received data:", json)
         }
-        setPerDayData(perDay)
       }
     }
     fetchHistoricalData()
