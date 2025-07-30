@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react"
-import { WebsocketClient } from "js/modules/ws-service-client"
-import { simplePost } from "js/modules/utils"
+import { WebsocketClient } from "../modules/ws-service-client"
+import { simplePost } from "../modules/utils"
 
 type HistoricalResetState = "idle" | "resetting" | "reset"
 
@@ -11,8 +11,12 @@ export default function HistoricalReset() {
   // Initialize the WebSocket client for historical status updates
   // This will create a new WebSocket connection when the component mounts
   useEffect(() => {
-    websocketRef.current = new WebsocketClient()
-    websocketRef.current.subscribe("historicalStatus")
+    try {
+      websocketRef.current = new WebsocketClient()
+      websocketRef.current.subscribe("historicalStatus")
+    } catch (error) {
+      console.error(`Failed to initialize WebSocket: ${error}`)
+    }
     return () => {
       // Clean up the WebSocket connection when the component unmounts
       websocketRef.current?.close()
@@ -21,20 +25,17 @@ export default function HistoricalReset() {
   }, [])
 
   const handleReset = () => {
-    simplePost("api/historical_reset")
-      .then(() => {
-        setResetState("resetting")
-      })
-      .catch((err) => {
-        console.error(`Couldn't reload historical data: ${err}`)
-        setResetState("idle")
-      })
+    setResetState("resetting")
+    simplePost("api/historical_reset").catch((err) => {
+      console.error(`Couldn't reload historical data: ${err}`)
+      setResetState("idle")
+    })
   }
 
   useEffect(() => {
     type EL = EventListener
     const handleStatusUpdate = (message: CustomEvent) => {
-      const isBusy = message.detail.data
+      const { data: isBusy } = message.detail || {}
       if (!isBusy && resetState) {
         setResetState("reset")
       }
