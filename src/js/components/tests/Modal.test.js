@@ -149,7 +149,7 @@ describe("Modal", () => {
 
     // Press Escape key
     act(() => {
-      fireEvent.keyDown(window, { key: "Escape", code: "Escape" })
+      fireEvent.keyDown(document, { key: "Escape", code: "Escape" })
     })
 
     expect(screen.queryByText("Test Modal Content")).not.toBeInTheDocument()
@@ -169,8 +169,8 @@ describe("Modal", () => {
 
     // Press other keys
     act(() => {
-      fireEvent.keyDown(window, { key: "Enter", code: "Enter" })
-      fireEvent.keyDown(window, { key: "Space", code: "Space" })
+      fireEvent.keyDown(document, { key: "Enter", code: "Enter" })
+      fireEvent.keyDown(document, { key: "Space", code: "Space" })
     })
 
     expect(screen.getByText("Test Modal Content")).toBeInTheDocument()

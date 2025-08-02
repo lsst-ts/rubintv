@@ -35,13 +35,13 @@ export default function DropDownMenu({
     }
 
     if (isOpen) {
-      window.addEventListener("click", handleClickOutside)
+      document.addEventListener("click", handleClickOutside)
     } else {
-      window.removeEventListener("click", handleClickOutside)
+      document.removeEventListener("click", handleClickOutside)
     }
 
     return () => {
-      window.removeEventListener("click", handleClickOutside)
+      document.removeEventListener("click", handleClickOutside)
     }
   }, [isOpen])
   const handleKeyDown = (event: KeyboardEvent) => {
@@ -51,13 +51,13 @@ export default function DropDownMenu({
   }
   useEffect(() => {
     if (isOpen) {
-      window.addEventListener("keydown", handleKeyDown)
+      document.addEventListener("keydown", handleKeyDown)
     } else {
-      window.removeEventListener("keydown", handleKeyDown)
+      document.removeEventListener("keydown", handleKeyDown)
     }
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown)
+      document.removeEventListener("keydown", handleKeyDown)
     }
   }, [isOpen])
 

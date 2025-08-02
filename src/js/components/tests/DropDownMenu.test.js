@@ -23,9 +23,9 @@ describe("DropDownMenu Component", () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    // Mock window event listeners
-    jest.spyOn(window, "addEventListener")
-    jest.spyOn(window, "removeEventListener")
+    // Mock document event listeners
+    jest.spyOn(document, "addEventListener")
+    jest.spyOn(document, "removeEventListener")
   })
 
   afterEach(() => {
@@ -283,7 +283,7 @@ describe("DropDownMenu Component", () => {
       expect(dropdown).not.toHaveClass("hidden")
 
       // Press Escape
-      fireEvent.keyDown(window, { key: "Escape" })
+      fireEvent.keyDown(document, { key: "Escape" })
       expect(dropdown).toHaveClass("hidden")
     })
 
@@ -299,9 +299,9 @@ describe("DropDownMenu Component", () => {
       expect(dropdown).not.toHaveClass("hidden")
 
       // Press other keys
-      fireEvent.keyDown(window, { key: "Enter" })
-      fireEvent.keyDown(window, { key: "Space" })
-      fireEvent.keyDown(window, { key: "Tab" })
+      fireEvent.keyDown(document, { key: "Enter" })
+      fireEvent.keyDown(document, { key: "Space" })
+      fireEvent.keyDown(document, { key: "Tab" })
 
       expect(dropdown).not.toHaveClass("hidden")
     })
@@ -314,21 +314,21 @@ describe("DropDownMenu Component", () => {
       const button = screen.getByRole("button")
 
       // Initially closed - no listener should be added
-      expect(window.addEventListener).not.toHaveBeenCalledWith(
+      expect(document.addEventListener).not.toHaveBeenCalledWith(
         "keydown",
         expect.any(Function)
       )
 
       // Open dropdown - listener should be added
       fireEvent.click(button)
-      expect(window.addEventListener).toHaveBeenCalledWith(
+      expect(document.addEventListener).toHaveBeenCalledWith(
         "keydown",
         expect.any(Function)
       )
 
       // Close dropdown - listener should be removed
       fireEvent.click(button)
-      expect(window.removeEventListener).toHaveBeenCalledWith(
+      expect(document.removeEventListener).toHaveBeenCalledWith(
         "keydown",
         expect.any(Function)
       )
@@ -386,21 +386,21 @@ describe("DropDownMenu Component", () => {
       const button = screen.getByRole("button")
 
       // Initially closed - no listener should be added
-      expect(window.addEventListener).not.toHaveBeenCalledWith(
+      expect(document.addEventListener).not.toHaveBeenCalledWith(
         "click",
         expect.any(Function)
       )
 
       // Open dropdown - listener should be added
       fireEvent.click(button)
-      expect(window.addEventListener).toHaveBeenCalledWith(
+      expect(document.addEventListener).toHaveBeenCalledWith(
         "click",
         expect.any(Function)
       )
 
       // Close dropdown - listener should be removed
       fireEvent.click(button)
-      expect(window.removeEventListener).toHaveBeenCalledWith(
+      expect(document.removeEventListener).toHaveBeenCalledWith(
         "click",
         expect.any(Function)
       )
@@ -539,11 +539,11 @@ describe("DropDownMenu Component", () => {
 
       unmount()
 
-      expect(window.removeEventListener).toHaveBeenCalledWith(
+      expect(document.removeEventListener).toHaveBeenCalledWith(
         "click",
         expect.any(Function)
       )
-      expect(window.removeEventListener).toHaveBeenCalledWith(
+      expect(document.removeEventListener).toHaveBeenCalledWith(
         "keydown",
         expect.any(Function)
       )
@@ -570,7 +570,7 @@ describe("DropDownMenu Component", () => {
 
       // Keyboard functionality should still work (proving listeners are properly managed)
       fireEvent.click(button) // Open
-      fireEvent.keyDown(window, { key: "Escape" })
+      fireEvent.keyDown(document, { key: "Escape" })
       expect(dropdown).toHaveClass("hidden")
     })
   })
