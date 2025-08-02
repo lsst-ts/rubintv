@@ -38,7 +38,13 @@ export default function PrevNext({
     function handleNewPrevNext(e: CustomEvent) {
       const { data, dataType } = e.detail
       if (dataType == "prevNext") {
+        if (!data) {
+          return
+        }
         const { prev, next } = data
+        if (!prev && !next) {
+          return
+        }
         setPrevNext({ prev, next })
       }
     }
