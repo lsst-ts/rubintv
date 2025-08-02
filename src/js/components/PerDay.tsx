@@ -103,6 +103,12 @@ function PerDayChannels({
   isHistorical,
 }: PerDayChannelsProps) {
   const channels = camera.channels
+  if (!channels || channels.length === 0) {
+    console.warn(
+      `Camera ${camera.name} has no channels configured, cannot render Per Day Channels`
+    )
+    return null
+  }
 
   return (
     perDay &&
@@ -114,6 +120,12 @@ function PerDayChannels({
             Object.entries(perDay).map(([channelName, event]) => {
               const channel =
                 channels[channels.map((chan) => chan.name).indexOf(channelName)]
+              if (!channel) {
+                console.warn(
+                  `Channel ${channelName} not found in camera configuration`
+                )
+                return null
+              }
               const label = channel.label ? channel.label : channel.title
               const filename = event.filename
               const url = `${homeUrl}event_video/${locationName}/${camera.name}/${channelName}/${filename}`
@@ -199,7 +211,7 @@ export default function PerDay({
   useEffect(() => {
     function handleCameraEvent(event: CustomEvent) {
       const { datestamp, data, dataType } = event.detail
-      if (dataType !== "perDay") {
+      if (dataType !== "perDay" || !data) {
         return
       }
 
