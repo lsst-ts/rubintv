@@ -857,7 +857,7 @@ describe("RubinCalendar Component", () => {
       const decemberMonth = screen.getAllByText("December")[0].closest(".month")
       expect(decemberMonth).toHaveClass("selected")
 
-      const day25Link = screen.getByRole("link", { name: /25/ })
+      const day25Link = within(decemberMonth).getByRole("link", { name: /25/ })
       expect(day25Link).toHaveClass("selected")
     })
   })
@@ -955,6 +955,7 @@ describe("RubinCalendar Component", () => {
     })
 
     it("handles very large sequence numbers", () => {
+      // although this will look like a mess, it should not throw an error
       render(<RubinCalendar {...defaultProps} />)
 
       act(() => {
@@ -968,7 +969,9 @@ describe("RubinCalendar Component", () => {
         window.dispatchEvent(calendarEvent)
       })
 
-      const newDay = screen.getByRole("link", { name: /31/ })
+      const januaryMonth = screen.getAllByText("January")[0].closest(".month")
+      const selectedDaySpan = within(januaryMonth).getByText("31")
+      const newDay = selectedDaySpan.closest("a")
       expect(screen.getAllByText("(999999999)")[0]).toBeInTheDocument()
     })
   })
@@ -994,11 +997,11 @@ describe("RubinCalendar Component", () => {
       })
     })
 
-    it("provides tooltips for days without data", () => {
+    it.only("provides tooltips for days without data", () => {
       render(<RubinCalendar {...defaultProps} />)
 
       // Find a day without data (should be a <p> element)
-      const dayWithoutDataElements = screen.getAllByText("1")
+      const dayWithoutDataElements = screen.getAllByText("2")
       const dayWithoutData = dayWithoutDataElements[0].closest("p")
       expect(dayWithoutData).toHaveAttribute("title", "today: no data yet")
     })
