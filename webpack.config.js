@@ -48,7 +48,7 @@ module.exports = {
     chunkFilename: "[name].[chunkhash].js",
   },
   plugins: [
-    new MiniCssExtractPlugin({ filename: "[name].css" }),
+    new MiniCssExtractPlugin({ filename: "style.css" }),
     new DuplicatesPlugin({
       emitErrors: false,
       verbose: false,
