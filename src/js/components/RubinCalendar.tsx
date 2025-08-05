@@ -49,9 +49,9 @@ const Day = ({
       <a className={currentDayClass} href={`${cameraUrl}/date/${dateStr}`}>
         <span className="day_num">{day}</span>
         {!noSeqNum ? (
-          <span className="num_evs">({calendarData[day]})</span>
+          <span className="has-events num-events">({calendarData[day]})</span>
         ) : (
-          <span>*</span>
+          <span className="has-events">*</span>
         )}
         {isSelected && <div className="selected-border"></div>}
       </a>
@@ -221,17 +221,25 @@ const RubinCalendar = ({
     const yearEl = document.querySelector(".year.selected") as HTMLElement
     const monthEl = document.querySelector(".month.selected") as HTMLElement
     if (yearEl && monthEl) {
-      yearEl.scrollLeft = monthEl.offsetLeft - yearEl.offsetLeft
+      monthEl.scrollIntoView({ behavior: "instant", block: "nearest" })
     }
   }, [yearToDisplay])
 
   useEffect(() => {
     const handleCalendarEvent = (event: CustomEvent) => {
       const { dataType, data, datestamp } = event.detail
+      if (!dataType || !datestamp) {
+        console.warn("Invalid calendar event data", event.detail)
+        return
+      }
       if (dataType === "dayChange") {
         setDayObs(datestamp)
       }
       if (dataType === "latestMetadata" || dataType === "perDay") {
+        if (!data || Object.keys(data).length === 0) {
+          console.warn("No data received for calendar event", event.detail)
+          return
+        }
         const [year, month, day] = datestamp
           .split("-")
           .map((x: string) => parseInt(x))
