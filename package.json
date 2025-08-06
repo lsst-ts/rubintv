@@ -10,7 +10,9 @@
     "build": "webpack --progress --no-devtool",
     "dev-build": "webpack --progress --mode development",
     "watch": "webpack --watch --progress --mode development",
-    "test": "jest"
+    "test": "jest",
+    "prepare": "husky",
+    "check:precommit": "lint-staged"
   },
   "author": "ugyballoons",
   "license": "ISC",
@@ -39,11 +41,13 @@
     "eslint-plugin-react": "^7.37.5",
     "globals": "^16.2.0",
     "html-webpack-plugin": "^5.6.3",
+    "husky": "^9.1.7",
     "inspectpack": "^4.7.1",
     "jest": "^30.0.2",
     "jest-canvas-mock": "^2.5.2",
     "jest-environment-jsdom": "^30.0.2",
     "jest-fetch-mock": "^3.0.3",
+    "lint-staged": "^16.1.4",
     "mini-css-extract-plugin": "^2.9.2",
     "postcss-loader": "^8.1.1",
     "prettier": "^3.6.2",
@@ -77,5 +81,16 @@
     "transform": {
       "^.+\\.(js|jsx|ts|tsx)$": "babel-jest"
     }
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "prettier --write",
+      "eslint --fix",
+      "tsc --noEmit",
+      "jest --findRelatedTests --passWithNoTests"
+    ],
+    "*.{html,css,less,ejs,json}": [
+      "prettier --write"
+    ]
   }
 }

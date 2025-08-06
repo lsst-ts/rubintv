@@ -149,9 +149,9 @@ jsconfig.json
 *.ipynb
 
 # npm and eslint
+.husky/
 .nvmrc
 */jsconfig.json
-.eslintrc.*
 node_modules/
 .pre-commit-config.yaml
 .clang-format
@@ -160,7 +160,6 @@ node_modules/
 .mypy.ini
 .ruff.toml
 towncrier.toml
-eslint.config.mjs
 
 # local scripts
 local_scripts/
