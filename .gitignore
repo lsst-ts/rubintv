@@ -153,6 +153,7 @@ jsconfig.json
 .nvmrc
 */jsconfig.json
 node_modules/
+.pre-commit-config.yaml
 .clang-format
 .flake8
 .isort.cfg
