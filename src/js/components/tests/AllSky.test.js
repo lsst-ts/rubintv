@@ -3,9 +3,8 @@ import React from "react"
 import { render, screen, act, waitFor } from "@testing-library/react"
 import AllSky from "../AllSky"
 import { getHistoricalData } from "../../modules/utils"
-import { before } from "node:test"
 
-/* global jest, describe, it, expect, beforeEach, beforeAll, afterEach */
+/* global jest, describe, it, expect, beforeEach, beforeAll */
 
 // Mock utility functions
 jest.mock("../../modules/utils", () => ({

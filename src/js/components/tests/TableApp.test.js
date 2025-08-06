@@ -111,10 +111,6 @@ describe("TableApp Column Selection Persistence", () => {
     const initialSelection = ["colA", "colB", "colC"]
     retrieveStoredSelection.mockReturnValue(initialSelection)
 
-    const initialMetadata = {
-      123: { colA: "valueA", colB: "valueB", colC: "valueC" },
-    }
-
     // Initial render with metadata containing most columns
     render(
       <TableApp camera={camera} initialDate="2024-01-01" isHistorical={false} />
@@ -291,16 +287,6 @@ describe("TableApp Column Selection Persistence", () => {
 })
 
 describe("TableApp Column Visibility and Disabling", () => {
-  const camera = {
-    name: "testcam",
-    metadata_columns: {
-      colA: "description A",
-      colB: "description B",
-      futureCol: "description Future",
-    },
-    channels: [],
-  }
-
   beforeEach(() => {
     // Clear localStorage before each test
     window.localStorage.clear()

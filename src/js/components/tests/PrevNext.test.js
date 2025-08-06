@@ -3,6 +3,7 @@ import React from "react"
 import { render, screen, fireEvent, act } from "@testing-library/react"
 import PrevNext from "../PrevNext"
 import { RubinTVTableContext } from "../componentTypes"
+import { setCameraBaseUrl } from "../../modules/utils"
 
 /* global jest, describe, it, expect, beforeEach, afterEach */
 
@@ -147,8 +148,6 @@ describe("PrevNext Component", () => {
     })
 
     it("uses context values for URL generation", () => {
-      const { setCameraBaseUrl } = require("../../modules/utils")
-
       render(
         <RubinTVTableContext.Provider value={mockContextValue}>
           <PrevNext initialPrevNext={mockPrevNext} />
@@ -165,7 +164,6 @@ describe("PrevNext Component", () => {
         camera: { name: "differentcam", channels: [], title: "Different Cam" },
       }
 
-      const { setCameraBaseUrl } = require("../../modules/utils")
       setCameraBaseUrl.mockReturnValue({
         getEventUrl: jest.fn(
           (event) =>
@@ -533,7 +531,6 @@ describe("PrevNext Component", () => {
     })
 
     it("works with different camera names in context", () => {
-      const { setCameraBaseUrl } = require("../../modules/utils")
       const specialCameraContext = {
         ...mockContextValue,
         camera: { name: "special-camera", channels: [], title: "Special Cam" },

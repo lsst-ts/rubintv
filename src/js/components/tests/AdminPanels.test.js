@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import "@testing-library/jest-dom"
 import React from "react"
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
@@ -11,7 +12,7 @@ import AdminPanels, {
 } from "../AdminPanels"
 import { simplePost, simpleGet } from "../../modules/utils"
 
-/* global jest, describe, it, expect, beforeEach, beforeAll, afterEach */
+/* global jest, describe, it, expect, beforeEach, beforeAll, afterAll, afterEach */
 
 // Mock external dependencies
 jest.mock("../../modules/utils", () => ({
@@ -589,7 +590,7 @@ describe("AdminDangerPanel Component", () => {
   it("renders danger panel correctly", () => {
     render(<AdminDangerPanel {...defaultProps} />)
 
-    expect(screen.getAllByText("Clear Redis")).length > 0
+    expect(screen.getAllByText("Clear Redis").length).toBeGreaterThan(0)
     expect(
       screen.getByRole("button", { name: "Clear Redis" })
     ).toBeInTheDocument()

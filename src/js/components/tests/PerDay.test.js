@@ -1,11 +1,10 @@
 import "@testing-library/jest-dom"
 import React from "react"
-import { render, screen, fireEvent, act } from "@testing-library/react"
+import { render, screen, act } from "@testing-library/react"
 import PerDay from "../PerDay"
 import { getImageAssetUrl } from "../../modules/utils"
-import { homeUrl } from "../../config"
 
-/* global jest, describe, it, expect, beforeEach, beforeAll */
+/* global jest, describe, it, expect, beforeEach */
 
 // Mock external dependencies
 jest.mock("../../modules/utils", () => ({

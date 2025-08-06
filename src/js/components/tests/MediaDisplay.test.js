@@ -1,9 +1,15 @@
+/* eslint-disable react/prop-types */
 import "@testing-library/jest-dom"
 import React from "react"
 import { render, screen, act } from "@testing-library/react"
 import MediaDisplay from "../MediaDisplay"
+import {
+  getDocumentLocation,
+  getMediaType,
+  getMediaProxyUrl,
+} from "../../modules/utils"
 
-/* global jest, describe, it, expect, beforeEach, beforeAll, afterEach */
+/* global jest, describe, it, expect, beforeEach, afterEach */
 
 // Mock utility functions
 jest.mock("../../modules/utils", () => ({
@@ -24,7 +30,7 @@ jest.mock("../../modules/utils", () => ({
 
 // Mock Clock components
 jest.mock("../Clock", () => ({
-  TimeSinceLastImageClock: ({ camera, metadata }) => (
+  TimeSinceLastImageClock: ({ camera }) => (
     <div data-testid="time-since-clock">
       Mock TimeSinceLastImageClock - {camera.name}
     </div>
@@ -442,7 +448,6 @@ describe("OtherChannelLinks Component", () => {
   })
 
   it("builds correct URLs for current channel links", () => {
-    const { getDocumentLocation } = require("../../modules/utils")
     getDocumentLocation.mockReturnValue(
       "http://test.com/test-location/testcam/channel1/current"
     )
@@ -474,7 +479,6 @@ describe("OtherChannelLinks Component", () => {
   })
 
   it("builds correct URLs for query parameter links", () => {
-    const { getDocumentLocation } = require("../../modules/utils")
     getDocumentLocation.mockReturnValue(
       "http://test.com/page?channel_name=channel1&other=param"
     )
@@ -633,12 +637,6 @@ describe("OtherChannelLinks Component", () => {
 })
 
 describe("Media Event Bundling", () => {
-  const {
-    getMediaType,
-    getMediaProxyUrl,
-    getBaseFromEventUrl,
-  } = require("../../modules/utils")
-
   it("correctly bundles image events", () => {
     const imageEvent = {
       key: "test/key",

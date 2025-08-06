@@ -1,7 +1,9 @@
+import "@testing-library/jest-dom"
 import React from "react"
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
-import "@testing-library/jest-dom"
 import NightReport from "../NightReport"
+
+/* global jest, describe, it, expect, beforeEach, afterEach */
 
 // Mock localStorage
 const localStorageMock = {

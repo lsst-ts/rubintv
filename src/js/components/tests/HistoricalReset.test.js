@@ -5,7 +5,7 @@ import HistoricalReset from "../HistoricalReset"
 import { WebsocketClient } from "../../modules/ws-service-client"
 import { simplePost } from "../../modules/utils"
 
-/* global jest, describe, it, expect, beforeEach, beforeAll, afterEach */
+/* global jest, describe, it, expect, beforeEach */
 
 // Mock dependencies
 jest.mock("../../modules/ws-service-client", () => ({
@@ -418,7 +418,7 @@ describe("HistoricalReset Component", () => {
               detail: null, // Invalid detail
             })
           )
-        } catch (error) {
+        } catch {
           // Should not crash the component
         }
       })

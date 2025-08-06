@@ -236,29 +236,12 @@ const RubinCalendar = ({
         setDayObs(datestamp)
       }
       if (dataType === "latestMetadata" || dataType === "perDay") {
-        if (!data || Object.keys(data).length === 0) {
-          console.warn("No data received for calendar event", event.detail)
-          return
-        }
-        const [year, month, day] = datestamp
-          .split("-")
-          .map((x: string) => parseInt(x))
-        setCalendarData((prevCalendarData) => {
-          const newCalendar = { ...prevCalendarData }
-          if (!newCalendar[year]) {
-            newCalendar[year] = {}
-          }
-          if (!newCalendar[year][month]) {
-            newCalendar[year][month] = {}
-          }
-          if (noSeqNum) {
-            newCalendar[year][month][day] = 1
-          } else {
-            const seqNum = parseInt(Object.keys(data)[0])
-            newCalendar[year][month][day] = seqNum
-          }
-          return newCalendar
-        })
+        const updatedCalendarData = updateCalendarData(
+          calendarData,
+          datestamp,
+          data
+        )
+        setCalendarData(updatedCalendarData)
         setDayObs(datestamp)
       }
     }
@@ -309,6 +292,48 @@ const RubinCalendar = ({
       </div>
     </div>
   )
+}
+
+function updateCalendarData(
+  calendarData: CalendarData,
+  datestamp: string,
+  data: Record<string, any>
+): CalendarData {
+  if (!datestamp) return calendarData
+
+  const [yearStr, monthStr, dayStr] = datestamp.split("-")
+  const year = parseInt(yearStr, 10)
+  const month = parseInt(monthStr, 10)
+  const day = parseInt(dayStr, 10)
+
+  if (isNaN(year) || isNaN(month) || isNaN(day)) return calendarData
+
+  if (!data || typeof data !== "object" || Object.keys(data).length === 0) {
+    return calendarData
+  }
+
+  // Find the highest sequence number (as string, but compare numerically if possible)
+  let maxSeq: Number | string | null = null
+  Object.keys(data).forEach((seq) => {
+    if (
+      maxSeq === null ||
+      Number(seq) > Number(maxSeq) ||
+      (isNaN(Number(seq)) && seq > maxSeq)
+    ) {
+      maxSeq = seq
+    }
+  })
+  if (maxSeq === null) return calendarData
+
+  const newCalendarData = { ...calendarData }
+  if (!newCalendarData[year]) newCalendarData[year] = {}
+  if (!newCalendarData[year][month]) newCalendarData[year][month] = {}
+  newCalendarData[year][month] = { ...newCalendarData[year][month] }
+  newCalendarData[year][month][day] = isNaN(Number(maxSeq))
+    ? maxSeq
+    : Number(maxSeq)
+
+  return newCalendarData
 }
 
 export default RubinCalendar

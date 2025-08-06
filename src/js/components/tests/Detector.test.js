@@ -1,3 +1,5 @@
+/* eslint-disable react/prop-types */
+/* global global */
 import "@testing-library/jest-dom"
 import React from "react"
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
@@ -7,6 +9,7 @@ import DetectorStatusVisualization, {
   Cell,
   ResetButton,
   OtherQueuesSection,
+  DetectorCanvas,
 } from "../Detector"
 import { simplePost } from "../../modules/utils"
 import { ModalProvider } from "../Modal"
@@ -18,9 +21,8 @@ import {
 } from "../../modules/detectorUtils"
 import { RedisEndpointContext } from "../componentTypes"
 import "jest-canvas-mock"
-import { mock } from "node:test"
 
-/* global jest, describe, it, expect, beforeEach, beforeAll, afterEach */
+/* global jest, describe, it, expect, beforeEach, beforeAll */
 
 // Mock external dependencies
 jest.mock("../../modules/utils", () => ({
@@ -313,9 +315,6 @@ describe("Detector Components", () => {
   })
 
   describe("DetectorCanvas Component", () => {
-    // Import the actual DetectorCanvas component
-    const { DetectorCanvas } = require("../Detector")
-
     it("renders canvas element and draws on it", async () => {
       const mockStatuses = {
         workers: { 0: { status: "free", queue_length: 0 } },

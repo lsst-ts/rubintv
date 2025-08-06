@@ -1,11 +1,13 @@
+/* global global*/
 import "@testing-library/jest-dom"
 import React from "react"
 import { render, screen, fireEvent } from "@testing-library/react"
 import AboveTableRow, { JumpButtons } from "../TableControls"
 import { RubinTVTableContext } from "../componentTypes"
 import { saveColumnSelection } from "../../modules/columnStorage"
+import { _getById } from "../../modules/utils"
 
-/* global jest, describe, it, expect, beforeEach, beforeAll, afterEach */
+/* global jest, describe, it, expect, beforeEach, beforeAll, afterAll */
 
 // Mock the column storage module
 jest.mock("../../modules/columnStorage", () => ({
@@ -473,7 +475,6 @@ describe("JumpButtons Component", () => {
   }
 
   beforeAll(() => {
-    const { _getById } = require("../../modules/utils")
     _getById.mockReturnValue(mockTable)
   })
 

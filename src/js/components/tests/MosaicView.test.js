@@ -2,9 +2,9 @@ import "@testing-library/jest-dom"
 import React from "react"
 import { render, screen, fireEvent, act, waitFor } from "@testing-library/react"
 import MosaicView from "../MosaicView"
-import { _getById, getStrHashCode } from "../../modules/utils"
+import { _getById } from "../../modules/utils"
 
-/* global jest, describe, it, expect, beforeEach, beforeAll, afterEach */
+/* global jest, describe, it, expect, beforeEach, afterEach */
 
 // Mock utility functions
 jest.mock("../../modules/utils", () => ({
@@ -981,9 +981,7 @@ describe("MosaicView Component", () => {
       }
       _getById.mockReturnValue(mockVideo)
 
-      const { container } = render(
-        <MosaicView locationName="test-location" camera={mockCamera} />
-      )
+      render(<MosaicView locationName="test-location" camera={mockCamera} />)
 
       // Send video event
       const videoEvent = {

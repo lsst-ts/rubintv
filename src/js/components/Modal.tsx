@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  createContext,
-  useContext,
-  useRef,
-} from "react"
+import React, { useState, useEffect, createContext, useContext } from "react"
 import { createPortal } from "react-dom"
 
 interface ModalContextType {

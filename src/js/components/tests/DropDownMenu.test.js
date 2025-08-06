@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom"
 import React from "react"
-import { render, screen, fireEvent, act } from "@testing-library/react"
+import { render, screen, fireEvent } from "@testing-library/react"
 import DropDownMenu from "../DropDownMenu"
 
 /* global jest, describe, it, expect, beforeEach, afterEach */
