@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { CalendarData, Camera } from "./componentTypes"
-import Calendar from "calendar"
+import * as Calendar from "calendar"
 import { monthNames, ymdToDateStr } from "../modules/utils"
 import { homeUrl } from "../config"
 
@@ -329,9 +329,10 @@ function updateCalendarData(
   if (!newCalendarData[year]) newCalendarData[year] = {}
   if (!newCalendarData[year][month]) newCalendarData[year][month] = {}
   newCalendarData[year][month] = { ...newCalendarData[year][month] }
-  newCalendarData[year][month][day] = isNaN(Number(maxSeq))
-    ? maxSeq
-    : Number(maxSeq)
+
+  // Always convert to number for CalendarData interface compliance
+  const seqAsNumber = Number(maxSeq)
+  newCalendarData[year][month][day] = isNaN(seqAsNumber) ? 0 : seqAsNumber
 
   return newCalendarData
 }

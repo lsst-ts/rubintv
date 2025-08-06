@@ -11,8 +11,7 @@
     "dev-build": "webpack --progress --mode development",
     "watch": "webpack --watch --progress --mode development",
     "test": "jest",
-    "prepare": "husky",
-    "check:precommit": "lint-staged"
+    "prepare": "husky"
   },
   "author": "ugyballoons",
   "license": "ISC",
@@ -86,7 +85,7 @@
     "*.{js,jsx,ts,tsx}": [
       "prettier --write",
       "eslint --fix",
-      "tsc --noEmit",
+      "tsc --noEmit --skipLibCheck --jsx react --esModuleInterop --allowSyntheticDefaultImports",
       "jest --findRelatedTests --passWithNoTests"
     ],
     "*.{html,css,less,ejs,json}": [
