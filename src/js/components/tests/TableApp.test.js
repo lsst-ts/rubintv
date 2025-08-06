@@ -509,7 +509,7 @@ describe("TableApp Loading and Historical Data Behavior", () => {
     expect(tableHeader).toBeInTheDocument()
   })
 
-  it.only("shows the correct date in the header", () => {
+  it("shows the correct date in the header", () => {
     render(
       <TableApp
         camera={camera}
