@@ -297,7 +297,7 @@ const RubinCalendar = ({
 function updateCalendarData(
   calendarData: CalendarData,
   datestamp: string,
-  data: Record<string, any>
+  data: Record<string, unknown>
 ): CalendarData {
   if (!datestamp) return calendarData
 
@@ -313,7 +313,7 @@ function updateCalendarData(
   }
 
   // Find the highest sequence number (as string, but compare numerically if possible)
-  let maxSeq: Number | string | null = null
+  let maxSeq: number | string | null = null
   Object.keys(data).forEach((seq) => {
     if (
       maxSeq === null ||

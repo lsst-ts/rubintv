@@ -32,7 +32,9 @@
     "css-loader": "^7.1.2",
     "css-minimizer-webpack-plugin": "^7.0.2",
     "eslint": "^9.29.0",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-promise": "^7.2.1",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^16.2.0",
@@ -44,6 +46,8 @@
     "jest-fetch-mock": "^3.0.3",
     "mini-css-extract-plugin": "^2.9.2",
     "postcss-loader": "^8.1.1",
+    "prettier": "^3.6.2",
+    "prettier-eslint": "^17.0.0-alpha.1",
     "sass": "^1.89.2",
     "sass-loader": "^16.0.5",
     "ts-loader": "^9.5.2",
@@ -60,12 +64,6 @@
     "react-dom": "^19.1.0",
     "reconnecting-websocket": "^4.4.0",
     "uuid": "^11.1.0"
-  },
-  "prettier": {
-    "trailingComma": "es5",
-    "tabWidth": 2,
-    "semi": false,
-    "singleQuote": false
   },
   "jest": {
     "setupFiles": [

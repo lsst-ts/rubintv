@@ -142,13 +142,16 @@ function TableRow({
   // Entries in metadata keyed `"@{channel_name}"` will have their
   // values show up in the table instead of a blank space.
   const noEventReplacements = (() => {
-    const replacements = channels.reduce((obj, chan) => {
-      const chanReplace = metadataRow["@" + chan.name] as string | undefined
-      if (chanReplace != null) {
-        obj[chan.name] = chanReplace
-      }
-      return obj
-    }, {} as Record<string, string>)
+    const replacements = channels.reduce(
+      (obj, chan) => {
+        const chanReplace = metadataRow["@" + chan.name] as string | undefined
+        if (chanReplace != null) {
+          obj[chan.name] = chanReplace
+        }
+        return obj
+      },
+      {} as Record<string, string>
+    )
     // Only return if there is at least one replacement
     return Object.keys(replacements).length > 0 ? replacements : undefined
   })()

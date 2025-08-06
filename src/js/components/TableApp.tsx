@@ -55,7 +55,7 @@ export default function TableApp({
           ({
             name,
             desc,
-          } as MetadataColumn)
+          }) as MetadataColumn
       )
     : []
   const defaultColNames = defaultColumns.map((col) => col.name)
