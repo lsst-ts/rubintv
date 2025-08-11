@@ -9,7 +9,7 @@
 # to build the image using conda.
 # TODO: DM-43222.
 
-FROM python:3.13.4-slim-bookworm
+FROM python:3.13.6-slim-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 
