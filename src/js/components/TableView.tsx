@@ -185,6 +185,7 @@ function TableRow({
             onClick={(e) => {
               handleCopyButton(dayObs, seqNum, camera.copy_row_template!, e)
             }}
+            aria-label="Copy to clipboard"
           ></button>
         </td>
       )}
@@ -196,6 +197,7 @@ function TableRow({
               controller: controller,
             })}
             className="button button-table image-viewer-link"
+            aria-label="Open image viewer"
           />
         </td>
       )}
