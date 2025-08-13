@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom"
 import React from "react"
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import NightReport from "../NightReport"
 
 /* global jest, describe, it, expect, beforeEach, afterEach */
@@ -121,7 +121,9 @@ describe("NightReport", () => {
       render(<NightReport {...defaultProps} />)
 
       const weatherTab = screen.getByText("Weather")
-      fireEvent.click(weatherTab)
+      act(() => {
+        fireEvent.click(weatherTab)
+      })
 
       expect(weatherTab).toHaveClass("selected")
       expect(localStorageMock.setItem).toHaveBeenCalledWith(
@@ -309,7 +311,9 @@ describe("NightReport", () => {
         },
       })
 
-      window.dispatchEvent(event)
+      await act(async () => {
+        window.dispatchEvent(event)
+      })
 
       await waitFor(() => {
         expect(
@@ -330,7 +334,9 @@ describe("NightReport", () => {
         },
       })
 
-      window.dispatchEvent(event)
+      act(() => {
+        window.dispatchEvent(event)
+      })
 
       // Should still show original content
       expect(screen.getByText("Efficiency")).toBeInTheDocument()

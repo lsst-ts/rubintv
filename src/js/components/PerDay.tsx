@@ -145,8 +145,7 @@ function PerDayChannels({
               )
             })}
           {!isHistorical &&
-            camera.extra_buttons &&
-            camera.extra_buttons.map(
+            camera.extra_buttons?.map(
               ({ name, title, linkURL, logo, text_colour, text_shadow }) => {
                 const logoURL = getImageAssetUrl(`logos/${logo}`)
                 return (

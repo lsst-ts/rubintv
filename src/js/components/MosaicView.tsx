@@ -174,7 +174,7 @@ function ChannelMedia({
   event: ExposureEvent | undefined
   mediaType: MediaType
 }) {
-  if (!event || !event.filename) return <ChannelMediaPlaceholder />
+  if (!event?.filename) return <ChannelMediaPlaceholder />
   const mediaURL = buildMediaURI(
     locationName,
     camera.name,
@@ -245,11 +245,7 @@ function ChannelMetadata({
   metadata: Record<string, Record<string, string>>
 }) {
   const { channel, metaColumns: viewColumns, latestEvent } = view
-  if (
-    viewColumns.length == 0 ||
-    !latestEvent ||
-    latestEvent.seq_num === undefined
-  ) {
+  if (viewColumns.length == 0 || latestEvent?.seq_num === undefined) {
     return
   }
   const columns = [...commonColumns, ...viewColumns]

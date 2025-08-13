@@ -214,24 +214,21 @@ export function AdminSendRedisValue({
   requiresConfirmation = false,
 }: AdminSendRedisValueProps) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
-  let showModal: ((content: React.ReactNode) => void) | null = null
+  const { showModal } = useModal()
 
   const handleConfirmSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (showModal)
-      showModal(
-        <ConfirmationModal
-          title={title}
-          message={`Are you sure you want to send value "${valueToSend}" to key "${keyToSend}"?`}
-          onConfirm={() => {
-            handleSubmit(e)
-            if (showModal) {
-              showModal(null)
-            }
-          }}
-          onCancel={() => showModal && showModal(null)}
-        />
-      )
+    showModal(
+      <ConfirmationModal
+        title={title}
+        message={`Are you sure you want to send value "${valueToSend}" to key "${keyToSend}"?`}
+        onConfirm={() => {
+          handleSubmit(e)
+          showModal(null)
+        }}
+        onCancel={() => showModal(null)}
+      />
+    )
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -249,10 +246,6 @@ export function AdminSendRedisValue({
         updateRedisStatus("false")
         console.error("Error posting to redis:", error)
       })
-  }
-
-  if (requiresConfirmation) {
-    ;({ showModal } = useModal())
   }
 
   const handleClick = requiresConfirmation ? handleConfirmSubmit : handleSubmit

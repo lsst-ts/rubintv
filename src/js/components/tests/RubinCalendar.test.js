@@ -1117,10 +1117,6 @@ describe("RubinCalendar Component", () => {
       // Track initial link count
       const initialLinks = screen.getAllByRole("link")
       const initialCount = initialLinks.length
-      console.log(
-        "Initial link count:",
-        initialLinks.map((el) => el.textContent.trim())
-      )
 
       // Add data to multiple days
       act(() => {

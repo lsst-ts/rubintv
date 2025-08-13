@@ -132,7 +132,9 @@ const ResetButton = ({ redisKey }: { redisKey: string }) => {
       <ConfirmationModal
         title="Confirm Reset"
         message="Are you sure you want to restart these workers?"
-        onConfirm={handleReset}
+        onConfirm={() => {
+          void handleReset()
+        }}
         onCancel={closeModal}
       />
     )
@@ -372,7 +374,7 @@ const Step1bSection = ({
   redisKey,
 }: {
   title: string
-  statuses: StatusSet["sfmStep1b"] | StatusSet["aosStep1b"]
+  statuses: StatusSet["sfmStep1b"]
   redisKey: string
 }) => {
   return (
@@ -462,8 +464,7 @@ const DetectorCanvas = memo(
       ctx.lineWidth = 1 * dpr
 
       Object.entries(detectorMap).forEach(([id, detector]) => {
-        const status = (detectorStatuses.workers &&
-          (detectorStatuses.workers[id] as WorkerStatus)) || {
+        const status = detectorStatuses.workers?.[id] || {
           status: "unknown",
           queue_length: 0,
         }

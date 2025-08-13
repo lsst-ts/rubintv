@@ -31,7 +31,7 @@ import { Camera, NightReportType } from "js/components/componentTypes"
   tableRoot.render(
     <NightReport
       initialNightReport={nightReport}
-      camera={camera as Camera}
+      camera={camera}
       locationName={locationName}
       initialDate={date}
       homeUrl={homeUrl}

@@ -274,17 +274,13 @@ function NightReport({
         />
         <NightReportText
           tab={
-            selectedTab && selectedTab.type === "text"
-              ? (selectedTab as TextTabType)
-              : undefined
+            selectedTab && selectedTab.type === "text" ? selectedTab : undefined
           }
           selected={selected}
         />
         <NightReportPlots
           tab={
-            selectedTab && selectedTab.type === "plot"
-              ? (selectedTab as PlotTabType)
-              : undefined
+            selectedTab && selectedTab.type === "plot" ? selectedTab : undefined
           }
           selected={selected}
           camera={camera}
