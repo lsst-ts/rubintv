@@ -78,6 +78,9 @@ afterAll(() => {
 })
 
 describe("AdminPanels Component", () => {
+  // These tests trigger a "An update to AdminSendRedisValue
+  // inside a test was not wrapped in act(...)" warning.
+  // This is expected.
   const mockMenus = [
     {
       key: "TEST_KEY",

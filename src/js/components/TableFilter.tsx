@@ -1,5 +1,4 @@
 import React, { KeyboardEvent, useEffect, useRef } from "react"
-import PropTypes from "prop-types"
 import { useModal } from "./Modal"
 import { FilterOptions } from "./componentTypes"
 
@@ -65,11 +64,4 @@ export function FilterDialog({
       <button onClick={handleClear}>Clear</button>
     </>
   )
-}
-FilterDialog.propTypes = {
-  column: PropTypes.string,
-  setFilterOn: PropTypes.func,
-  filterOn: PropTypes.object,
-  filteredRowsCount: PropTypes.number,
-  unfilteredRowsCount: PropTypes.number,
 }
