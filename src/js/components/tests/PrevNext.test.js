@@ -195,7 +195,7 @@ describe("PrevNext Component", () => {
       const prevLink = screen.getByText("12344")
       const clickSpy = jest.spyOn(prevLink, "click")
 
-      fireEvent.keyDown(document, { key: "Left" })
+      fireEvent.keyDown(document, { key: "ArrowLeft" })
 
       expect(clickSpy).toHaveBeenCalledTimes(1)
       clickSpy.mockRestore()
@@ -211,7 +211,7 @@ describe("PrevNext Component", () => {
       const nextLink = screen.getByText("12346")
       const clickSpy = jest.spyOn(nextLink, "click")
 
-      fireEvent.keyDown(document, { key: "Right" })
+      fireEvent.keyDown(document, { key: "ArrowRight" })
 
       expect(clickSpy).toHaveBeenCalledTimes(1)
       clickSpy.mockRestore()
@@ -280,8 +280,8 @@ describe("PrevNext Component", () => {
       const nextClickSpy = jest.spyOn(nextLink, "click")
 
       // Test with different key representations
-      fireEvent.keyDown(document, { key: "ArrowLeft" })
-      fireEvent.keyDown(document, { key: "ArrowRight" })
+      fireEvent.keyDown(document, { key: "Left" })
+      fireEvent.keyDown(document, { key: "Right" })
 
       // These should not trigger navigation (only "Left" and "Right" strings)
       expect(prevClickSpy).not.toHaveBeenCalled()
@@ -678,10 +678,10 @@ describe("PrevNext Component", () => {
       const prevClickSpy = jest.spyOn(prevLink, "click")
       const nextClickSpy = jest.spyOn(nextLink, "click")
 
-      fireEvent.keyDown(document, { key: "Left" })
+      fireEvent.keyDown(document, { key: "ArrowLeft" })
       expect(prevClickSpy).toHaveBeenCalledTimes(1)
 
-      fireEvent.keyDown(document, { key: "Right" })
+      fireEvent.keyDown(document, { key: "ArrowRight" })
       expect(nextClickSpy).toHaveBeenCalledTimes(1)
 
       prevClickSpy.mockRestore()
@@ -710,10 +710,10 @@ describe("PrevNext Component", () => {
       const newPrevClickSpy = jest.spyOn(newPrevLink, "click")
       const newNextClickSpy = jest.spyOn(newNextLink, "click")
 
-      fireEvent.keyDown(document, { key: "Left" })
+      fireEvent.keyDown(document, { key: "ArrowLeft" })
       expect(newPrevClickSpy).toHaveBeenCalledTimes(1)
 
-      fireEvent.keyDown(document, { key: "Right" })
+      fireEvent.keyDown(document, { key: "ArrowRight" })
       expect(newNextClickSpy).toHaveBeenCalledTimes(1)
 
       newPrevClickSpy.mockRestore()

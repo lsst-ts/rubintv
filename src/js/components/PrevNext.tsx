@@ -9,9 +9,6 @@ export default function PrevNext({
   initialPrevNext: PrevNextType
 }) {
   const [prevNext, setPrevNext] = useState(initialPrevNext)
-  if (!prevNext) {
-    return null
-  }
   const { locationName, camera } = useContext(
     RubinTVTableContext
   ) as RubinTVContextType
@@ -20,10 +17,10 @@ export default function PrevNext({
   const right = useRef<HTMLAnchorElement>(null)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key == "Right") {
+      if (e.key == "ArrowRight") {
         right.current?.click()
       }
-      if (e.key == "Left") {
+      if (e.key == "ArrowLeft") {
         left.current?.click()
       }
     }
@@ -55,6 +52,9 @@ export default function PrevNext({
     }
   }, [])
 
+  if (!prevNext) {
+    return null
+  }
   const prev = prevNext.prev
   const next = prevNext.next
 

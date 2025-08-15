@@ -11,15 +11,15 @@ export default [
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
       parser: typescriptParser,
+      ecmaVersion: 2022,
+      sourceType: "module",
       parserOptions: {
-        ecmaVersion: 2022,
-        sourceType: "module",
-        ecmaFeatures: {
-          jsx: true,
-        },
         // Enable type-aware linting (same as VS Code TypeScript service)
         project: ["./tsconfig.json"],
         tsconfigRootDir: import.meta.dirname,
+        ecmaFeatures: {
+          jsx: true,
+        },
       },
       globals: {
         window: "readonly",
@@ -91,8 +91,10 @@ export default [
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "module",
-      ecmaFeatures: {
-        jsx: true,
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
       },
       globals: {
         window: "readonly",
@@ -100,12 +102,7 @@ export default [
         console: "readonly",
         setTimeout: "readonly",
         clearTimeout: "readonly",
-        jest: "readonly",
-        describe: "readonly",
-        it: "readonly",
-        expect: "readonly",
-        beforeEach: "readonly",
-        afterEach: "readonly",
+        CustomEvent: "readonly",
       },
     },
     plugins: {
