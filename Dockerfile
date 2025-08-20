@@ -46,8 +46,10 @@ USER rubintv
 RUN git clone https://github.com/flutter/flutter.git /home/rubintv/flutter
 ENV PATH="/home/rubintv/flutter/bin:/home/rubintv/flutter/bin/cache/dart-sdk/bin:${PATH}"
 RUN flutter doctor && \
-    flutter channel master && \
-    flutter upgrade
+    dart pub global activate fvm
+
+# Add fvm to PATH
+ENV PATH="/home/rubintv/.pub-cache/bin:${PATH}"
 
 # Create a virtual environment
 RUN python -m venv venv
