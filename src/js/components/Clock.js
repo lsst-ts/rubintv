@@ -101,9 +101,8 @@ export function TimeSinceLastImageClock(props) {
   if (!row) {
     return
   }
-  const toSum = ["Date begin", "Exposure time"]
   let error, timeElapsed
-  if (!toSum.every((col) => row.hasOwnProperty(col))) {
+  if (!row.hasOwnProperty("Date begin")) {
     error = "Can't ascertain..."
   } else {
     let UTCDateString = row["Date begin"]
@@ -111,7 +110,7 @@ export function TimeSinceLastImageClock(props) {
       UTCDateString += "Z"
     }
     const startTime = Date.parse(UTCDateString)
-    const exposureTime = row["Exposure time"] * 1000
+    const exposureTime = Number(row["Exposure time"] || 0) * 1000
     const endTime = startTime + exposureTime
     timeElapsed = time - endTime + TAIDIFF
   }
