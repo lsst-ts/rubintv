@@ -191,12 +191,17 @@ cameras:
       - name: zk_measurement_pyramid
         title: Zernike Measurement Pyramid
         colour: "#876f45"
+        text_colour: "#fff"
       - name: focus_sweep
         title: Focus Sweep
         colour: "#965d82"
+        text_colour: "#fff"
       - name: psf_zk_panel
         title: AOS residual FWHM
         colour: "#d27549"
+      - name: donut_fits
+        title: Donut Fits
+        colour: "#f0a500"
 
   - name: lsstcam_guider
     title: LSSTCam guider
