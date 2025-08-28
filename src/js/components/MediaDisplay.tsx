@@ -110,6 +110,8 @@ export default function MediaDisplay({
             id="eventVideo"
             src={mediaEvent.src}
             controls
+            loop
+            autoPlay
           />
         ) : (
           <img className="resp" id="eventImage" src={mediaEvent.src} />
