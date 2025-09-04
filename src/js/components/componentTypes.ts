@@ -1,3 +1,4 @@
+import React from "react"
 import * as Calendar from "calendar"
 
 /** A single item of metadata is either a string, number or nested object of
@@ -1116,4 +1117,14 @@ export interface CalendarYearProps {
   cameraUrl: string
   noSeqNum: boolean
   dayObs?: string | null
+}
+
+/**
+ * @description Context type for managing modal content in the application.
+ * @param {React.ReactNode | null} modalContent - Current modal content or null if none.
+ * @param {(content: React.ReactNode | null) => void} setModalContent - Function to update modal content.
+ */
+export interface ModalContextType {
+  modalContent: React.ReactNode | null
+  setModalContent: (content: React.ReactNode | null) => void
 }

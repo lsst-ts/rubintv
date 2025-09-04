@@ -3,13 +3,13 @@ import "@testing-library/jest-dom"
 import React from "react"
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import DetectorStatusVisualization, {
-  useRedisEndpoint,
   Cells,
   Cell,
   ResetButton,
   OtherQueuesSection,
   DetectorCanvas,
 } from "../Detector"
+
 import { simplePost } from "../../modules/utils"
 import { ModalProvider } from "../Modal"
 import {
@@ -18,7 +18,7 @@ import {
   getStatusColor,
   createPlaceholders,
 } from "../../modules/detectorUtils"
-import { RedisEndpointContext } from "../contexts/contexts"
+import { RedisEndpointContext, useRedisEndpoint } from "../contexts/contexts"
 import "jest-canvas-mock"
 
 /* global jest, describe, it, expect, beforeEach, beforeAll */
@@ -48,10 +48,6 @@ jest.mock("../Modal", () => ({
   ModalProvider: ({ children }) => (
     <div data-testid="modal-provider">{children}</div>
   ),
-  useModal: () => ({
-    showModal: mockShowModal,
-    closeModal: mockCloseModal,
-  }),
   ConfirmationModal: ({ title, message, onConfirm, onCancel }) => (
     <div data-testid="confirmation-modal">
       <h2>{title}</h2>
@@ -60,6 +56,14 @@ jest.mock("../Modal", () => ({
       <button onClick={onCancel}>Cancel</button>
     </div>
   ),
+}))
+
+jest.mock("../../hooks/useModal", () => ({
+  useModal: () => ({
+    modalContent: null,
+    showModal: mockShowModal,
+    closeModal: mockCloseModal,
+  }),
 }))
 
 // Mock detector maps
@@ -130,11 +134,15 @@ describe("Detector Components", () => {
   describe("DetectorStatusVisualization", () => {
     it("renders the main detector visualization with legend and sections", () => {
       render(
-        <DetectorStatusVisualization
-          detectorKeys={mockDetectorKeys}
-          redisEndpointUrl="http://test.com"
-          admin={true}
-        />
+        <RedisEndpointContext.Provider
+          value={{ url: "http://test.com", admin: true }}
+        >
+          <DetectorStatusVisualization
+            detectorKeys={mockDetectorKeys}
+            redisEndpointUrl="http://test.com"
+            admin={true}
+          />
+        </RedisEndpointContext.Provider>
       )
 
       expect(screen.getByText("Free")).toBeInTheDocument()
@@ -147,11 +155,15 @@ describe("Detector Components", () => {
 
     it("handles detector status events correctly", async () => {
       render(
-        <DetectorStatusVisualization
-          detectorKeys={mockDetectorKeys}
-          redisEndpointUrl="http://test.com"
-          admin={true}
-        />
+        <RedisEndpointContext.Provider
+          value={{ url: "http://test.com", admin: true }}
+        >
+          <DetectorStatusVisualization
+            detectorKeys={mockDetectorKeys}
+            redisEndpointUrl="http://test.com"
+            admin={true}
+          />
+        </RedisEndpointContext.Provider>
       )
 
       const mockEventData = {
@@ -181,11 +193,15 @@ describe("Detector Components", () => {
       const consoleSpy = jest.spyOn(console, "log").mockImplementation()
 
       render(
-        <DetectorStatusVisualization
-          detectorKeys={mockDetectorKeys}
-          redisEndpointUrl="http://test.com"
-          admin={true}
-        />
+        <RedisEndpointContext.Provider
+          value={{ url: "http://test.com", admin: true }}
+        >
+          <DetectorStatusVisualization
+            detectorKeys={mockDetectorKeys}
+            redisEndpointUrl="http://test.com"
+            admin={true}
+          />
+        </RedisEndpointContext.Provider>
       )
 
       const event = new CustomEvent("detectors", {
@@ -439,7 +455,6 @@ describe("Detector Components", () => {
 
     it("throws error when used outside provider", () => {
       const consoleSpy = jest.spyOn(console, "error").mockImplementation()
-
       expect(() => render(<TestComponent />)).toThrow(
         "useRedisEndpoint must be used within a RedisEndpointProvider"
       )

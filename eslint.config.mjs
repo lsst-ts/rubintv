@@ -38,6 +38,17 @@ export default [
         "warn",
         { allowConstantExport: true },
       ],
+      // Allow unused parameters in function signatures (interfaces)
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          args: "after-used",
+        },
+      ],
+      // Turn off the base rule to avoid conflicts
+      "no-unused-vars": "off",
     },
     settings: {
       react: {

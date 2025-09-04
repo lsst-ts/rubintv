@@ -8,7 +8,7 @@ import { RubinTVTableContext } from "../contexts/contexts"
 
 // Mock the Modal hook
 const mockShowModal = jest.fn()
-jest.mock("../Modal", () => ({
+jest.mock("../../hooks/useModal", () => ({
   useModal: () => ({ showModal: mockShowModal }),
 }))
 

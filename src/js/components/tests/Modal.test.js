@@ -1,7 +1,8 @@
 import React from "react"
 import { render, screen, fireEvent, act } from "@testing-library/react"
 import "@testing-library/jest-dom"
-import { ModalProvider, useModal, ConfirmationModal } from "../Modal"
+import { ModalProvider, ConfirmationModal } from "../Modal"
+import { useModal } from "../../hooks/useModal"
 
 /* global jest, describe, it, expect, beforeEach, afterEach */
 

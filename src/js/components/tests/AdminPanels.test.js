@@ -39,16 +39,12 @@ jest.mock("../DropDownMenu", () => ({
 }))
 
 const mockShowModal = jest.fn()
-const mockCloseModal = jest.fn()
 
 jest.mock("../Modal", () => ({
   ModalProvider: ({ children }) => (
     <div data-testid="modal-provider">{children}</div>
   ),
-  useModal: () => ({
-    showModal: mockShowModal,
-    closeModal: mockCloseModal,
-  }),
+
   ConfirmationModal: ({ title, message, onConfirm, onCancel }) => (
     <div data-testid="confirmation-modal">
       <h2>{title}</h2>
@@ -61,6 +57,13 @@ jest.mock("../Modal", () => ({
       </button>
     </div>
   ),
+}))
+
+jest.mock("../../hooks/useModal", () => ({
+  useModal: () => ({
+    modalContent: null,
+    showModal: mockShowModal,
+  }),
 }))
 
 // Mock timers for auto-clearing status
