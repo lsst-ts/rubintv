@@ -38,8 +38,6 @@ jest.mock("../DropDownMenu", () => ({
   ),
 }))
 
-const mockShowModal = jest.fn()
-
 jest.mock("../Modal", () => ({
   ModalProvider: ({ children }) => (
     <div data-testid="modal-provider">{children}</div>
@@ -58,6 +56,8 @@ jest.mock("../Modal", () => ({
     </div>
   ),
 }))
+
+const mockShowModal = jest.fn()
 
 jest.mock("../../hooks/useModal", () => ({
   useModal: () => ({

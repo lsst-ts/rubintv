@@ -41,9 +41,6 @@ jest.mock("../../modules/detectorUtils", () => ({
   }),
 }))
 
-const mockShowModal = jest.fn()
-const mockCloseModal = jest.fn()
-
 jest.mock("../Modal", () => ({
   ModalProvider: ({ children }) => (
     <div data-testid="modal-provider">{children}</div>
@@ -58,12 +55,17 @@ jest.mock("../Modal", () => ({
   ),
 }))
 
+const mockShowModal = jest.fn()
+const mockCloseModal = jest.fn()
+
+const mockUseModal = jest.fn(() => ({
+  modalContent: null,
+  showModal: mockShowModal,
+  closeModal: mockCloseModal,
+}))
+
 jest.mock("../../hooks/useModal", () => ({
-  useModal: () => ({
-    modalContent: null,
-    showModal: mockShowModal,
-    closeModal: mockCloseModal,
-  }),
+  useModal: (...args) => mockUseModal(...args),
 }))
 
 // Mock detector maps
@@ -127,8 +129,6 @@ describe("Detector Components", () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    mockShowModal.mockClear()
-    mockCloseModal.mockClear()
   })
 
   describe("DetectorStatusVisualization", () => {
@@ -283,18 +283,63 @@ describe("Detector Components", () => {
       const mockSimplePost = simplePost
       mockSimplePost.mockResolvedValue(true)
 
-      render(
+      // Create a mock confirmation modal that actually renders and can be interacted with
+      let modalContent = null
+      const testShowModal = jest.fn((content) => {
+        modalContent = content
+      })
+      const testCloseModal = jest.fn(() => {
+        modalContent = null
+      })
+
+      // Override the mock for this test
+      mockUseModal.mockReturnValue({
+        modalContent,
+        showModal: testShowModal,
+        closeModal: testCloseModal,
+      })
+
+      const { rerender } = render(
         <ModalProvider>
           <RedisEndpointContext.Provider
             value={{ url: "http://test.com", admin: true }}
           >
             <ResetButton redisKey="CLUSTER_STATUS_TEST" />
+            {/* Render the modal content if it exists */}
+            {modalContent}
           </RedisEndpointContext.Provider>
         </ModalProvider>
       )
 
+      // Click reset button
       fireEvent.click(screen.getByText(/restart workers/i))
-      expect(mockShowModal).toHaveBeenCalled()
+
+      // Verify modal was shown
+      expect(testShowModal).toHaveBeenCalled()
+
+      // Re-render to show the modal content
+      rerender(
+        <ModalProvider>
+          <RedisEndpointContext.Provider
+            value={{ url: "http://test.com", admin: true }}
+          >
+            <ResetButton redisKey="CLUSTER_STATUS_TEST" />
+            {modalContent}
+          </RedisEndpointContext.Provider>
+        </ModalProvider>
+      )
+
+      // Find and click the confirm button in the modal
+      const confirmButton = screen.getByText("Confirm")
+      fireEvent.click(confirmButton)
+
+      // Wait for the API call to be made
+      await waitFor(() => {
+        expect(mockSimplePost).toHaveBeenCalledWith("http://test.com", {
+          key: "RUBINTV_CONTROL_RESET_TEST",
+          value: "reset",
+        })
+      })
     })
   })
 
