@@ -1,9 +1,10 @@
-import React, { useContext, memo } from "react"
+import React, { memo } from "react"
 import { useState, useEffect, useRef } from "react"
 import detectorMap from "../data/detectorMap.json"
 import cwfsMap from "../data/cwfsMap.json"
 import { simplePost } from "../modules/utils"
-import { ModalProvider, useModal, ConfirmationModal } from "./Modal"
+import { ModalProvider, ConfirmationModal } from "./Modal"
+import { useModal } from "../hooks/useModal"
 import {
   WorkerGroup,
   WorkerStatus,
@@ -13,7 +14,7 @@ import {
   DetectorCanvasProps,
   DetectorStatusVisualizationProps,
 } from "./componentTypes"
-import { RedisEndpointContext } from "./contexts/contexts"
+import { RedisEndpointContext, useRedisEndpoint } from "./contexts/contexts"
 import {
   RESET_PREFIX,
   getStatusClass,
@@ -24,16 +25,6 @@ import {
 type EL = EventListener
 
 export { DetectorCanvas, Cell, ResetButton, OtherQueuesSection, Cells }
-
-export const useRedisEndpoint = () => {
-  const context = useContext(RedisEndpointContext)
-  if (context === null) {
-    throw new Error(
-      "useRedisEndpoint must be used within a RedisEndpointProvider"
-    )
-  }
-  return context
-}
 
 const DetectorSection = ({
   title,

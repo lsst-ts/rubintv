@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react"
 import DropDownMenu from "./DropDownMenu"
-import { useModal, ConfirmationModal, ModalProvider } from "./Modal"
+import { ConfirmationModal, ModalProvider } from "./Modal"
+import { useModal } from "../hooks/useModal"
 import { simplePost, simpleGet, sanitiseRedisValue } from "../modules/utils"
 import { Menu } from "./DropDownMenu"
 

@@ -95,7 +95,7 @@ function NightReportTabs({ tabs, selected, setSelected }: NightReportTabProps) {
     return () => {
       document.body.removeEventListener("keydown", keyPress)
     }
-  }, [typed, hiddenTabs])
+  }, [typed, hiddenTabs, setSelected])
 
   const handleSelectionChange = (tabId: string) => {
     setSelected((prevSelected) => {
