@@ -10,7 +10,7 @@ export interface AdminInfo {
   name?: string
 }
 
-interface AdminPanelProps {
+interface AdminPanelsProps {
   initMenus: Menu[]
   initAdmin: AdminInfo
   redisEndpointUrl: string
