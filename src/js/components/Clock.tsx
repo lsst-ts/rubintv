@@ -125,7 +125,7 @@ export function TimeSinceLastImageClock({
               <span>Can&#39;t ascertain...</span>
             </p>
           )}
-          {!isOnline && <p>Lost comms with app</p>}
+          {!isOnline && <p>Lost communication with app</p>}
         </div>
       </div>
     )
