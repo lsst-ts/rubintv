@@ -1,70 +1,12 @@
 import React, { useState, useEffect } from "react"
 import { homeUrl } from "../config"
 import { getImageAssetUrl } from "../modules/utils"
-
-interface Channel {
-  name: string
-  label?: string
-  title: string
-  icon: string
-  colour: string
-}
-
-interface ExtraButton {
-  name: string
-  title: string
-  linkURL: string
-  logo: string
-  text_colour?: string
-  text_shadow?: boolean
-}
-
-interface Camera {
-  name: string
-  channels: Channel[]
-  extra_buttons?: ExtraButton[]
-  night_report_label?: string
-}
-
-interface Event {
-  filename: string
-  // Add other event properties as needed
-}
-
-interface ButtonProps {
-  clsName: string
-  url: string
-  bckCol?: string
-  iconUrl?: string
-  logoURL?: string
-  label: string
-  date?: string
-  textColour?: string
-  textShadow?: boolean
-}
-
-interface PerDayChannelsProps {
-  locationName: string
-  camera: Camera
-  date: string
-  perDay: Record<string, Event>
-  isHistorical: boolean
-}
-
-interface NightReportLinkProps {
-  locationName: string
-  camera: Camera
-  date: string
-  nightReportLink: string
-}
-
-interface PerDayProps {
-  locationName: string
-  camera: Camera
-  initialDate: string
-  initialNRLink: string
-  isHistorical: boolean
-}
+import {
+  ButtonProps,
+  PerDayChannelsProps,
+  NightReportLinkProps,
+  PerDayProps,
+} from "../components/componentTypes"
 
 function Button({
   clsName,

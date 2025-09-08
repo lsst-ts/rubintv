@@ -1,23 +1,27 @@
-import React, { useContext, memo, useMemo } from "react"
+import React, { useContext, memo } from "react"
 import { useState, useEffect, useRef } from "react"
 import detectorMap from "../data/detectorMap.json"
 import cwfsMap from "../data/cwfsMap.json"
 import { simplePost } from "../modules/utils"
 import { ModalProvider, useModal, ConfirmationModal } from "./Modal"
 import {
-  DetectorMap,
-  DetectorKey,
   WorkerGroup,
   WorkerStatus,
-  StatusSet,
-  RedisEndpointContext,
+  Step1bSectionProps,
+  DetectorSectionProps,
+  DetectorCellsProps,
+  DetectorCanvasProps,
+  DetectorStatusVisualizationProps,
 } from "./componentTypes"
+import { RedisEndpointContext } from "./contexts/contexts"
 import {
   RESET_PREFIX,
   getStatusClass,
   getStatusColor,
   createPlaceholders,
 } from "../modules/detectorUtils"
+
+type EL = EventListener
 
 export { DetectorCanvas, Cell, ResetButton, OtherQueuesSection, Cells }
 
@@ -37,13 +41,7 @@ const DetectorSection = ({
   statuses,
   redisKey,
   size = "large",
-}: {
-  title: string
-  map: DetectorMap
-  statuses: StatusSet
-  redisKey: string
-  size?: "small" | "large"
-}) => {
+}: DetectorSectionProps) => {
   return (
     <div className={`detector-section detector-section-${size}`}>
       <h2 className="detector-title">{title}</h2>
@@ -53,30 +51,30 @@ const DetectorSection = ({
   )
 }
 
-const Cells = memo(
-  ({ statuses, prefix }: { statuses: WorkerGroup; prefix: string }) => {
-    const activeWorkerCells = useMemo(() => {
-      const cells = { ...statuses.workers }
-      const { numWorkers } = statuses
-      if (numWorkers && numWorkers > 0) {
-        const cellsToAdd = createPlaceholders(numWorkers)
-        return {
-          ...cellsToAdd,
-          ...cells,
-        }
+const Cells = memo(({ statuses, prefix }: DetectorCellsProps) => {
+  const activeWorkerCells = () => {
+    const activeWorkers = { ...statuses.workers }
+    const { numWorkers } = statuses
+    if (numWorkers && numWorkers > 0) {
+      const cellsToAdd = createPlaceholders(numWorkers)
+      return {
+        ...cellsToAdd,
+        ...activeWorkers,
       }
-      return cells
-    }, [statuses])
-
-    return (
-      <div className={`${prefix}-cells`}>
-        {Object.entries(activeWorkerCells).map(([i, status]) => (
-          <Cell key={`${prefix}-${i}`} status={status as WorkerStatus} />
-        ))}
-      </div>
-    )
+    }
+    return activeWorkers
   }
-)
+
+  const cells = activeWorkerCells()
+
+  return (
+    <div className={`${prefix}-cells`}>
+      {Object.entries(cells).map(([i, status]) => (
+        <Cell key={`${prefix}-${i}`} status={status as WorkerStatus} />
+      ))}
+    </div>
+  )
+})
 Cells.displayName = "Cells"
 
 function Cell({ status }: { status: WorkerStatus }) {
@@ -114,7 +112,6 @@ const ResetButton = ({ redisKey }: { redisKey: string }) => {
         value: "reset",
       })
       if (response) {
-        console.log("Reset successful")
         showStatusDelay("success")
       } else {
         console.error("Reset failed:", response)
@@ -152,11 +149,7 @@ const DetectorStatusVisualization = ({
   detectorKeys,
   redisEndpointUrl,
   admin,
-}: {
-  detectorKeys: DetectorKey[]
-  redisEndpointUrl: string
-  admin: boolean
-}) => {
+}: DetectorStatusVisualizationProps) => {
   // redisKeys is a map of detector section names to their respective
   // keys in the Redis database
   // e.g. { sfmSet0: "CLUSTER_STATUS_SFM_SET_0", ... }
@@ -178,7 +171,6 @@ const DetectorStatusVisualization = ({
   const [otherQueues, setOtherQueues] = useState({})
 
   useEffect(() => {
-    type EL = EventListener
     function handleDetectorEvent(event: CustomEvent) {
       const { data, dataType } = event.detail
       if (dataType !== "detectorStatus") {
@@ -350,7 +342,6 @@ const OtherQueuesSection = ({ otherQueues }: { otherQueues: WorkerGroup }) => {
           </thead>
           <tbody>
             {Object.entries(text || {})
-              .slice()
               .sort()
               .map(
                 ([key, value]) =>
@@ -368,15 +359,7 @@ const OtherQueuesSection = ({ otherQueues }: { otherQueues: WorkerGroup }) => {
   )
 }
 
-const Step1bSection = ({
-  title,
-  statuses,
-  redisKey,
-}: {
-  title: string
-  statuses: StatusSet["sfmStep1b"]
-  redisKey: string
-}) => {
+const Step1bSection = ({ title, statuses, redisKey }: Step1bSectionProps) => {
   return (
     <div className="step1b-section">
       <h2 className="detector-title">{title}</h2>
@@ -391,13 +374,7 @@ const Step1bSection = ({
 }
 
 const DetectorCanvas = memo(
-  ({
-    detectorMap,
-    detectorStatuses,
-  }: {
-    detectorMap: DetectorMap
-    detectorStatuses: WorkerGroup
-  }) => {
+  ({ detectorMap, detectorStatuses }: DetectorCanvasProps) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null)
     const containerRef = useRef<HTMLDivElement | null>(null)
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 })

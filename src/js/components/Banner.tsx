@@ -1,14 +1,7 @@
 import React from "react"
-import { Camera } from "./componentTypes"
+import { BannerProps } from "./componentTypes"
 
-export default function Banner({
-  locationName,
-  camera,
-}: {
-  siteLocation: string
-  locationName: string
-  camera: Camera
-}) {
+export default function Banner({ locationName, camera }: BannerProps) {
   const camName = camera.name
   let banner = ""
   let cls = "banner-text"

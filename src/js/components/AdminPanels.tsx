@@ -46,11 +46,11 @@ interface AdminSendRedisCommandProps {
 }
 
 // Custom hook to handle Redis post success/failure
-function useRedisStatus(): [string | null, (status: string) => void] {
-  const [redisChanged, setRedisChanged] = useState<string | null>(null)
+function useRedisStatus(): [IndicatorStatus, (status: string) => void] {
+  const [redisChanged, setRedisChanged] = useState<IndicatorStatus>(null)
 
   const updateRedisStatus = (status: string) => {
-    setRedisChanged(status)
+    setRedisChanged(status as IndicatorStatus)
     // Only auto-clear if status is "true" or "false"
     if (status === "true" || status === "false") {
       setTimeout(() => setRedisChanged(null), 2000)
@@ -66,7 +66,7 @@ export default function AdminPanels({
   redisEndpointUrl,
   redisKeyPrefix,
   authEndpointUrl,
-}: AdminPanelProps) {
+}: AdminPanelsProps) {
   const [admin, setAdmin] = useState(initAdmin)
   const [menus, setMenus] = useState(initMenus)
 
@@ -379,8 +379,10 @@ export function AdminDangerPanel({
   )
 }
 
-export function StatusIndicator({ status }: { status: string | null }) {
-  const statusClass = (status: string | null) => {
+type IndicatorStatus = "true" | "false" | "pending" | null
+
+export function StatusIndicator({ status }: { status: IndicatorStatus }) {
+  const statusClass = (status: IndicatorStatus) => {
     switch (status) {
       case "true":
         return "indicator-success"

@@ -9,13 +9,15 @@ import {
 import { ModalProvider } from "./Modal"
 import {
   RubinTVTableContext,
-  Camera,
+  TableAppProps,
   ChannelData,
   Metadata,
   MetadataColumn,
   FilterOptions,
   SortingOptions,
 } from "./componentTypes"
+
+type EL = EventListener
 
 export default function TableApp({
   camera,
@@ -24,14 +26,7 @@ export default function TableApp({
   isHistorical,
   siteLocation,
   isStale,
-}: {
-  camera: Camera
-  locationName: string
-  initialDate: string
-  isHistorical: boolean
-  siteLocation: string
-  isStale: boolean
-}) {
+}: TableAppProps) {
   const [hasReceivedData, setHasReceivedData] = useState(false)
   const [date, setDate] = useState(initialDate)
   const [channelData, setChannelData] = useState({} as ChannelData)
@@ -155,7 +150,7 @@ export default function TableApp({
 
   useEffect(() => {
     redrawHeaderWidths()
-  })
+  }, [filteredMetadata, filteredChannelData, selected])
 
   const handleCameraEvent = useCallback(
     (event: CustomEvent) => {
@@ -186,7 +181,6 @@ export default function TableApp({
   )
 
   useEffect(() => {
-    type EL = EventListener
     window.addEventListener("camera", handleCameraEvent as EL)
     return () => {
       window.removeEventListener("camera", handleCameraEvent as EL)
@@ -290,7 +284,6 @@ function getAllColumnNames(metadata: Metadata, defaultColNames: string[]) {
   const availableColumns = Object.values(metadata)
     .map((obj) => Object.keys(obj))
     .flat()
-    .slice()
     .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
   // get the set of all data for list of all available attrs
   const uniqueColNames = Array.from(

@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from "react"
 import { toTimeString } from "../modules/utils"
-import { Metadata, Camera } from "./componentTypes"
+import { TimeSinceLastImageClockProps } from "./componentTypes"
 
-interface CameraWithTimeSinceClock extends Camera {
-  time_since_clock: {
-    label: string
-  }
-}
+type EL = EventListener
 
 export default function Clock() {
   const [time, setTime] = useState(new Date())
@@ -46,10 +42,7 @@ function padZero(num: number): string {
 export function TimeSinceLastImageClock({
   metadata: propsMeta,
   camera,
-}: {
-  metadata: Metadata
-  camera: CameraWithTimeSinceClock
-}) {
+}: TimeSinceLastImageClockProps) {
   const [isOnline, setIsOnline] = useState(true)
   const [time, setTime] = useState(Date.now())
   const [metadata, setMetadata] = useState(propsMeta)
@@ -58,7 +51,6 @@ export function TimeSinceLastImageClock({
   const TAIDIFF = 37 * 1000
 
   useEffect(() => {
-    type EV = EventListener
     const timerId = setInterval(() => {
       setTime(Date.now())
     }, 1000)
@@ -67,7 +59,7 @@ export function TimeSinceLastImageClock({
       const { online } = event.detail
       setIsOnline(online)
     }
-    window.addEventListener("ws_status_change", handleWSStateChange as EV)
+    window.addEventListener("ws_status_change", handleWSStateChange as EL)
 
     function handleMetadataChange(event: CustomEvent) {
       const { data, dataType } = event.detail
@@ -75,7 +67,7 @@ export function TimeSinceLastImageClock({
         setMetadata(data)
       }
     }
-    window.addEventListener("camera", handleMetadataChange as EV)
+    window.addEventListener("camera", handleMetadataChange as EL)
 
     // Listen for the latest metadata change event
     // This is just one seq_num, not the whole metadata
@@ -86,13 +78,13 @@ export function TimeSinceLastImageClock({
         setMetadata(data)
       }
     }
-    window.addEventListener("channel", handleLatestMetadataChange as EV)
+    window.addEventListener("channel", handleLatestMetadataChange as EL)
 
     return () => {
       clearInterval(timerId)
-      window.removeEventListener("ws_status_change", handleWSStateChange as EV)
-      window.removeEventListener("camera", handleMetadataChange as EV)
-      window.removeEventListener("channel", handleLatestMetadataChange as EV)
+      window.removeEventListener("ws_status_change", handleWSStateChange as EL)
+      window.removeEventListener("camera", handleMetadataChange as EL)
+      window.removeEventListener("channel", handleLatestMetadataChange as EL)
     }
   }, [])
 
@@ -131,11 +123,11 @@ export function TimeSinceLastImageClock({
     )
   }
 
-  let UTCDateString = row["Date begin"] as string
-  if (!UTCDateString.endsWith("Z")) {
-    UTCDateString += "Z"
+  let utcDateString = row["Date begin"] as string
+  if (!utcDateString.endsWith("Z")) {
+    utcDateString += "Z"
   }
-  const startTime = Date.parse(UTCDateString)
+  const startTime = Date.parse(utcDateString)
   const exposureTime = row["Exposure time"] as number
   const endTime = startTime + (exposureTime ? exposureTime * 1000 : 0)
   const timeElapsed = time - endTime + TAIDIFF

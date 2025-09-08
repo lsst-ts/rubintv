@@ -3,6 +3,7 @@ import { WebsocketClient } from "../modules/ws-service-client"
 import { simplePost } from "../modules/utils"
 
 type HistoricalResetState = "idle" | "resetting" | "reset"
+type EL = EventListener
 
 export default function HistoricalReset() {
   const [resetState, setResetState] = useState<HistoricalResetState>("idle")
@@ -33,10 +34,9 @@ export default function HistoricalReset() {
   }
 
   useEffect(() => {
-    type EL = EventListener
     const handleStatusUpdate = (message: CustomEvent) => {
       const { data: isBusy } = message.detail || {}
-      if (!isBusy && resetState) {
+      if (!isBusy) {
         setResetState("reset")
       }
     }

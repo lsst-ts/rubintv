@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react"
-import { CalendarData, Camera } from "./componentTypes"
+import {
+  RubinCalendarProps,
+  CalendarYearProps,
+  CalendarMonthProps,
+  CalendarDayProps,
+  CalendarData,
+} from "./componentTypes"
 import * as Calendar from "calendar"
 import { monthNames, ymdToDateStr } from "../modules/utils"
 import { homeUrl } from "../config"
@@ -15,15 +21,7 @@ const Day = ({
   selectedDate,
   cameraUrl,
   noSeqNum,
-}: {
-  day: number
-  dateStr: string
-  calendarData: CalendarData[number][number]
-  dayObs?: string | null
-  selectedDate: string // formatted as "yyyy-mm-dd"
-  cameraUrl: string
-  noSeqNum?: boolean
-}) => {
+}: CalendarDayProps) => {
   let hasData = false
   let isSelected = false
   const currentDayClassList = ["day"]
@@ -76,24 +74,16 @@ const Month = ({
   calendarFrame,
   selectedDate,
   dayObs,
-}: {
-  year: number
-  month: number
-  isSelected: boolean
-  calendarData: CalendarData
-  cameraUrl: string
-  noSeqNum: boolean
-  calendarFrame: Calendar.Calendar
-  selectedDate: Date
-  dayObs?: string | null
-}) => {
+}: CalendarMonthProps) => {
   const selectedDateStr = ymdToDateStr(
     selectedDate.getFullYear(),
+    // 1 is added to the month as Date months are zero-indexed
     selectedDate.getMonth() + 1,
     selectedDate.getDate()
   )
   return (
     <div className={`month ${isSelected ? "selected" : ""}`}>
+      {/* 1 is subtracted from the month as monthNames are zero-indexed */}
       <h5 className="month-title">{monthNames[month - 1]}</h5>
       <div className="weekdays">
         {weekdays.map((day, index) => (
@@ -103,6 +93,8 @@ const Month = ({
         ))}
       </div>
       <div className="days">
+        {/* again, 1 is added to the month as Calendar.Calendar months are
+        zero-indexed */}
         {calendarFrame.monthDays(year, month - 1).map((week) =>
           week.map((day, dayIndex) => {
             const dateStr = ymdToDateStr(year, month, day)
@@ -129,6 +121,7 @@ const dateStringToDate = (dateStr: string): Date => {
   const parts = dateStr.split("-")
   return new Date(
     parseInt(parts[0]),
+    // One month is subtracted from the month as Date months are zero-indexed
     parseInt(parts[1]) - 1,
     parseInt(parts[2])
   )
@@ -144,16 +137,7 @@ const Year = ({
   cameraUrl,
   noSeqNum,
   dayObs,
-}: {
-  year: number
-  yearToDisplay: number
-  selectedDate: Date
-  calendarData: CalendarData
-  calendarFrame: Calendar.Calendar
-  cameraUrl: string
-  noSeqNum: boolean
-  dayObs?: string | null
-}) => {
+}: CalendarYearProps) => {
   return (
     <div
       className={`year ${year == yearToDisplay ? "selected" : ""}`}
@@ -164,6 +148,8 @@ const Year = ({
         .sort((a, b) => a - b)
         .reverse()
         .map((month) => {
+          // 1 is added to the month so that it represents the actual month number
+          // i.e. January is 1, February is 2, etc.
           const isSelected =
             year == yearToDisplay && month == selectedDate.getMonth() + 1
           return (
@@ -190,14 +176,9 @@ const RubinCalendar = ({
   initialCalendarData = {} as CalendarData,
   camera,
   locationName,
-}: {
-  selectedDate: string
-  initialCalendarData: CalendarData
-  camera: Camera
-  locationName: string
-}) => {
+}: RubinCalendarProps) => {
   const [yearToDisplay, setYearToDisplay] = useState(
-    parseInt(selectedDate.split("-")[0])
+    parseInt(selectedDate.split("-")[0], 10)
   )
   const [calendarData, setCalendarData] = useState(initialCalendarData)
   const [dayObs, setDayObs] = useState(null)

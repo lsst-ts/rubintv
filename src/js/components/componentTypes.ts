@@ -1,4 +1,5 @@
-import { createContext } from "react"
+import * as Calendar from "calendar"
+
 /** A single item of metadata is either a string, number or nested object of
  * key-value pairs. In the case of the latter, if one of the keys is
  * 'DISPLAY_VALUE', it's value is a UTF-8 encoded character to display as an
@@ -12,9 +13,16 @@ export type MetadatumType =
 
 /**
  * @description Represents a row of metadata.
- * @property {string} [key] - The key for the metadata item.
- * @property {MetadatumType} value - The value of the metadata item, which
- * can be a string, number, boolean, or an object with string keys and values.
+ * @example
+ * const row: MetadataRow = {
+ *   {
+ *    DISPLAY_VALUE: "<UTF-8 encoded character>",
+ *    VALUETOLIST1: 100,
+ *    VALUETOLIST2: 200
+ *   },
+ *   "Exposure time": 30,
+ *   "Location": "Living Room",
+ * };
  */
 export interface MetadataRow {
   [key: string]: MetadatumType
@@ -22,9 +30,17 @@ export interface MetadataRow {
 
 /**
  * @description Represents a collection of metadata rows.
- * @property {string} [seqNum] - The key for the metadata item.
- * @property {MetadataRow} value - The value of the metadata item, which
- * is an object containing key-value pairs of metadata.
+ * @example
+ * const metadata: Metadata = {
+ *   "1": {
+ *     "Exposure time": 30,
+ *     "Location": "Living Room",
+ *   },
+ *   "2": {
+ *     "Exposure time": 60,
+ *     "Location": "Kitchen",
+ *   },
+ * };
  */
 export interface Metadata {
   [seqNum: string]: MetadataRow
@@ -66,7 +82,7 @@ export interface MediaData {
  * @property {string} seq_num - The sequence number of the exposure event.
  */
 export interface ExposureEvent extends MediaData {
-  seq_num: number | string
+  seq_num: string
 }
 
 /**
@@ -92,7 +108,7 @@ export interface ProcessingLocation {
  * @property {Record<string, string>} [metadata_columns] - Optional metadata columns for the camera.
  * @property {string} [image_viewer_link] - Optional link to an image viewer.
  * @property {Object} [time_since_clock] - Optional object containing a label for time since clock.
- * @property {Array<MosiacSingleView>} [mosaic_view_meta] - Optional metadata for mosaic views.
+ * @property {Array<MosaicSingleView>} [mosaic_view_meta] - Optional metadata for mosaic views.
  * @property {string} [night_report_label] - Optional label for night reports.
  */
 export interface Camera {
@@ -105,11 +121,12 @@ export interface Camera {
   metadata_columns?: Record<string, string>
   image_viewer_link?: string
   time_since_clock?: { label: string }
-  mosaic_view_meta?: Array<MosiacSingleView>
+  mosaic_view_meta?: Array<MosaicSingleView>
   night_report_label?: string
+  extra_buttons?: ExtraButton[]
 }
 
-export interface MosiacSingleView {
+export interface MosaicSingleView {
   channel: string
   metaColumns: string[]
   mediaType: MediaType
@@ -130,13 +147,40 @@ export interface Channel {
 }
 
 /**
- * @description Represents a channel data structure mapping day observations to exposure events.
- * @property {Object} [key] - Dynamic key representing a day observation.
- * @property {Object} value - Nested object mapping sequence numbers to exposure events.
+ * @description Represents a channel data structure mapping day observations
+ * to exposure events.
+ * TODO: Writing out this structure has identified the amount of
+ * redundancy in the data representation. This will be addressed in
+ * DM-51895.
+ * @example
+ * const channelData: ChannelData = {
+ *   "1": {
+ *     "channel1": {
+ *       key: "1",
+ *       hash: "abc123",
+ *       camera_name: "Camera 1",
+ *       day_obs: "2023-01-01",
+ *       channel_name: "channel1",
+ *       filename: "video1.mp4",
+ *       ext: "mp4",
+ *       seq_num: "1"
+ *     },
+ *     "channel2": {
+ *       key: "1",
+ *       hash: "abc123",
+ *       camera_name: "Camera 1",
+ *       day_obs: "2023-01-01",
+ *       channel_name: "channel2",
+ *       filename: "video1.mp4",
+ *       ext: "mp4",
+ *       seq_num: "1"
+ *     }
+ *   }
+ * };
  */
 export interface ChannelData {
-  [key: string]: {
-    [key: string]: ExposureEvent
+  [seqNum: string]: {
+    [channelName: string]: ExposureEvent
   }
 }
 
@@ -161,15 +205,23 @@ export interface NightReportPlot extends MediaData {
 
 /**
  * @description Represents calendar data with hierarchical date structure (year > month > day > count).
- * @property {Object} [key] - Year as numeric key.
- * @property {Object} value - Nested object with month as key.
- * @property {Object} value.value - Nested object with day as key.
- * @property {number} value.value.value - Count value for the specific date.
+ * @example
+ * const calendarData: CalendarData = {
+ *   2023: {
+ *     1: {
+ *       1: 5,
+ *       2: 10
+ *     },
+ *     2: {
+ *       1: 8
+ *     }
+ *   }
+ * };
  */
 export interface CalendarData {
-  [key: number]: {
-    [key: number]: {
-      [key: number]: number
+  [year: number]: {
+    [month: number]: {
+      [day: number]: number
     }
   }
 }
@@ -191,18 +243,15 @@ export interface RubinTVContextType {
   dayObs: string
 }
 
-export const RubinTVTableContext = createContext<
-  RubinTVContextType | undefined
->(undefined)
-
+type SortingDirection = "asc" | "desc"
 /**
  * @description Represents sorting configuration for table columns.
  * @property {string} column - The column name to sort by.
- * @property {"asc" | "desc"} order - The sort order, either ascending or descending.
+ * @property {sortingDirection} order - The sort order, either ascending or descending.
  */
 export interface SortingOptions {
   column: string
-  order: "asc" | "desc"
+  order: SortingDirection
 }
 
 /**
@@ -227,13 +276,17 @@ export interface DetectorKey {
 
 /**
  * @description Represents a mapping of detector positions with corner coordinates.
- * @property {Object} [key] - Dynamic key representing a detector identifier.
- * @property {Object} value - Object containing corner coordinate information.
- * @property {Object} value.corners - Corner coordinates for the detector.
- * @property {number[]} value.corners.lowerLeft - [x, y] coordinates of the lower left corner.
- * @property {number[]} value.corners.lowerRight - [x, y] coordinates of the lower right corner.
- * @property {number[]} value.corners.upperRight - [x, y] coordinates of the upper right corner.
- * @property {number[]} value.corners.upperLeft - [x, y] coordinates of the upper left corner.
+ * @example
+ * const detectorMap: DetectorMap = {
+ *   "23": {
+ *     corners: {
+ *       lowerLeft: [0, 0],
+ *       lowerRight: [10, 0],
+ *       upperRight: [10, 10],
+ *       upperLeft: [0, 10]
+ *     }
+ *   }
+ * };
  */
 export interface DetectorMap {
   [key: string]: {
@@ -245,6 +298,10 @@ export interface DetectorMap {
     }
   }
 }
+
+// TODO: Properly constrain the keys of the WorkerStatus and WorkerGroup interfaces
+// See https://www.typescriptlang.org/docs/handbook/2/objects.html#literal-types
+// and DM-52440
 
 /**
  * @description Represents the status of a single worker process.
@@ -270,7 +327,21 @@ export interface WorkerGroup {
 
 /**
  * @description Represents a collection of worker groups organized by group names.
- * @property {WorkerGroup} [key] - Dynamic key representing a worker group name.
+ * @example
+ * const statusSet: StatusSet = {
+ *   "group1": {
+ *     workers: {
+ *       "worker1": { status: "free" },
+ *       "worker2": { status: "busy", queue_length: 5 }
+ *     },
+ *     numWorkers: 2,
+ *   },
+ *   "group2": {
+ *     workers: {
+ *       "worker3": { status: "queued", queue_length: 3 }
+ *     },
+ *   }
+ * };
  */
 export interface StatusSet {
   [key: string]: WorkerGroup
@@ -286,4 +357,360 @@ export interface RedisEndpoint {
   admin: boolean
 }
 
-export const RedisEndpointContext = createContext<RedisEndpoint | null>(null)
+export interface TableAppProps {
+  camera: Camera
+  locationName: string
+  initialDate: string
+  isHistorical: boolean
+  siteLocation: string
+  isStale: boolean
+}
+
+export interface AboveTableRowProps {
+  camera: Camera
+  availableColumns: string[]
+  selected: string[]
+  setSelected: (selected: string[]) => void
+  date: string
+  metadata: Metadata
+  isHistorical: boolean
+}
+
+export interface TableControlProps {
+  cameraName: string
+  availableColumns: string[]
+  selected: string[]
+  setSelected: (selected: string[]) => void
+}
+
+export interface DownloadMetadataButtonProps {
+  date: string
+  cameraName: string
+  metadata: Metadata | null
+}
+
+export interface TableFilterDialogProps {
+  column: string
+  setFilterOn: (filter: FilterOptions) => void
+  filterOn: FilterOptions
+  filteredRowsCount: number
+  unfilteredRowsCount: number
+}
+
+export interface TableChannelCellProps {
+  event?: ExposureEvent
+  chanName: string
+  chanColour: string
+  noEventReplacement?: string
+}
+
+export interface TableMetadataCellProps {
+  data: MetadatumType
+  indicator: string
+  seqNum: string
+  columnName: string
+}
+
+export interface TableRowProps {
+  seqNum: string
+  camera: Camera
+  channels: Channel[]
+  channelRow: Record<string, ExposureEvent>
+  metadataColumns: MetadataColumn[]
+  metadataRow: MetadataRow
+}
+
+export interface TableBodyProps {
+  camera: Camera
+  channels: Channel[]
+  channelData: ChannelData
+  metadataColumns: MetadataColumn[]
+  metadata: Metadata
+  sortOn: SortingOptions
+}
+
+interface TableSortingFiltering {
+  filteredRowsCount: number
+  unfilteredRowsCount: number
+  sortOn: SortingOptions
+  setSortOn: React.Dispatch<React.SetStateAction<SortingOptions>>
+  filterOn: FilterOptions
+  setFilterOn: (filter: FilterOptions) => void
+}
+
+export interface TableChannelHeaderProps extends TableSortingFiltering {
+  channel: Channel | MetadataColumn
+}
+
+export interface TableHeaderProps extends TableSortingFiltering {
+  camera: Camera
+  metadataColumns: MetadataColumn[]
+}
+
+export interface TableViewProps {
+  camera: Camera
+  channelData: ChannelData
+  metadata: Metadata
+  metadataColumns: MetadataColumn[]
+  filterOn: FilterOptions
+  filteredRowsCount: number
+  sortOn: SortingOptions
+  siteLocation: string
+}
+
+export interface TableFoldoutCellProps {
+  seqNum: string
+  columnName: string
+  data: MetadatumType
+}
+
+export interface ExtraButton {
+  name: string
+  title: string
+  linkURL: string
+  logo: string
+  text_colour?: string
+  text_shadow?: boolean
+}
+
+export interface PerDayEvent {
+  filename: string
+}
+
+export interface ButtonProps {
+  clsName: string
+  url: string
+  bckCol?: string
+  iconUrl?: string
+  logoURL?: string
+  label: string
+  date?: string
+  textColour?: string
+  textShadow?: boolean
+}
+
+export interface PerDayChannelsProps {
+  locationName: string
+  camera: Camera
+  date: string
+  perDay: Record<string, PerDayEvent>
+  isHistorical: boolean
+}
+
+export interface NightReportLinkProps {
+  locationName: string
+  camera: Camera
+  date: string
+  nightReportLink: string
+}
+
+export interface PerDayProps {
+  locationName: string
+  camera: Camera
+  initialDate: string
+  initialNRLink: string
+  isHistorical: boolean
+}
+
+/**
+ * @description Represents the props for the AllSky component.
+ * @property {string} initialDate - The initial date for the AllSky component.
+ * @property {boolean} [isHistorical] - Whether the data is historical.
+ * @property {string} locationName - The name of the location.
+ * @property {Camera} camera - The camera configuration.
+ * @property {CalendarData} [calendar] - The calendar data.
+ */
+export interface AllSkyProps {
+  initialDate: string
+  isHistorical?: boolean
+  locationName: string
+  camera: Camera
+  calendar?: CalendarData
+}
+
+export interface MediaDisplayProps {
+  locationName: string
+  camera: Camera
+  initEvent: ExposureEvent | null
+  prevNext: PrevNextType
+  allChannelNames: string[]
+  isCurrent: boolean
+}
+
+export interface BundledMediaEvent extends ExposureEvent {
+  mediaType: "image" | "video"
+  src: string
+}
+
+export interface OtherChannelLinksProps {
+  allChannelNames: string[]
+  thisChannel: string
+  camera: Camera
+}
+
+export interface AllSkyMediaProps {
+  details: ExposureEvent | null
+  locationName: string
+}
+
+export interface BannerProps {
+  siteLocation?: string
+  locationName: string
+  camera: Camera
+}
+
+export interface CameraWithTimeSinceClock extends Camera {
+  time_since_clock: {
+    label: string
+  }
+}
+
+export interface TimeSinceLastImageClockProps {
+  metadata: Metadata
+  camera: CameraWithTimeSinceClock
+}
+
+export interface DetectorCanvasProps {
+  detectorMap: DetectorMap
+  detectorStatuses: WorkerGroup
+}
+
+export interface DetectorSectionProps {
+  title: string
+  map: DetectorMap
+  statuses: StatusSet
+  redisKey: string
+  size?: "small" | "large"
+}
+
+export interface DetectorCellsProps {
+  statuses: WorkerGroup
+  prefix: string
+}
+
+export interface DetectorStatusVisualizationProps {
+  detectorKeys: DetectorKey[]
+  redisEndpointUrl: string
+  admin: boolean
+}
+
+export interface Step1bSectionProps {
+  title: string
+  statuses: StatusSet["sfmStep1b"]
+  redisKey: string
+}
+
+export interface ConfirmationModalProps {
+  title?: string
+  message?: string
+  onConfirm?: () => void
+  onCancel?: () => void
+}
+
+export interface MosaicViewProps {
+  locationName: string
+  camera: CameraWithMosaicViewMeta
+}
+
+export interface CameraWithMosaicViewMeta extends Camera {
+  mosaic_view_meta: MosaicSingleView[]
+}
+
+export interface ChannelMediaProps {
+  locationName: string
+  camera: CameraWithMosaicViewMeta
+  event: ExposureEvent | undefined
+  mediaType: MediaType
+}
+
+export interface ChannelMetadataProps {
+  view: MosaicSingleView
+  metadata: Record<string, Record<string, string>>
+}
+
+export interface ChannelListViewItemProps {
+  locationName: string
+  camera: CameraWithMosaicViewMeta
+  view: MosaicSingleView
+  currentMeta: Record<string, Record<string, string>>
+  selectView: (view: MosaicSingleView) => void
+  isSelectable: boolean
+}
+
+export interface NightReportProps {
+  initialNightReport: NightReportType
+  initialDate: string
+  camera: Camera
+  locationName: string
+  homeUrl: string
+}
+
+export interface NightReportTabProps {
+  tabs: TabType[]
+  selected: string
+  setSelected: React.Dispatch<React.SetStateAction<string>>
+}
+
+export interface NightReportTextProps {
+  tab: TextTabType | undefined
+  selected: string
+}
+
+export interface NightReportPlotProps {
+  tab: PlotTabType | undefined
+  selected: string
+  camera: Camera
+  locationName: string
+  homeUrl: string
+}
+
+type BaseTab<T extends string, D> = {
+  id: string
+  label: string
+  type: T
+  data: D
+}
+
+export type TextTabType = BaseTab<"text", Record<string, string>>
+export type PlotTabType = BaseTab<"plot", NightReportPlot[]>
+export type TabType = TextTabType | PlotTabType
+
+export interface RubinCalendarProps {
+  selectedDate: string
+  initialCalendarData: CalendarData
+  camera: Camera
+  locationName: string
+}
+
+export interface CalendarDayProps {
+  day: number
+  dateStr: string
+  calendarData: CalendarData[number][number]
+  dayObs?: string | null
+  selectedDate: string // formatted as "yyyy-mm-dd"
+  cameraUrl: string
+  noSeqNum?: boolean
+}
+
+export interface CalendarMonthProps {
+  year: number
+  month: number
+  isSelected: boolean
+  calendarData: CalendarData
+  cameraUrl: string
+  noSeqNum: boolean
+  calendarFrame: Calendar.Calendar
+  selectedDate: Date
+  dayObs?: string | null
+}
+
+export interface CalendarYearProps {
+  year: number
+  yearToDisplay: number
+  selectedDate: Date
+  calendarData: CalendarData
+  calendarFrame: Calendar.Calendar
+  cameraUrl: string
+  noSeqNum: boolean
+  dayObs?: string | null
+}

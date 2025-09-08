@@ -2,15 +2,14 @@ import React, { useState, useEffect } from "react"
 import { _getById, getStrHashCode } from "../modules/utils"
 import { homeUrl } from "../config"
 import {
-  Camera,
-  MosiacSingleView,
-  MediaType,
-  ExposureEvent,
+  MosaicViewProps,
+  MosaicSingleView,
+  ChannelMediaProps,
+  ChannelMetadataProps,
+  ChannelListViewItemProps,
 } from "./componentTypes"
 
-export interface CameraWithMosaicViewMeta extends Camera {
-  mosaic_view_meta: MosiacSingleView[]
-}
+type EL = EventListener
 
 const FRAMELENGTH = 0.1
 const BACK = -FRAMELENGTH
@@ -18,13 +17,7 @@ const FORWARD = FRAMELENGTH
 
 const commonColumns = ["seqNum"]
 
-export default function MosaicView({
-  locationName,
-  camera,
-}: {
-  locationName: string
-  camera: CameraWithMosaicViewMeta
-}) {
+export default function MosaicView({ locationName, camera }: MosaicViewProps) {
   const [currentMeta, setCurrentMeta] = useState({})
   const [views, setViews] = useState(initialViews)
 
@@ -52,7 +45,7 @@ export default function MosaicView({
     return vids.length > 1 ? true : false
   }
 
-  function selectView(thisView: MosiacSingleView) {
+  function selectView(thisView: MosaicSingleView) {
     setViews((prevViews) =>
       prevViews.map((view) =>
         view.channel === thisView.channel
@@ -63,9 +56,8 @@ export default function MosaicView({
   }
 
   useEffect(() => {
-    type EV = EventListener
-    window.addEventListener("camera", handleMetadataChange as EV)
-    window.addEventListener("channel", handleChannelEvent as EV)
+    window.addEventListener("camera", handleMetadataChange as EL)
+    window.addEventListener("channel", handleChannelEvent as EL)
 
     function handleMetadataChange(event: CustomEvent) {
       const { data, dataType } = event.detail
@@ -95,8 +87,8 @@ export default function MosaicView({
     }
 
     return () => {
-      window.removeEventListener("camera", handleMetadataChange as EV)
-      window.removeEventListener("channel", handleChannelEvent as EV)
+      window.removeEventListener("camera", handleMetadataChange as EL)
+      window.removeEventListener("channel", handleChannelEvent as EL)
     }
   }, [])
 
@@ -128,14 +120,7 @@ function ChannelViewListItem({
   currentMeta,
   selectView,
   isSelectable,
-}: {
-  locationName: string
-  camera: CameraWithMosaicViewMeta
-  view: MosiacSingleView
-  currentMeta: Record<string, Record<string, string>>
-  selectView: (view: MosiacSingleView) => void
-  isSelectable: boolean
-}) {
+}: ChannelListViewItemProps) {
   const channel = camera.channels.find(({ name }) => name === view.channel)
   if (!channel) {
     return <h3>Channel {view.channel} not found</h3>
@@ -168,12 +153,7 @@ function ChannelMedia({
   camera,
   event,
   mediaType,
-}: {
-  locationName: string
-  camera: CameraWithMosaicViewMeta
-  event: ExposureEvent | undefined
-  mediaType: MediaType
-}) {
+}: ChannelMediaProps) {
   if (!event?.filename) return <ChannelMediaPlaceholder />
   const mediaURL = buildMediaURI(
     locationName,
@@ -237,13 +217,7 @@ function ChannelMediaPlaceholder() {
   )
 }
 
-function ChannelMetadata({
-  view,
-  metadata,
-}: {
-  view: MosiacSingleView
-  metadata: Record<string, Record<string, string>>
-}) {
+function ChannelMetadata({ view, metadata }: ChannelMetadataProps) {
   const { channel, metaColumns: viewColumns, latestEvent } = view
   if (viewColumns.length == 0 || latestEvent?.seq_num === undefined) {
     return

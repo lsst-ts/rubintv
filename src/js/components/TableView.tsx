@@ -8,18 +8,21 @@ import {
   setCameraBaseUrl,
 } from "../modules/utils"
 import {
-  MetadatumType,
-  ChannelData,
-  ExposureEvent,
   RubinTVTableContext,
   RubinTVContextType,
   Channel,
   Camera,
   Metadata,
-  MetadataRow,
   MetadataColumn,
   SortingOptions,
-  FilterOptions,
+  TableMetadataCellProps,
+  TableChannelCellProps,
+  TableRowProps,
+  TableBodyProps,
+  TableChannelHeaderProps,
+  TableHeaderProps,
+  TableViewProps,
+  TableFoldoutCellProps,
 } from "./componentTypes"
 
 // TODO: this should be set in the backend
@@ -33,12 +36,7 @@ function MetadataCell({
   indicator,
   seqNum,
   columnName,
-}: {
-  data: MetadatumType
-  indicator: string
-  seqNum: string
-  columnName: string
-}) {
+}: TableMetadataCellProps) {
   let toDisplay: string | React.ReactElement = ""
   let title = ""
   const classNames = ["grid-cell meta", indicator]
@@ -91,12 +89,7 @@ function ChannelCell({
   chanName,
   chanColour,
   noEventReplacement,
-}: {
-  event?: ExposureEvent
-  chanName: string
-  chanColour: string
-  noEventReplacement?: string
-}) {
+}: TableChannelCellProps) {
   const { locationName, camera } = useContext(
     RubinTVTableContext
   ) as RubinTVContextType
@@ -126,14 +119,7 @@ function TableRow({
   channelRow,
   metadataColumns,
   metadataRow,
-}: {
-  seqNum: string
-  camera: Camera
-  channels: Channel[]
-  channelRow: Record<string, ExposureEvent>
-  metadataColumns: MetadataColumn[]
-  metadataRow: MetadataRow
-}) {
+}: TableRowProps) {
   const { dayObs, siteLocation } = useContext(
     RubinTVTableContext
   ) as RubinTVContextType
@@ -141,20 +127,18 @@ function TableRow({
 
   // Entries in metadata keyed `"@{channel_name}"` will have their
   // values show up in the table instead of a blank space.
-  const noEventReplacements = (() => {
-    const replacements = channels.reduce(
-      (obj, chan) => {
-        const chanReplace = metadataRow["@" + chan.name] as string | undefined
-        if (chanReplace != null) {
-          obj[chan.name] = chanReplace
-        }
-        return obj
-      },
-      {} as Record<string, string>
-    )
-    // Only return if there is at least one replacement
-    return Object.keys(replacements).length > 0 ? replacements : undefined
-  })()
+  const replacements = channels.reduce(
+    (obj, chan) => {
+      const chanReplace = metadataRow["@" + chan.name] as string | undefined
+      if (chanReplace != null) {
+        obj[chan.name] = chanReplace
+      }
+      return obj
+    },
+    {} as Record<string, string>
+  )
+  const noEventReplacements =
+    Object.keys(replacements).length > 0 ? replacements : undefined
 
   const metadataCells = metadataColumns.map((md) => {
     const indicator = indicatorForAttr(metadataRow, md.name)
@@ -225,18 +209,11 @@ function TableBody({
   metadataColumns,
   metadata,
   sortOn,
-}: {
-  camera: Camera
-  channels: Channel[]
-  channelData: ChannelData
-  metadataColumns: MetadataColumn[]
-  metadata: Metadata
-  sortOn: SortingOptions
-}) {
+}: TableBodyProps) {
   const allSeqs = Array.from(
     new Set(Object.keys(channelData).concat(Object.keys(metadata)))
   )
-  const seqs = applySorting(allSeqs, sortOn, metadata, channelData)
+  const seqs = applySorting(allSeqs, sortOn, metadata)
   return (
     <tbody>
       {seqs.map((seqNum) => {
@@ -263,16 +240,12 @@ function TableBody({
 function applySorting(
   allSeqs: string[],
   sortOn: SortingOptions,
-  metadata: Metadata,
-  channelData: ChannelData
+  metadata: Metadata
 ) {
   const getValue = (seq: number) =>
-    metadata[seq]?.[sortOn.column] ?? channelData[seq]?.[sortOn.column]
+    sortOn.column === "seq" ? seq : metadata[seq]?.[sortOn.column]
 
   const compare = (a: number, b: number) => {
-    if (sortOn.column === "seq") {
-      return sortOn.order === "asc" ? a - b : b - a
-    }
     const aValue = getValue(a)
     const bValue = getValue(b)
 
@@ -298,7 +271,7 @@ function applySorting(
     return sortOn.order === "asc" ? aValue - bValue : bValue - aValue
   }
 
-  return allSeqs.slice().map(Number).sort(compare)
+  return allSeqs.map(Number).sort(compare)
 }
 
 // Component for individual channel header
@@ -310,15 +283,7 @@ function ChannelHeader({
   unfilteredRowsCount,
   sortOn,
   setSortOn,
-}: {
-  channel: Channel | MetadataColumn
-  filterOn: FilterOptions
-  setFilterOn: (filter: FilterOptions) => void
-  filteredRowsCount: number
-  unfilteredRowsCount: number
-  sortOn: SortingOptions
-  setSortOn: React.Dispatch<React.SetStateAction<SortingOptions>>
-}) {
+}: TableChannelHeaderProps) {
   const { showModal } = useModal()
 
   const handleColumnClick = (event: React.MouseEvent, column: string) => {
@@ -374,16 +339,7 @@ export function TableHeader({
   unfilteredRowsCount,
   sortOn,
   setSortOn,
-}: {
-  camera: Camera
-  metadataColumns: MetadataColumn[]
-  filterOn: FilterOptions
-  setFilterOn: (filter: FilterOptions) => void
-  filteredRowsCount: number
-  unfilteredRowsCount: number
-  sortOn: SortingOptions
-  setSortOn: React.Dispatch<React.SetStateAction<SortingOptions>>
-}) {
+}: TableHeaderProps) {
   const { siteLocation } = useContext(RubinTVTableContext) as RubinTVContextType
   const siteLocHasCCS = hasCCS(siteLocation)
   const channelColumns = seqChannels(camera) as (Channel | MetadataColumn)[]
@@ -431,16 +387,7 @@ export default function TableView({
   filterOn,
   filteredRowsCount,
   sortOn,
-}: {
-  camera: Camera
-  channelData: ChannelData
-  metadata: Metadata
-  metadataColumns: MetadataColumn[]
-  filterOn: FilterOptions
-  filteredRowsCount: number
-  sortOn: SortingOptions
-  siteLocation: string
-}) {
+}: TableViewProps) {
   const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
   if (filterColumnSet && filteredRowsCount == 0) {
     return (
@@ -471,15 +418,7 @@ function seqChannels(camera: Camera): Channel[] {
  * key/value pairs. The function is called when button in a metadata cell of
  * the table is clicked.
  */
-function FoldoutCell({
-  seqNum,
-  columnName,
-  data,
-}: {
-  seqNum: string
-  columnName: string
-  data: MetadatumType
-}) {
+function FoldoutCell({ seqNum, columnName, data }: TableFoldoutCellProps) {
   if (!data || typeof data !== "object") {
     return null
   }

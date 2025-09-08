@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from "react"
-import { NightReportPlot, NightReportType, Camera } from "./componentTypes"
+import {
+  NightReportProps,
+  NightReportTabProps,
+  NightReportPlot,
+  NightReportPlotProps,
+  NightReportType,
+  NightReportTextProps,
+  TabType,
+  TextTabType,
+} from "./componentTypes"
 import { groupBy, sanitiseString } from "../modules/utils"
+
+type EL = EventListener
 
 // Helper component for rendering multiline text with double-space as &nbsp;&nbsp;
 function MultilineText({ text }: { text: string }) {
@@ -21,13 +32,7 @@ function MultilineText({ text }: { text: string }) {
 }
 
 // Simplified: expects a single tab object for text
-function NightReportText({
-  tab,
-  selected,
-}: {
-  tab: TextTabType | undefined
-  selected: string
-}) {
+function NightReportText({ tab, selected }: NightReportTextProps) {
   if (!tab || tab.id !== selected) return null
   const data = tab.data || {}
   return (
@@ -64,15 +69,7 @@ function NightReportText({
   )
 }
 
-function NightReportTabs({
-  tabs,
-  selected,
-  setSelected,
-}: {
-  tabs: TabType[]
-  selected: string
-  setSelected: React.Dispatch<React.SetStateAction<string>>
-}) {
+function NightReportTabs({ tabs, selected, setSelected }: NightReportTabProps) {
   const [hiddenTabs, setHiddenTabs] = useState(["elana"])
   const [typed, setTyped] = useState("")
 
@@ -141,13 +138,7 @@ function NightReportPlots({
   camera,
   locationName,
   homeUrl,
-}: {
-  tab: PlotTabType | undefined
-  selected: string
-  camera: Camera
-  locationName: string
-  homeUrl: string
-}) {
+}: NightReportPlotProps) {
   if (!tab || tab.id !== selected) return null
   const groupedPlots = tab.data
   return (
@@ -217,13 +208,7 @@ function NightReport({
   camera,
   locationName,
   homeUrl,
-}: {
-  initialNightReport: NightReportType
-  initialDate: string
-  camera: Camera
-  locationName: string
-  homeUrl: string
-}) {
+}: NightReportProps) {
   const [date, setDate] = useState(initialDate)
   const [nightReport, setNightReport] = useState(initialNightReport)
 
@@ -239,7 +224,6 @@ function NightReport({
   })
 
   useEffect(() => {
-    type EV = EventListener
     function handleNightReportEvent(event: CustomEvent) {
       const { datestamp, data, dataType } = event.detail
       if (datestamp && datestamp !== date) {
@@ -249,9 +233,9 @@ function NightReport({
         setNightReport(data)
       }
     }
-    window.addEventListener("nightreport", handleNightReportEvent as EV)
+    window.addEventListener("nightreport", handleNightReportEvent as EL)
     return () => {
-      window.removeEventListener("nightreport", handleNightReportEvent as EV)
+      window.removeEventListener("nightreport", handleNightReportEvent as EL)
     }
   }, [date])
 
@@ -293,15 +277,3 @@ function NightReport({
 }
 
 export default NightReport
-
-type BaseTab<T extends string, D> = {
-  id: string
-  label: string
-  type: T
-  data: D
-}
-
-type TextTabType = BaseTab<"text", Record<string, string>>
-type PlotTabType = BaseTab<"plot", NightReportPlot[]>
-
-type TabType = TextTabType | PlotTabType

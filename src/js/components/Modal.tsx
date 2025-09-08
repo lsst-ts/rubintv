@@ -1,5 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from "react"
 import { createPortal } from "react-dom"
+import { ConfirmationModalProps } from "./componentTypes"
 
 interface ModalContextType {
   modalContent: React.ReactNode | null
@@ -85,12 +86,7 @@ export const ConfirmationModal = ({
   message = "Are you sure?",
   onConfirm = () => {},
   onCancel = () => {},
-}: {
-  title?: string
-  message?: string
-  onConfirm?: () => void
-  onCancel?: () => void
-}) => {
+}: ConfirmationModalProps) => {
   return (
     <div>
       <div className="modal-header">

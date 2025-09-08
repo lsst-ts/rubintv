@@ -3,11 +3,13 @@ import Clock, { TimeSinceLastImageClock } from "./Clock"
 import { _getById, getImageAssetUrl } from "../modules/utils"
 import { saveColumnSelection } from "../modules/columnStorage"
 import {
-  Camera,
   Metadata,
-  RubinTVTableContext,
   RubinTVContextType,
+  AboveTableRowProps,
+  TableControlProps,
+  DownloadMetadataButtonProps,
 } from "./componentTypes"
+import { RubinTVTableContext } from "./contexts/contexts"
 
 export default function AboveTableRow({
   camera,
@@ -17,15 +19,7 @@ export default function AboveTableRow({
   date,
   metadata,
   isHistorical,
-}: {
-  camera: Camera
-  availableColumns: string[]
-  selected: string[]
-  setSelected: (selected: string[]) => void
-  date: string
-  metadata: Metadata
-  isHistorical: boolean
-}) {
+}: AboveTableRowProps) {
   return (
     <div className="row">
       <h3 id="the-date">
@@ -58,20 +52,17 @@ export default function AboveTableRow({
 
 function TableControls({
   cameraName,
-  availableColumns,
-  selected,
+  availableColumns: originalAvailableColumns,
+  selected: originalSelected,
   setSelected,
-}: {
-  cameraName: string
-  availableColumns: string[]
-  selected: string[]
-  setSelected: (selected: string[]) => void
-}) {
+}: TableControlProps) {
   const [controlsOpen, setControlsOpen] = useState(false)
   const { locationName } = useContext(RubinTVTableContext) as RubinTVContextType
 
-  selected = Array.isArray(selected) ? selected : []
-  availableColumns = Array.isArray(availableColumns) ? availableColumns : []
+  const selected = Array.isArray(originalSelected) ? originalSelected : []
+  const availableColumns = Array.isArray(originalAvailableColumns)
+    ? originalAvailableColumns
+    : []
 
   // Handle clicks outside to close the panel
   useEffect(() => {
@@ -176,7 +167,6 @@ function TableControls({
           <div className="table-options" style={gridStyle}>
             {/* Show both available and unavailable selected columns */}
             {Array.from(new Set([...selected, ...availableColumns]))
-              .slice()
               .sort((a, b) => a.localeCompare(b))
               .map(renderCheckbox)}
           </div>
@@ -213,11 +203,7 @@ function DownloadMetadataButton({
   date,
   cameraName,
   metadata,
-}: {
-  date: string
-  cameraName: string
-  metadata: Metadata
-}) {
+}: DownloadMetadataButtonProps) {
   return (
     <button
       className="button button-small download-metadata"
@@ -231,7 +217,7 @@ function DownloadMetadataButton({
 function downloadMetadata(
   date: string,
   cameraName: string,
-  metadata: Metadata
+  metadata: Metadata | null
 ) {
   const a = document.createElement("a")
   const blob = new Blob([JSON.stringify(metadata)])

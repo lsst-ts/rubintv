@@ -3,6 +3,8 @@ import { PrevNextType } from "./componentTypes"
 import { RubinTVTableContext, RubinTVContextType } from "./componentTypes"
 import { setCameraBaseUrl } from "../modules/utils"
 
+type EL = EventListener
+
 export default function PrevNext({
   initialPrevNext,
 }: {
@@ -31,7 +33,6 @@ export default function PrevNext({
   }, [])
 
   useEffect(() => {
-    type EL = EventListener
     function handleNewPrevNext(e: CustomEvent) {
       const { data, dataType } = e.detail
       if (dataType == "prevNext") {

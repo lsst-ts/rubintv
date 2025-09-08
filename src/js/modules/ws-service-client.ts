@@ -121,7 +121,7 @@ export class WebsocketClient implements WebsocketClientInterface {
     }
 
     if (!data.dataType || !Object.keys(data).includes("payload")) {
-      console.debug("Invalid message format:", data)
+      console.warn("Invalid message format:", data)
       return
     }
 
@@ -153,7 +153,9 @@ export class WebsocketClient implements WebsocketClientInterface {
         ...subscriptionPayload,
         clientID: this.connectionID,
       }
-      this.ws!.send(JSON.stringify(message))
+      if (this.ws) {
+        this.ws.send(JSON.stringify(message))
+      }
     })
   }
 }

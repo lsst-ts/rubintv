@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 /* global global */
 import "@testing-library/jest-dom"
 import React from "react"
@@ -19,7 +18,7 @@ import {
   getStatusColor,
   createPlaceholders,
 } from "../../modules/detectorUtils"
-import { RedisEndpointContext } from "../componentTypes"
+import { RedisEndpointContext } from "../contexts/contexts"
 import "jest-canvas-mock"
 
 /* global jest, describe, it, expect, beforeEach, beforeAll */

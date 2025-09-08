@@ -1,6 +1,6 @@
 import React, { KeyboardEvent, useEffect, useRef } from "react"
 import { useModal } from "./Modal"
-import { FilterOptions } from "./componentTypes"
+import { TableFilterDialogProps } from "./componentTypes"
 
 export function FilterDialog({
   column,
@@ -8,13 +8,7 @@ export function FilterDialog({
   filterOn,
   filteredRowsCount,
   unfilteredRowsCount,
-}: {
-  column: string
-  setFilterOn: (filter: FilterOptions) => void
-  filterOn: FilterOptions
-  filteredRowsCount: number
-  unfilteredRowsCount: number
-}) {
+}: TableFilterDialogProps) {
   const placeholder = `Enter ${column}...`
   const inputRef = useRef<HTMLInputElement>(null)
   useEffect(() => {

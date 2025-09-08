@@ -10,32 +10,15 @@ import {
 } from "../modules/utils"
 import {
   ExposureEvent,
-  Camera,
   Metadata,
-  PrevNextType,
-  RubinTVTableContext,
   RubinTVContextType,
+  MediaDisplayProps,
+  BundledMediaEvent,
+  OtherChannelLinksProps,
 } from "./componentTypes"
+import { RubinTVTableContext } from "./contexts/contexts"
 
-interface MediaEventProps {
-  locationName: string
-  camera: Camera
-  initEvent: ExposureEvent | null
-  prevNext: PrevNextType
-  allChannelNames: string[]
-  isCurrent: boolean
-}
-
-interface BundledMediaEvent extends ExposureEvent {
-  mediaType: "image" | "video"
-  src: string
-}
-
-interface OtherChannelLinksProps {
-  allChannelNames: string[]
-  thisChannel: string
-  camera: Camera
-}
+type EL = EventListener
 
 // MediaDisplay component to handle the image/video display
 export default function MediaDisplay({
@@ -45,7 +28,7 @@ export default function MediaDisplay({
   prevNext,
   allChannelNames,
   isCurrent = false,
-}: MediaEventProps) {
+}: MediaDisplayProps) {
   const [mediaEvent, setMediaEvent] = useState<BundledMediaEvent | null>(() => {
     if (!initEvent) {
       return null
@@ -54,7 +37,6 @@ export default function MediaDisplay({
   })
 
   useEffect(() => {
-    type EL = EventListener
     const handleChannelEvent = (message: CustomEvent) => {
       const { data, dataType } = message.detail
       if (dataType !== "event" || !data) {
@@ -175,7 +157,6 @@ const OtherChannelLinks = ({
   const [channelNames, setChannelNames] = useState(allChannelNames)
 
   useEffect(() => {
-    type EL = EventListener
     function handleChannelNamesChange(event: CustomEvent) {
       const { data: newChannelNames } = event.detail
       if (!newChannelNames || !Array.isArray(newChannelNames)) {

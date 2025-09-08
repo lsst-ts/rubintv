@@ -1,6 +1,10 @@
 import { gunzipSync } from "fflate"
 import { homeUrl, imagesUrl } from "../config"
-import { ExposureEvent, MetadataRow } from "../components/componentTypes"
+import {
+  ExposureEvent,
+  MediaType,
+  MetadataRow,
+} from "../components/componentTypes"
 
 export function isEmpty(obj: Record<string, unknown>): boolean {
   for (const prop in obj) {
@@ -21,7 +25,7 @@ export function union<T>(arrayA: T[], arrayB: T[]): T[] {
 }
 
 export async function simplePost(
-  url: RequestInfo | URL,
+  url: string | URL,
   message: object = {}
 ): Promise<string> {
   const res = await fetch(url.toString(), {
@@ -280,7 +284,7 @@ export function getBaseFromEventUrl(url: string): string {
   return baseImgUrl
 }
 
-export function getMediaType(ext: string): "video" | "image" {
+export function getMediaType(ext: MediaType): MediaType {
   if (["mp4", "mov"].includes(ext)) {
     return "video"
   }

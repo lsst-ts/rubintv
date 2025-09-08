@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from "react"
 import RubinCalendar from "./RubinCalendar"
 import { getMediaProxyUrl, getHistoricalData } from "../modules/utils"
-import { CalendarData, Camera, ExposureEvent } from "./componentTypes"
+import { AllSkyProps, AllSkyMediaProps, ExposureEvent } from "./componentTypes"
+
+type EL = EventListener
 
 export default function AllSky({
   initialDate,
@@ -9,13 +11,7 @@ export default function AllSky({
   locationName,
   camera,
   calendar,
-}: {
-  initialDate: string
-  isHistorical?: boolean
-  locationName: string
-  camera: Camera
-  calendar?: CalendarData
-}) {
+}: AllSkyProps) {
   const [date, setDate] = useState(initialDate)
   const [perDayData, setPerDayData] = useState({
     stills: {} as ExposureEvent,
@@ -29,7 +25,6 @@ export default function AllSky({
   }, [date])
 
   useEffect(() => {
-    type EL = EventListener
     function handleDataChange(event: CustomEvent) {
       const { datestamp, data, dataType } = event.detail
       if (dataType !== "perDay") {
@@ -99,21 +94,18 @@ export default function AllSky({
             />
           </section>
         ) : (
-          <AllSkyStill still={perDayData.stills} locationName={locationName} />
+          <AllSkyStill
+            details={perDayData.stills}
+            locationName={locationName}
+          />
         )}
-        <AllSkyMovie movie={perDayData.movies} locationName={locationName} />
+        <AllSkyMovie details={perDayData.movies} locationName={locationName} />
       </div>
     </>
   )
 }
 
-function AllSkyStill({
-  still,
-  locationName,
-}: {
-  still: ExposureEvent | null
-  locationName: string
-}) {
+function AllSkyStill({ details: still, locationName }: AllSkyMediaProps) {
   if (!still || Object.keys(still).length === 0) {
     return null
   }
@@ -141,13 +133,7 @@ function AllSkyStill({
   )
 }
 
-function AllSkyMovie({
-  movie,
-  locationName,
-}: {
-  movie: ExposureEvent | null
-  locationName: string
-}) {
+function AllSkyMovie({ details: movie, locationName }: AllSkyMediaProps) {
   if (!movie || Object.keys(movie).length === 0) {
     return null
   }
