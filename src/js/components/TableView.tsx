@@ -8,7 +8,6 @@ import {
   setCameraBaseUrl,
 } from "../modules/utils"
 import {
-  RubinTVTableContext,
   RubinTVContextType,
   Channel,
   Camera,
@@ -24,7 +23,7 @@ import {
   TableViewProps,
   TableFoldoutCellProps,
 } from "./componentTypes"
-
+import { RubinTVTableContext } from "./contexts/contexts"
 // TODO: this should be set in the backend
 // See DM-50192
 const hasCCS = (siteLoc: string) => {

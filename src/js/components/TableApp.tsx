@@ -8,7 +8,6 @@ import {
 } from "../modules/columnStorage"
 import { ModalProvider } from "./Modal"
 import {
-  RubinTVTableContext,
   TableAppProps,
   ChannelData,
   Metadata,
@@ -16,6 +15,7 @@ import {
   FilterOptions,
   SortingOptions,
 } from "./componentTypes"
+import { RubinTVTableContext } from "./contexts/contexts"
 
 type EL = EventListener
 
@@ -122,7 +122,7 @@ export default function TableApp({
   let filteredChannelData = channelData
   if (filterColumnSet) {
     filteredMetadata = Object.entries(metadata).reduce((acc, [key, val]) => {
-      if (String(val[filterOn.column]) === filterOn.value) {
+      if (String(val[filterOn.column] as string) === filterOn.value) {
         acc[key] = val
       }
       return acc

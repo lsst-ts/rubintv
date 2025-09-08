@@ -385,7 +385,7 @@ describe("TableApp Loading and Historical Data Behavior", () => {
     // Simulate camera event with data
     act(() => {
       metadataEvent({
-        data: { 1: { colA: "foo", colB: "bar" } },
+        1: { colA: "foo", colB: "bar" },
       })
       channelDataEvent({ 1: { value: 42 } })
     })
@@ -416,7 +416,7 @@ describe("TableApp Loading and Historical Data Behavior", () => {
     // Simulate camera event with data
     act(() => {
       metadataEvent({
-        data: { 1: { colA: "foo", colB: "bar" } },
+        1: { colA: "foo", colB: "bar" },
       })
       channelDataEvent({ 1: { value: 42 } })
     })

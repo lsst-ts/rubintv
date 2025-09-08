@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useContext } from "react"
 import { PrevNextType } from "./componentTypes"
-import { RubinTVTableContext, RubinTVContextType } from "./componentTypes"
+import { RubinTVContextType } from "./componentTypes"
+import { RubinTVTableContext } from "./contexts/contexts"
 import { setCameraBaseUrl } from "../modules/utils"
 
 type EL = EventListener

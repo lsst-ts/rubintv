@@ -1,9 +1,8 @@
-/* eslint-disable react/prop-types */
 import "@testing-library/jest-dom"
 import React from "react"
 import { render, screen, fireEvent } from "@testing-library/react"
 import { TableHeader, TableRow } from "../TableView"
-import { RubinTVTableContext } from "../componentTypes"
+import { RubinTVTableContext } from "../contexts/contexts"
 
 /* global jest, describe, it, expect, beforeEach */
 
@@ -21,7 +20,8 @@ jest.mock("../TableFilter", () => ({
 }))
 
 // Mock clipboard API
-Object.assign(navigator, {
+window.navigator = window.navigator || {}
+Object.assign(window.navigator, {
   clipboard: {
     writeText: jest.fn(),
   },
@@ -382,7 +382,7 @@ describe("TableView Components", () => {
       })
       fireEvent.click(copyButton)
 
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+      expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(
         "template-20230101-000100"
       )
     })

@@ -3,7 +3,7 @@ import "@testing-library/jest-dom"
 import React from "react"
 import { render, screen, fireEvent } from "@testing-library/react"
 import AboveTableRow, { JumpButtons } from "../TableControls"
-import { RubinTVTableContext } from "../componentTypes"
+import { RubinTVTableContext } from "../contexts/contexts"
 import { saveColumnSelection } from "../../modules/columnStorage"
 import { _getById } from "../../modules/utils"
 
@@ -411,7 +411,7 @@ describe("TableControls Component", () => {
       </RubinTVTableContext.Provider>
     )
 
-    let button = screen.getByRole("button", { name: /add\/remove columns/i })
+    const button = screen.getByRole("button", { name: /add\/remove columns/i })
     fireEvent.click(button)
 
     let optionsContainer = document.querySelector(".table-options")

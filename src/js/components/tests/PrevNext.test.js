@@ -2,7 +2,7 @@ import "@testing-library/jest-dom"
 import React from "react"
 import { render, screen, fireEvent, act } from "@testing-library/react"
 import PrevNext from "../PrevNext"
-import { RubinTVTableContext } from "../componentTypes"
+import { RubinTVTableContext } from "../contexts/contexts"
 import { setCameraBaseUrl } from "../../modules/utils"
 
 /* global jest, describe, it, expect, beforeEach, afterEach */

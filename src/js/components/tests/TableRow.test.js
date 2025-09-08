@@ -3,7 +3,7 @@ import "@testing-library/jest-dom" // Import jest-dom for custom matchers
 import React from "react"
 import { render, screen } from "@testing-library/react"
 import { TableRow } from "../TableView"
-import { RubinTVTableContext } from "../componentTypes" // or wherever it's exported
+import { RubinTVTableContext } from "../contexts/contexts"
 import { indicatorForAttr, replaceInString } from "../../modules/utils"
 
 /* global jest, describe, it, expect */
