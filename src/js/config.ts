@@ -11,3 +11,6 @@ function buildHomeUrl() {
 export const homeUrl = buildHomeUrl()
 export const apiUrl = `${homeUrl}api/`
 export const imagesUrl = `${homeUrl}static/images/`
+
+// provides a default list of tabs to hide in the night report
+export const DEFAULT_HIDDEN_TABS = ["elana"]

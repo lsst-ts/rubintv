@@ -10,6 +10,7 @@ import {
   TextTabType,
 } from "./componentTypes"
 import { groupBy, sanitiseString } from "../modules/utils"
+import { DEFAULT_HIDDEN_TABS } from "../config"
 
 type EL = EventListener
 
@@ -69,7 +70,7 @@ function NightReportText({ tab, selected }: NightReportTextProps) {
 }
 
 function NightReportTabs({ tabs, selected, setSelected }: NightReportTabProps) {
-  const [hiddenTabs, setHiddenTabs] = useState(["elana"])
+  const [hiddenTabs, setHiddenTabs] = useState(DEFAULT_HIDDEN_TABS)
   const [typed, setTyped] = useState("")
 
   useEffect(() => {
