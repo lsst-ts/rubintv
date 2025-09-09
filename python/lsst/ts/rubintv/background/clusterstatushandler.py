@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Literal, Mapping, TypeAlias, TypedDict
+from typing import Literal, TypeAlias, TypedDict
 
 import redis.asyncio as redis  # type: ignore[import]
 
@@ -14,29 +14,34 @@ logger = rubintv_logger()
 # Typed helpers
 # ----------------------------------------------------------------------
 
-StatusLiteral: TypeAlias = Literal["free", "busy", "missing", "queued"]
+# Status values for a worker
+StatusLiteral: TypeAlias = Literal[
+    "free", "busy", "missing", "queued", "restarting", "guest"
+]
 
 
 class QueueStatus(TypedDict, total=False):
-    """Status for one detector entry.
-
-    `queue_length` is present only when status == "queued".
-    """
-
     status: StatusLiteral
     queue_length: int
 
 
-# Text data is a simple mapping of strings to strings
-TextData: TypeAlias = dict[str, str]
+# Workers mapping: worker name -> QueueStatus
+WorkersDict: TypeAlias = dict[str, QueueStatus]
 
-# A "numWorkers" entry is just an int, everything else is a QueueStatus
-DecodedRedisValue: TypeAlias = Mapping[str, int | QueueStatus] | TextData
+# Text status mapping: key -> text value
+TextStatusDict: TypeAlias = dict[str, str]
 
-# detector‑name  ->  DecodedRedisValue | TextData
-InitialData: TypeAlias = Mapping[str, DecodedRedisValue | TextData]
+# The decoded Redis value can contain:
+# - "workers": mapping of worker names to their status
+# - "text": mapping of keys to text status
+# - "numWorkers": integer count of workers
+DecodedRedisValue: TypeAlias = dict[str, WorkersDict | TextStatusDict | int]
 
-KeyspaceEvent: TypeAlias = Mapping[str, bytes]
+# Initial data: detector name -> DecodedRedisValue
+InitialData: TypeAlias = dict[str, DecodedRedisValue]
+
+# Keyspace event: mapping of string to bytes
+KeyspaceEvent: TypeAlias = dict[str, bytes]
 
 # ----------------------------------------------------------------------
 # Main handler
@@ -153,7 +158,11 @@ def _decode_stream_message(data: dict[bytes, bytes]) -> DecodedRedisValue:
             logger.warning(f"Expected dict data, got {type(state_data)}")
             return {}
 
-        result: dict[str, QueueStatus | int] = {}
+        # Use DecodedRedisValue for result type
+        result: DecodedRedisValue = {}
+
+        workers: WorkersDict = {}
+        text: TextStatusDict = {}
 
         # Process each detector entry
         for key, value in state_data.items():
@@ -168,7 +177,10 @@ def _decode_stream_message(data: dict[bytes, bytes]) -> DecodedRedisValue:
                 try:
                     # Try to parse as queue length
                     queue_length = int(status_value)
-                    result[key] = {"status": "queued", "queue_length": queue_length}
+                    workers[key] = {
+                        "status": "queued",
+                        "queue_length": queue_length,
+                    }
                 except ValueError:
                     # Handle as normal status
                     if status_value in (
@@ -178,17 +190,23 @@ def _decode_stream_message(data: dict[bytes, bytes]) -> DecodedRedisValue:
                         "restarting",
                         "guest",
                     ):
-                        result[key] = {"status": status_value}
+                        workers[key] = {"status": status_value}
                     else:
-                        result[key] = {"status": "missing"}
-            if status_type == "text_status":
+                        workers[key] = {"status": "missing"}
+            elif status_type == "text_status":
                 # text status is passed through as-is
-                result[key] = status_value
-            if status_type == "worker_count":
+                text[key] = status_value
+            elif status_type == "worker_count":
                 try:
-                    result[key] = int(status_value)
+                    result["numWorkers"] = int(status_value)
                 except ValueError:
                     logger.warning(f"Invalid worker count for {key}: {status_value}")
+
+        if workers:
+            result["workers"] = workers
+        if text:
+            result["text"] = text
+
         return result
     except Exception as e:
         logger.warning(f"Failed to decode state: {e}", exc_info=True)

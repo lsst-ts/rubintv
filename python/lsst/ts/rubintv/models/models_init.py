@@ -101,11 +101,11 @@ class ModelsInitiator:
         cams: `list`[`Camera`]
             The updated list of cameras.
         """
-        metadata: dict[str, Any] = data["metadata_cols"]
+        metadata: dict[str, Any] = data["metadata_columns"]
         updated_cams: list[Camera] = []
         for cam in cameras:
             if cam.name in metadata and (cols := metadata[cam.name]):
-                cam.metadata_cols = cols
+                cam.metadata_columns = cols
             updated_cams.append(cam)
         return updated_cams
 

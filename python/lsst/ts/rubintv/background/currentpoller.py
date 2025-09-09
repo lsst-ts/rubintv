@@ -155,6 +155,7 @@ class CurrentPoller:
                         average_time=time_total / self.RUNNING_LOG_PERIOD,
                     )
                     time_total = 0.0
+                    self._count_loops = 0
                 if elapsed < self.MIN_INTERVAL:
                     await sleep(self.MIN_INTERVAL - elapsed)
 
@@ -207,11 +208,23 @@ class CurrentPoller:
             self._events[loc_cam] = events
             await self.update_channel_events(events, location, camera)
 
-            pd_data = await self.make_per_day_data(camera, events)
+            pd_events = await self.filter_per_day_events(camera, events)
+            pd_data = await self.per_day_events_to_dicts(pd_events)
             self._per_day[loc_cam] = pd_data
             await notify_ws_clients(
                 Service.CAMERA, MessageType.CAMERA_PER_DAY, loc_cam, pd_data
             )
+
+            last_pd_event = pd_events[-1] if pd_events else None
+            if last_pd_event:
+                chan_lookup = f"{loc_cam}/{last_pd_event.channel_name}"
+                self._most_recent_events[chan_lookup] = last_pd_event
+                await notify_ws_clients(
+                    Service.CALENDAR,
+                    MessageType.CAMERA_PER_DAY,
+                    chan_lookup,
+                    last_pd_event.__dict__,
+                )
 
             table = await self.make_channel_table(camera, events)
             self._table[loc_cam] = table
@@ -410,16 +423,19 @@ class CurrentPoller:
             self._night_reports[loc_cam] = night_report
         return
 
-    async def make_per_day_data(
+    async def filter_per_day_events(
         self, camera: Camera, events: list[Event]
-    ) -> dict[str, dict]:
+    ) -> list[Event]:
+        """Filter the events to only include those that are per-day
+        channels."""
         per_day_chans = camera.pd_channels()
         if not per_day_chans:
-            return {}
+            return []
         per_day_chan_names = [chan.name for chan in per_day_chans]
         pd_events = [e for e in events if e.channel_name in per_day_chan_names]
-        if not pd_events:
-            return {}
+        return pd_events
+
+    async def per_day_events_to_dicts(self, pd_events: list[Event]) -> dict[str, dict]:
         pd_data = {e.channel_name: e.__dict__ for e in pd_events}
         return pd_data
 
@@ -588,6 +604,11 @@ class CurrentPoller:
                 ):
                     yield MessageType.LATEST_METADATA, (latest_metadata)
                 yield MessageType.DAY_CHANGE, "from current poller"
+
+                if latest_per_day := await self.get_current_per_day_data(
+                    location.name, camera
+                ):
+                    yield MessageType.CAMERA_PER_DAY, latest_per_day
 
     async def get_all_channel_names_for_seq_num(
         self, location_name: str, camera_name: str, seq_num: int

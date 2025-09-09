@@ -13,7 +13,7 @@ function attachWsListeners(ws) {
   }
 
   ws.onerror = (error) => {
-    sendToPorts(error.data)
+    console.error("WebSocket error:", error)
   }
 
   ws.onclose = () => {
@@ -27,7 +27,7 @@ function attachWsListeners(ws) {
   }
 }
 
-onconnect = function (e) {
+self.onconnect = function (e) {
   const port = e.ports[0]
   ports.push(port)
 

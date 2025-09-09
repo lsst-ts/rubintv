@@ -13,9 +13,9 @@
     <title>{{ title }}</title>
 </head>
 
-{% set body_class = "" %}
+{% set body_class = site_location %}
 {% if camera %}
-    {% set body_class = camera.name %}
+    {% set body_class = body_class ~ " body_camera." ~ camera.name %}
 {% endif %}
 {% if event %}
     {% set body_class = body_class ~ " event" %}

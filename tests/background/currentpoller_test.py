@@ -122,7 +122,7 @@ async def test_clear_todays_data(current_poller: CurrentPoller) -> None:
 
 
 @patch(f"{rtv_root}.background.currentpoller.notify_ws_clients", new_callable=AsyncMock)
-@patch(f"{cp_path}.make_per_day_data", new_callable=AsyncMock)
+@patch(f"{cp_path}.filter_per_day_events", new_callable=AsyncMock)
 @patch(f"{cp_path}.update_channel_events", new_callable=AsyncMock)
 @pytest.mark.asyncio
 async def test_process_channel_objects(
@@ -180,7 +180,8 @@ async def test_make_per_day_data(
                 continue
             loc_cam = f"{location.name}/{camera.name}"
             events = mocked_events[loc_cam]
-            pd_data = await current_poller.make_per_day_data(camera, events)
+            pd_events = await current_poller.filter_per_day_events(camera, events)
+            pd_data = await current_poller.per_day_events_to_dicts(pd_events)
             pd_chan_names = [chan.name for chan in camera.pd_channels()]
             if not pd_chan_names:
                 assert pd_data == {}

@@ -623,7 +623,7 @@ services:
     services:
       backgroundService: Background
 
-metadata_cols:
+metadata_columns:
   fake_auxtel:
     Exposure log entries: Any exposure log entries which have been made, click to pop out the details
     Mount motion image degradation: An estimate of the degradation of the PSF, in arcseconds, due mount tracking issues

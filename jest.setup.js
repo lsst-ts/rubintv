@@ -1,3 +1,5 @@
+import fetchMock from "jest-fetch-mock"
+fetchMock.enableMocks()
 import "@testing-library/jest-dom"
 
 // Mock global APP_DATA
@@ -6,3 +8,8 @@ window.APP_DATA = {
   siteLocation: "summit",
   eventUrl: "http://example.com", // Add eventUrl mock
 }
+
+// Always return valid JSON for fetch
+beforeAll(() => {
+  fetchMock.mockResponse(JSON.stringify({}))
+})
