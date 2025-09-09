@@ -31,7 +31,6 @@ function MultilineText({ text }: { text: string }) {
   )
 }
 
-// Simplified: expects a single tab object for text
 function NightReportText({ tab, selected }: NightReportTextProps) {
   if (!tab || tab.id !== selected) return null
   const data = tab.data || {}
