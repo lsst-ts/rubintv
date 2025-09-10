@@ -224,6 +224,9 @@ function ChannelMetadata({ view, metadata }: ChannelMetadataProps) {
   }
   const columns = [...commonColumns, ...viewColumns]
   const metadatum = metadata[latestEvent.seq_num] || {}
+  if (!Object.keys(metadatum).includes("seqNum")) {
+    metadatum.seqNum = latestEvent.seq_num.toString()
+  }
   return (
     <table className="viewMeta" id={`table-${channel}`}>
       <tbody>
