@@ -1,3 +1,4 @@
+import gc
 from asyncio import Event as AsyncioEvent
 from asyncio import sleep
 from time import time
@@ -21,6 +22,7 @@ from lsst.ts.rubintv.models.models_helpers import (
     make_table_from_event_list,
     objects_to_ngt_report_data,
 )
+from lsst.ts.rubintv.s3_connection_pool import get_shared_s3_client
 from lsst.ts.rubintv.s3client import S3Client
 
 logger = rubintv_logger()
@@ -61,7 +63,7 @@ class CurrentPoller:
         self.locations = locations
         self._current_day_obs = get_current_day_obs()
         for location in locations:
-            self._s3clients[location.name] = S3Client(
+            self._s3clients[location.name] = get_shared_s3_client(
                 location.profile_name, location.bucket_name, location.endpoint_url
             )
 
@@ -74,6 +76,9 @@ class CurrentPoller:
         self._most_recent_events = {}
         self._nr_metadata = {}
         self._night_reports = {}
+        # Force garbage collection after clearing large data structures
+        gc.collect()
+        logger.debug("Cleared today's data and triggered garbage collection")
 
     async def check_for_empty_per_day_channels(self) -> None:
         """Creates a store of channel prefixes for per-day data that's not
@@ -156,6 +161,10 @@ class CurrentPoller:
                     )
                     time_total = 0.0
                     self._count_loops = 0
+                    # Trigger garbage collection periodically to prevent
+                    # memory accumulation
+                    gc.collect()
+                    logger.debug("Triggered garbage collection in CurrentPoller")
                 if elapsed < self.MIN_INTERVAL:
                     await sleep(self.MIN_INTERVAL - elapsed)
 

@@ -34,7 +34,7 @@ from .handlers.websocket import data_ws_router
 from .handlers.websockets_clients import clients
 from .middleware.x_forwarded import XForwardedMiddleware
 from .models.models_init import ModelsInitiator
-from .s3client import S3Client
+from .s3_connection_pool import get_shared_s3_client
 
 logger = rubintv_logger()
 
@@ -84,7 +84,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     app.state.historical = hp
     app.state.s3_clients = {}
     for location in models.locations:
-        app.state.s3_clients[location.name] = S3Client(
+        app.state.s3_clients[location.name] = get_shared_s3_client(
             location.profile_name, location.bucket_name, location.endpoint_url
         )
 
