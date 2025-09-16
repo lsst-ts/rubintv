@@ -25,6 +25,8 @@ class RubinDataMocker:
         day_obs: date = today,
         s3_required: bool = False,
         populate: bool = True,
+        include_metadata: bool = False,
+        metadata_entries_per_camera: int = 100,
     ) -> None:
         """
         Initialize the RubinDataMocker instance.
@@ -41,6 +43,10 @@ class RubinDataMocker:
             to False.
         populate: `bool`, `optional`
             Set to False if an empty mocker is requires. Defaults to True.
+        include_metadata : `bool`, `optional`
+            Whether to create metadata files for cameras. Defaults to False.
+        metadata_entries_per_camera : `int`, `optional`
+            Number of metadata entries per camera. Defaults to 100.
         """
         self.last_seq: dict[str, int] = {}
         self._locations = locations
@@ -53,6 +59,10 @@ class RubinDataMocker:
         self.empty_channel: dict[str, str] = {}
         self.events: dict[str, list[Event]] = {}
         self.seq_objs: dict[str, list[dict[str, str]]] = {}
+        self.include_metadata = include_metadata
+        self.metadata_entries_per_camera = metadata_entries_per_camera
+        self.metadata: dict[str, dict] = {}
+        self.metadata_files: list[str] = []
         if populate:
             self.mock_up_data()
 
@@ -90,6 +100,10 @@ class RubinDataMocker:
 
                     self.location_channels[loc_name].append(camera.channels)
                     self.add_seq_objs(location, camera)
+
+        # Create metadata files if enabled
+        if self.include_metadata:
+            self._create_metadata_files()
 
     def add_seq_objs(
         self, location: Location, camera: Camera, include_empty_channel: bool = True
@@ -305,3 +319,130 @@ class RubinDataMocker:
             logging.error(e)
             return ""
         return res["ETag"]
+
+    def _create_metadata_files(self) -> None:
+        """Create metadata files for testing purposes.
+
+        This method creates metadata entries for each camera at each location,
+        storing them in both in-memory structures and optionally S3 if
+        required.
+        """
+        from lsst.ts.rubintv.config import rubintv_logger
+
+        logger = rubintv_logger()
+
+        logger.info("Creating metadata files for testing")
+
+        for location in self._locations:
+            loc_name = location.name
+            for camera in location.cameras:
+                if not camera.online:
+                    continue
+
+                camera_name = camera.name
+
+                # Create metadata entries for this camera
+                for i in range(self.metadata_entries_per_camera):
+                    metadata_key = f"{loc_name}-{camera_name}-metadata-{i:03d}"
+                    metadata_content = {
+                        "seq_num": str(i),
+                        "date_obs": f"{self.day_obs}T10:00:00",
+                        "camera": camera_name,
+                        "location": loc_name,
+                        "image_type": "OBJECT",
+                        "exposure_time": 30.0,
+                        "filter": "r",
+                        "target": f"target_{i}",
+                        "airmass": 1.2,
+                        "azimuth": float(i % 360),
+                        "altitude": 45.0,
+                        "test_data": True,
+                    }
+
+                    self.metadata[metadata_key] = metadata_content
+                    self.metadata_files.append(metadata_key)
+
+                # Create S3 metadata file once per camera if S3 is required
+                if self.s3_required:
+                    self._create_s3_metadata(location, camera, 0, {})
+
+        logger.info(f"Created {len(self.metadata_files)} metadata files for testing")
+
+    def _create_s3_metadata(
+        self, location: Location, camera: Camera, seq_num: int, metadata_content: dict
+    ) -> None:
+        """Create metadata files in S3 for a camera.
+
+        Parameters
+        ----------
+        location : Location
+            The location where the camera is located
+        camera : Camera
+            The camera to create metadata for
+        seq_num : int
+            The sequence number for this metadata entry
+        metadata_content : dict
+            The metadata content to store
+        """
+        bucket_name = location.bucket_name
+        # Use the expected metadata.json pattern that CurrentPoller recognizes
+        metadata_key = f"{camera.name}/{self.day_obs}/metadata.json"
+
+        # Create a dictionary with all sequence entries for this camera
+        if not hasattr(self, "_s3_metadata_created"):
+            self._s3_metadata_created: set[str] = set()
+
+        # Only create one metadata.json file per camera per day
+        camera_day_key = f"{camera.name}-{self.day_obs}"
+        if camera_day_key not in self._s3_metadata_created:
+            # Create metadata with all sequence entries for this camera
+            full_metadata = {}
+            for i in range(self.metadata_entries_per_camera):
+                full_metadata[str(i)] = {
+                    "camera": camera.name,
+                    "day_obs": str(self.day_obs),
+                    "seq_num": i,
+                    "timestamp": f"{self.day_obs}T{i:02d}:00:00.000000",
+                    "image_type": "OBJECT",
+                    "exposure_time": 30.0,
+                    "filter": "r",
+                    "target": f"target_{i}",
+                    "airmass": 1.2,
+                    "azimuth": float(i % 360),
+                    "altitude": 45.0,
+                    "test_data": True,
+                }
+
+            try:
+                json_str = json.dumps(full_metadata)
+                self.s3_client.put_object(
+                    Bucket=bucket_name, Body=json_str, Key=metadata_key
+                )
+                self._s3_metadata_created.add(camera_day_key)
+            except ClientError as e:
+                logging.error(f"Failed to upload metadata to S3: {e}")
+
+    def get_metadata_files(self) -> list[str]:
+        """Get the list of created metadata file keys.
+
+        Returns
+        -------
+        list[str]
+            List of metadata file keys that were created
+        """
+        return self.metadata_files.copy()
+
+    def get_metadata(self, key: str) -> dict | None:
+        """Get metadata content by key.
+
+        Parameters
+        ----------
+        key : str
+            The metadata key to retrieve
+
+        Returns
+        -------
+        dict | None
+            The metadata content, or None if not found
+        """
+        return self.metadata.get(key)
