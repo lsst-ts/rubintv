@@ -284,7 +284,7 @@ export function getBaseFromEventUrl(url: string): string {
   return baseImgUrl
 }
 
-export function getMediaType(ext: MediaType): MediaType {
+export function getMediaType(ext: string): MediaType {
   if (["mp4", "mov"].includes(ext)) {
     return "video"
   }

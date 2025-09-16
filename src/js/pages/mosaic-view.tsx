@@ -1,7 +1,8 @@
 import React from "react"
 import { createRoot } from "react-dom/client"
 import { WebsocketClient } from "../modules/ws-service-client"
-import MosaicView, { CameraWithMosaicViewMeta } from "../components/MosaicView"
+import MosaicView from "../components/MosaicView"
+import { CameraWithMosaicViewMeta } from "../components/componentTypes"
 import { _getById } from "../modules/utils"
 ;(function () {
   const locationName = window.APP_DATA.locationName || ""
