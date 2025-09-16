@@ -1,10 +1,11 @@
 import asyncio
+import gc
 import pickle
 import re
 import zlib
 from datetime import date
 from time import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.config import rubintv_logger
@@ -30,7 +31,10 @@ from lsst.ts.rubintv.models.models_helpers import (
     objects_to_events,
     objects_to_ngt_report_data,
 )
-from lsst.ts.rubintv.s3client import S3Client
+from lsst.ts.rubintv.s3_connection_pool import get_shared_s3_client
+
+if TYPE_CHECKING:
+    from lsst.ts.rubintv.s3client import S3Client
 
 logger = rubintv_logger()
 
@@ -64,7 +68,7 @@ class HistoricalPoller:
         self._calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
         self._locations = locations
         self._clients = {
-            location.name: S3Client(
+            location.name: get_shared_s3_client(
                 location.profile_name, location.bucket_name, location.endpoint_url
             )
             for location in locations
@@ -86,6 +90,9 @@ class HistoricalPoller:
         self._compressed_events = {}
         self._nr_metadata = {}
         self._calendar = {}
+        # Force garbage collection after clearing large data structures
+        gc.collect()
+        logger.debug("Cleared all historical data and triggered garbage collection")
 
     async def trigger_reload_everything(self) -> None:
         self._have_downloaded = False
@@ -113,6 +120,12 @@ class HistoricalPoller:
 
                     time_taken = time() - time_start
                     logger.info("Historical polling took:", time_taken=time_taken)
+
+                    # Force garbage collection after completing data refresh
+                    gc.collect()
+                    logger.debug(
+                        "Completed historical data refresh and triggered garbage collection"
+                    )
 
                     await notify_all_status_change(historical_busy=False)
                 else:
