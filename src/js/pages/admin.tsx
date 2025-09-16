@@ -17,7 +17,7 @@ import { Menu } from "../components/DropDownMenu"
       {
         title: "AOS Pipeline",
         key: "RUBINTV_CONTROL_AOS_PIPELINE",
-        items: [{ title: "Danish" }, { title: "TIE" }],
+        items: [{ title: "Danish" }, { title: "TIE" }, { title: "AI" }],
       },
       {
         title: "Chip selection",
