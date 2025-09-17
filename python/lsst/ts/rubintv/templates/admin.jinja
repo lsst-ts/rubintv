@@ -23,6 +23,7 @@
 <script src="{{ url_for('static', path='assets/admin.js') }}"></script>
 <script>
     window.APP_DATA.admin = {{ admin|tojson }};
+    window.APP_DATA.redisMenus = {{ redis_menus|tojson if redis_menus else 'null' }};
     window.APP_DATA.baseUrl = "{{ request.base_url }}";
 </script>
 {% endblock footer_scripts %}

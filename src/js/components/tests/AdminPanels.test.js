@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import "@testing-library/jest-dom"
 import React from "react"
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
@@ -18,6 +17,7 @@ import { simplePost, simpleGet } from "../../modules/utils"
 jest.mock("../../modules/utils", () => ({
   simplePost: jest.fn(),
   simpleGet: jest.fn(),
+  sanitiseRedisValue: jest.fn((value) => value), // Mock implementation
 }))
 
 jest.mock("../DropDownMenu", () => ({
@@ -29,7 +29,7 @@ jest.mock("../DropDownMenu", () => ({
         <button
           key={index}
           onClick={() => onItemSelect(item)}
-          data-testid={`menu-item-${item.name}`}
+          data-testid={`menu-item-${item}`}
         >
           {item.name}
         </button>
@@ -187,7 +187,7 @@ describe("AdminPanels Component", () => {
     // Since the mock returns "Updated User", we should eventually see "Hello Updated"
     // However, the component may not re-render with the new name immediately
     // The test should verify that the API was called, which is the main behavior we're testing
-    expect(simpleGet).toHaveBeenCalledTimes(1)
+    expect(simpleGet).toHaveBeenCalledWith("http://auth.test")
   })
 })
 
@@ -196,13 +196,13 @@ describe("RedisPanel Component", () => {
     {
       key: "TEST_KEY_1",
       title: "Menu 1",
-      items: [{ name: "Item 1", value: "value1" }],
+      items: ["value1"],
       selectedItem: null,
     },
     {
       key: "TEST_KEY_2",
       title: "Menu 2",
-      items: [{ name: "Item 2", value: "value2" }],
+      items: ["value2"],
       selectedItem: null,
     },
   ]
@@ -230,10 +230,9 @@ describe("RedisPanel Component", () => {
   })
 
   it("handles menu item selection successfully", async () => {
-    const consoleSpy = jest.spyOn(console, "log").mockImplementation()
     render(<RedisPanel {...mockProps} />)
 
-    const menuItem = screen.getByTestId("menu-item-Item 1")
+    const menuItem = screen.getByTestId("menu-item-value1")
     fireEvent.click(menuItem)
 
     await waitFor(() => {
@@ -242,9 +241,6 @@ describe("RedisPanel Component", () => {
         value: "value1",
       })
     })
-
-    expect(consoleSpy).toHaveBeenCalledWith("Redis updated successfully")
-    consoleSpy.mockRestore()
   })
 
   it("handles menu item selection failure", async () => {
@@ -254,7 +250,7 @@ describe("RedisPanel Component", () => {
 
     render(<RedisPanel {...mockProps} />)
 
-    const menuItem = screen.getByTestId("menu-item-Item 1")
+    const menuItem = screen.getByTestId("menu-item-value1")
     fireEvent.click(menuItem)
 
     // Wait for the simplePost to be called and the error to be handled
@@ -272,16 +268,201 @@ describe("RedisPanel Component", () => {
 
     consoleSpy.mockRestore()
   })
+
+  it("fetches and sets selected menu items from server on mount", async () => {
+    const mockMenusWithSelection = [
+      {
+        key: "TEST_KEY_1",
+        title: "Menu 1",
+        items: ["value1", "value2"],
+        selectedItem: null,
+      },
+      {
+        key: "TEST_KEY_2",
+        title: "Menu 2",
+        items: ["option1", "option2"],
+        selectedItem: null,
+      },
+    ]
+
+    const mockSelectedValues = [
+      { key: "TEST_KEY_1", value: "value2" },
+      { key: "TEST_KEY_2", value: "option1" },
+    ]
+
+    const mockPropsWithSelection = {
+      ...mockProps,
+      menus: mockMenusWithSelection,
+    }
+
+    const mockSimpleGet = simpleGet
+    mockSimpleGet.mockResolvedValue(JSON.stringify(mockSelectedValues))
+
+    render(<RedisPanel {...mockPropsWithSelection} />)
+
+    // Wait for the fetchSelectedValues effect to complete
+    await waitFor(() => {
+      expect(simpleGet).toHaveBeenCalledWith("http://redis.test/controlvalues")
+    })
+
+    // Verify setMenus was called with updated selected items
+    await waitFor(() => {
+      expect(mockProps.setMenus).toHaveBeenCalledWith([
+        {
+          key: "TEST_KEY_1",
+          title: "Menu 1",
+          items: ["value1", "value2"],
+          selectedItem: "value2",
+        },
+        {
+          key: "TEST_KEY_2",
+          title: "Menu 2",
+          items: ["option1", "option2"],
+          selectedItem: "option1",
+        },
+      ])
+    })
+  })
+
+  it("handles fetchSelectedValues API failure gracefully", async () => {
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation()
+    const mockSimpleGet = simpleGet
+    mockSimpleGet.mockRejectedValue(new Error("Fetch failed"))
+
+    render(<RedisPanel {...mockProps} />)
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Error fetching menus:",
+        expect.any(Error)
+      )
+    })
+
+    consoleSpy.mockRestore()
+  })
+
+  it("correctly sets menu selected items based on simpleGet response", async () => {
+    const initialMenus = [
+      {
+        key: "AOS_PIPELINE",
+        title: "AOS Pipeline",
+        items: ["DANISH", "TIE", "AI"],
+        selectedItem: null,
+      },
+      {
+        key: "CHIP_SELECTION",
+        title: "Chip Selection",
+        items: ["ALL", "RAFT_CHECKERBOARD", "CCD_CHECKERBOARD"],
+        selectedItem: null,
+      },
+    ]
+
+    // Mock response from the server with specific selected values
+    const serverResponse = [
+      { key: "AOS_PIPELINE", value: "TIE" },
+      { key: "CHIP_SELECTION", value: "RAFT_CHECKERBOARD" },
+    ]
+
+    const testProps = {
+      ...mockProps,
+      menus: initialMenus,
+    }
+
+    const mockSimpleGet = simpleGet
+    mockSimpleGet.mockResolvedValue(JSON.stringify(serverResponse))
+
+    render(<RedisPanel {...testProps} />)
+
+    // Wait for fetchSelectedValues to complete
+    await waitFor(() => {
+      expect(simpleGet).toHaveBeenCalledWith("http://redis.test/controlvalues")
+    })
+
+    // Verify that setMenus was called with the correct updated menus
+    await waitFor(() => {
+      expect(mockProps.setMenus).toHaveBeenCalledWith([
+        {
+          key: "AOS_PIPELINE",
+          title: "AOS Pipeline",
+          items: ["DANISH", "TIE", "AI"],
+          selectedItem: "TIE",
+        },
+        {
+          key: "CHIP_SELECTION",
+          title: "Chip Selection",
+          items: ["ALL", "RAFT_CHECKERBOARD", "CCD_CHECKERBOARD"],
+          selectedItem: "RAFT_CHECKERBOARD",
+        },
+      ])
+    })
+
+    // Verify the API call was made to the correct endpoint
+    expect(simpleGet).toHaveBeenCalledTimes(1)
+    expect(simpleGet).toHaveBeenCalledWith("http://redis.test/controlvalues")
+  })
+
+  it("renders menus with selected items after fetchSelectedValues completes", async () => {
+    const mockMenusWithSelection = [
+      {
+        key: "TEST_KEY_1",
+        title: "Menu 1",
+        items: ["value1", "value2", "value3"],
+        selectedItem: null,
+      },
+      {
+        key: "TEST_KEY_2",
+        title: "Menu 2",
+        items: ["option1", "option2", "option3"],
+        selectedItem: null,
+      },
+    ]
+
+    const mockSelectedValues = [
+      { key: "TEST_KEY_1", value: "value3" },
+      { key: "TEST_KEY_2", value: "option2" },
+    ]
+
+    const mockPropsWithSelection = {
+      ...mockProps,
+      menus: mockMenusWithSelection,
+    }
+
+    const mockSimpleGet = simpleGet
+    mockSimpleGet.mockResolvedValue(JSON.stringify(mockSelectedValues))
+
+    const { rerender } = render(<RedisPanel {...mockPropsWithSelection} />)
+
+    // Wait for the fetchSelectedValues effect to complete
+    await waitFor(() => {
+      expect(simpleGet).toHaveBeenCalledWith("http://redis.test/controlvalues")
+    })
+
+    // Wait for setMenus to be called and then rerender with updated props
+    await waitFor(() => {
+      expect(mockProps.setMenus).toHaveBeenCalled()
+    })
+
+    // Get the updated menus from the setMenus call
+    const updatedMenus = mockProps.setMenus.mock.calls[0][0]
+
+    // Verify the menus have the correct selected items
+    expect(updatedMenus[0].selectedItem).toBe("value3")
+    expect(updatedMenus[1].selectedItem).toBe("option2")
+
+    // Rerender with the updated menus to simulate state update
+    rerender(<RedisPanel {...mockPropsWithSelection} menus={updatedMenus} />)
+
+    // The dropdown menus should now display the selected items
+    expect(screen.getByText("Menu 1")).toBeInTheDocument()
+    expect(screen.getByText("Menu 2")).toBeInTheDocument()
+  })
 })
 
 describe("DropDownMenuContainer Component", () => {
   const mockMenu = {
     key: "TEST_KEY",
     title: "Test Menu",
-    items: [
-      { name: "Option 1", value: "value1" },
-      { name: "Option 2", value: "value2" },
-    ],
+    items: ["value1", "value2"],
     selectedItem: null,
   }
 
@@ -298,7 +479,7 @@ describe("DropDownMenuContainer Component", () => {
 
     expect(screen.getByText("Test Menu")).toBeInTheDocument()
     expect(screen.getByTestId("dropdown-menu")).toBeInTheDocument()
-    expect(screen.getByTestId("menu-item-Option 1")).toBeInTheDocument()
+    expect(screen.getByTestId("menu-item-value1")).toBeInTheDocument()
   })
 
   it("handles successful item selection", async () => {
@@ -306,17 +487,14 @@ describe("DropDownMenuContainer Component", () => {
       <DropDownMenuContainer menu={mockMenu} onItemSelect={mockOnItemSelect} />
     )
 
-    const menuItem = screen.getByTestId("menu-item-Option 1")
+    const menuItem = screen.getByTestId("menu-item-value1")
     fireEvent.click(menuItem)
 
     // Should show pending status immediately
     expect(document.querySelector(".indicator-pending")).toBeInTheDocument()
 
     await waitFor(() => {
-      expect(mockOnItemSelect).toHaveBeenCalledWith({
-        name: "Option 1",
-        value: "value1",
-      })
+      expect(mockOnItemSelect).toHaveBeenCalledWith("value1")
     })
 
     // Check that status indicator shows success after promise resolves
@@ -340,7 +518,7 @@ describe("DropDownMenuContainer Component", () => {
       <DropDownMenuContainer menu={mockMenu} onItemSelect={mockOnItemSelect} />
     )
 
-    const menuItem = screen.getByTestId("menu-item-Option 1")
+    const menuItem = screen.getByTestId("menu-item-value1")
     fireEvent.click(menuItem)
 
     await waitFor(() => {
@@ -368,7 +546,7 @@ describe("DropDownMenuContainer Component", () => {
       <DropDownMenuContainer menu={mockMenu} onItemSelect={mockOnItemSelect} />
     )
 
-    const menuItem = screen.getByTestId("menu-item-Option 1")
+    const menuItem = screen.getByTestId("menu-item-value1")
     fireEvent.click(menuItem)
 
     // Should show pending status immediately

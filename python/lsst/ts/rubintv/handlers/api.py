@@ -23,6 +23,7 @@ from lsst.ts.rubintv.models.models import (
 )
 from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.s3client import S3Client
+from redis.asyncio import Redis  # type: ignore
 
 api_router = APIRouter()
 """FastAPI router for all external handlers."""
@@ -44,9 +45,36 @@ async def historical_reset(request: Request) -> None:
     await current.clear_todays_data()
 
 
+@api_router.get("/redis/controlvalues")
+async def redis_get(request: Request) -> list[KeyValue]:
+    redis_client: Redis = request.app.state.redis_client
+    if not redis_client:
+        raise HTTPException(500, "Redis client not initialized")
+    results = []
+    try:
+        for menu in request.app.state.models.admin_redis_menus:
+            key = menu["key"]
+            value = await redis_client.get(key)
+            if value:
+                value = value.decode("utf-8")
+            else:
+                value = ""
+            results.append({"key": key, "value": value})
+    except redis.exceptions.ResponseError:
+        raise HTTPException(500, "Failed to get Redis key: No response")
+    except redis.exceptions.TimeoutError:
+        raise HTTPException(500, "Failed to get Redis key: Timeout")
+    except redis.exceptions.ConnectionError:
+        raise HTTPException(500, "Failed to get Redis key: Connection error")
+    except redis.exceptions.RedisError as e:
+        raise HTTPException(500, f"Failed to get Redis key: {e}")
+    logger.info("Fetched Redis control values", extra={"results": results})
+    return results
+
+
 @api_router.post("/redis")
 async def redis_post(request: Request, message: KeyValue) -> dict:
-    redis_client = request.app.state.redis_client
+    redis_client: Redis = request.app.state.redis_client
     if not redis_client:
         raise HTTPException(500, "Redis client not initialized")
     key, value = message.key, message.value
