@@ -843,7 +843,7 @@ admin_redis_menus:
       - TIE
       - REFIT_WCS
       - TARTS
-      - JFC
+      - AI_DONUT
 
   - title: "Chip selection"
     key: RUBINTV_CONTROL_CHIP_SELECTION
