@@ -841,7 +841,9 @@ admin_redis_menus:
     items:
       - DANISH
       - TIE
-      - AI
+      - REFIT_WCS
+      - TARTS
+      - JFC
 
   - title: "Chip selection"
     key: RUBINTV_CONTROL_CHIP_SELECTION
