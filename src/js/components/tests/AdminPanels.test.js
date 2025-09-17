@@ -31,7 +31,7 @@ jest.mock("../DropDownMenu", () => ({
           onClick={() => onItemSelect(item)}
           data-testid={`menu-item-${item}`}
         >
-          {item.name}
+          {item}
         </button>
       ))}
     </div>
@@ -85,10 +85,7 @@ describe("AdminPanels Component", () => {
     {
       key: "TEST_KEY",
       title: "Test Menu",
-      items: [
-        { name: "Option 1", value: "value1" },
-        { name: "Option 2", value: "value2" },
-      ],
+      items: ["value1", "value2"],
       selectedItem: null,
     },
   ]
@@ -888,6 +885,7 @@ describe("StatusIndicator Component", () => {
   })
 
   it("renders default for unknown status", () => {
+    // @ts-expect-error - Testing invalid status value
     render(<StatusIndicator status="unknown" />)
 
     const indicator = document.querySelector(".indicator")

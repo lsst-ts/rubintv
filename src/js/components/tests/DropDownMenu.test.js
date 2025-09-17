@@ -6,11 +6,7 @@ import DropDownMenu from "../DropDownMenu"
 /* global jest, describe, it, expect, beforeEach, afterEach */
 
 describe("DropDownMenu Component", () => {
-  const mockItems = [
-    { title: "Option 1", value: "value1" },
-    { title: "Option 2", value: "value2" },
-    { title: "Option 3", value: "value3" },
-  ]
+  const mockItems = ["Option 1", "Option 2", "Option 3"]
 
   const defaultMenu = {
     key: "test-menu",
@@ -82,7 +78,7 @@ describe("DropDownMenu Component", () => {
       fireEvent.click(button)
 
       mockItems.forEach((item) => {
-        expect(screen.getByText(item.title)).toBeInTheDocument()
+        expect(screen.getByText(item)).toBeInTheDocument()
       })
     })
 
@@ -512,10 +508,7 @@ describe("DropDownMenu Component", () => {
 
       const updatedMenu = {
         ...defaultMenu,
-        items: [
-          { title: "New Option 1", value: "new1" },
-          { title: "New Option 2", value: "new2" },
-        ],
+        items: ["New Option 1", "New Option 2"],
       }
 
       rerender(
@@ -576,59 +569,12 @@ describe("DropDownMenu Component", () => {
   })
 
   describe("Edge Cases", () => {
-    it("handles items without titles gracefully", () => {
-      const menuWithBadItems = {
-        ...defaultMenu,
-        items: [
-          { title: "", value: "empty" },
-          { value: "no-title" },
-          { title: "Good Item", value: "good" },
-        ],
-      }
-
-      render(
-        <DropDownMenu menu={menuWithBadItems} onItemSelect={mockOnItemSelect} />
-      )
-
-      const button = screen.getByRole("button")
-      fireEvent.click(button)
-
-      // Should render all items even with missing/empty titles
-      const dropdownItems = document.querySelectorAll(".dropdown-item")
-      expect(dropdownItems).toHaveLength(3)
-    })
-
-    it("handles items without values", () => {
-      const menuWithoutValues = {
-        ...defaultMenu,
-        items: [{ title: "No Value Item" }, { title: "Another Item" }],
-      }
-
-      render(
-        <DropDownMenu
-          menu={menuWithoutValues}
-          onItemSelect={mockOnItemSelect}
-        />
-      )
-
-      const button = screen.getByRole("button")
-      fireEvent.click(button)
-
-      const firstItem = screen.getByText("No Value Item")
-      fireEvent.click(firstItem)
-
-      expect(mockOnItemSelect).toHaveBeenCalledWith({ title: "No Value Item" })
-    })
-
     it("handles very long item titles", () => {
       const longTitle =
         "This is a very long item title that might cause layout issues"
       const menuWithLongTitles = {
         ...defaultMenu,
-        items: [
-          { title: longTitle, value: "long" },
-          { title: "Short", value: "short" },
-        ],
+        items: [longTitle, "Short"],
       }
 
       render(
@@ -692,7 +638,7 @@ describe("DropDownMenu Component", () => {
       expect(dropdownItems).toHaveLength(mockItems.length)
 
       dropdownItems.forEach((item, index) => {
-        expect(item).toHaveTextContent(mockItems[index].title)
+        expect(item).toHaveTextContent(mockItems[index])
         expect(item.tagName.toLowerCase()).toBe("li")
       })
     })
