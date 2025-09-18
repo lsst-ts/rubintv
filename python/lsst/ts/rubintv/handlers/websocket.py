@@ -37,11 +37,11 @@ async def data_websocket(
         async with clients_lock:
             clients[client_id] = websocket
             websocket_to_client[websocket] = client_id
-            logger.info("Num clients:", num_clients=len(clients))
+            logger.debug("Num clients:", num_clients=len(clients))
 
         while True:
             raw: str = await websocket.receive_text()
-            logger.info("Ws recvd:", raw=raw)
+            logger.debug("Ws recvd:", raw=raw)
             validated = await validate_raw_message(raw)
             if validated is None:
                 continue
@@ -49,7 +49,7 @@ async def data_websocket(
 
             if "message" in data:
                 service_loc_cam = data["message"]
-                logger.info("Attaching:", id=r_client_id, service=service_loc_cam)
+                logger.debug("Attaching:", id=r_client_id, service=service_loc_cam)
                 await attach_service(r_client_id, service_loc_cam, websocket)
             else:
                 logger.warn("No message:", client_id=r_client_id, data=data)
@@ -58,10 +58,10 @@ async def data_websocket(
         async with clients_lock:
             if websocket in websocket_to_client:
                 client_id = websocket_to_client[websocket]
-                logger.info("Unattaching:", client_id=client_id)
+                logger.debug("Unattaching:", client_id=client_id)
                 del clients[client_id]
                 del websocket_to_client[websocket]
-                logger.info("Num clients:", num_clients=len(clients))
+                logger.debug("Num clients:", num_clients=len(clients))
                 await remove_client_from_services(client_id)
     except Exception as e:
         # Catch all exceptions to prevent the websocket from crashing
@@ -86,7 +86,7 @@ async def validate_raw_message(raw: str) -> tuple[uuid.UUID, dict] | None:
 
 
 async def remove_client_from_services(client_id: uuid.UUID) -> None:
-    logger.info("Removing client from services list...", client_id=client_id)
+    logger.debug("Removing client from services list...", client_id=client_id)
     async with services_lock:
         # First remove the client_id from all services
         for _, client_ids in services_clients.items():
@@ -103,7 +103,7 @@ async def remove_client_from_services(client_id: uuid.UUID) -> None:
         # Finally, delete those services
         for service in services_to_remove:
             del services_clients[service]
-    logger.info("Removed client.")
+    logger.debug("Removed client.")
 
 
 async def attach_simple_service(
