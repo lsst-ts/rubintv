@@ -88,7 +88,7 @@ class RubinDataMocker:
                     if not camera.online:
                         continue
 
-                    self.location_channels[loc_name].append(camera.channels)
+                    self.location_channels[loc_name].extend(camera.channels)
                     self.add_seq_objs(location, camera)
 
     def add_seq_objs(
