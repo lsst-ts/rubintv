@@ -212,7 +212,6 @@ class Location(HasButton):
 @dataclass
 class Event:
     key: str
-    hash: str = ""
     # derived fields:
     camera_name: str = ""
     day_obs: str = ""
@@ -358,6 +357,8 @@ class NightReportData:
         ) = self.parse_key()
 
     def __hash__(self) -> int:
+        if not re.match(r"^[0-9a-fA-F]+$", self.hash):
+            raise ValueError(f"Hash is not a valid hex value: {self.hash}")
         return int(f"0x{self.hash}", 0)
 
 
@@ -420,7 +421,7 @@ class Heartbeat:
         return {
             "serviceName": self.service_name,
             "isActive": bool(self.state.value),
-            "nextExpected": self.next_expected.isoformat(),  # Convert datetime to string
+            "nextExpected": self.next_expected.isoformat(),
         }
 
 

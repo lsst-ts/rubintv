@@ -58,7 +58,7 @@ class HistoricalPoller:
     ) -> None:
         self._clients: dict[str, S3Client] = {}
         self._metadata: dict[str, bytes] = {}
-        self._temp_events: dict[str, list[Event]] = {}
+        self._temp_events: dict[str, list[str]] = {}
         self._compressed_events: dict[str, bytes] = {}
         self._nr_metadata: dict[str, list[NightReportData]] = {}
         self._calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
@@ -76,8 +76,12 @@ class HistoricalPoller:
         self.cam_year_rgx = re.compile(r"(\w+)\/([\d]{4})-[\d]{2}-[\d]{2}")
 
         self.test_mode = test_mode
-        self.test_date_start = test_date_start and date_str_to_date(test_date_start)
-        self.test_date_end = test_date_end and date_str_to_date(test_date_end)
+        self.test_date_start: date | None = None
+        self.test_date_end: date | None = None
+        if test_date_start:
+            self.test_date_start = date_str_to_date(test_date_start)
+        if test_date_end:
+            self.test_date_end = date_str_to_date(test_date_end)
         self.prefix_extra = prefix_extra
 
     async def clear_all_data(self) -> None:
@@ -237,7 +241,7 @@ class HistoricalPoller:
 
             if loc_cam not in self._temp_events:
                 self._temp_events[loc_cam] = []
-            self._temp_events[loc_cam].append(event)
+            self._temp_events[loc_cam].append(event.key)
 
             seq_num = event.seq_num
             if isinstance(seq_num, str):
@@ -344,9 +348,10 @@ class HistoricalPoller:
         to_decompress = self._compressed_events.get(loc_cam, None)
         if to_decompress is None:
             return []
-        events: list[Event] = pickle.loads(zlib.decompress(to_decompress))
-        events = [e for e in events if e.day_obs == date_str]
-        return events
+        archived_events: list[str] = pickle.loads(zlib.decompress(to_decompress))
+        events = [Event(key=e) for e in archived_events]
+        events_for_date = [e for e in events if e.day_obs == date_str]
+        return events_for_date
 
     async def get_channel_data_for_date(
         self, location: Location, camera: Camera, day_obs: date
@@ -432,7 +437,8 @@ class HistoricalPoller:
         compressed = self._compressed_events.get(loc_cam, None)
         if compressed is None:
             return []
-        events = pickle.loads(zlib.decompress(compressed))
+        archived_events = pickle.loads(zlib.decompress(compressed))
+        events = [Event(key=e) for e in archived_events]
         date_str = day_obs.isoformat()
         return [e for e in events if e.day_obs == date_str]
 
@@ -443,11 +449,14 @@ class HistoricalPoller:
         compressed = self._compressed_events.get(loc_cam, None)
         if compressed is None:
             return None
-        events = pickle.loads(zlib.decompress(compressed))
-        events = [event for event in events if event.channel_name == channel.name]
+        archived_events = pickle.loads(zlib.decompress(compressed))
+        events = self.unarchive_events(archived_events)
         if not events:
             return None
         return max(events)
+
+    def unarchive_events(self, archived_events: list[str]) -> list[Event]:
+        return [Event(key=e) for e in archived_events]
 
     async def get_next_prev_event(
         self, location: Location, camera: Camera, event: Event
