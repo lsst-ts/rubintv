@@ -130,11 +130,7 @@ async def attach_simple_service(
         The key to use for storing in services_clients
     """
     # Register client for this service
-    async with services_lock:
-        if service_key not in services_clients:
-            services_clients[service_key] = [client_id]
-        else:
-            services_clients[service_key].append(client_id)
+    await register_client_service(client_id, service_key)
 
     payload = None
     if service == Service.HISTORICALSTATUS:
@@ -211,6 +207,14 @@ async def attach_service(
         return
 
     location = find_first(locations, "name", location_name)
+    if location is None:
+        logger.error(
+            "No such location:",
+            service=service,
+            client_id=client_id,
+            location=location_name,
+        )
+        return
 
     if extra:
         channel_name = extra[0]
@@ -219,25 +223,27 @@ async def attach_service(
             return
 
     await notify_new_client(websocket, location, camera, channel_name, service)
-
-    async with services_lock:
-        if full_service_name in services_clients:
-            services_clients[full_service_name].append(client_id)
-        else:
-            services_clients[full_service_name] = [client_id]
+    await register_client_service(client_id, full_service_name)
 
     # If registering a service with location and camera and channel,
-    # also register a service with just location and camera.
+    # also register a service with just location and camera. This
+    # allows to send notifications to all clients interested in
+    # that camera, regardless of channel.
     if not channel_name:
         return
 
     loc_cam_service = f"{service_str} {location_name}/{camera_name}"
+    await register_client_service(client_id, loc_cam_service)
 
+
+async def register_client_service(
+    client_id: uuid.UUID, client_service_identifier: str
+) -> None:
     async with services_lock:
-        if loc_cam_service in services_clients:
-            services_clients[loc_cam_service].append(client_id)
+        if client_service_identifier in services_clients:
+            services_clients[client_service_identifier].append(client_id)
         else:
-            services_clients[loc_cam_service] = [client_id]
+            services_clients[client_service_identifier] = [client_id]
 
 
 async def is_valid_client_request(data: dict) -> bool:
