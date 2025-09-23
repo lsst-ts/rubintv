@@ -226,7 +226,16 @@ export function DropDownMenuContainer({
         <h4 className="dropdown-menu-title box-title">{menu.title}</h4>
         <StatusIndicator status={redisChanged} />
       </div>
+      <ValueDisplay value={thisMenu.selectedItem} />
       <DropDownMenu menu={thisMenu} onItemSelect={handleSelect} />
+    </div>
+  )
+}
+
+function ValueDisplay({ value }: { value?: string }) {
+  return (
+    <div className="current-value">
+      <span>{value || "-"}</span>
     </div>
   )
 }

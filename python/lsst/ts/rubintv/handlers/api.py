@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
-from lsst.ts.rubintv.config import rubintv_logger
+from lsst.ts.rubintv.config import config, rubintv_logger
 from lsst.ts.rubintv.handlers.handlers_helpers import (
     date_validation,
     get_camera_events_for_date,
@@ -53,7 +53,7 @@ async def redis_get(request: Request) -> list[KeyValue]:
     results = []
     try:
         for menu in request.app.state.models.admin_redis_menus:
-            key = menu["key"]
+            key = menu["key"] + config.redis_control_readback_suffix
             value = await redis_client.get(key)
             if value:
                 value = value.decode("utf-8")
@@ -74,14 +74,13 @@ async def redis_get(request: Request) -> list[KeyValue]:
 
 @api_router.post("/redis")
 async def redis_post(request: Request, message: KeyValue) -> dict:
+    response: bool | None
     redis_client: Redis = request.app.state.redis_client
     if not redis_client:
         raise HTTPException(500, "Redis client not initialized")
     key, value = message.key, message.value
     if not key:
         raise HTTPException(400, "Message must contain a 'key' key")
-    if key != "clear_redis" and value is None:
-        raise HTTPException(400, "Message must contain a 'value' key")
     if key == "clear_redis":
         try:
             response = await redis_client.flushdb()
@@ -90,6 +89,8 @@ async def redis_post(request: Request, message: KeyValue) -> dict:
             raise HTTPException(500, f"Failed to clear Redis database: {e}")
     else:
         logger.info("Setting Redis key", extra={"key": key, "value": value})
+        if value is None:
+            raise HTTPException(400, "Message must contain a 'value' key")
         try:
             response = await redis_client.set(key, value)
         except redis.exceptions.ResponseError:

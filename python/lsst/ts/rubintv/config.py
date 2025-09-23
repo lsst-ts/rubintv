@@ -65,6 +65,14 @@ class Configuration(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="SAFIR_", case_sensitive=False)
 
+    redis_control_readback_suffix: str = Field(
+        default="_READBACK",
+        validation_alias="REDIS_CONTROL_READBACK_SUFFIX",
+        json_schema_extra={
+            "title": "Suffix to append to control keys to get readback keys"
+        },
+    )
+
 
 config = Configuration()
 """Configuration for rubintv."""

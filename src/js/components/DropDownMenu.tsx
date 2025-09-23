@@ -19,8 +19,6 @@ export default function DropDownMenu({
   const [isOpen, setIsOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(menu.selectedItem)
 
-  useEffect(() => setSelectedItem(menu.selectedItem), [menu.selectedItem])
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement
