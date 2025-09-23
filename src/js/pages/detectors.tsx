@@ -1,6 +1,6 @@
 import React from "react"
 import { createRoot } from "react-dom/client"
-import { _getById, isEmpty } from "../modules/utils"
+import { _getById } from "../modules/utils"
 import Detector from "../components/Detector"
 import { WebsocketClient } from "../modules/ws-service-client"
 ;(function () {
@@ -24,7 +24,7 @@ import { WebsocketClient } from "../modules/ws-service-client"
     <Detector
       detectorKeys={detectorKeys}
       redisEndpointUrl={redisEndpointUrl}
-      admin={!isEmpty(admin as Record<string, unknown>)}
+      admin={admin !== null}
     />
   )
 })()
