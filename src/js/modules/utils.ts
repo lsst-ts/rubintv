@@ -378,10 +378,11 @@ export const getCameraPageForDateUrl = (
 
 export const sanitiseRedisValue = (value: string): string => {
   // Trim whitespace and remove control characters
-  value = value.trim().replace(/[\\x00-\\x1F\\x7F]/g, "")
-  value = value.replace(/[\r\n]+/g, " ") // Replace newlines with space
-  value = value.replace(/ +/g, " ") // Replace multiple spaces with single space
-  value = value.replace(/ /g, "_") // Swap spaces for underscores
+  // eslint-disable-next-line no-control-regex
+  value = value.trim().replace(/[\x00-\x1F\x7F]/g, "_")
+  value = value.replace(/[\r\n]+/g, "_") // Replace newlines with underscore
+  value = value.replace(/ +/g, "_") // Replace multiple spaces with single underscore
+  value = value.replace(/_+/g, "_") // Replace multiple underscores with single underscore
   value = value.toUpperCase() // Convert to uppercase
   return value
 }

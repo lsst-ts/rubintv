@@ -7,7 +7,8 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
-from lsst.ts.rubintv.config import config, rubintv_logger
+from lsst.ts.rubintv.config import REDIS_CONTROL_READBACK_SUFFIX as RC_SUFFIX
+from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.handlers_helpers import (
     date_validation,
     get_camera_events_for_date,
@@ -51,9 +52,10 @@ async def redis_get(request: Request) -> list[KeyValue]:
     if not redis_client:
         raise HTTPException(500, "Redis client not initialized")
     results = []
+    admin_redis_menus = request.app.state.models.admin_redis_menus
     try:
-        for menu in request.app.state.models.admin_redis_menus:
-            key = menu["key"] + config.redis_control_readback_suffix
+        for menu in admin_redis_menus:
+            key = menu["key"] + RC_SUFFIX
             value = await redis_client.get(key)
             if value:
                 value = value.decode("utf-8")

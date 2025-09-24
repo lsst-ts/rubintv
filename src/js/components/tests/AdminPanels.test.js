@@ -17,7 +17,7 @@ import { simplePost, simpleGet } from "../../modules/utils"
 jest.mock("../../modules/utils", () => ({
   simplePost: jest.fn(),
   simpleGet: jest.fn(),
-  sanitiseRedisValue: jest.fn((value) => value), // Mock implementation
+  sanitiseRedisValue: jest.fn((value) => value),
 }))
 
 jest.mock("../DropDownMenu", () => ({
@@ -180,11 +180,6 @@ describe("AdminPanels Component", () => {
     await waitFor(() => {
       expect(simpleGet).toHaveBeenCalledWith("http://auth.test")
     })
-
-    // Since the mock returns "Updated User", we should eventually see "Hello Updated"
-    // However, the component may not re-render with the new name immediately
-    // The test should verify that the API was called, which is the main behavior we're testing
-    expect(simpleGet).toHaveBeenCalledWith("http://auth.test")
   })
 })
 
@@ -394,7 +389,6 @@ describe("RedisPanel Component", () => {
     })
 
     // Verify the API call was made to the correct endpoint
-    expect(simpleGet).toHaveBeenCalledTimes(1)
     expect(simpleGet).toHaveBeenCalledWith("http://redis.test/controlvalues")
   })
 

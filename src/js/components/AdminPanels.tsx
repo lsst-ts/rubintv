@@ -143,7 +143,7 @@ export function RedisPanel({
           const selectedValue = data.find(
             (item) => item.key === menu.key
           )?.value
-          return { ...menu, selectedItem: selectedValue || undefined }
+          return { ...menu, selectedItem: selectedValue }
         })
         setMenus(updatedMenus)
       } catch (error) {
@@ -197,8 +197,6 @@ export function DropDownMenuContainer({
 }: DropDownMenuContainerProps) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
   const [thisMenu, setThisMenu] = useState(menu)
-
-  useEffect(() => setThisMenu(menu), [menu])
 
   const handleSelect = (item: string) => {
     updateRedisStatus("pending")
