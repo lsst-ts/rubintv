@@ -7,7 +7,7 @@ const { DuplicatesPlugin } = require("inspectpack/plugin")
 const pagesWithoutHistory = ["admin", "detectors"].reduce(
   (pages, page) => ({
     ...pages,
-    [page]: [`./src/js/pages/${page}.js`],
+    [page]: [`./src/js/pages/${page}.tsx`],
   }),
   {}
 )
@@ -22,10 +22,9 @@ const pagesWithHistory = [
   (pages, page) => ({
     ...pages,
     [page]: [
-      `./src/js/pages/${page}.js`,
-      "./src/js/modules/ws-service-client.js",
-      "./src/js/reload-on-historical.js",
-      "./src/js/modules/calendar-controls.js",
+      `./src/js/pages/${page}.tsx`,
+      "./src/js/modules/ws-service-client.ts",
+      "./src/js/modules/reload-on-historical.ts",
     ],
   }),
   {}
@@ -39,7 +38,7 @@ module.exports = {
   },
   entry: {
     style: "./src/sass/style.sass",
-    hostbanner: "./src/js/hostbanner.js",
+    hostbanner: "./src/js/hostbanner.ts",
     ...pagesWithoutHistory,
     ...pagesWithHistory,
   },
@@ -49,7 +48,7 @@ module.exports = {
     chunkFilename: "[name].[chunkhash].js",
   },
   plugins: [
-    new MiniCssExtractPlugin({ filename: "[name].css" }),
+    new MiniCssExtractPlugin({ filename: "style.css" }),
     new DuplicatesPlugin({
       emitErrors: false,
       verbose: false,
@@ -69,16 +68,18 @@ module.exports = {
         },
         common: {
           name: "common",
-          minChunks: 2,
+          minChunks: 1,
           chunks: "all",
           priority: -20,
           reuseExistingChunk: true,
+          enforce: true,
         },
       },
     },
   },
   resolve: {
-    extensions: [".js", ".jsx"],
+    extensions: [".js", ".jsx", ".ts", ".tsx"],
+    modules: [path.resolve(__dirname, "src"), "node_modules"],
   },
   module: {
     rules: [
@@ -92,10 +93,17 @@ module.exports = {
         ],
       },
       {
-        test: /\.(js|jsx)$/,
+        test: /\.(js|jsx|ts|tsx)$/,
         exclude: /node_modules/,
         use: {
-          loader: "babel-loader",
+          loader: "ts-loader",
+          options: {
+            transpileOnly: true,
+            compilerOptions: {
+              module: "es6",
+              allowSyntheticDefaultImports: true,
+            },
+          },
         },
       },
     ],

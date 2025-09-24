@@ -2,16 +2,21 @@
 import "@testing-library/jest-dom" // Import jest-dom for custom matchers
 import React from "react"
 import { render, screen } from "@testing-library/react"
-import { TableRow } from "../TableView" // Import TableRow directly
+import { TableRow } from "../TableView"
+import { RubinTVTableContext } from "../contexts/contexts"
 import { indicatorForAttr, replaceInString } from "../../modules/utils"
 
-/* global jest, describe, it, expect, beforeAll */
+/* global jest, describe, it, expect */
 
 // Mock utility functions
-jest.mock("../../modules/utils", () => ({
-  indicatorForAttr: jest.fn(),
-  replaceInString: jest.fn(),
-}))
+jest.mock("../../modules/utils", () => {
+  const actual = jest.requireActual("../../modules/utils")
+  return {
+    ...actual,
+    indicatorForAttr: jest.fn(),
+    replaceInString: jest.fn(),
+  }
+})
 
 describe("TableRow Component", () => {
   it("renders correctly with given props", () => {
@@ -55,22 +60,30 @@ describe("TableRow Component", () => {
         .replace("{controller}", options.controller || "default")
     )
 
+    const mockContextValue = {
+      siteLocation: "summit",
+      locationName: "test-location",
+      camera: { name: "testcam", channels: [], title: "Test Cam" },
+      dayObs: "2025-05-29",
+    }
+
     render(
-      <table>
-        <tbody>
-          <TableRow
-            seqNum={seqNum}
-            camera={camera}
-            channels={channels}
-            channelRow={channelRow}
-            metadataColumns={metadataColumns}
-            metadataRow={metadataRow}
-          />
-        </tbody>
-      </table>
+      <RubinTVTableContext.Provider value={mockContextValue}>
+        <table>
+          <tbody>
+            <TableRow
+              seqNum={seqNum}
+              camera={camera}
+              channels={channels}
+              channelRow={channelRow}
+              metadataColumns={metadataColumns}
+              metadataRow={metadataRow}
+            />
+          </tbody>
+        </table>
+      </RubinTVTableContext.Provider>
     )
 
-    screen.debug() // For debugging purposes, can be removed later
     // Assert sequence number cell
     expect(screen.getByText(seqNum)).toBeInTheDocument()
 

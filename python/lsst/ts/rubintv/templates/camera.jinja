@@ -1,7 +1,7 @@
 {% extends "_camera.jinja" %}
 
 {% block headerbuttons %}
-  {% if not isHistorical %}
+  {% if isHistorical == isStale %}
     <a class="button historical" href="{{ url_for('historical', location_name=location.name, camera_name=camera.name) }}">
       Historical<img src="{{ url_for('static', path='images/history-line.svg') }}">
     </a>

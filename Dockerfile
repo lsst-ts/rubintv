@@ -9,7 +9,7 @@
 # to build the image using conda.
 # TODO: DM-43222.
 
-FROM python:3.13.4-slim-bullseye
+FROM python:3.13.7-slim-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -17,7 +17,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y \
     libsasl2-dev \
-    python-dev \
+    python3-dev \
     libldap2-dev \
     inetutils-ping \
     vim \
@@ -27,8 +27,8 @@ RUN apt-get update && \
     libssl-dev \
     git curl unzip xz-utils zip libglu1-mesa \
     python3-venv \
-    libgl1-mesa-glx && \
-    apt-get clean && \
+    libgl1-mesa-glx
+RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Add a user with UID and GID 1000
@@ -46,8 +46,10 @@ USER rubintv
 RUN git clone https://github.com/flutter/flutter.git /home/rubintv/flutter
 ENV PATH="/home/rubintv/flutter/bin:/home/rubintv/flutter/bin/cache/dart-sdk/bin:${PATH}"
 RUN flutter doctor && \
-    flutter channel master && \
-    flutter upgrade
+    dart pub global activate fvm
+
+# Add fvm to PATH
+ENV PATH="/home/rubintv/.pub-cache/bin:${PATH}"
 
 # Create a virtual environment
 RUN python -m venv venv

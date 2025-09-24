@@ -69,6 +69,8 @@ class Configuration(BaseSettings):
 config = Configuration()
 """Configuration for rubintv."""
 
+REDIS_CONTROL_READBACK_SUFFIX = "_READBACK"
+
 
 def rubintv_logger() -> Any:
     logger = get_logger()

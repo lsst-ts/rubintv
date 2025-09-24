@@ -29,9 +29,9 @@ jobs:
           || startsWith(github.ref, 'refs/heads/develop'))
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: 3.12
 
@@ -41,8 +41,18 @@ jobs:
         pip install -r requirements.txt
         pip install -e .
 
-    - name: Run tests
+    - name: Run python tests
       run: pytest tests
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: '18'
+
+    - name: Run JavaScript tests
+      run: |
+        npm install
+        npm run test
 
 
   build:
@@ -57,11 +67,13 @@ jobs:
           || startsWith(github.ref, 'refs/heads/develop'))
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '18'
       
       - name: npm install and build
         run: |

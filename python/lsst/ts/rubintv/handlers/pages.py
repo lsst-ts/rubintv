@@ -81,11 +81,17 @@ async def get_admin_page(request: Request) -> Response:
     admin = await get_admin(request)
     if admin is None:
         raise HTTPException(status_code=403, detail="Access forbidden.")
+    admin_redis_menus = request.app.state.models.admin_redis_menus
     title = build_title("Admin")
     return templates.TemplateResponse(
         request=request,
         name="admin.jinja",
-        context={"request": request, "title": title, "admin": admin},
+        context={
+            "request": request,
+            "title": title,
+            "admin": admin,
+            "redis_menus": admin_redis_menus,
+        },
     )
 
 
@@ -221,7 +227,7 @@ async def get_camera_for_date_page(
         raise HTTPException(404, "Camera not online.")
 
     data: CameraPageData = CameraPageData()
-    stale_data = False
+    is_stale = False
     no_data_at_all = False
 
     is_historical = True
@@ -230,7 +236,7 @@ async def get_camera_for_date_page(
         is_historical = False
         data = await get_camera_current_data(location, camera, request)
         if data.is_empty():
-            stale_data = True
+            is_stale = True
 
     historical_busy = False
     try:
@@ -238,6 +244,7 @@ async def get_camera_for_date_page(
             day_obs = await get_most_recent_historical_day(location, camera, request)
         if day_obs is not None and data.is_empty():
             data = await get_camera_events_for_date(location, camera, day_obs, request)
+            is_historical = True
         if day_obs is None:
             no_data_at_all = True
 
@@ -279,7 +286,7 @@ async def get_camera_for_date_page(
             "nr_link": nr_link,
             "calendar": calendar,
             "title": title,
-            "isStale": stale_data,
+            "isStale": is_stale,
         },
     )
 

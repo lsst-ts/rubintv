@@ -182,7 +182,7 @@ class Camera(HasButton):
     metadata_from: str = ""
     channels: list[Channel] = []
     night_report_label: str = "Night's Evolution"
-    metadata_cols: dict[str, str] | None = None
+    metadata_columns: dict[str, str] | None = None
     image_viewer_link: str = ""
     copy_row_template: str = ""
     mosaic_view_meta: list[MosaicViewMeta] = []
@@ -299,7 +299,7 @@ class NightReportData:
     hash: `str`
         The md5 hash of the blob. This is used to keep plot images up-to-date
         onsite.
-    camera: `str`
+    camera_name: `str`
         The name of the camera the report belongs to.
     day_obs: `str`
         A hyphenated string representing the date i.e. ``"2023-12-31"``
@@ -315,7 +315,7 @@ class NightReportData:
     key: str
     hash: str
     # derived fields
-    camera: str = ""
+    camera_name: str = ""
     day_obs: str = ""
     group: str = ""
     filename: str = ""
@@ -333,7 +333,7 @@ class NightReportData:
         metadata_re = re.compile(r"(\w+)\/([\d-]+)\/night_report\/([\w-]+md)\.(\w+)$")
         if match := metadata_re.match(key):
             parts = match.groups()
-            camera, day_obs_str, filename, ext = parts
+            camera_name, day_obs_str, filename, ext = parts
             group = "metadata"
         else:
             plot_re = re.compile(
@@ -341,16 +341,16 @@ class NightReportData:
             )
             if match := plot_re.match(key):
                 parts = match.groups()
-                camera, day_obs_str, group, filename, ext = parts
+                camera_name, day_obs_str, group, filename, ext = parts
                 filename = filename + "." + ext
             else:
                 raise ValueError(f"Key can't be parsed: {key}")
 
-        return (camera, day_obs_str, group, filename, ext)
+        return (camera_name, day_obs_str, group, filename, ext)
 
     def __post_init__(self) -> None:
         (
-            self.camera,
+            self.camera_name,
             self.day_obs,
             self.group,
             self.filename,
