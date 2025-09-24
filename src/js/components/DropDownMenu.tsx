@@ -3,18 +3,13 @@ import React, { useState, useEffect } from "react"
 export interface Menu {
   key: string
   title: string
-  items: Array<MenuItem>
-  selectedItem?: MenuItem | null
-}
-
-export interface MenuItem {
-  title: string
-  value?: string
+  items: Array<string>
+  selectedItem?: string
 }
 
 interface DropDownMenuProps {
   menu: Menu
-  onItemSelect?: (item: MenuItem) => void
+  onItemSelect?: (item: string) => void
 }
 
 export default function DropDownMenu({
@@ -23,8 +18,6 @@ export default function DropDownMenu({
 }: DropDownMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(menu.selectedItem)
-
-  useEffect(() => setSelectedItem(menu.selectedItem), [menu.selectedItem])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -63,7 +56,7 @@ export default function DropDownMenu({
 
   const toggleMenu = () => setIsOpen((isOpen) => !isOpen)
 
-  const handleItemSelect = (item: MenuItem) => {
+  const handleItemSelect = (item: string) => {
     setSelectedItem(item)
     setIsOpen(false)
     if (onItemSelect) onItemSelect(item)
@@ -77,7 +70,7 @@ export default function DropDownMenu({
         }
         onClick={toggleMenu}
       >
-        {selectedItem ? selectedItem.title : "- Select -"}
+        {selectedItem || selectedItem === "" ? selectedItem : "- Select -"}
       </button>
       <div className="dropdown-content">
         {menu.items.map((item, index) => (
@@ -86,7 +79,7 @@ export default function DropDownMenu({
             className="dropdown-item"
             onClick={() => handleItemSelect(item)}
           >
-            {item.title}
+            {item}
           </li>
         ))}
       </div>

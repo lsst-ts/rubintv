@@ -834,3 +834,31 @@ redis_detectors:
     name: otherQueues
   - key: test_stream
     name: test_stream
+
+admin_redis_menus:
+  - title: "AOS Pipeline"
+    key: RUBINTV_CONTROL_AOS_PIPELINE
+    items:
+      - DANISH
+      - TIE
+      - REFIT_WCS
+      - TARTS
+      - AI_DONUT
+
+  - title: "Chip selection"
+    key: RUBINTV_CONTROL_CHIP_SELECTION
+    items:
+      - ALL
+      - RAFT_CHECKERBOARD
+      - CCD_CHECKERBOARD
+      - 5_ON_A_DIE
+      - MINIMAL
+      - ULTRA_MINIMAL
+      - ALL_UNVIGNETTED
+
+  - title: "Selection strategy"
+    key: RUBINTV_CONTROL_VISIT_PROCESSING_MODE
+    items:
+      - CONSTANT
+      - ALTERNATING
+      - ALTERNATING_IN_TWOS

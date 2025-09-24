@@ -1,3 +1,4 @@
+import { Menu } from "js/components/DropDownMenu"
 import { AdminInfo } from "../components/AdminPanels"
 import {
   Camera,
@@ -16,6 +17,7 @@ declare global {
     APP_DATA: {
       historicalBusy: boolean
       admin: AdminInfo
+      redisMenus: Menu[] | null
       homeUrl: string
       baseUrl: string
       locationName: string
