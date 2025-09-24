@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react"
 import DropDownMenu from "./DropDownMenu"
 import { useModal, ConfirmationModal, ModalProvider } from "./Modal"
-import { simplePost, simpleGet, sanitiseRedisValue } from "../modules/utils"
-import { Menu } from "./DropDownMenu"
+import { simplePost, simpleGet } from "../modules/utils"
+import { Menu, MenuItem } from "./DropDownMenu"
 
 export interface AdminInfo {
   username?: string
@@ -27,7 +27,7 @@ interface RedisPanelProps {
 
 interface DropDownMenuContainerProps {
   menu: Menu
-  onItemSelect: (item: string) => Promise<void>
+  onItemSelect: (item: MenuItem) => Promise<void>
 }
 
 interface AdminSendRedisValueProps {
@@ -85,7 +85,7 @@ export default function AdminPanels({
         }
       })
       .catch((error) => console.warn("Error loading auth API:", error.message))
-  }, [authEndpointUrl])
+  }, [])
 
   const firstName = admin.name ? admin.name.split(" ")[0] : ""
 
@@ -115,43 +115,18 @@ export default function AdminPanels({
 
 export function RedisPanel({
   menus,
-  setMenus,
   redisEndpointUrl,
   redisKeyPrefix,
 }: RedisPanelProps) {
-  const handleItemSelect = async (menuKey: string, item: string) => {
+  const handleItemSelect = async (menuKey: string, item: MenuItem) => {
     try {
-      await simplePost(redisEndpointUrl, { key: menuKey, value: item })
+      await simplePost(redisEndpointUrl, { key: menuKey, value: item.value })
+      console.log("Redis updated successfully")
     } catch (error) {
       console.error("Error posting to redis:", error)
       throw error
     }
   }
-
-  useEffect(() => {
-    // This effect is used to fetch selected items from the server
-    // It runs only once when the component mounts
-    async function fetchSelectedValues() {
-      try {
-        const dataStr = await simpleGet(`${redisEndpointUrl}/controlvalues`)
-        const data = JSON.parse(dataStr) as Array<{
-          key: string
-          value: string
-        }>
-        // Update menus with selected items from server response
-        const updatedMenus = menus.map((menu) => {
-          const selectedValue = data.find(
-            (item) => item.key === menu.key
-          )?.value
-          return { ...menu, selectedItem: selectedValue || undefined }
-        })
-        setMenus(updatedMenus)
-      } catch (error) {
-        console.error("Error fetching menus:", error)
-      }
-    }
-    void fetchSelectedValues()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="admin-panel">
@@ -198,9 +173,7 @@ export function DropDownMenuContainer({
   const [redisChanged, updateRedisStatus] = useRedisStatus()
   const [thisMenu, setThisMenu] = useState(menu)
 
-  useEffect(() => setThisMenu(menu), [menu])
-
-  const handleSelect = (item: string) => {
+  const handleSelect = (item: MenuItem) => {
     updateRedisStatus("pending")
     onItemSelect(item)
       .then(() => {
@@ -215,7 +188,7 @@ export function DropDownMenuContainer({
         updateRedisStatus("false")
         setThisMenu((prevMenu) => ({
           ...prevMenu,
-          selectedItem: undefined,
+          selectedItem: null,
         }))
       })
   }
@@ -226,16 +199,7 @@ export function DropDownMenuContainer({
         <h4 className="dropdown-menu-title box-title">{menu.title}</h4>
         <StatusIndicator status={redisChanged} />
       </div>
-      <ValueDisplay value={thisMenu.selectedItem} />
       <DropDownMenu menu={thisMenu} onItemSelect={handleSelect} />
-    </div>
-  )
-}
-
-function ValueDisplay({ value }: { value?: string }) {
-  return (
-    <div className="current-value">
-      <span>{value || "-"}</span>
     </div>
   )
 }
@@ -327,7 +291,7 @@ export function AdminSendRedisCommand({
     const keyInput = form.elements.namedItem("key") as HTMLInputElement
     const valueInput = form.elements.namedItem("value") as HTMLInputElement
     const key = redisKeyPrefix(keyInput.value)
-    const value = sanitiseRedisValue(valueInput.value)
+    const value = valueInput.value
     simplePost(redisEndpointUrl, { key, value })
       .then(() => {
         updateRedisStatus("true")

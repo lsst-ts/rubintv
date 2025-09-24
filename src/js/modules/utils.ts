@@ -375,13 +375,3 @@ export const getCameraPageForDateUrl = (
     homeUrl
   ).toString()
 }
-
-export const sanitiseRedisValue = (value: string): string => {
-  // Trim whitespace and remove control characters
-  value = value.trim().replace(/[\\x00-\\x1F\\x7F]/g, "")
-  value = value.replace(/[\r\n]+/g, " ") // Replace newlines with space
-  value = value.replace(/ +/g, " ") // Replace multiple spaces with single space
-  value = value.replace(/ /g, "_") // Swap spaces for underscores
-  value = value.toUpperCase() // Convert to uppercase
-  return value
-}

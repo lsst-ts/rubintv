@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
-from lsst.ts.rubintv.config import config, rubintv_logger
+from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.handlers_helpers import (
     date_validation,
     get_camera_events_for_date,
@@ -23,7 +23,6 @@ from lsst.ts.rubintv.models.models import (
 )
 from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.s3client import S3Client
-from redis.asyncio import Redis  # type: ignore
 
 api_router = APIRouter()
 """FastAPI router for all external handlers."""
@@ -45,42 +44,16 @@ async def historical_reset(request: Request) -> None:
     await current.clear_todays_data()
 
 
-@api_router.get("/redis/controlvalues")
-async def redis_get(request: Request) -> list[KeyValue]:
-    redis_client: Redis = request.app.state.redis_client
-    if not redis_client:
-        raise HTTPException(500, "Redis client not initialized")
-    results = []
-    try:
-        for menu in request.app.state.models.admin_redis_menus:
-            key = menu["key"] + config.redis_control_readback_suffix
-            value = await redis_client.get(key)
-            if value:
-                value = value.decode("utf-8")
-            else:
-                value = ""
-            results.append({"key": key, "value": value})
-    except redis.exceptions.ResponseError:
-        raise HTTPException(500, "Failed to get Redis key: No response")
-    except redis.exceptions.TimeoutError:
-        raise HTTPException(500, "Failed to get Redis key: Timeout")
-    except redis.exceptions.ConnectionError:
-        raise HTTPException(500, "Failed to get Redis key: Connection error")
-    except redis.exceptions.RedisError as e:
-        raise HTTPException(500, f"Failed to get Redis key: {e}")
-    logger.info("Fetched Redis control values", extra={"results": results})
-    return results
-
-
 @api_router.post("/redis")
 async def redis_post(request: Request, message: KeyValue) -> dict:
-    response: bool | None
-    redis_client: Redis = request.app.state.redis_client
+    redis_client = request.app.state.redis_client
     if not redis_client:
         raise HTTPException(500, "Redis client not initialized")
     key, value = message.key, message.value
     if not key:
         raise HTTPException(400, "Message must contain a 'key' key")
+    if key != "clear_redis" and value is None:
+        raise HTTPException(400, "Message must contain a 'value' key")
     if key == "clear_redis":
         try:
             response = await redis_client.flushdb()
@@ -89,8 +62,6 @@ async def redis_post(request: Request, message: KeyValue) -> dict:
             raise HTTPException(500, f"Failed to clear Redis database: {e}")
     else:
         logger.info("Setting Redis key", extra={"key": key, "value": value})
-        if value is None:
-            raise HTTPException(400, "Message must contain a 'value' key")
         try:
             response = await redis_client.set(key, value)
         except redis.exceptions.ResponseError:

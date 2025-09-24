@@ -81,17 +81,11 @@ async def get_admin_page(request: Request) -> Response:
     admin = await get_admin(request)
     if admin is None:
         raise HTTPException(status_code=403, detail="Access forbidden.")
-    admin_redis_menus = request.app.state.models.admin_redis_menus
     title = build_title("Admin")
     return templates.TemplateResponse(
         request=request,
         name="admin.jinja",
-        context={
-            "request": request,
-            "title": title,
-            "admin": admin,
-            "redis_menus": admin_redis_menus,
-        },
+        context={"request": request, "title": title, "admin": admin},
     )
 
 

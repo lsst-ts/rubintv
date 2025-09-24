@@ -6,7 +6,11 @@ import DropDownMenu from "../DropDownMenu"
 /* global jest, describe, it, expect, beforeEach, afterEach */
 
 describe("DropDownMenu Component", () => {
-  const mockItems = ["Option 1", "Option 2", "Option 3"]
+  const mockItems = [
+    { title: "Option 1", value: "value1" },
+    { title: "Option 2", value: "value2" },
+    { title: "Option 3", value: "value3" },
+  ]
 
   const defaultMenu = {
     key: "test-menu",
@@ -78,7 +82,7 @@ describe("DropDownMenu Component", () => {
       fireEvent.click(button)
 
       mockItems.forEach((item) => {
-        expect(screen.getByText(item)).toBeInTheDocument()
+        expect(screen.getByText(item.title)).toBeInTheDocument()
       })
     })
 
@@ -426,6 +430,75 @@ describe("DropDownMenu Component", () => {
   })
 
   describe("Props and State Management", () => {
+    it("updates when menu.selectedItem prop changes", () => {
+      const { rerender } = render(
+        <DropDownMenu menu={defaultMenu} onItemSelect={mockOnItemSelect} />
+      )
+
+      const button = screen.getByRole("button")
+      expect(button).toHaveTextContent("- Select -")
+
+      // Update menu with selected item
+      const updatedMenu = {
+        ...defaultMenu,
+        selectedItem: mockItems[1],
+      }
+
+      rerender(
+        <DropDownMenu menu={updatedMenu} onItemSelect={mockOnItemSelect} />
+      )
+      expect(button).toHaveTextContent("Option 2")
+    })
+
+    it("handles selectedItem changing from null to item", () => {
+      const { rerender } = render(
+        <DropDownMenu menu={defaultMenu} onItemSelect={mockOnItemSelect} />
+      )
+
+      const button = screen.getByRole("button")
+      expect(button).toHaveClass("greyed-out")
+
+      const updatedMenu = {
+        ...defaultMenu,
+        selectedItem: mockItems[0],
+      }
+
+      rerender(
+        <DropDownMenu menu={updatedMenu} onItemSelect={mockOnItemSelect} />
+      )
+      expect(button).not.toHaveClass("greyed-out")
+      expect(button).toHaveTextContent("Option 1")
+    })
+
+    it("handles selectedItem changing from item to null", () => {
+      const menuWithSelection = {
+        ...defaultMenu,
+        selectedItem: mockItems[0],
+      }
+
+      const { rerender } = render(
+        <DropDownMenu
+          menu={menuWithSelection}
+          onItemSelect={mockOnItemSelect}
+        />
+      )
+
+      const button = screen.getByRole("button")
+      expect(button).toHaveTextContent("Option 1")
+      expect(button).not.toHaveClass("greyed-out")
+
+      const updatedMenu = {
+        ...defaultMenu,
+        selectedItem: null,
+      }
+
+      rerender(
+        <DropDownMenu menu={updatedMenu} onItemSelect={mockOnItemSelect} />
+      )
+      expect(button).toHaveTextContent("- Select -")
+      expect(button).toHaveClass("greyed-out")
+    })
+
     it("handles menu items changing", () => {
       const { rerender } = render(
         <DropDownMenu menu={defaultMenu} onItemSelect={mockOnItemSelect} />
@@ -439,7 +512,10 @@ describe("DropDownMenu Component", () => {
 
       const updatedMenu = {
         ...defaultMenu,
-        items: ["New Option 1", "New Option 2"],
+        items: [
+          { title: "New Option 1", value: "new1" },
+          { title: "New Option 2", value: "new2" },
+        ],
       }
 
       rerender(
@@ -500,12 +576,59 @@ describe("DropDownMenu Component", () => {
   })
 
   describe("Edge Cases", () => {
+    it("handles items without titles gracefully", () => {
+      const menuWithBadItems = {
+        ...defaultMenu,
+        items: [
+          { title: "", value: "empty" },
+          { value: "no-title" },
+          { title: "Good Item", value: "good" },
+        ],
+      }
+
+      render(
+        <DropDownMenu menu={menuWithBadItems} onItemSelect={mockOnItemSelect} />
+      )
+
+      const button = screen.getByRole("button")
+      fireEvent.click(button)
+
+      // Should render all items even with missing/empty titles
+      const dropdownItems = document.querySelectorAll(".dropdown-item")
+      expect(dropdownItems).toHaveLength(3)
+    })
+
+    it("handles items without values", () => {
+      const menuWithoutValues = {
+        ...defaultMenu,
+        items: [{ title: "No Value Item" }, { title: "Another Item" }],
+      }
+
+      render(
+        <DropDownMenu
+          menu={menuWithoutValues}
+          onItemSelect={mockOnItemSelect}
+        />
+      )
+
+      const button = screen.getByRole("button")
+      fireEvent.click(button)
+
+      const firstItem = screen.getByText("No Value Item")
+      fireEvent.click(firstItem)
+
+      expect(mockOnItemSelect).toHaveBeenCalledWith({ title: "No Value Item" })
+    })
+
     it("handles very long item titles", () => {
       const longTitle =
         "This is a very long item title that might cause layout issues"
       const menuWithLongTitles = {
         ...defaultMenu,
-        items: [longTitle, "Short"],
+        items: [
+          { title: longTitle, value: "long" },
+          { title: "Short", value: "short" },
+        ],
       }
 
       render(
@@ -569,7 +692,7 @@ describe("DropDownMenu Component", () => {
       expect(dropdownItems).toHaveLength(mockItems.length)
 
       dropdownItems.forEach((item, index) => {
-        expect(item).toHaveTextContent(mockItems[index])
+        expect(item).toHaveTextContent(mockItems[index].title)
         expect(item.tagName.toLowerCase()).toBe("li")
       })
     })

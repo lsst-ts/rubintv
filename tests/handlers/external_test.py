@@ -95,6 +95,10 @@ async def test_current_channels(
                 if mocker.empty_channel.get(loc_cam) == seq_chan.name:
                     assert parsed.select(".event-error")
                     assert not parsed.select(".event-info")
+                # TODO: check for event-info (it's rendered via React- so
+                # need to use a testing library that can handle React, like
+                # Playwright or Selenium)
+                # See DM-50301
 
 
 @pytest.mark.asyncio

@@ -48,7 +48,6 @@ class ModelsInitiator:
         # current Location.
         self.admin_list = data["admin_for"][current_location]
         self.redis_detectors = data["redis_detectors"]
-        self.admin_redis_menus = data["admin_redis_menus"]
 
     def _attach_cameras_to_locations(
         self, cameras: list[Camera], locations: list[Location]
