@@ -35,16 +35,18 @@ jest.mock("../../modules/detectorUtils", () => ({
   createPlaceholders: jest.fn((count) => {
     const placeholders = {}
     for (let i = 0; i < count; i++) {
-      placeholders[i] = { status: "missing", queue_length: 0 }
+      placeholders[i] = { status: "missing" }
     }
     return { workers: placeholders, numWorkers: count }
   }),
 }))
 
 jest.mock("../Modal", () => ({
+  // eslint-disable-next-line react/prop-types
   ModalProvider: ({ children }) => (
     <div data-testid="modal-provider">{children}</div>
   ),
+  // eslint-disable-next-line react/prop-types
   ConfirmationModal: ({ title, message, onConfirm, onCancel }) => (
     <div data-testid="confirmation-modal">
       <h2>{title}</h2>
@@ -167,7 +169,7 @@ describe("Detector Components", () => {
       )
 
       const mockEventData = {
-        aosStep1b: { workers: { 0: { status: "queued", queue_length: 0 } } },
+        aosStep1b: { workers: { 0: { status: "queued", queue_length: 3 } } },
         spareWorkers: { workers: { 0: { status: "free" } } },
       }
 
@@ -222,7 +224,7 @@ describe("Detector Components", () => {
     it("renders basic cell with status class", () => {
       const { container } = render(
         <div>
-          <Cell status={{ status: "free", queue_length: 0 }} />
+          <Cell status={{ status: "free" }} />
         </div>
       )
 
@@ -245,7 +247,7 @@ describe("Detector Components", () => {
     it("does not display queue length for non-queued status", () => {
       const { container } = render(
         <div>
-          <Cell status={{ status: "busy", queue_length: 3 }} />
+          <Cell status={{ status: "busy" }} />
         </div>
       )
 
@@ -377,7 +379,7 @@ describe("Detector Components", () => {
   describe("DetectorCanvas Component", () => {
     it("renders canvas element and draws on it", async () => {
       const mockStatuses = {
-        workers: { 0: { status: "free", queue_length: 0 } },
+        workers: { 0: { status: "free" } },
         numWorkers: 1,
       }
 
@@ -461,7 +463,7 @@ describe("Detector Components", () => {
 
       // Update status and rerender
       const newStatuses = {
-        workers: { 0: { status: "busy", queue_length: 0 } },
+        workers: { 0: { status: "busy" } },
         numWorkers: 1,
       }
 
@@ -511,15 +513,15 @@ describe("Detector Components", () => {
   describe("Cells Component", () => {
     it("renders cells with placeholder workers", () => {
       const mockStatuses = {
-        workers: { 0: { status: "busy", queue_length: 0 } },
+        workers: { 0: { status: "busy" } },
         numWorkers: 3,
       }
 
       createPlaceholders.mockReturnValue({
         workers: {
-          0: { status: "missing", queue_length: 0 },
-          1: { status: "missing", queue_length: 0 },
-          2: { status: "missing", queue_length: 0 },
+          0: { status: "missing" },
+          1: { status: "missing" },
+          2: { status: "missing" },
         },
         numWorkers: 3,
       })
@@ -534,7 +536,7 @@ describe("Detector Components", () => {
 
     it("renders cells without placeholders when numWorkers is 0", () => {
       const mockStatuses = {
-        workers: { 0: { status: "free", queue_length: 0 } },
+        workers: { 0: { status: "free" } },
         numWorkers: 0,
       }
 

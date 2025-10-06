@@ -296,7 +296,17 @@ export interface FilterOptions {
  * @param {string} key - The unique key identifier for the detector.
  */
 export interface DetectorKey {
-  name: string
+  name:
+    | "sfmSet0"
+    | "sfmSet1"
+    | "sfmStep1b"
+    | "spareWorkers"
+    | "aosSet0"
+    | "aosSet1"
+    | "aosSet2"
+    | "aosSet3"
+    | "aosStep1b"
+    | "otherQueues"
   key: string
 }
 
@@ -325,19 +335,28 @@ export interface DetectorMap {
   }
 }
 
-// TODO: Properly constrain the keys of the WorkerStatus and WorkerGroup interfaces
-// See https://www.typescriptlang.org/docs/handbook/2/objects.html#literal-types
-// and DM-52440
+/*
+ * Possible statuses for a worker process.
+ */
+type WorkerStatusType =
+  | "free"
+  | "busy"
+  | "queued"
+  | "starting"
+  | "guest"
+  | "missing"
+  | "unknown"
+
+type StatusesWithQueue = "queued" | "unknown"
+type StatusesWithoutQueue = Exclude<WorkerStatusType, StatusesWithQueue>
 
 /**
  * @description Represents the status of a single worker process.
- * @param {string} status - The current status of the worker.
- * @param {number} [queue_length] - Optional length of the worker's processing queue.
+ * Only "queued" and "unknown" statuses can have a queue_length.
  */
-export interface WorkerStatus {
-  status: string
-  queue_length?: number
-}
+export type WorkerStatus =
+  | { status: StatusesWithoutQueue }
+  | { status: StatusesWithQueue; queue_length: number }
 
 /**
  * @description Represents a group of workers with their collective status information.
