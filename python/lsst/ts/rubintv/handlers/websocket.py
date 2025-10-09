@@ -111,7 +111,6 @@ async def attach_simple_service(
     websocket: WebSocket,
     service: Service,
     message_type: MessageType,
-    service_key: str,
 ) -> None:
     """Attach a client to a simple service that just needs initial state
     notification.
@@ -130,6 +129,7 @@ async def attach_simple_service(
         The key to use for storing in services_clients
     """
     # Register client for this service
+    service_key = service.value
     async with services_lock:
         if service_key not in services_clients:
             services_clients[service_key] = [client_id]
@@ -170,24 +170,31 @@ async def attach_service(
     websocket : WebSocket
         The websocket connection
     """
-    if full_service_name == "historicalStatus":
-        await attach_simple_service(
-            client_id,
-            websocket,
-            Service.HISTORICALSTATUS,
-            MessageType.HISTORICAL_STATUS,
-            "historicalStatus",
-        )
-        return
-    elif full_service_name == "detectors":
-        await attach_simple_service(
-            client_id,
-            websocket,
-            Service.DETECTORS,
-            MessageType.DETECTOR_STATUS,
-            "detectors",
-        )
-        return
+    match full_service_name:
+        case "historicalStatus":
+            await attach_simple_service(
+                client_id,
+                websocket,
+                Service.HISTORICALSTATUS,
+                MessageType.HISTORICAL_STATUS,
+            )
+            return
+        case "detectors":
+            await attach_simple_service(
+                client_id,
+                websocket,
+                Service.DETECTORS,
+                MessageType.DETECTOR_STATUS,
+            )
+            return
+        case "admin":
+            await attach_simple_service(
+                client_id,
+                websocket,
+                Service.ADMIN,
+                MessageType.CONTROL_READBACK_CHANGE,
+            )
+            return
 
     try:
         service_str, full_location = full_service_name.split(" ")
@@ -211,6 +218,14 @@ async def attach_service(
         return
 
     location = find_first(locations, "name", location_name)
+    if not location:
+        logger.error(
+            "No such location:",
+            service=service,
+            client_id=client_id,
+            location=location_name,
+        )
+        return
 
     if extra:
         channel_name = extra[0]

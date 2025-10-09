@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client"
 import AdminPanels from "../components/AdminPanels"
 import HistoricalReset from "../components/HistoricalReset"
 import { Menu } from "../components/DropDownMenu"
+import { WebsocketClient } from "js/modules/ws-service-client"
 ;(function () {
   window.addEventListener("DOMContentLoaded", () => {
     const { admin, homeUrl, baseUrl, redisMenus } = window.APP_DATA
@@ -13,6 +14,9 @@ import { Menu } from "../components/DropDownMenu"
     }
 
     const menus: Menu[] = redisMenus as Menu[]
+
+    const ws = new WebsocketClient()
+    ws.subscribe("admin")
 
     const redisEndpointUrl = new URL("api/redis", homeUrl).toString()
     const authEndpointUrl = new URL(
