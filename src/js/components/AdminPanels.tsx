@@ -137,7 +137,7 @@ export function RedisPanel({
   useEffect(() => {
     // This effect is used to fetch control values from the server
     // It runs only once when the component mounts
-    async function fetchSelectedValues() {
+    async function retrieveControlValues() {
       try {
         const dataStr = await simpleGet(`${redisEndpointUrl}/controlvalues`)
         const data = JSON.parse(dataStr) as Array<ControlValue>
@@ -146,7 +146,7 @@ export function RedisPanel({
         console.error("Error fetching control values:", error)
       }
     }
-    void fetchSelectedValues()
+    void retrieveControlValues()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
