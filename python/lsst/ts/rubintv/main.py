@@ -22,7 +22,8 @@ from . import __version__
 from .background.clusterstatushandler import DetectorStatusHandler
 from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
-from .config import config, rubintv_logger
+from .background.redissubscriber import RedisSubscriber
+from .config import REDIS_CONTROL_READBACK_SUFFIX, config, rubintv_logger
 from .handlers.api import api_router
 from .handlers.ddv_routes_handler import ddv_router
 from .handlers.ddv_websocket_handler import ddv_client_ws_router, internal_ws_router
@@ -62,19 +63,30 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 
     # initialise the redis client
     redis_client = None
-    redis_subscriber = None
+    detector_stream_reader = None
     if config.ra_redis_host:
         redis_client = await _makeRedis()
     if redis_client:
-        redis_subscriber = DetectorStatusHandler(
+        detector_stream_reader = DetectorStatusHandler(
             redis_client=redis_client,
             redis_keys=models.redis_detectors,
         )
-        redis_task = asyncio.create_task(redis_subscriber.run_async())
+        detector_stream_task = asyncio.create_task(detector_stream_reader.run_async())
+        control_readback_subscriber = RedisSubscriber(redis_client)
+        pubsub = await control_readback_subscriber.subscribe_to_keys(
+            [
+                menu["key"] + REDIS_CONTROL_READBACK_SUFFIX
+                for menu in models.admin_redis_menus
+            ]
+        )
+        control_readback_task = asyncio.create_task(
+            control_readback_subscriber.listen(pubsub)
+        )
         app.state.redis_client = redis_client
-        app.state.redis_subscriber = redis_subscriber
+        app.state.redis_subscriber = detector_stream_reader
     else:
-        redis_task = None
+        detector_stream_task = None
+        control_readback_task = None
         logger.error("Redis client not created. Redis is not available.")
         app.state.redis_client = None
         app.state.redis_subscriber = None
@@ -101,11 +113,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     else:
         yield
 
-    if redis_task and redis_subscriber is not None:
-        await redis_subscriber.stop_async()
-        redis_task.cancel()
+    if detector_stream_task and detector_stream_reader is not None:
+        await detector_stream_reader.stop_async()
+        detector_stream_task.cancel()
         try:
-            await redis_task
+            await detector_stream_task
+        except asyncio.CancelledError:
+            pass
+
+    if control_readback_task and control_readback_subscriber is not None:
+        await control_readback_subscriber.stop(pubsub)
+        control_readback_task.cancel()
+        try:
+            await control_readback_task
         except asyncio.CancelledError:
             pass
 

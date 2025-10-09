@@ -4,6 +4,11 @@ import { useModal, ConfirmationModal, ModalProvider } from "./Modal"
 import { simplePost, simpleGet, sanitiseRedisValue } from "../modules/utils"
 import { Menu } from "./DropDownMenu"
 
+interface ControlValue {
+  key: string
+  value: string
+}
+
 export interface AdminInfo {
   username?: string
   email?: string
@@ -20,13 +25,14 @@ interface AdminPanelsProps {
 
 interface RedisPanelProps {
   menus: Menu[]
-  setMenus: (menus: Menu[]) => void
   redisEndpointUrl: string
   redisKeyPrefix: (key: string) => string
 }
 
 interface DropDownMenuContainerProps {
   menu: Menu
+  controlValue?: ControlValue
+  setControlValues: React.Dispatch<React.SetStateAction<ControlValue[]>>
   onItemSelect: (item: string) => Promise<void>
 }
 
@@ -68,7 +74,6 @@ export default function AdminPanels({
   authEndpointUrl,
 }: AdminPanelsProps) {
   const [admin, setAdmin] = useState(initAdmin)
-  const [menus, setMenus] = useState(initMenus)
 
   useEffect(() => {
     simpleGet(authEndpointUrl)
@@ -97,8 +102,7 @@ export default function AdminPanels({
           <h3 className="admin-panels-title">Redis Controls</h3>
         </div>
         <RedisPanel
-          menus={menus}
-          setMenus={setMenus}
+          menus={initMenus}
           redisEndpointUrl={redisEndpointUrl}
           redisKeyPrefix={redisKeyPrefix}
         />
@@ -115,10 +119,11 @@ export default function AdminPanels({
 
 export function RedisPanel({
   menus,
-  setMenus,
   redisEndpointUrl,
   redisKeyPrefix,
 }: RedisPanelProps) {
+  const [controlValues, setControlValues] = useState<Array<ControlValue>>([])
+
   const handleItemSelect = async (menuKey: string, item: string) => {
     try {
       await simplePost(redisEndpointUrl, { key: menuKey, value: item })
@@ -129,25 +134,15 @@ export function RedisPanel({
   }
 
   useEffect(() => {
-    // This effect is used to fetch selected items from the server
+    // This effect is used to fetch control values from the server
     // It runs only once when the component mounts
     async function fetchSelectedValues() {
       try {
         const dataStr = await simpleGet(`${redisEndpointUrl}/controlvalues`)
-        const data = JSON.parse(dataStr) as Array<{
-          key: string
-          value: string
-        }>
-        // Update menus with selected items from server response
-        const updatedMenus = menus.map((menu) => {
-          const selectedValue = data.find(
-            (item) => item.key === menu.key
-          )?.value
-          return { ...menu, selectedItem: selectedValue }
-        })
-        setMenus(updatedMenus)
+        const data = JSON.parse(dataStr) as Array<ControlValue>
+        setControlValues(data)
       } catch (error) {
-        console.error("Error fetching menus:", error)
+        console.error("Error fetching control values:", error)
       }
     }
     void fetchSelectedValues()
@@ -159,6 +154,10 @@ export function RedisPanel({
         {menus.map((menu, index) => (
           <DropDownMenuContainer
             key={index}
+            controlValue={controlValues.find((cv) =>
+              cv.key.startsWith(menu.key)
+            )}
+            setControlValues={setControlValues}
             menu={menu}
             onItemSelect={(item) => handleItemSelect(menu.key, item)}
           />
@@ -193,10 +192,43 @@ export function RedisPanel({
 
 export function DropDownMenuContainer({
   menu,
+  controlValue,
+  setControlValues,
   onItemSelect,
 }: DropDownMenuContainerProps) {
   const [redisChanged, updateRedisStatus] = useRedisStatus()
   const [thisMenu, setThisMenu] = useState(menu)
+
+  // Runs once to set up event listener for admin events
+  useEffect(() => {
+    type EL = EventListener
+    const handleAdminEvent = (event: CustomEvent) => {
+      const { data, dataType } = event.detail
+      if (dataType === "controlReadback" && data) {
+        const readback = data as ControlValue
+        const sanitizedValue = sanitiseRedisValue(readback.value)
+        setControlValues((prevValues) => {
+          const existingIndex = prevValues.findIndex(
+            (cv) => cv.key === readback.key
+          )
+          if (existingIndex !== -1) {
+            const updatedValues = [...prevValues]
+            updatedValues[existingIndex] = {
+              key: readback.key,
+              value: sanitizedValue,
+            }
+            return updatedValues
+          } else {
+            return [...prevValues, { key: readback.key, value: sanitizedValue }]
+          }
+        })
+      }
+    }
+    window.addEventListener("admin", handleAdminEvent as EL)
+    return () => {
+      window.removeEventListener("admin", handleAdminEvent as EL)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSelect = (item: string) => {
     updateRedisStatus("pending")
@@ -217,14 +249,13 @@ export function DropDownMenuContainer({
         }))
       })
   }
-
   return (
     <div className="dropdown-menu-container box">
       <div className="dropdown-menu-header box-header">
         <h4 className="dropdown-menu-title box-title">{menu.title}</h4>
         <StatusIndicator status={redisChanged} />
       </div>
-      <ValueDisplay value={thisMenu.selectedItem} />
+      <ValueDisplay value={controlValue?.value} />
       <DropDownMenu menu={thisMenu} onItemSelect={handleSelect} />
     </div>
   )
