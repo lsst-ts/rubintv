@@ -445,12 +445,13 @@ async def get_specific_channel_event_page(
             type = channel_name
             day_obs = date_str.replace("-", "")
             visit = f"{day_obs}{seq_num:05d}"
-        if type is not None and visit is not None:
-            key = await get_key_from_type_and_visit(
-                camera_name=camera_name,
-                type=type,
-                visit=visit,
-            )
+        if type is None or visit is None:
+            raise HTTPException(status_code=404, detail="Key not found.")
+        key = await get_key_from_type_and_visit(
+            camera_name=camera_name,
+            type=type,
+            visit=visit,
+        )
         if not key:
             raise HTTPException(status_code=404, detail="Key not found.")
 
