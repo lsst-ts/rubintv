@@ -428,6 +428,39 @@ describe("DropDownMenuContainer Component", () => {
       expect(document.querySelector(".indicator-success")).toBeInTheDocument()
     })
   })
+
+  it("handles admin event updates", async () => {
+    const mockSetControlValues = jest.fn()
+
+    const adminEvent = new CustomEvent("admin", {
+      detail: {
+        dataType: "controlReadback",
+        data: { key: "TEST_KEY", value: "value3" },
+      },
+    })
+
+    render(
+      <DropDownMenuContainer
+        menu={mockMenu}
+        onItemSelect={mockOnItemSelect}
+        setControlValues={mockSetControlValues}
+      />
+    )
+
+    act(() => {
+      window.dispatchEvent(adminEvent)
+    })
+
+    await waitFor(() => {
+      expect(mockSetControlValues).toHaveBeenCalled()
+    })
+
+    // Check how it was called - getting the first call's first argument function
+    const updateFn = mockSetControlValues.mock.calls[0][0]
+
+    const result = updateFn([])
+    expect(result).toEqual([{ key: "TEST_KEY", value: "value3" }])
+  })
 })
 
 describe("AdminSendRedisValue Component", () => {
