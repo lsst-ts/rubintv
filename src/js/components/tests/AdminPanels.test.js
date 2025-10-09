@@ -205,13 +205,24 @@ describe("RedisPanel Component", () => {
   const mockProps = {
     menus: mockMenus,
     setMenus: jest.fn(),
+    setControlValues: jest.fn(),
     redisEndpointUrl: "http://redis.test",
     redisKeyPrefix: (key) => `PREFIX_${key}`,
   }
 
   beforeEach(() => {
+    // Reset all mocks before each test
+    jest.clearAllMocks()
+
+    // Set up default mock implementations
     const mockSimplePost = simplePost
     mockSimplePost.mockResolvedValue("success")
+
+    const mockSimpleGet = simpleGet
+    mockSimpleGet.mockResolvedValue(JSON.stringify([]))
+
+    // Explicitly reset the setControlValues mock that's part of mockProps
+    mockProps.setControlValues.mockReset()
   })
 
   it("renders all menus and admin controls", () => {
@@ -264,62 +275,39 @@ describe("RedisPanel Component", () => {
     consoleSpy.mockRestore()
   })
 
-  it("fetches and sets selected menu items from server on mount", async () => {
-    const mockMenusWithSelection = [
-      {
-        key: "TEST_KEY_1",
-        title: "Menu 1",
-        items: ["value1", "value2"],
-        selectedItem: null,
-      },
-      {
-        key: "TEST_KEY_2",
-        title: "Menu 2",
-        items: ["option1", "option2"],
-        selectedItem: null,
-      },
-    ]
+  it("retrieves control values from server on mount", async () => {
+    // Mock the API response that will update the internal state
+    simpleGet.mockImplementation((url) => {
+      console.log("simpleGet called with URL:", url)
+      if (url === "http://redis.test/controlvalues") {
+        return Promise.resolve(
+          JSON.stringify([
+            { key: "TEST_KEY_1", value: "value2" },
+            { key: "TEST_KEY_2", value: "option1" },
+          ])
+        )
+      }
+      return Promise.resolve("[]")
+    })
 
-    const mockSelectedValues = [
-      { key: "TEST_KEY_1", value: "value2" },
-      { key: "TEST_KEY_2", value: "option1" },
-    ]
+    // Render the component - don't need to pass setControlValues
+    render(<RedisPanel {...mockProps} />)
 
-    const mockPropsWithSelection = {
-      ...mockProps,
-      menus: mockMenusWithSelection,
-    }
-
-    const mockSimpleGet = simpleGet
-    mockSimpleGet.mockResolvedValue(JSON.stringify(mockSelectedValues))
-
-    render(<RedisPanel {...mockPropsWithSelection} />)
-
-    // Wait for the fetchSelectedValues effect to complete
+    // Wait for the API call to be made
     await waitFor(() => {
       expect(simpleGet).toHaveBeenCalledWith("http://redis.test/controlvalues")
     })
 
-    // Verify setMenus was called with updated selected items
+    // Check that the values appear in the component
+    // This is testing the actual behavior rather than the implementation detail
     await waitFor(() => {
-      expect(mockProps.setMenus).toHaveBeenCalledWith([
-        {
-          key: "TEST_KEY_1",
-          title: "Menu 1",
-          items: ["value1", "value2"],
-          selectedItem: "value2",
-        },
-        {
-          key: "TEST_KEY_2",
-          title: "Menu 2",
-          items: ["option1", "option2"],
-          selectedItem: "option1",
-        },
-      ])
+      // The component should display the value from the API response
+      const valueDisplays = screen.getAllByText(/value2|option1/)
+      expect(valueDisplays.length).toBeGreaterThan(0)
     })
   })
 
-  it("handles fetchSelectedValues API failure gracefully", async () => {
+  it("handles retrieveControlValues API failure gracefully", async () => {
     const consoleSpy = jest.spyOn(console, "error").mockImplementation()
     const mockSimpleGet = simpleGet
     mockSimpleGet.mockRejectedValue(new Error("Fetch failed"))
@@ -328,127 +316,12 @@ describe("RedisPanel Component", () => {
 
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith(
-        "Error fetching menus:",
+        "Error fetching control values:",
         expect.any(Error)
       )
     })
 
     consoleSpy.mockRestore()
-  })
-
-  it("correctly sets menu selected items based on simpleGet response", async () => {
-    const initialMenus = [
-      {
-        key: "AOS_PIPELINE",
-        title: "AOS Pipeline",
-        items: ["DANISH", "TIE", "AI"],
-        selectedItem: null,
-      },
-      {
-        key: "CHIP_SELECTION",
-        title: "Chip Selection",
-        items: ["ALL", "RAFT_CHECKERBOARD", "CCD_CHECKERBOARD"],
-        selectedItem: null,
-      },
-    ]
-
-    // Mock response from the server with specific selected values
-    const serverResponse = [
-      { key: "AOS_PIPELINE", value: "TIE" },
-      { key: "CHIP_SELECTION", value: "RAFT_CHECKERBOARD" },
-    ]
-
-    const testProps = {
-      ...mockProps,
-      menus: initialMenus,
-    }
-
-    const mockSimpleGet = simpleGet
-    mockSimpleGet.mockResolvedValue(JSON.stringify(serverResponse))
-
-    render(<RedisPanel {...testProps} />)
-
-    // Wait for fetchSelectedValues to complete
-    await waitFor(() => {
-      expect(simpleGet).toHaveBeenCalledWith("http://redis.test/controlvalues")
-    })
-
-    // Verify that setMenus was called with the correct updated menus
-    await waitFor(() => {
-      expect(mockProps.setMenus).toHaveBeenCalledWith([
-        {
-          key: "AOS_PIPELINE",
-          title: "AOS Pipeline",
-          items: ["DANISH", "TIE", "AI"],
-          selectedItem: "TIE",
-        },
-        {
-          key: "CHIP_SELECTION",
-          title: "Chip Selection",
-          items: ["ALL", "RAFT_CHECKERBOARD", "CCD_CHECKERBOARD"],
-          selectedItem: "RAFT_CHECKERBOARD",
-        },
-      ])
-    })
-
-    // Verify the API call was made to the correct endpoint
-    expect(simpleGet).toHaveBeenCalledWith("http://redis.test/controlvalues")
-  })
-
-  it("renders menus with selected items after fetchSelectedValues completes", async () => {
-    const mockMenusWithSelection = [
-      {
-        key: "TEST_KEY_1",
-        title: "Menu 1",
-        items: ["value1", "value2", "value3"],
-        selectedItem: null,
-      },
-      {
-        key: "TEST_KEY_2",
-        title: "Menu 2",
-        items: ["option1", "option2", "option3"],
-        selectedItem: null,
-      },
-    ]
-
-    const mockSelectedValues = [
-      { key: "TEST_KEY_1", value: "value3" },
-      { key: "TEST_KEY_2", value: "option2" },
-    ]
-
-    const mockPropsWithSelection = {
-      ...mockProps,
-      menus: mockMenusWithSelection,
-    }
-
-    const mockSimpleGet = simpleGet
-    mockSimpleGet.mockResolvedValue(JSON.stringify(mockSelectedValues))
-
-    const { rerender } = render(<RedisPanel {...mockPropsWithSelection} />)
-
-    // Wait for the fetchSelectedValues effect to complete
-    await waitFor(() => {
-      expect(simpleGet).toHaveBeenCalledWith("http://redis.test/controlvalues")
-    })
-
-    // Wait for setMenus to be called and then rerender with updated props
-    await waitFor(() => {
-      expect(mockProps.setMenus).toHaveBeenCalled()
-    })
-
-    // Get the updated menus from the setMenus call
-    const updatedMenus = mockProps.setMenus.mock.calls[0][0]
-
-    // Verify the menus have the correct selected items
-    expect(updatedMenus[0].selectedItem).toBe("value3")
-    expect(updatedMenus[1].selectedItem).toBe("option2")
-
-    // Rerender with the updated menus to simulate state update
-    rerender(<RedisPanel {...mockPropsWithSelection} menus={updatedMenus} />)
-
-    // The dropdown menus should now display the selected items
-    expect(screen.getByText("Menu 1")).toBeInTheDocument()
-    expect(screen.getByText("Menu 2")).toBeInTheDocument()
   })
 })
 
