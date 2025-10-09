@@ -29,7 +29,7 @@ async def get_camera_current_data(
 ) -> CameraPageData:
     """Get the current data for a camera."""
     if not camera.online:
-        return None
+        return CameraPageData()
     current_poller: CurrentPoller = connection.app.state.current_poller
     first_pass: asyncio.Event = connection.app.state.first_pass_event
     # wait for the first poll to complete
@@ -91,14 +91,16 @@ async def get_camera_events_for_date(
     if await historical.is_busy():
         raise HTTPException(423, "Historical data is being processed")
     channel_data = await historical.get_channel_data_for_date(location, camera, day_obs)
-    metadata = await historical.get_metadata_for_date(location, camera, day_obs)
+    metadata_exists = await historical.check_for_metadata_for_date(
+        location, camera, day_obs
+    )
     per_day = await historical.get_per_day_for_date(location, camera, day_obs)
     nr_exists = await historical.night_report_exists_for(location, camera, day_obs)
 
     return CameraPageData(
         channel_data=channel_data,
         per_day=per_day,
-        metadata=metadata,
+        metadata_exists=metadata_exists,
         nr_exists=nr_exists,
     )
 

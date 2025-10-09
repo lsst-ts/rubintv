@@ -1,10 +1,6 @@
 import asyncio
-import pickle
-import re
-import zlib
 from datetime import date
 from time import time
-from typing import Any
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.config import rubintv_logger
@@ -54,17 +50,18 @@ class HistoricalPoller:
         test_date_end: str | None = None,
     ) -> None:
         self._clients: dict[str, S3Client] = {}
-        self._metadata: dict[str, bytes] = {}
 
-        # Change the structure to use sets for O(1) lookup
-        self._structured_events: dict[str, dict[str, dict[str, set[int]]]] = {}
+        self._metadata_refs: dict[str, set[str]] = {}
+        # Structure: {loc_cam: {date_str}}
+
+        self._structured_events: dict[str, dict[str, dict[str, set[int | str]]]] = {}
         # Structure: {loc_cam: {date_str: {
-        #  channel_name: [seq_num1, seq_num2, ...]}}}
+        #  channel_name: {seq_num1, seq_num2, ...}}}}
 
         self._channel_default_extensions: dict[str, str] = {}
         # Structure: {f"{loc_cam}/{date_str}/{channel_name}": "default_ext"}
 
-        self._extension_exceptions: dict[str, dict[int, str]] = {}
+        self._extension_exceptions: dict[str, dict[int | str, str]] = {}
         # Structure: {f"{loc_cam}/{date_str}/{channel_name}":
         #   {seq_num: "different_ext"}}
 
@@ -81,8 +78,6 @@ class HistoricalPoller:
         self._have_downloaded = False
         self._last_reload = get_current_day_obs()
 
-        self.cam_year_rgx = re.compile(r"(\w+)\/([\d]{4})-[\d]{2}-[\d]{2}")
-
         self.test_mode = test_mode
         self.test_date_start: date | None = None
         self.test_date_end: date | None = None
@@ -94,7 +89,7 @@ class HistoricalPoller:
 
     async def clear_all_data(self) -> None:
         self._have_downloaded = False
-        self._metadata = {}
+        self._metadata_refs = {}
         self._structured_events = {}
         self._nr_metadata = {}
         self._calendar = {}
@@ -233,7 +228,7 @@ class HistoricalPoller:
         async for events_batch in objects_to_events(event_objs):
             await self.store_events_structured(events_batch, locname)
 
-        await self.download_and_store_metadata(locname, metadata_objs)
+        await self.store_metadata_dates(locname, metadata_objs)
 
     async def store_events_structured(self, events: list[Event], locname: str) -> None:
         """Highly optimized event storage with extension deduplication."""
@@ -277,10 +272,10 @@ class HistoricalPoller:
 
         # Analyze extensions to find the most common one
         extension_counts: dict[str, int] = {}
-        event_extensions: dict[int, str] = {}
+        event_extensions: dict[int | str, str] = {}
 
         for event in events:
-            seq_num = event.seq_num_force_int()
+            seq_num = event.seq_num
             ext = event.ext
 
             # Track extension frequency
@@ -291,7 +286,7 @@ class HistoricalPoller:
             self._structured_events[loc_cam][date_str][channel_name].add(seq_num)
 
             # Update calendar
-            self.add_to_calendar(loc_cam, date_str, seq_num)
+            self.add_to_calendar(loc_cam, date_str, event.seq_num_force_int())
 
         # Determine the default extension (most common)
         if extension_counts:
@@ -307,10 +302,9 @@ class HistoricalPoller:
 
             if exceptions:
                 self._extension_exceptions[channel_date_key] = exceptions
-            # If no exceptions, don't store anything in _extension_exceptions
 
     def get_extension_for_event(
-        self, loc_cam: str, date_str: str, channel_name: str, seq_num: int
+        self, loc_cam: str, date_str: str, channel_name: str, seq_num: int | str
     ) -> str:
         """Get the extension for a specific event, using default and
         exceptions pattern."""
@@ -323,14 +317,16 @@ class HistoricalPoller:
                 return exceptions[seq_num]
 
         # Return the default extension
-        return self._channel_default_extensions.get(channel_date_key, "fits")
+        return self._channel_default_extensions.get(channel_date_key, "jpg")
 
     def reconstruct_filename(
-        self, camera_name: str, channel_name: str, seq_num: int, ext: str
+        self, camera_name: str, channel_name: str, seq_num: int | str, ext: str
     ) -> str:
         """Reconstruct filename from components."""
-        # Adjust this based on your actual filename pattern
-        base_name = f"{camera_name}_{channel_name}_{seq_num:06d}"
+        if isinstance(seq_num, str):
+            base_name = f"{camera_name}_{channel_name}_{seq_num}"
+        else:
+            base_name = f"{camera_name}_{channel_name}_{seq_num:06d}"
         return f"{base_name}.{ext}"
 
     async def get_events_for_date_structured(
@@ -351,7 +347,6 @@ class HistoricalPoller:
             date_str
         ].items():
             for seq_num in seq_data:
-                # Get the correct extension
                 ext = self.get_extension_for_event(
                     loc_cam, date_str, channel_name, seq_num
                 )
@@ -360,9 +355,13 @@ class HistoricalPoller:
                 filename = self.reconstruct_filename(
                     camera.name, channel_name, seq_num, ext
                 )
-                key = (
-                    f"{camera.name}/{date_str}/{channel_name}/{seq_num:06d}/{filename}"
-                )
+                if isinstance(seq_num, str):
+                    # seq_num is 'final' or similar non-integer
+                    key = (
+                        f"{camera.name}/{date_str}/{channel_name}/{seq_num}/{filename}"
+                    )
+                else:
+                    key = f"{camera.name}/{date_str}/{channel_name}/{seq_num:06d}/{filename}"
                 events.append(Event(key=key))
 
         return events
@@ -379,13 +378,11 @@ class HistoricalPoller:
         if self._calendar[loc_cam][year][month].get(day, 0) <= seq_num:
             self._calendar[loc_cam][year][month][day] = seq_num
 
-    async def download_and_store_metadata(
+    async def store_metadata_dates(
         self, locname: str, metadata_objs: list[dict[str, str]]
     ) -> None:
-        # metadata is downloaded and stored against its loc/cam/date
-        # for efficient retrieval
+
         logger.info("Fetching metadata for:", locname=locname)
-        t = time()
         for md_obj in metadata_objs:
             key = md_obj.get("key")
             if not key:
@@ -393,17 +390,8 @@ class HistoricalPoller:
             storage_name = locname + "/" + key.split("/metadata")[0]
             _, cam_name, date_str = storage_name.split("/")
             loc_cam = f"{locname}/{cam_name}"
+            self._metadata_refs.setdefault(loc_cam, set()).add(date_str)
             self.add_to_calendar(loc_cam, date_str, 0)
-
-            client = self._clients[locname]
-            md = await client.async_get_object(key)
-            if not md:
-                logger.info("Missing metadata for:", md_obj=md_obj)
-                continue
-            compressed_md = zlib.compress(pickle.dumps(md))
-            self._metadata[storage_name] = compressed_md
-        dur = time() - t
-        logger.info("Metatdata fetch took", locname=locname, dur=dur)
 
     async def get_night_report_payload(
         self, location: Location, camera: Camera, day_obs: date
@@ -491,17 +479,14 @@ class HistoricalPoller:
             per_day[event.channel_name] = event.__dict__
         return per_day
 
-    async def get_metadata_for_date(
+    async def check_for_metadata_for_date(
         self, location: Location, camera: Camera, day_obs: date
-    ) -> dict[str, Any]:
-        cam_name = camera.name
-        if camera.metadata_from:
-            cam_name = camera.metadata_from
-        loc_cam_date = f"{location.name}/{cam_name}/{day_obs}"
-        compressed = self._metadata.get(loc_cam_date, None)
-        if compressed is None:
-            return {}
-        return pickle.loads(zlib.decompress(compressed))
+    ) -> bool:
+        date_str = day_obs.isoformat()
+        loc_cam = f"{location.name}/{camera.name}"
+        if loc_cam in self._metadata_refs and date_str in self._metadata_refs[loc_cam]:
+            return True
+        return False
 
     def flatten_calendar(self, location: Location, camera: Camera) -> dict[str, int]:
         """Flatten the calendar for a given location and camera.
