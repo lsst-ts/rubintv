@@ -173,7 +173,7 @@ async def get_all_channel_names_for_date_seq_num(
     location: Location,
     camera: Camera,
     day_obs: date,
-    seq_num: int,
+    seq_num: int | str,
     connection: HTTPConnection,
 ) -> list[str]:
     """Get all channels for a given date and sequence number."""
