@@ -357,7 +357,7 @@ class TestHistoricalPollerWithMockData:
     @pytest.mark.asyncio
     async def test_with_mock_events(self, rubin_data_mocker: RubinDataMocker) -> None:
         """Test HistoricalPoller with mock events from S3."""
-        historical = HistoricalPoller(m.locations, test_mode=True)
+        historical = HistoricalPoller(m.locations)
         location = m.locations[0]
 
         # Get objects from mock data
@@ -390,7 +390,7 @@ class TestHistoricalPollerWithMockData:
         self, rubin_data_mocker: RubinDataMocker
     ) -> None:
         """Test processing night report data."""
-        historical = HistoricalPoller(m.locations, test_mode=True)
+        historical = HistoricalPoller(m.locations)
         location = m.locations[0]
         camera = location.cameras[0]
 
@@ -414,7 +414,7 @@ class TestHistoricalPollerWithMockData:
     @pytest.mark.asyncio
     async def test_complete_data_flow(self, rubin_data_mocker: RubinDataMocker) -> None:
         """Test the complete flow of data processing, storage and retrieval."""
-        historical = HistoricalPoller(m.locations, test_mode=True)
+        historical = HistoricalPoller(m.locations)
         location = m.locations[0]
         camera = location.cameras[0]
         channel = camera.channels[0].name
@@ -535,7 +535,7 @@ class TestHistoricalPollerWithMockData:
     ) -> None:
         """Test the optimized storage and retrieval of structured event
         data."""
-        historical = HistoricalPoller(m.locations, test_mode=True)
+        historical = HistoricalPoller(m.locations)
         location = m.locations[0]
         camera = location.cameras[0]
         channel1 = camera.channels[0]
@@ -651,7 +651,7 @@ class TestHistoricalPollerWithMockData:
         self, rubin_data_mocker: RubinDataMocker
     ) -> None:
         """Test integration of metadata and night report processing."""
-        historical = HistoricalPoller(m.locations, test_mode=True)
+        historical = HistoricalPoller(m.locations)
         location = m.locations[0]
         camera = location.cameras[0]
         date_str = "2024-04-20"
@@ -708,7 +708,7 @@ class TestHistoricalPollerWithMockData:
         self, rubin_data_mocker: RubinDataMocker
     ) -> None:
         """Test getting next/previous events with structured data storage."""
-        historical = HistoricalPoller(m.locations, test_mode=True)
+        historical = HistoricalPoller(m.locations)
         location = m.locations[0]
         camera = location.cameras[0]
         channel = camera.channels[0]
