@@ -69,7 +69,6 @@ export interface MetadataColumn {
  */
 export interface MediaData {
   key: string
-  hash: string
   camera_name: string
   day_obs: string
   channel_name: string
@@ -219,6 +218,7 @@ export interface NightReportType {
  * @param {string} group - The group category this plot belongs to.
  */
 export interface NightReportPlot extends MediaData {
+  hash: string
   group: string
 }
 
