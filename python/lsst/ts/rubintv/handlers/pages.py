@@ -472,7 +472,7 @@ async def get_specific_channel_event_page(
                 location=location,
                 camera=camera,
                 day_obs=event.day_obs_date(),
-                seq_num=event.seq_num_force_int(),
+                seq_num=event.seq_num,
                 connection=request,
             )
 
@@ -520,7 +520,7 @@ async def get_current_channel_event_page(
             location=location,
             camera=camera,
             day_obs=event.day_obs_date(),
-            seq_num=event.seq_num_force_int(),
+            seq_num=event.seq_num,
             connection=request,
         )
 

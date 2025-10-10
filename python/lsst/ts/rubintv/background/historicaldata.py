@@ -1,6 +1,7 @@
 import asyncio
 from datetime import date
 from time import time
+from typing import Collection
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.config import rubintv_logger
@@ -286,7 +287,11 @@ class HistoricalPoller:
             self._structured_events[loc_cam][date_str][channel_name].add(seq_num)
 
             # Update calendar
-            self.add_to_calendar(loc_cam, date_str, event.seq_num_force_int())
+            self.add_to_calendar(
+                loc_cam,
+                date_str,
+                event.seq_num if isinstance(event.seq_num, int) else 0,
+            )
 
         # Determine the default extension (most common)
         if extension_counts:
@@ -328,6 +333,49 @@ class HistoricalPoller:
         else:
             base_name = f"{camera_name}_{channel_name}_{seq_num:06d}"
         return f"{base_name}.{ext}"
+
+    async def get_structured_data_for_date(
+        self, location: Location, camera: Camera, a_date: date
+    ) -> dict[str, set[int | str]]:
+        """Returns the structured data for a given date."""
+        loc_cam = f"{location.name}/{camera.name}"
+        date_str = a_date.isoformat()
+
+        if (
+            loc_cam not in self._structured_events
+            or date_str not in self._structured_events[loc_cam]
+        ):
+            return {}
+
+        return self._structured_events[loc_cam][date_str]
+
+    async def get_all_extensions_for_date(
+        self, location: Location, camera: Camera, a_date: date
+    ) -> dict[str, dict[str, Collection[int | str]]]:
+        """Get all extensions (default and exceptions) for all channels on a
+        given date."""
+        loc_cam = f"{location.name}/{camera.name}"
+        date_str = a_date.isoformat()
+
+        if (
+            loc_cam not in self._structured_events
+            or date_str not in self._structured_events[loc_cam]
+        ):
+            return {}
+
+        extensions_info = {}
+        for channel_name in self._structured_events[loc_cam][date_str]:
+            default_ext = self._channel_default_extensions.get(
+                f"{loc_cam}/{date_str}/{channel_name}", "jpg"
+            )
+            exceptions = self._extension_exceptions.get(
+                f"{loc_cam}/{date_str}/{channel_name}", {}
+            )
+            extensions_info[channel_name] = {
+                "default": default_ext,
+                "exceptions": exceptions if exceptions else {},
+            }
+        return extensions_info
 
     async def get_events_for_date_structured(
         self, location: Location, camera: Camera, a_date: date
