@@ -114,5 +114,11 @@ async def test_get_api_camera_for_today(
     today = get_current_day_obs()
     response = await client.get(f"/rubintv/api/usdf/lsstcam/date/{today}")
     data = response.json()
-    assert "channelData" in data
-    assert data["channelData"] != {}
+    assert "structuredData" in data
+    assert "extensionInfo" in data
+    assert "perDay" in data
+    assert "metadata" in data
+    assert data["perDay"] != {}
+    assert data["metadata"] != {}
+    assert data["structuredData"] != {}
+    assert data["extensionInfo"] != {}
