@@ -412,7 +412,7 @@ class TestHistoricalPollerWithMockData:
         assert report.plots is not None
 
     @pytest.mark.asyncio
-    async def test_complete_data_flow(self, rubin_data_mocker: RubinDataMocker) -> None:
+    async def test_complete_data_flow(self) -> None:
         """Test the complete flow of data processing, storage and retrieval."""
         historical = HistoricalPoller(m.locations)
         location = m.locations[0]
@@ -530,9 +530,7 @@ class TestHistoricalPollerWithMockData:
         assert flat_calendar["2024-02-15"] == 7
 
     @pytest.mark.asyncio
-    async def test_structured_event_storage_and_retrieval(
-        self, rubin_data_mocker: RubinDataMocker
-    ) -> None:
+    async def test_structured_event_storage_and_retrieval(self) -> None:
         """Test the optimized storage and retrieval of structured event
         data."""
         historical = HistoricalPoller(m.locations)
@@ -629,7 +627,7 @@ class TestHistoricalPollerWithMockData:
         assert channel2.name in extensions_info
         assert extensions_info[channel1.name]["default"] == "jpg"
         assert extensions_info[channel2.name]["default"] == "png"
-        assert 3 in extensions_info[channel1.name]["exceptions"]
+        assert extensions_info[channel1.name]["exceptions"].keys() == {3}
 
         # Test events reconstruction
         events = await historical.get_events_for_date_structured(
@@ -704,9 +702,7 @@ class TestHistoricalPollerWithMockData:
         assert date_str in flat_calendar
 
     @pytest.mark.asyncio
-    async def test_get_next_prev_event_with_structured_data(
-        self, rubin_data_mocker: RubinDataMocker
-    ) -> None:
+    async def test_get_next_prev_event_with_structured_data(self) -> None:
         """Test getting next/previous events with structured data storage."""
         historical = HistoricalPoller(m.locations)
         location = m.locations[0]
