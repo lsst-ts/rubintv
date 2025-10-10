@@ -69,7 +69,6 @@ export interface MetadataColumn {
  */
 export interface MediaData {
   key: string
-  hash: string
   camera_name: string
   day_obs: string
   channel_name: string
