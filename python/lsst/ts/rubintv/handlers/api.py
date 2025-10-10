@@ -173,6 +173,28 @@ async def get_camera_events_for_date_api(
 
 
 @api_router.get(
+    "/{location_name}/{camera_name}/date/{date_str}/data",
+    response_model=dict,
+)
+async def get_camera_events_for_date_data_api(
+    location_name: str, camera_name: str, date_str: str, request: Request
+) -> dict:
+    location, camera = await get_location_camera(location_name, camera_name, request)
+
+    day_obs = date_validation(date_str)
+
+    historical: HistoricalPoller = request.app.state.historical
+    data = await historical.get_structured_data_for_date(location, camera, day_obs)
+    extension_info = await historical.get_all_extensions_for_date(
+        location, camera, day_obs
+    )
+    return {
+        "data": data,
+        "extensionInfo": extension_info,
+    }
+
+
+@api_router.get(
     "/{location_name}/{camera_name}/{channel_name}/current",
     response_model=Event | None,
 )
