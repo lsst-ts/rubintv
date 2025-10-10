@@ -156,6 +156,7 @@ async def get_camera_events_for_date_api(
     data: CameraPageData = await get_camera_events_for_date(
         location, camera, day_obs, request
     )
+    metadata = None
     if data.metadata_exists:
         metadata = await get_metadata_for_date(
             location_name, camera_name, date_str, request
