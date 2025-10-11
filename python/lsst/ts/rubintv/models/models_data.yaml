@@ -203,7 +203,7 @@ cameras:
         title: Donut Fits
         colour: "#f0a500"
       - name: zernike_predicted_fwhm
-        title: Zernicke predicted FWHM
+        title: Zernike predicted FWHM
         colour: "#f08a5d"
       - name: dof_predicted_fwhm
         title: DOF predicted FWHM
