@@ -5,7 +5,7 @@ import dataclasses
 import re
 from datetime import date, datetime, timedelta, timezone
 from enum import Enum
-from typing import Any
+from typing import Any, TypedDict
 
 from lsst.ts.rubintv import __version__
 from lsst.ts.rubintv.config import config, rubintv_logger
@@ -459,11 +459,22 @@ class KeyValue(BaseModel):
     value: str | int | float | bool | None = None
 
 
+type StructuredData = dict[str, dict[str, dict[str, set[int | str]]]]
+
+
+class ExtensionDict(TypedDict):
+    default: str
+    exceptions: dict[int | str, str]
+
+
+type ExtensionInfo = dict[str, ExtensionDict]
+type ChannelData = dict[int, dict[str, dict]]
+
+
 @dataclass
 class CameraPageData:
     """Data for a camera page."""
 
-    channel_data: dict[int, dict[str, dict]] = dataclasses.field(default_factory=dict)
     per_day: dict[str, dict] = dataclasses.field(default_factory=dict)
     metadata: dict[str, Any] = dataclasses.field(default_factory=dict)
     metadata_exists: bool = False
@@ -473,9 +484,38 @@ class CameraPageData:
         """Check if the data is empty."""
         return not any(
             [
-                self.channel_data,
                 self.metadata_exists or self.metadata,
                 self.per_day,
                 self.nr_exists,
             ]
         )
+
+
+@dataclass
+class HistoricalPageData(CameraPageData):
+    """Data for the historical page."""
+
+    structured_data: dict[str, set[int | str]] = dataclasses.field(default_factory=dict)
+    extension_info: ExtensionInfo = dataclasses.field(default_factory=dict)
+
+    def is_empty(self) -> bool:
+        """Check if the data is empty."""
+        base_empty = super().is_empty()
+        return base_empty and not any(
+            [
+                self.structured_data,
+                self.extension_info,
+            ]
+        )
+
+
+@dataclass
+class CurrentPageData(CameraPageData):
+    """Data for the current page."""
+
+    channel_data: ChannelData = dataclasses.field(default_factory=dict)
+
+    def is_empty(self) -> bool:
+        """Check if the data is empty."""
+        base_empty = super().is_empty()
+        return base_empty and not self.channel_data

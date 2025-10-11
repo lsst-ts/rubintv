@@ -1,5 +1,4 @@
 import json
-import re
 import traceback
 import uuid
 
@@ -253,12 +252,6 @@ async def is_valid_client_request(data: dict) -> bool:
         logger.warn("Received json without client_id")
         return False
     return client_id in clients.keys()
-
-
-async def is_valid_service(service: str) -> bool:
-    services_str = "|".join(valid_services)
-    valid_req = re.compile(rf"^({services_str}) [\w-]+(\/\w+)+$")
-    return valid_req.fullmatch(service) is not None
 
 
 async def is_valid_location_camera(

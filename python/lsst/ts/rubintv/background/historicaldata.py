@@ -1,7 +1,6 @@
 import asyncio
 from datetime import date
 from time import time
-from typing import Collection
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.config import rubintv_logger
@@ -13,13 +12,14 @@ from lsst.ts.rubintv.models.models import (
     Camera,
     Channel,
     Event,
+    ExtensionInfo,
     Location,
     NightReport,
     NightReportData,
 )
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
 from lsst.ts.rubintv.models.models import ServiceTypes as Service
-from lsst.ts.rubintv.models.models import get_current_day_obs
+from lsst.ts.rubintv.models.models import StructuredData, get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import (
     date_str_to_date,
     daterange,
@@ -55,7 +55,7 @@ class HistoricalPoller:
         self._metadata_refs: dict[str, set[str]] = {}
         # Structure: {loc_cam: {date_str}}
 
-        self._structured_events: dict[str, dict[str, dict[str, set[int | str]]]] = {}
+        self._structured_events: StructuredData = {}
         # Structure: {loc_cam: {date_str: {
         #  channel_name: {seq_num1, seq_num2, ...}}}}
 
@@ -351,9 +351,13 @@ class HistoricalPoller:
 
     async def get_all_extensions_for_date(
         self, location: Location, camera: Camera, a_date: date
-    ) -> dict[str, dict[str, Collection[int | str]]]:
+    ) -> ExtensionInfo:
         """Get all extensions (default and exceptions) for all channels on a
-        given date."""
+        given date.
+
+        Structure of returned data:
+        {channel_name: {"default": "ext", "exceptions": {seq_num: "ext", ...}}}
+        """
         loc_cam = f"{location.name}/{camera.name}"
         date_str = a_date.isoformat()
 
