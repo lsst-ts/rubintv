@@ -153,4 +153,76 @@ describe("createTableFromStructuredData", () => {
 
     expect(Object.keys(result).length).toBe(0)
   })
+
+  // Test with array data format (simulating JSON from backend)
+  test("handles array data format from JSON", () => {
+    const cameraName = "TestCamera"
+    const dateStr = "2024-03-10"
+    const channels = [{ name: "channel1" }, { name: "channel2" }]
+
+    // Mock structured data as arrays (as it would come from JSON)
+    const structuredData = {
+      channel1: [1, 2, 3],
+      channel2: [1, 2],
+    }
+
+    const extensionInfo = {
+      channel1: {
+        default: "jpg",
+        exceptions: { 3: "fits" },
+      },
+      channel2: {
+        default: "png",
+        exceptions: {},
+      },
+    }
+
+    const result = createTableFromStructuredData(
+      cameraName,
+      dateStr,
+      structuredData,
+      extensionInfo,
+      channels
+    )
+
+    // Verify structure and content
+    expect(Object.keys(result).length).toBe(3)
+    expect(result["1"].channel1).toBeDefined()
+    expect(result["1"].channel2).toBeDefined()
+    expect(result["3"].channel1).toBeDefined()
+    expect(result["3"].channel2).toBeUndefined()
+    expect(result["3"].channel1.ext).toBe("fits")
+  })
+
+  // Test with object format from JSON
+  test("handles object data format from JSON", () => {
+    const cameraName = "TestCamera"
+    const dateStr = "2024-03-10"
+    const channels = [{ name: "channel1" }]
+
+    // Mock structured data as object (another possible JSON format)
+    const structuredData = {
+      channel1: { 1: true, 2: true, 3: true },
+    }
+
+    const extensionInfo = {
+      channel1: {
+        default: "jpg",
+        exceptions: {},
+      },
+    }
+
+    const result = createTableFromStructuredData(
+      cameraName,
+      dateStr,
+      structuredData,
+      extensionInfo,
+      channels
+    )
+
+    expect(Object.keys(result).length).toBe(3)
+    expect(result["1"].channel1).toBeDefined()
+    expect(result["2"].channel1).toBeDefined()
+    expect(result["3"].channel1).toBeDefined()
+  })
 })

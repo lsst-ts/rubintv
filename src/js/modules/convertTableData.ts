@@ -15,7 +15,10 @@ import { ChannelData } from "../components/componentTypes"
 export function createTableFromStructuredData(
   cameraName: string,
   dateStr: string,
-  data: Record<string, Set<number | string>>,
+  data: Record<
+    string,
+    Set<number | string> | Array<number | string> | Record<string, any>
+  >,
   extensionInfo: Record<
     string,
     { default: string; exceptions: Record<string | number, string> }
@@ -28,14 +31,47 @@ export function createTableFromStructuredData(
   // Find all unique sequence numbers across all channels
   const allSeqNums = new Set<number>()
 
-  // Convert string seq numbers to integers and collect all unique ones
-  Object.entries(data).forEach(([, seqNums]) => {
-    seqNums.forEach((seqNum) => {
-      // Skip 'final' or other non-numeric seq numbers for the main table
-      if (typeof seqNum === "number") {
-        allSeqNums.add(seqNum)
-      }
-    })
+  // Helper function to check if a seq_num exists in the data structure
+  // This handles both Set objects and arrays/objects from JSON
+  const hasSeqNum = (channelData: any, seqNum: number | string): boolean => {
+    if (channelData instanceof Set) {
+      return channelData.has(seqNum)
+    } else if (Array.isArray(channelData)) {
+      return channelData.includes(seqNum)
+    } else if (typeof channelData === "object") {
+      // If it's an object with sequence numbers as keys or values
+      return (
+        Object.keys(channelData).includes(String(seqNum)) ||
+        Object.values(channelData).includes(seqNum)
+      )
+    }
+    return false
+  }
+
+  // Convert data to collect all unique sequence numbers
+  Object.entries(data).forEach(([, channelData]) => {
+    // Handle different formats (Set, Array, Object)
+    if (channelData instanceof Set) {
+      channelData.forEach((seqNum) => {
+        if (typeof seqNum === "number") {
+          allSeqNums.add(seqNum)
+        }
+      })
+    } else if (Array.isArray(channelData)) {
+      channelData.forEach((seqNum) => {
+        if (typeof seqNum === "number") {
+          allSeqNums.add(seqNum)
+        }
+      })
+    } else if (typeof channelData === "object") {
+      // Handle object format (e.g., from JSON)
+      Object.keys(channelData).forEach((key) => {
+        const seqNum = Number(key)
+        if (!isNaN(seqNum)) {
+          allSeqNums.add(seqNum)
+        }
+      })
+    }
   })
 
   // Sort sequence numbers
@@ -49,8 +85,8 @@ export function createTableFromStructuredData(
     channels.forEach((channel) => {
       const channelName = channel.name
 
-      // Skip channels not in our data
-      if (!data[channelName]?.has(seqNum)) {
+      // Skip channels not in our data or that don't have this sequence number
+      if (!data[channelName] || !hasSeqNum(data[channelName], seqNum)) {
         return
       }
 
