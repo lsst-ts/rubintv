@@ -155,8 +155,8 @@ export function RedisPanel({
         {menus.map((menu, index) => (
           <DropDownMenuContainer
             key={index}
-            controlValue={controlValues.find((cv) =>
-              cv.key.startsWith(menu.key)
+            controlValue={controlValues.find(
+              (cv) => cv.key == menu.key + "_READBACK"
             )}
             setControlValues={setControlValues}
             menu={menu}
