@@ -113,26 +113,25 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     else:
         yield
 
-    if detector_stream_task and detector_stream_reader is not None:
-        await detector_stream_reader.stop_async()
-        detector_stream_task.cancel()
-        try:
-            await detector_stream_task
-        except asyncio.CancelledError:
-            pass
-
-    if control_readback_task and control_readback_subscriber is not None:
-        await control_readback_subscriber.stop(pubsub)
-        control_readback_task.cancel()
-        try:
-            await control_readback_task
-        except asyncio.CancelledError:
-            pass
-
     historical_polling.cancel()
     today_polling.cancel()
 
     if redis_client is not None:
+        if detector_stream_task and detector_stream_reader is not None:
+            await detector_stream_reader.stop_async()
+            detector_stream_task.cancel()
+            try:
+                await detector_stream_task
+            except asyncio.CancelledError:
+                pass
+
+        if control_readback_task and control_readback_subscriber is not None:
+            await control_readback_subscriber.stop(pubsub)
+            control_readback_task.cancel()
+            try:
+                await control_readback_task
+            except asyncio.CancelledError:
+                pass
         try:
             await redis_client.aclose()  # type: ignore
         except (ConnectionError, TimeoutError) as e:
