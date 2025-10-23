@@ -453,22 +453,25 @@ section
     border: none
     padding: 4px
 
-    .to-bottom
+    &.to-bottom
       transform: rotate(180deg)
 
 .cell-dict-modal
-  max-height: calc(100vh - 1.6em)
+  max-height: 80vh
   padding: 0 2em
   overflow-y: scroll
 
   .key
     text-align: left
+    padding: 0.2em
 
   .key::after
     content: ":"
     padding-right: 2em
 
 .cell-dict
+  width: 100%
+  border-collapse: collapse
   tr:hover
     background: #333
     color: #fff
