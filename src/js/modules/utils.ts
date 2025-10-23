@@ -127,6 +127,10 @@ export function replaceInString(
     base: string
   }
 
+  if (dayObs.match(/-/)) {
+    // Remove hyphens from dayObs if present
+    dayObs = dayObs.replace(/-/g, "")
+  }
   const siteLocToDomain = (siteLocation: keyof SiteLocMap | string): string => {
     // Maps site location to domain
     // can only be summit or base
