@@ -202,6 +202,13 @@ cameras:
       - name: donut_fits
         title: Donut Fits
         colour: "#f0a500"
+      - name: zernike_predicted_fwhm
+        title: Zernike predicted FWHM
+        colour: "#f08a5d"
+      - name: dof_predicted_fwhm
+        title: DOF predicted FWHM
+        colour: "#b83b5e"
+        text_colour: "#fff"
 
   - name: lsstcam_guider
     title: LSSTCam guider

@@ -36,11 +36,12 @@
         {# Use snake_cased per_day as it's an attribute in a Python object #}
         {% for channel in camera.channels if not channel.per_day %}
         <li class="channel service" id="{{ channel.name }}">
-          <a class="button button-large {{ channel.name }}" style="background-color: {{ channel.colour }};" href="{{
-                        url_for('current_event',
-                        location_name=location.name,
-                        camera_name=camera.name,
-                        channel_name=channel.name) }}" target="_blank">
+          <a  class="button button-large {{ channel.name }}"
+              style="background-color: {{ channel.colour }}; color: {{ channel.text_colour}};"
+              href="{{url_for('current_event',
+                    location_name=location.name,
+                    camera_name=camera.name,
+                    channel_name=channel.name) }}" target="_blank">
             <span>{{ channel.title }}</span>
           </a>
         </li>
