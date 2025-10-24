@@ -27,12 +27,6 @@ function attachWsListeners(ws: ReconnectingWebSocket): void {
   }
 }
 
-// Declare SharedWorkerGlobalScope if not available in TypeScript's DOM typings
-declare const SharedWorkerGlobalScope: {
-  prototype: SharedWorkerGlobalScope
-  new (): SharedWorkerGlobalScope
-}
-
 interface SharedWorkerGlobalScope extends Worker {
   onconnect: ((this: SharedWorkerGlobalScope, ev: MessageEvent) => void) | null
 }

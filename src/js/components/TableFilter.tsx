@@ -1,5 +1,5 @@
 import React, { KeyboardEvent, useEffect, useRef } from "react"
-import { useModal } from "./Modal"
+import { useModal } from "../hooks/useModal"
 import { TableFilterDialogProps } from "./componentTypes"
 
 export function FilterDialog({

@@ -1,9 +1,10 @@
-import React, { useContext, memo } from "react"
+import React, { memo } from "react"
 import { useState, useEffect, useRef } from "react"
 import detectorMap from "../data/detectorMap.json"
 import cwfsMap from "../data/cwfsMap.json"
 import { simplePost } from "../modules/utils"
-import { ModalProvider, useModal, ConfirmationModal } from "./Modal"
+import { ModalProvider, ConfirmationModal } from "./Modal"
+import { useModal } from "../hooks/useModal"
 import {
   WorkerGroup,
   WorkerStatus,
@@ -13,7 +14,7 @@ import {
   DetectorCanvasProps,
   DetectorStatusVisualizationProps,
 } from "./componentTypes"
-import { RedisEndpointContext } from "./contexts/contexts"
+import { RedisEndpointContext, useRedisEndpoint } from "./contexts/contexts"
 import {
   RESET_PREFIX,
   getStatusClass,
@@ -24,16 +25,6 @@ import {
 type EL = EventListener
 
 export { DetectorCanvas, Cell, ResetButton, OtherQueuesSection, Cells }
-
-export const useRedisEndpoint = () => {
-  const context = useContext(RedisEndpointContext)
-  if (context === null) {
-    throw new Error(
-      "useRedisEndpoint must be used within a RedisEndpointProvider"
-    )
-  }
-  return context
-}
 
 const DetectorSection = ({
   title,
@@ -90,7 +81,7 @@ function Cell({ status }: { status: WorkerStatus }) {
 }
 
 const ResetButton = ({ redisKey }: { redisKey: string }) => {
-  const [status, setStatus] = useState("")
+  const [buttonStatus, setButtonStatus] = useState("")
   const { url: redisEndpointUrl, admin } = useRedisEndpoint()
   const { showModal, closeModal } = useModal()
 
@@ -98,9 +89,9 @@ const ResetButton = ({ redisKey }: { redisKey: string }) => {
   if (!admin) return null
 
   const showStatusDelay = (status: string) => {
-    setStatus(status)
+    setButtonStatus(status)
     setTimeout(() => {
-      setStatus("")
+      setButtonStatus("")
     }, 2000)
   }
 
@@ -119,7 +110,7 @@ const ResetButton = ({ redisKey }: { redisKey: string }) => {
       }
     } catch (error) {
       console.error("Error resetting detector:", error)
-      setStatus("error")
+      setButtonStatus("error")
     }
     closeModal()
   }
@@ -137,7 +128,7 @@ const ResetButton = ({ redisKey }: { redisKey: string }) => {
     )
   }
 
-  const statusClass = `reset-button ${status}`
+  const statusClass = `reset-button ${buttonStatus}`
   return (
     <button className={statusClass} onClick={onClick}>
       Restart Workers
@@ -441,7 +432,7 @@ const DetectorCanvas = memo(
       ctx.lineWidth = 1 * dpr
 
       Object.entries(detectorMap).forEach(([id, detector]) => {
-        const status = detectorStatuses.workers?.[id] || {
+        const status: WorkerStatus = detectorStatuses.workers?.[id] || {
           status: "unknown",
           queue_length: 0,
         }
@@ -476,7 +467,7 @@ const DetectorCanvas = memo(
           ctx.font = `bold ${fontSize}px Arial` // Match Sass font weight
           ctx.textAlign = "center"
           ctx.textBaseline = "middle"
-          if (status.queue_length !== undefined) {
+          if (status.queue_length) {
             ctx.fillText(status.queue_length.toString(), centerX, centerY)
           }
         }

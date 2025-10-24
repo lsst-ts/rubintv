@@ -111,7 +111,7 @@ export default function TableApp({
         console.error("Error fetching historical data:", error.message)
         setError(error.message || "Failed to fetch historical data")
       })
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // convenience var for showing filterColumn has been set
   const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
