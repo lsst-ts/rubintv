@@ -76,7 +76,7 @@ export default function AllSky({
       }
     }
     fetchHistoricalData()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
