@@ -10,8 +10,9 @@ from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.models.models import (
     Camera,
-    CameraPageData,
+    CurrentPageData,
     Event,
+    HistoricalPageData,
     Location,
     NightReport,
     get_current_day_obs,
@@ -26,10 +27,10 @@ async def get_camera_current_data(
     location: Location,
     camera: Camera,
     connection: HTTPConnection,
-) -> CameraPageData:
+) -> CurrentPageData:
     """Get the current data for a camera."""
     if not camera.online:
-        return None
+        return CurrentPageData()
     current_poller: CurrentPoller = connection.app.state.current_poller
     first_pass: asyncio.Event = connection.app.state.first_pass_event
     # wait for the first poll to complete
@@ -40,7 +41,7 @@ async def get_camera_current_data(
     per_day = await current_poller.get_current_per_day_data(location.name, camera)
     nr_exists = current_poller.night_report_exists(location.name, camera.name)
 
-    return CameraPageData(
+    return CurrentPageData(
         channel_data=channel_data,
         per_day=per_day,
         metadata=metadata,
@@ -85,20 +86,28 @@ async def get_most_recent_historical_day(
 
 async def get_camera_events_for_date(
     location: Location, camera: Camera, day_obs: date, connection: HTTPConnection
-) -> CameraPageData:
+) -> HistoricalPageData:
     """Get the camera events for a particular date."""
     historical: HistoricalPoller = connection.app.state.historical
     if await historical.is_busy():
         raise HTTPException(423, "Historical data is being processed")
-    channel_data = await historical.get_channel_data_for_date(location, camera, day_obs)
-    metadata = await historical.get_metadata_for_date(location, camera, day_obs)
+    structured_data = await historical.get_structured_data_for_date(
+        location, camera, day_obs
+    )
+    extension_info = await historical.get_all_extensions_for_date(
+        location, camera, day_obs
+    )
+    metadata_exists = await historical.check_for_metadata_for_date(
+        location, camera, day_obs
+    )
     per_day = await historical.get_per_day_for_date(location, camera, day_obs)
     nr_exists = await historical.night_report_exists_for(location, camera, day_obs)
 
-    return CameraPageData(
-        channel_data=channel_data,
+    return HistoricalPageData(
+        structured_data=structured_data,
+        extension_info=extension_info,
         per_day=per_day,
-        metadata=metadata,
+        metadata_exists=metadata_exists,
         nr_exists=nr_exists,
     )
 
@@ -171,7 +180,7 @@ async def get_all_channel_names_for_date_seq_num(
     location: Location,
     camera: Camera,
     day_obs: date,
-    seq_num: int,
+    seq_num: int | str,
     connection: HTTPConnection,
 ) -> list[str]:
     """Get all channels for a given date and sequence number."""

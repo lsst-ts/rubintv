@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, StrictMode } from "react"
 import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
 import { _getById, union, getHistoricalData } from "../modules/utils"
+import { createTableFromStructuredData } from "../modules/convertTableData"
 import {
   loadColumnSelection,
   saveColumnSelection,
@@ -103,7 +104,16 @@ export default function TableApp({
       .then((json) => {
         const data = JSON.parse(json)
         if (data.metadata) setMetadata(data.metadata)
-        if (data.channelData) setChannelData(data.channelData)
+        if (data.structuredData && data.extensionInfo) {
+          const channelData = createTableFromStructuredData(
+            camera.name,
+            date,
+            data.structuredData,
+            data.extensionInfo,
+            camera.channels
+          )
+          setChannelData(channelData)
+        }
         setDateAndUpdateHeader(data.date, isStale)
         setHasReceivedData(true)
       })
