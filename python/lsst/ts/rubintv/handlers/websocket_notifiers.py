@@ -51,8 +51,17 @@ async def notify_clients(
 
 
 async def send_notification(
-    websocket: WebSocket, service: Service, messageType: MessageType, payload: Any
+    websocket: WebSocket,
+    service: Service,
+    messageType: MessageType,
+    payload: Any,
 ) -> None:
+    logger.debug(
+        "Sending websocket notification",
+        service=service.value,
+        messageType=messageType.value,
+        payload=payload,
+    )
     start_time = time.time()
     datestamp = get_current_day_obs().isoformat()
 
@@ -172,7 +181,43 @@ async def notify_redis_detector_status(data: dict) -> None:
     """
     service = Service.DETECTORS
     message_type = MessageType.DETECTOR_STATUS
-    key = "detectors"
+    key = service.value
+    tasks = []
+
+    async with services_lock:
+        if key not in services_clients:
+            return
+        client_ids = services_clients[key]
+
+    # Gather websockets for the clients
+    async with clients_lock:
+        websockets = [
+            clients[client_id] for client_id in client_ids if client_id in clients
+        ]
+
+    # Prepare tasks for each websocket
+    for websocket in websockets:
+        task = send_notification(websocket, service, message_type, data)
+        tasks.append(task)
+
+    # Use asyncio.gather to handle all tasks concurrently
+    await asyncio.gather(*tasks, return_exceptions=True)
+
+
+async def notify_controls_readback_change(data: dict) -> None:
+    """Notify all clients subscribed to the ControlsReadback service about
+    readback changes.
+
+    Parameters
+    ----------
+    data : dict
+        The controls readback data to send to clients. Contains:
+        - key: The key of the control
+        - value: The actual readback value from Redis
+    """
+    service = Service.ADMIN
+    message_type = MessageType.CONTROL_READBACK_CHANGE
+    key = service.value
     tasks = []
 
     async with services_lock:
