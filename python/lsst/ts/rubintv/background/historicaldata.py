@@ -1,10 +1,6 @@
 import asyncio
-import pickle
-import re
-import zlib
 from datetime import date
 from time import time
-from typing import Any
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.config import rubintv_logger
@@ -16,13 +12,14 @@ from lsst.ts.rubintv.models.models import (
     Camera,
     Channel,
     Event,
+    ExtensionInfo,
     Location,
     NightReport,
     NightReportData,
 )
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
 from lsst.ts.rubintv.models.models import ServiceTypes as Service
-from lsst.ts.rubintv.models.models import get_current_day_obs
+from lsst.ts.rubintv.models.models import StructuredData, get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import (
     date_str_to_date,
     daterange,
@@ -50,16 +47,25 @@ class HistoricalPoller:
         locations: list[Location],
         test_mode: bool = False,
         prefix_extra: str = "",
-        # test_date_start and test_date_end will be used in writing tests.
-        # This needs an overhaul of the test suite to use these parameters:
-        # see DM-44273
         test_date_start: str | None = None,
         test_date_end: str | None = None,
     ) -> None:
         self._clients: dict[str, S3Client] = {}
-        self._metadata: dict[str, bytes] = {}
-        self._temp_events: dict[str, list[Event]] = {}
-        self._compressed_events: dict[str, bytes] = {}
+
+        self._metadata_refs: dict[str, set[str]] = {}
+        # Structure: {loc_cam: {date_str}}
+
+        self._structured_events: StructuredData = {}
+        # Structure: {loc_cam: {date_str: {
+        #  channel_name: {seq_num1, seq_num2, ...}}}}
+
+        self._channel_default_extensions: dict[str, str] = {}
+        # Structure: {f"{loc_cam}/{date_str}/{channel_name}": "default_ext"}
+
+        self._extension_exceptions: dict[str, dict[int | str, str]] = {}
+        # Structure: {f"{loc_cam}/{date_str}/{channel_name}":
+        #   {seq_num: "different_ext"}}
+
         self._nr_metadata: dict[str, list[NightReportData]] = {}
         self._calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
         self._locations = locations
@@ -73,17 +79,19 @@ class HistoricalPoller:
         self._have_downloaded = False
         self._last_reload = get_current_day_obs()
 
-        self.cam_year_rgx = re.compile(r"(\w+)\/([\d]{4})-[\d]{2}-[\d]{2}")
-
         self.test_mode = test_mode
-        self.test_date_start = test_date_start and date_str_to_date(test_date_start)
-        self.test_date_end = test_date_end and date_str_to_date(test_date_end)
+        self.test_date_start: date | None = None
+        self.test_date_end: date | None = None
+        if test_date_start:
+            self.test_date_start = date_str_to_date(test_date_start)
+        if test_date_end:
+            self.test_date_end = date_str_to_date(test_date_end)
         self.prefix_extra = prefix_extra
 
     async def clear_all_data(self) -> None:
         self._have_downloaded = False
-        self._metadata = {}
-        self._compressed_events = {}
+        self._metadata_refs = {}
+        self._structured_events = {}
         self._nr_metadata = {}
         self._calendar = {}
 
@@ -194,7 +202,9 @@ class HistoricalPoller:
             A list of dicts representing bucket objects.
         """
         logger.info(
-            "Fetching objects for prefix:", location=location.name, prefix=prefix
+            "Fetching objects for prefix:",
+            location=location.name,
+            prefix=prefix,
         )
         client: S3Client = self._clients[location.name]
         objects = await client.async_list_objects(prefix=prefix)
@@ -217,32 +227,196 @@ class HistoricalPoller:
 
         self._nr_metadata[locname] = await objects_to_ngt_report_data(n_report_objs)
         async for events_batch in objects_to_events(event_objs):
-            await self.store_events(events_batch, locname)
-        await self.compress_events()
-        self._temp_events = {}
+            await self.store_events_structured(events_batch, locname)
 
-        await self.download_and_store_metadata(locname, metadata_objs)
+        await self.store_metadata_dates(locname, metadata_objs)
 
-    async def compress_events(self) -> None:
-        for storage_key, events in self._temp_events.items():
-            compressed = zlib.compress(pickle.dumps(events))
-            if storage_key in self._compressed_events:
-                self._compressed_events[storage_key] += compressed
-            else:
-                self._compressed_events[storage_key] = compressed
+    async def store_events_structured(self, events: list[Event], locname: str) -> None:
+        """Highly optimized event storage with extension deduplication."""
 
-    async def store_events(self, events: list[Event], locname: str) -> None:
+        # Group events by channel-date to analyze extension patterns
+        channel_date_groups: dict[str, list[Event]] = {}
+
         for event in events:
             loc_cam = f"{locname}/{event.camera_name}"
+            channel_date_key = f"{loc_cam}/{event.day_obs}/{event.channel_name}"
 
-            if loc_cam not in self._temp_events:
-                self._temp_events[loc_cam] = []
-            self._temp_events[loc_cam].append(event)
+            if channel_date_key not in channel_date_groups:
+                channel_date_groups[channel_date_key] = []
+            channel_date_groups[channel_date_key].append(event)
 
+        # Process each channel-date group
+        for channel_date_key, group_events in channel_date_groups.items():
+            await self._store_channel_date_group(channel_date_key, group_events)
+
+    async def _store_channel_date_group(
+        self, channel_date_key: str, events: list[Event]
+    ) -> None:
+        """Store events for a specific channel-date, optimizing extension
+        storage."""
+
+        # Parse the channel_date_key
+        parts = channel_date_key.split("/")
+        locname = parts[0]
+        camera_name = parts[1]
+        date_str = parts[2]
+        channel_name = parts[3]
+        loc_cam = f"{locname}/{camera_name}"
+
+        # Initialize nested structure
+        if loc_cam not in self._structured_events:
+            self._structured_events[loc_cam] = {}
+        if date_str not in self._structured_events[loc_cam]:
+            self._structured_events[loc_cam][date_str] = {}
+        if channel_name not in self._structured_events[loc_cam][date_str]:
+            self._structured_events[loc_cam][date_str][channel_name] = set()
+
+        # Analyze extensions to find the most common one
+        extension_counts: dict[str, int] = {}
+        event_extensions: dict[int | str, str] = {}
+
+        for event in events:
             seq_num = event.seq_num
-            if isinstance(seq_num, str):
-                seq_num = 1
-            self.add_to_calendar(loc_cam, event.day_obs, seq_num)
+            ext = event.ext
+
+            # Track extension frequency
+            extension_counts[ext] = extension_counts.get(ext, 0) + 1
+            event_extensions[seq_num] = ext
+
+            # Store seq_num (we'll determine how to store extension below)
+            self._structured_events[loc_cam][date_str][channel_name].add(seq_num)
+
+            # Update calendar
+            self.add_to_calendar(
+                loc_cam,
+                date_str,
+                event.seq_num if isinstance(event.seq_num, int) else 0,
+            )
+
+        # Determine the default extension (most common)
+        if extension_counts:
+            default_ext = max(extension_counts, key=lambda ext: extension_counts[ext])
+            self._channel_default_extensions[channel_date_key] = default_ext
+
+            # Store only the exceptions
+            exceptions = {
+                seq_num: ext
+                for seq_num, ext in event_extensions.items()
+                if ext != default_ext
+            }
+
+            if exceptions:
+                self._extension_exceptions[channel_date_key] = exceptions
+
+    def get_extension_for_event(
+        self, loc_cam: str, date_str: str, channel_name: str, seq_num: int | str
+    ) -> str:
+        """Get the extension for a specific event, using default and
+        exceptions pattern."""
+        channel_date_key = f"{loc_cam}/{date_str}/{channel_name}"
+
+        # Check if there's an exception for this seq_num
+        if channel_date_key in self._extension_exceptions:
+            exceptions = self._extension_exceptions[channel_date_key]
+            if seq_num in exceptions:
+                return exceptions[seq_num]
+
+        # Return the default extension
+        return self._channel_default_extensions.get(channel_date_key, "jpg")
+
+    def reconstruct_filename(
+        self, camera_name: str, channel_name: str, seq_num: int | str, ext: str
+    ) -> str:
+        """Reconstruct filename from components."""
+        if isinstance(seq_num, str):
+            base_name = f"{camera_name}_{channel_name}_{seq_num}"
+        else:
+            base_name = f"{camera_name}_{channel_name}_{seq_num:06d}"
+        return f"{base_name}.{ext}"
+
+    async def get_structured_data_for_date(
+        self, location: Location, camera: Camera, a_date: date
+    ) -> dict[str, set[int | str]]:
+        """Returns the structured data for a given date."""
+        loc_cam = f"{location.name}/{camera.name}"
+        date_str = a_date.isoformat()
+
+        if (
+            loc_cam not in self._structured_events
+            or date_str not in self._structured_events[loc_cam]
+        ):
+            return {}
+
+        return self._structured_events[loc_cam][date_str]
+
+    async def get_all_extensions_for_date(
+        self, location: Location, camera: Camera, a_date: date
+    ) -> ExtensionInfo:
+        """Get all extensions (default and exceptions) for all channels on a
+        given date.
+
+        Structure of returned data:
+        {channel_name: {"default": "ext", "exceptions": {seq_num: "ext", ...}}}
+        """
+        loc_cam = f"{location.name}/{camera.name}"
+        date_str = a_date.isoformat()
+
+        if (
+            loc_cam not in self._structured_events
+            or date_str not in self._structured_events[loc_cam]
+        ):
+            return {}
+
+        extensions_info = {}
+        for channel_name in self._structured_events[loc_cam][date_str]:
+            default_ext = self._channel_default_extensions.get(
+                f"{loc_cam}/{date_str}/{channel_name}", "jpg"
+            )
+            exceptions = self._extension_exceptions.get(
+                f"{loc_cam}/{date_str}/{channel_name}", {}
+            )
+            extensions_info[channel_name] = {
+                "default": default_ext,
+                "exceptions": exceptions if exceptions else {},
+            }
+        return extensions_info
+
+    async def get_events_for_date_structured(
+        self, location: Location, camera: Camera, a_date: date
+    ) -> list[Event]:
+        """Efficient event retrieval using optimized structure."""
+        loc_cam = f"{location.name}/{camera.name}"
+        date_str = a_date.isoformat()
+
+        if (
+            loc_cam not in self._structured_events
+            or date_str not in self._structured_events[loc_cam]
+        ):
+            return []
+
+        events = []
+        for channel_name, seq_data in self._structured_events[loc_cam][
+            date_str
+        ].items():
+            for seq_num in seq_data:
+                ext = self.get_extension_for_event(
+                    loc_cam, date_str, channel_name, seq_num
+                )
+
+                # Reconstruct filename and key
+                filename = self.reconstruct_filename(
+                    camera.name, channel_name, seq_num, ext
+                )
+                if isinstance(seq_num, str):
+                    # seq_num is 'final' or similar non-integer
+                    key = (
+                        f"{camera.name}/{date_str}/{channel_name}/{seq_num}/{filename}"
+                    )
+                else:
+                    key = f"{camera.name}/{date_str}/{channel_name}/{seq_num:06d}/{filename}"
+                events.append(Event(key=key))
+
+        return events
 
     def add_to_calendar(self, loc_cam: str, date_str: str, seq_num: int) -> None:
         year_str, month_str, day_str = date_str.split("-")
@@ -256,13 +430,11 @@ class HistoricalPoller:
         if self._calendar[loc_cam][year][month].get(day, 0) <= seq_num:
             self._calendar[loc_cam][year][month][day] = seq_num
 
-    async def download_and_store_metadata(
+    async def store_metadata_dates(
         self, locname: str, metadata_objs: list[dict[str, str]]
     ) -> None:
-        # metadata is downloaded and stored against its loc/cam/date
-        # for efficient retrieval
+
         logger.info("Fetching metadata for:", locname=locname)
-        t = time()
         for md_obj in metadata_objs:
             key = md_obj.get("key")
             if not key:
@@ -270,17 +442,8 @@ class HistoricalPoller:
             storage_name = locname + "/" + key.split("/metadata")[0]
             _, cam_name, date_str = storage_name.split("/")
             loc_cam = f"{locname}/{cam_name}"
+            self._metadata_refs.setdefault(loc_cam, set()).add(date_str)
             self.add_to_calendar(loc_cam, date_str, 0)
-
-            client = self._clients[locname]
-            md = await client.async_get_object(key)
-            if not md:
-                logger.info("Missing metadata for:", md_obj=md_obj)
-                continue
-            compressed_md = zlib.compress(pickle.dumps(md))
-            self._metadata[storage_name] = compressed_md
-        dur = time() - t
-        logger.info("Metatdata fetch took", locname=locname, dur=dur)
 
     async def get_night_report_payload(
         self, location: Location, camera: Camera, day_obs: date
@@ -339,14 +502,10 @@ class HistoricalPoller:
     async def get_events_for_date(
         self, location: Location, camera: Camera, a_date: date
     ) -> list[Event]:
-        loc_cam = f"{location.name}/{camera.name}"
-        date_str = a_date.isoformat()
-        to_decompress = self._compressed_events.get(loc_cam, None)
-        if to_decompress is None:
-            return []
-        events: list[Event] = pickle.loads(zlib.decompress(to_decompress))
-        events = [e for e in events if e.day_obs == date_str]
-        return events
+        events_for_date = await self.get_events_for_date_structured(
+            location, camera, a_date
+        )
+        return events_for_date
 
     async def get_channel_data_for_date(
         self, location: Location, camera: Camera, day_obs: date
@@ -372,17 +531,14 @@ class HistoricalPoller:
             per_day[event.channel_name] = event.__dict__
         return per_day
 
-    async def get_metadata_for_date(
+    async def check_for_metadata_for_date(
         self, location: Location, camera: Camera, day_obs: date
-    ) -> dict[str, Any]:
-        cam_name = camera.name
-        if camera.metadata_from:
-            cam_name = camera.metadata_from
-        loc_cam_date = f"{location.name}/{cam_name}/{day_obs}"
-        compressed = self._metadata.get(loc_cam_date, None)
-        if compressed is None:
-            return {}
-        return pickle.loads(zlib.decompress(compressed))
+    ) -> bool:
+        date_str = day_obs.isoformat()
+        loc_cam = f"{location.name}/{camera.name}"
+        if loc_cam in self._metadata_refs and date_str in self._metadata_refs[loc_cam]:
+            return True
+        return False
 
     def flatten_calendar(self, location: Location, camera: Camera) -> dict[str, int]:
         """Flatten the calendar for a given location and camera.
@@ -425,29 +581,25 @@ class HistoricalPoller:
     async def get_most_recent_events(
         self, location: Location, camera: Camera
     ) -> list[Event]:
-        loc_cam = f"{location.name}/{camera.name}"
         day_obs = await self.get_most_recent_day(location, camera)
         if not day_obs:
             return []
-        compressed = self._compressed_events.get(loc_cam, None)
-        if compressed is None:
-            return []
-        events = pickle.loads(zlib.decompress(compressed))
-        date_str = day_obs.isoformat()
-        return [e for e in events if e.day_obs == date_str]
+        events_for_date = await self.get_events_for_date_structured(
+            location, camera, day_obs
+        )
+        return events_for_date
 
     async def get_most_recent_event(
         self, location: Location, camera: Camera, channel: Channel
     ) -> Event | None:
-        loc_cam = f"{location.name}/{camera.name}"
-        compressed = self._compressed_events.get(loc_cam, None)
-        if compressed is None:
-            return None
-        events = pickle.loads(zlib.decompress(compressed))
-        events = [event for event in events if event.channel_name == channel.name]
+        events = await self.get_most_recent_events(location, camera)
+        events = [e for e in events if e.channel_name == channel.name]
         if not events:
             return None
         return max(events)
+
+    def unarchive_events(self, archived_events: list[str]) -> list[Event]:
+        return [Event(key=e) for e in archived_events]
 
     async def get_next_prev_event(
         self, location: Location, camera: Camera, event: Event
@@ -509,12 +661,16 @@ class HistoricalPoller:
             A list of channel names for the given date and seq_num.
         """
         loc_cam = f"{location.name}/{camera.name}"
-        compressed = self._compressed_events.get(loc_cam, None)
-        if compressed is None:
+
+        if (
+            loc_cam not in self._structured_events
+            or date not in self._structured_events[loc_cam]
+        ):
             return []
-        events: list[Event] = pickle.loads(zlib.decompress(compressed))
-        relevant_events = [
-            e for e in events if e.day_obs == date and e.seq_num == seq_num
-        ]
-        chan_names = [e.channel_name for e in relevant_events]
-        return chan_names
+
+        channel_names = []
+        for channel_name, seq_data in self._structured_events[loc_cam][date].items():
+            if seq_num in seq_data:
+                channel_names.append(channel_name)
+
+        return channel_names
