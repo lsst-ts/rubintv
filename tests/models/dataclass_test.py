@@ -9,13 +9,11 @@ def test_camera_page_data_initialization() -> None:
     """Test initializing CameraPageData."""
     data = CameraPageData()
     assert data.per_day == {}
-    assert data.metadata == {}
-    assert data.metadata_exists is False
     assert data.nr_exists is False
     assert data.is_empty() is True
 
     # Test with data
-    data.metadata = {"key": "value"}
+    data.per_day = {"1": {}}
     assert data.is_empty() is False
 
 
@@ -25,7 +23,6 @@ def test_historical_page_data_initialization() -> None:
 
     # Check base attributes are properly initialized
     assert data.per_day == {}
-    assert data.metadata == {}
     assert data.metadata_exists is False
     assert data.nr_exists is False
 
@@ -35,7 +32,7 @@ def test_historical_page_data_initialization() -> None:
     assert data.is_empty() is True
 
     # Test with base data
-    data.metadata = {"key": "value"}
+    data.per_day = {"1": {}}
     assert data.is_empty() is False
 
     # Test with subclass data
@@ -51,7 +48,6 @@ def test_current_page_data_initialization() -> None:
     # Check base attributes are properly initialized
     assert data.per_day == {}
     assert data.metadata == {}
-    assert data.metadata_exists is False
     assert data.nr_exists is False
 
     # Check subclass attributes
