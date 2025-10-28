@@ -29,7 +29,7 @@ async def get_camera_current_data(
 ) -> CameraPageData:
     """Get the current data for a camera."""
     if not camera.online:
-        return None
+        return CameraPageData()
     current_poller: CurrentPoller = connection.app.state.current_poller
     first_pass: asyncio.Event = connection.app.state.first_pass_event
     # wait for the first poll to complete
