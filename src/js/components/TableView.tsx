@@ -1,4 +1,4 @@
-import React, { useContext } from "react"
+import React, { useContext, useLayoutEffect } from "react"
 import { useModal } from "../hooks/useModal"
 import { FilterDialog } from "./TableFilter"
 import {
@@ -118,6 +118,7 @@ function TableRow({
   channelRow,
   metadataColumns,
   metadataRow,
+  highlightRow,
 }: TableRowProps) {
   const { dayObs, siteLocation } = useContext(
     RubinTVTableContext
@@ -155,8 +156,10 @@ function TableRow({
     ? (metadataRow["controller"] as string)
     : undefined
 
+  const rowClass = highlightRow ? "highlight-row" : ""
+
   return (
-    <tr>
+    <tr className={rowClass}>
       <td className="grid-cell seq" id={`seqNum-${seqNum}`}>
         {seqNum}
       </td>
@@ -208,6 +211,7 @@ function TableBody({
   metadataColumns,
   metadata,
   sortOn,
+  seqNumToShow,
 }: TableBodyProps) {
   const allSeqs = Array.from(
     new Set(Object.keys(channelData).concat(Object.keys(metadata)))
@@ -218,6 +222,8 @@ function TableBody({
       {seqs.map((seqNum) => {
         const metadataRow = seqNum in metadata ? metadata[seqNum] : {}
         const channelRow = seqNum in channelData ? channelData[seqNum] : {}
+        const highlightRow =
+          seqNumToShow !== undefined && Number(seqNum) === seqNumToShow
         return (
           <TableRow
             key={seqNum}
@@ -227,6 +233,7 @@ function TableBody({
             channelRow={channelRow}
             metadataColumns={metadataColumns}
             metadataRow={metadataRow}
+            highlightRow={highlightRow}
           />
         )
       })}
@@ -386,7 +393,20 @@ export default function TableView({
   filterOn,
   filteredRowsCount,
   sortOn,
+  seqNumToShow,
 }: TableViewProps) {
+  useLayoutEffect(() => {
+    if (seqNumToShow !== undefined) {
+      const highlightedRow = document.querySelector(".highlight-row")
+      if (highlightedRow) {
+        highlightedRow.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        })
+      }
+    }
+  }, [seqNumToShow, filteredRowsCount, sortOn])
+
   const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
   if (filterColumnSet && filteredRowsCount == 0) {
     return (
@@ -404,6 +424,7 @@ export default function TableView({
         metadataColumns={metadataColumns}
         metadata={metadata}
         sortOn={sortOn}
+        seqNumToShow={seqNumToShow}
       />
     </table>
   )
