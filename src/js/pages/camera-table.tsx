@@ -20,6 +20,7 @@ import { Camera } from "../components/componentTypes"
     isHistorical,
     calendar,
     isStale = false,
+    seqNum,
   } = window.APP_DATA
 
   const banner = _getById("header-banner")
@@ -73,6 +74,7 @@ import { Camera } from "../components/componentTypes"
       initialDate={date}
       isStale={isStale}
       isHistorical={isHistorical}
+      seqNum={seqNum}
     />
   )
 

@@ -156,6 +156,7 @@ async def get_camera_page(
     location_name: str,
     camera_name: str,
     request: Request,
+    seq_num: int | None = None,
 ) -> Response:
     """GET ``/rubintv/{location_name}/{camera_name}``
     (the camera page for the current day)."""
@@ -165,6 +166,7 @@ async def get_camera_page(
         camera_name=camera_name,
         date_str=day_obs.isoformat(),
         request=request,
+        seq_num=seq_num,
     )
 
 
@@ -216,6 +218,7 @@ async def get_camera_for_date_page(
     camera_name: str,
     date_str: str,
     request: Request,
+    seq_num: int | None = None,
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
 
@@ -287,6 +290,7 @@ async def get_camera_for_date_page(
             "calendar": calendar,
             "title": title,
             "isStale": is_stale,
+            "seqNum": seq_num,
         },
     )
 
