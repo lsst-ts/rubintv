@@ -22,6 +22,7 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
     get_latest_metadata,
     get_most_recent_historical_day,
     get_prev_next_event,
+    parse_seq_nums,
     try_historical_call,
 )
 from lsst.ts.rubintv.handlers.pages_helpers import (
@@ -156,6 +157,7 @@ async def get_camera_page(
     location_name: str,
     camera_name: str,
     request: Request,
+    seq_num: str | None = None,
 ) -> Response:
     """GET ``/rubintv/{location_name}/{camera_name}``
     (the camera page for the current day)."""
@@ -165,6 +167,7 @@ async def get_camera_page(
         camera_name=camera_name,
         date_str=day_obs.isoformat(),
         request=request,
+        seq_num=seq_num,
     )
 
 
@@ -216,6 +219,7 @@ async def get_camera_for_date_page(
     camera_name: str,
     date_str: str,
     request: Request,
+    seq_num: str | None = None,
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
 
@@ -271,6 +275,8 @@ async def get_camera_for_date_page(
     if no_data_at_all and not historical_busy:
         template = "camera-empty"
 
+    seq_num_list = parse_seq_nums(seq_num)
+
     title = build_title(location.title, camera.title, date_str)
 
     return templates.TemplateResponse(
@@ -287,6 +293,7 @@ async def get_camera_for_date_page(
             "calendar": calendar,
             "title": title,
             "isStale": is_stale,
+            "seqNums": seq_num_list if seq_num_list else None,
         },
     )
 
