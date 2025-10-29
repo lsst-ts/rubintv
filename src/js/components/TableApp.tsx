@@ -27,6 +27,7 @@ export default function TableApp({
   isHistorical,
   siteLocation,
   isStale,
+  seqNum,
 }: TableAppProps) {
   const [hasReceivedData, setHasReceivedData] = useState(false)
   const [date, setDate] = useState(initialDate)
@@ -257,6 +258,7 @@ export default function TableApp({
               filteredRowsCount={filteredRowsCount}
               sortOn={sortOn}
               siteLocation={siteLocation}
+              seqNumToShow={seqNum}
             />
           </ModalProvider>
         </div>
