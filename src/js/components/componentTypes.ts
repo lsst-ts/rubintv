@@ -419,6 +419,9 @@ export interface TableAppProps {
   isHistorical: boolean
   siteLocation: string
   isStale: boolean
+  seqNums?: number[]
+  calendar?: CalendarData
+  toggleCalendar?: () => void
 }
 
 /**
@@ -528,6 +531,7 @@ export interface TableRowProps {
   channelRow: Record<string, ExposureEvent>
   metadataColumns: MetadataColumn[]
   metadataRow: MetadataRow
+  highlightRow?: boolean
 }
 
 /**
@@ -546,6 +550,7 @@ export interface TableBodyProps {
   metadataColumns: MetadataColumn[]
   metadata: Metadata
   sortOn: SortingOptions
+  seqNumRange?: [number, number]
 }
 
 /**
@@ -630,6 +635,7 @@ export interface TableViewProps {
   filteredRowsCount: number
   sortOn: SortingOptions
   siteLocation: string
+  seqNumsToShow?: number[]
 }
 
 /**
@@ -1150,5 +1156,21 @@ export interface ModalContextType {
   modalHeader: string | null
   modalContent: React.ReactNode | null
   setModalContent: (content: React.ReactNode | null) => void
-  setModalHeader: (header: string | null) => void
+}
+
+export interface CameraTableProps {
+  siteLocation: string
+  locationName: string
+  camera: Camera
+  nightReportLink: string
+  date: string
+  isHistorical: boolean
+  calendar: CalendarData
+  isStale: boolean
+  seqNums?: number[]
+}
+
+export interface CurrentChannelsProps {
+  locationName: string
+  camera: Camera
 }

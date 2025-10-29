@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, StrictMode } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
 import { _getById, union, getHistoricalData } from "../modules/utils"
@@ -26,6 +26,7 @@ export default function TableApp({
   isHistorical,
   siteLocation,
   isStale,
+  seqNums,
 }: TableAppProps) {
   const [isReadyToDisplay, setIsReadyToDisplay] = useState(false)
   const [hasReceivedData, setHasReceivedData] = useState(false)
@@ -215,50 +216,50 @@ export default function TableApp({
   const tableHeaderClass = `table-header row ${displayReadyClass} transition-opacity`
 
   return (
-    <StrictMode>
-      <RubinTVTableContext.Provider
-        value={{ siteLocation, locationName, camera, dayObs: date }}
-      >
-        <div className="table-container">
-          <ModalProvider>
-            <div className="above-table-sticky">
-              <AboveTableRow
-                camera={camera}
-                availableColumns={availableColumns}
-                selected={selected}
-                setSelected={handleSetSelected}
-                date={date}
-                metadata={metadata}
-                isHistorical={isHistorical}
-              />
-              <div className={tableHeaderClass}>
-                <TableHeader
-                  camera={camera}
-                  metadataColumns={metaColumnsToDisplay}
-                  filterOn={filterOn}
-                  setFilterOn={setFilterOn}
-                  filteredRowsCount={filteredRowsCount}
-                  unfilteredRowsCount={unfilteredRowsCount}
-                  sortOn={sortOn}
-                  setSortOn={setSortOn}
-                />
-              </div>
-              <JumpButtons></JumpButtons>
-            </div>
-            <TableView
+    <RubinTVTableContext.Provider
+      value={{ siteLocation, locationName, camera, dayObs: date }}
+    >
+      <div className="table-container">
+        <ModalProvider>
+          <div className="above-table-sticky">
+            <AboveTableRow
               camera={camera}
-              channelData={filteredChannelData}
-              metadata={filteredMetadata}
-              metadataColumns={metaColumnsToDisplay}
-              filterOn={filterOn}
-              filteredRowsCount={filteredRowsCount}
-              sortOn={sortOn}
-              siteLocation={siteLocation}
+              availableColumns={availableColumns}
+              selected={selected}
+              setSelected={handleSetSelected}
+              date={date}
+              metadata={metadata}
+              isHistorical={isHistorical}
             />
-          </ModalProvider>
-        </div>
-      </RubinTVTableContext.Provider>
-    </StrictMode>
+            <div className={tableHeaderClass}>
+              <TableHeader
+                camera={camera}
+                metadataColumns={metaColumnsToDisplay}
+                filterOn={filterOn}
+                setFilterOn={setFilterOn}
+                filteredRowsCount={filteredRowsCount}
+                unfilteredRowsCount={unfilteredRowsCount}
+                sortOn={sortOn}
+                setSortOn={setSortOn}
+              />
+            </div>
+            <JumpButtons></JumpButtons>
+          </div>
+          <JumpButtons></JumpButtons>
+          <TableView
+            camera={camera}
+            channelData={filteredChannelData}
+            metadata={filteredMetadata}
+            metadataColumns={metaColumnsToDisplay}
+            filterOn={filterOn}
+            filteredRowsCount={filteredRowsCount}
+            sortOn={sortOn}
+            siteLocation={siteLocation}
+            seqNumsToShow={seqNums}
+          />
+        </ModalProvider>
+      </div>
+    </RubinTVTableContext.Provider>
   )
 }
 
