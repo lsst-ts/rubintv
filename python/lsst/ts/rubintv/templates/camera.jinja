@@ -62,6 +62,7 @@
     window.APP_DATA.nightReportLink = {{ nr_link | tojson }}
     window.APP_DATA.calendar = {{ calendar | tojson }}
     window.APP_DATA.isHistorical = {{ isHistorical | tojson }}
+    window.APP_DATA.seqNum = {{ seqNum | tojson if seqNum is not none else 'undefined' }}
   </script>
   <script src='{{ url_for("static", path="assets/camera-table.js") }}'></script>
   {{ super() }}
