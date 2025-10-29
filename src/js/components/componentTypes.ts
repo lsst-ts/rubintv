@@ -399,6 +399,7 @@ export interface TableAppProps {
   isHistorical: boolean
   siteLocation: string
   isStale: boolean
+  seqNum?: number
 }
 
 /**
@@ -508,6 +509,7 @@ export interface TableRowProps {
   channelRow: Record<string, ExposureEvent>
   metadataColumns: MetadataColumn[]
   metadataRow: MetadataRow
+  highlightRow?: boolean
 }
 
 /**
@@ -526,6 +528,7 @@ export interface TableBodyProps {
   metadataColumns: MetadataColumn[]
   metadata: Metadata
   sortOn: SortingOptions
+  seqNumToShow?: number
 }
 
 /**
@@ -610,6 +613,7 @@ export interface TableViewProps {
   filteredRowsCount: number
   sortOn: SortingOptions
   siteLocation: string
+  seqNumToShow?: number
 }
 
 /**

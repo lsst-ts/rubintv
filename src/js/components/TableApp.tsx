@@ -27,6 +27,7 @@ export default function TableApp({
   isHistorical,
   siteLocation,
   isStale,
+  seqNum,
 }: TableAppProps) {
   const [isReadyToDisplay, setIsReadyToDisplay] = useState(false)
   const [hasReceivedData, setHasReceivedData] = useState(false)
@@ -264,6 +265,7 @@ export default function TableApp({
               filteredRowsCount={filteredRowsCount}
               sortOn={sortOn}
               siteLocation={siteLocation}
+              seqNumToShow={seqNum}
             />
           </ModalProvider>
         </div>
