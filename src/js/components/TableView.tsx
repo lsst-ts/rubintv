@@ -1,4 +1,4 @@
-import React, { useContext, useLayoutEffect } from "react"
+import React, { useContext, useLayoutEffect, useMemo } from "react"
 import { useModal } from "../hooks/useModal"
 import { FilterDialog } from "./TableFilter"
 import {
@@ -6,6 +6,7 @@ import {
   _elWithAttrs,
   replaceInString,
   setCameraBaseUrl,
+  rangeFromArray,
 } from "../modules/utils"
 import {
   RubinTVContextType,
@@ -211,19 +212,21 @@ function TableBody({
   metadataColumns,
   metadata,
   sortOn,
-  seqNumToShow,
+  seqNumRange,
 }: TableBodyProps) {
   const allSeqs = Array.from(
     new Set(Object.keys(channelData).concat(Object.keys(metadata)))
   )
   const seqs = applySorting(allSeqs, sortOn, metadata)
+  const filledSeqRange =
+    seqNumRange !== undefined ? rangeFromArray(seqNumRange) : undefined
+
   return (
     <tbody>
       {seqs.map((seqNum) => {
         const metadataRow = seqNum in metadata ? metadata[seqNum] : {}
         const channelRow = seqNum in channelData ? channelData[seqNum] : {}
-        const highlightRow =
-          seqNumToShow !== undefined && Number(seqNum) === seqNumToShow
+        const highlightRow = filledSeqRange?.includes(seqNum) ?? false
         return (
           <TableRow
             key={seqNum}
@@ -395,9 +398,21 @@ export default function TableView({
   sortOn,
   seqNumToShow,
 }: TableViewProps) {
+  const seqNumRange = useMemo(() => {
+    if (seqNumToShow === undefined) {
+      return undefined
+    }
+    return typeof seqNumToShow === "number"
+      ? [seqNumToShow, seqNumToShow]
+      : [Math.min(...seqNumToShow), Math.max(...seqNumToShow)]
+  }, [seqNumToShow])
+
+  // Scroll to highlighted row on initial render.
+  // Runs only once when component mounts.
   useLayoutEffect(() => {
-    if (seqNumToShow !== undefined) {
-      const highlightedRow = document.querySelector(".highlight-row")
+    if (seqNumRange !== undefined && seqNumRange.length === 2) {
+      const firstSeqNum = seqNumRange[1]
+      const highlightedRow = document.getElementById(`seqNum-${firstSeqNum}`)
       if (highlightedRow) {
         highlightedRow.scrollIntoView({
           behavior: "smooth",
@@ -405,7 +420,7 @@ export default function TableView({
         })
       }
     }
-  }, [seqNumToShow, filteredRowsCount, sortOn])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
   if (filterColumnSet && filteredRowsCount == 0) {
@@ -424,7 +439,7 @@ export default function TableView({
         metadataColumns={metadataColumns}
         metadata={metadata}
         sortOn={sortOn}
-        seqNumToShow={seqNumToShow}
+        seqNumRange={seqNumRange}
       />
     </table>
   )
