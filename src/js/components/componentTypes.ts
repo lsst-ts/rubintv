@@ -547,7 +547,7 @@ export interface TableBodyProps {
   metadataColumns: MetadataColumn[]
   metadata: Metadata
   sortOn: SortingOptions
-  seqNumToShow?: number
+  seqNumRange?: number[]
 }
 
 /**
@@ -632,7 +632,7 @@ export interface TableViewProps {
   filteredRowsCount: number
   sortOn: SortingOptions
   siteLocation: string
-  seqNumToShow?: number
+  seqNumToShow?: number | number[]
 }
 
 /**

@@ -388,3 +388,14 @@ export const sanitiseRedisValue = (value: string): string => {
   value = value.toUpperCase() // Convert to uppercase
   return value
 }
+
+// Function to generate a range of numbers from an array of numbers
+export function rangeFromArray(arr?: number[]) {
+  if (!arr || arr.length === 0) return []
+  const [start, end] = [Math.min(...arr), Math.max(...arr)]
+  const result = []
+  for (let i = start; i <= end; i++) {
+    result.push(i)
+  }
+  return result
+}
