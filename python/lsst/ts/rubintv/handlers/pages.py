@@ -1,5 +1,6 @@
 """Handlers for the app's external root, ``/rubintv/``."""
 
+import re
 from datetime import date
 
 from fastapi import APIRouter, HTTPException, Request
@@ -156,7 +157,7 @@ async def get_camera_page(
     location_name: str,
     camera_name: str,
     request: Request,
-    seq_num: int | None = None,
+    seq_num: int | str | None = None,
 ) -> Response:
     """GET ``/rubintv/{location_name}/{camera_name}``
     (the camera page for the current day)."""
@@ -218,7 +219,7 @@ async def get_camera_for_date_page(
     camera_name: str,
     date_str: str,
     request: Request,
-    seq_num: int | None = None,
+    seq_num: int | str | list[int] | None = None,
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
 
@@ -273,6 +274,20 @@ async def get_camera_for_date_page(
         template = "not-on-this-day"
     if no_data_at_all and not historical_busy:
         template = "camera-empty"
+
+    if isinstance(seq_num, str):
+        sequence_input = re.sub(r"[^0-9,.]", "", seq_num)
+        elements = sequence_input.split(",")
+        seq_num_list: list[int] = []
+        for el in elements:
+            try:
+                seq_num_list.append(int(float(el)))
+            except ValueError:
+                pass
+        if seq_num_list:
+            seq_num = seq_num_list
+        else:
+            seq_num = None
 
     title = build_title(location.title, camera.title, date_str)
 
