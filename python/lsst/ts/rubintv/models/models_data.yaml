@@ -248,6 +248,9 @@ cameras:
       - name: timing_diagram
         title: Timing Diagram
         colour: "#85e986"
+      - name: aos_timing
+        title: AOS Timing
+        colour: "#e7a9df"
 
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
       {seqNum}}, \"detector\": 0}"
