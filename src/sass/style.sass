@@ -164,7 +164,7 @@ h3
   margin-bottom: 0.5em
 
 section
-  padding-bottom: 2em
+  margin-bottom: 2em
 
 .columns
   display: flex
@@ -277,7 +277,13 @@ section
   margin-bottom: 0
   display: flex
   align-items: center
-  gap: 0.4em
+  border-radius: 12px
+  background: rgba(0,0,0,0.2)
+  padding: 0.1em 0
+  cursor: pointer
+  .date
+    margin: 0 0.2em
+
   .jump-to-date
     width: 32px
     height: 32px
@@ -319,6 +325,7 @@ section
       margin-bottom: 0
 
 .table-container
+  margin-top: -1em
   width: 100%
 
 .camera-table
