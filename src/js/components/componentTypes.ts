@@ -403,6 +403,7 @@ export interface TableAppProps {
   isStale: boolean
   seqNum?: number | number[]
   calendar?: CalendarData
+  toggleCalendar?: () => void
 }
 
 /**
@@ -425,6 +426,7 @@ export interface AboveTableRowProps {
   metadata: Metadata
   isHistorical: boolean
   calendar?: CalendarData
+  toggleCalendar?: () => void
 }
 
 /**
@@ -1079,6 +1081,7 @@ export interface RubinCalendarProps {
   initialCalendarData: CalendarData
   camera: Camera
   locationName: string
+  isClosed?: boolean
 }
 
 /**
@@ -1159,4 +1162,21 @@ export interface ModalContextType {
   modalContent: React.ReactNode | null
   setModalContent: (content: React.ReactNode | null) => void
   setModalHeader: (header: string | null) => void
+}
+
+export interface CameraTableProps {
+  siteLocation: string
+  locationName: string
+  camera: Camera
+  nightReportLink: string
+  date: string
+  isHistorical: boolean
+  calendar: CalendarData
+  isStale: boolean
+  seqNum?: number | number[]
+}
+
+export interface CurrentChannelsProps {
+  locationName: string
+  camera: Camera
 }

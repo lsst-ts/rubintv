@@ -34,6 +34,7 @@ export default function AboveTableRow({
   metadata,
   isHistorical,
   calendar,
+  toggleCalendar,
 }: AboveTableRowProps) {
   const [calendarData, setCalendarData] = useState<CalendarData | null>(
     calendar || null
@@ -82,7 +83,13 @@ export default function AboveTableRow({
             aria-label="Jump to previous date"
           ></button>
         )}
-        <span className="date">{date}</span>
+        <span
+          className="date"
+          aria-label="toggle calendar view onClick"
+          onClick={toggleCalendar}
+        >
+          {date}
+        </span>
         {nextDate && (
           <button
             className="button jump-to-date next-date"
