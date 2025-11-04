@@ -75,7 +75,7 @@ export default function AboveTableRow({
       <h3 id="the-date">
         {prevDate && (
           <button
-            className="button jump-to-prev-date"
+            className="button jump-to-date prev-date"
             onClick={() => {
               handleJumpToDate(prevDate)
             }}
@@ -85,7 +85,7 @@ export default function AboveTableRow({
         <span className="date">{date}</span>
         {nextDate && (
           <button
-            className="button jump-to-next-date"
+            className="button jump-to-date next-date"
             onClick={() => {
               handleJumpToDate(nextDate)
             }}

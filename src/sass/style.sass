@@ -278,6 +278,22 @@ section
   display: flex
   align-items: center
   gap: 0.4em
+  .jump-to-date
+    width: 32px
+    height: 32px
+    border: none
+    background-color: transparent
+    background-image: url(../images/sorting-indicator.svg)
+    background-repeat: no-repeat
+    background-position: center
+    background-size: contain
+    cursor: pointer
+    padding: 4px
+    box-shadow: none
+    &.prev-date
+      transform: rotate(90deg)
+    &.next-date
+      transform: rotate(270deg)
 
 .above-table-sticky
   min-width: 100%
