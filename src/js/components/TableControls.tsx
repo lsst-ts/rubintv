@@ -79,6 +79,7 @@ export default function AboveTableRow({
             onClick={() => {
               handleJumpToDate(prevDate)
             }}
+            aria-label="Jump to previous date"
           ></button>
         )}
         <span className="date">{date}</span>
@@ -88,6 +89,7 @@ export default function AboveTableRow({
             onClick={() => {
               handleJumpToDate(nextDate)
             }}
+            aria-label="Jump to next date"
           ></button>
         )}
       </h3>
