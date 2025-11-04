@@ -446,6 +446,7 @@ export interface AboveTableRowProps {
   metadata: Metadata
   isHistorical: boolean
   calendar?: CalendarData
+  toggleCalendar?: () => void
 }
 
 /**
@@ -1082,6 +1083,7 @@ export interface RubinCalendarProps {
   initialCalendarData: CalendarData
   camera: Camera
   locationName: string
+  isClosed?: boolean
 }
 
 /**

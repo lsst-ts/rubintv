@@ -34,6 +34,7 @@ export default function AboveTableRow({
   metadata,
   isHistorical,
   calendar,
+  toggleCalendar,
 }: AboveTableRowProps) {
   const [calendarData, setCalendarData] = useState<CalendarData | null>(
     calendar || null
@@ -70,9 +71,18 @@ export default function AboveTableRow({
     )
   }
 
+  function handleKeyToggleCalendar(e: KeyboardEvent<HTMLSpanElement>) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault()
+      if (typeof toggleCalendar === "function") {
+        toggleCalendar()
+      }
+    }
+  }
+
   return (
     <div className="row">
-      <h3 id="the-date">
+      <h3 id="the-date" className="clickable-date">
         {prevDate && (
           <button
             className="button jump-to-date prev-date"
@@ -82,7 +92,16 @@ export default function AboveTableRow({
             aria-label="Jump to previous date"
           ></button>
         )}
-        <span className="date">{date}</span>
+        <span
+          role="button"
+          className="date"
+          aria-label="Toggle calendar view"
+          onClick={toggleCalendar}
+          onKeyDown={handleKeyToggleCalendar}
+          tabIndex={0}
+        >
+          {date}
+        </span>
         {nextDate && (
           <button
             className="button jump-to-date next-date"

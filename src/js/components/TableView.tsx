@@ -236,7 +236,6 @@ function TableBody({
   const filledSeqRange =
     seqNumRange !== undefined ? rangeSetFromLimits(seqNumRange) : undefined
 
-  console.log("TableBody render: ", { seqNumRange, filledSeqRange })
   return (
     <tbody>
       {seqs.map((seqNum) => {
