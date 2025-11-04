@@ -37,13 +37,12 @@ import { Camera } from "../components/componentTypes"
     />
   )
 
+  const ws = new WebsocketClient()
+  ws.subscribe("calendar", locationName, camera.name)
+
   if (!isHistorical || isStale) {
-    const ws = new WebsocketClient()
     ws.subscribe("camera", locationName, camera.name)
   } else {
-    const ws = new WebsocketClient()
-    ws.subscribe("calendar", locationName, camera.name)
-
     const calendarElement = _getById("calendar")
     if (!calendarElement) {
       console.error("Calendar element not found")
@@ -75,6 +74,7 @@ import { Camera } from "../components/componentTypes"
       isStale={isStale}
       isHistorical={isHistorical}
       seqNum={seqNum}
+      calendar={calendar}
     />
   )
 

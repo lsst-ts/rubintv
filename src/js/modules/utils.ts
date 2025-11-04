@@ -1,6 +1,7 @@
 import { gunzipSync } from "fflate"
 import { homeUrl, imagesUrl } from "../config"
 import {
+  CalendarData,
   ExposureEvent,
   MediaType,
   MetadataRow,
@@ -398,4 +399,37 @@ export function rangeFromArray(arr?: number[]) {
     result.push(i)
   }
   return result
+}
+
+// Unpack calendar data into a list of dates
+export function unpackCalendarAsDateList(calendar: CalendarData): string[] {
+  const dateList: string[] = []
+  for (const [year, months] of Object.entries(calendar)) {
+    for (const [month, days] of Object.entries(months)) {
+      const padMonth = month.toString().padStart(2, "0")
+      for (const day of Object.keys(days as Record<number, number>)) {
+        dateList.push(`${year}-${padMonth}-${day.toString().padStart(2, "0")}`)
+      }
+    }
+  }
+  return dateList.sort()
+}
+
+export function findPrevNextDate(
+  dateList: string[],
+  currentDate: string
+): { prevDate: string | null; nextDate: string | null } {
+  const currentIndex = dateList.indexOf(currentDate)
+
+  let prevDate: string | null = null
+  let nextDate: string | null = null
+
+  if (currentIndex > 0) {
+    prevDate = dateList[currentIndex - 1]
+  }
+  if (currentIndex >= 0 && currentIndex < dateList.length - 1) {
+    nextDate = dateList[currentIndex + 1]
+  }
+
+  return { prevDate, nextDate }
 }

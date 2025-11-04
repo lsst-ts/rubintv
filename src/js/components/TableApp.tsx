@@ -27,6 +27,7 @@ export default function TableApp({
   siteLocation,
   isStale,
   seqNum,
+  calendar,
 }: TableAppProps) {
   const [hasReceivedData, setHasReceivedData] = useState(false)
   const [date, setDate] = useState(initialDate)
@@ -36,7 +37,6 @@ export default function TableApp({
     column: "",
     value: "",
   } as FilterOptions)
-
   const [sortOn, setSortOn] = useState({
     column: "seq",
     order: "desc",
@@ -217,11 +217,13 @@ export default function TableApp({
           <ModalProvider>
             <div className="above-table-sticky">
               <AboveTableRow
+                locationName={locationName}
                 camera={camera}
                 availableColumns={availableColumns}
                 selected={selected}
                 setSelected={handleSetSelected}
                 date={date}
+                calendar={calendar}
                 metadata={metadata}
                 isHistorical={isHistorical}
               />

@@ -260,8 +260,7 @@ async def get_camera_for_date_page(
             raise http_error
 
     calendar: dict[int, dict[int, dict[int, int]]] = {}
-    if is_historical:
-        calendar = await get_camera_calendar(location, camera, request)
+    calendar = await get_camera_calendar(location, camera, request)
 
     nr_link = ""
     if not data.is_empty() and data.nr_exists:

@@ -446,6 +446,7 @@ class ServiceMessageTypes(Enum):
     NIGHT_REPORT = "nightReport"
     HISTORICAL_STATUS = "historicalStatus"
     DAY_CHANGE = "dayChange"
+    CALENDAR_UPDATE = "calendarUpdate"
     PREV_NEXT = "prevNext"
     ALL_CHANNELS = "allChannels"
     DETECTOR_STATUS = "detectorStatus"
