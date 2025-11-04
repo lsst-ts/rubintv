@@ -5,7 +5,11 @@ import { render, screen, fireEvent } from "@testing-library/react"
 import AboveTableRow, { JumpButtons } from "../TableControls"
 import { RubinTVTableContext } from "../contexts/contexts"
 import { saveColumnSelection } from "../../modules/columnStorage"
-import { _getById } from "../../modules/utils"
+import {
+  _getById,
+  findPrevNextDate,
+  getCameraPageForDateUrl,
+} from "../../modules/utils"
 
 /* global jest, describe, it, expect, beforeEach, beforeAll, afterAll */
 
@@ -23,6 +27,9 @@ jest.mock("../../modules/utils", () => ({
     return null
   }),
   getImageAssetUrl: jest.fn(() => "mock-arrow.svg"),
+  findPrevNextDate: jest.fn(() => ({ prevDate: null, nextDate: null })),
+  getCameraPageForDateUrl: jest.fn(() => "mock-url"),
+  unpackCalendarAsDateList: jest.fn(() => []),
 }))
 
 // Mock Clock components
@@ -53,6 +60,7 @@ describe("AboveTableRow Component", () => {
     time_since_clock: { label: "Last Image" },
   }
   defaultProps = {
+    locationName: "test-location",
     camera: mockCamera,
     availableColumns: ["colA", "colB", "colC"],
     selected: ["colA", "colB"],
@@ -73,7 +81,6 @@ describe("AboveTableRow Component", () => {
       </RubinTVTableContext.Provider>
     )
 
-    expect(screen.getByText("Data for day:")).toBeInTheDocument()
     expect(screen.getByText("2024-01-01")).toBeInTheDocument()
     expect(screen.getByText("Add/Remove Columns")).toBeInTheDocument()
     expect(screen.getByText("Download Metadata")).toBeInTheDocument()
@@ -105,6 +112,84 @@ describe("AboveTableRow Component", () => {
     )
 
     expect(screen.queryByTestId("time-since-clock")).not.toBeInTheDocument()
+  })
+
+  it("renders jump-to-date buttons when prev/next dates are available", () => {
+    // Mock the utils functions to return prev/next dates
+    findPrevNextDate.mockReturnValue({
+      prevDate: "2024-01-01",
+      nextDate: "2024-01-03",
+    })
+
+    render(
+      <RubinTVTableContext.Provider value={mockContextValue}>
+        <AboveTableRow {...defaultProps} date="2024-01-02" />
+      </RubinTVTableContext.Provider>
+    )
+
+    expect(
+      screen.getByRole("button", { name: "Jump to previous date" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Jump to next date" })
+    ).toBeInTheDocument()
+  })
+
+  it("does not render jump buttons when no prev/next dates available", () => {
+    findPrevNextDate.mockReturnValue({
+      prevDate: null,
+      nextDate: null,
+    })
+
+    render(
+      <RubinTVTableContext.Provider value={mockContextValue}>
+        <AboveTableRow {...defaultProps} />
+      </RubinTVTableContext.Provider>
+    )
+
+    expect(
+      screen.queryByRole("button", { name: "Jump to previous date" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Jump to next date" })
+    ).not.toBeInTheDocument()
+  })
+
+  it("navigates to correct URL when jump buttons are clicked", () => {
+    findPrevNextDate.mockReturnValue({
+      prevDate: "2024-01-01",
+      nextDate: "2024-01-03",
+    })
+    getCameraPageForDateUrl.mockReturnValue("/test-url")
+
+    render(
+      <RubinTVTableContext.Provider value={mockContextValue}>
+        <AboveTableRow {...defaultProps} date="2024-01-02" />
+      </RubinTVTableContext.Provider>
+    )
+
+    const prevButton = screen.getByRole("button", {
+      name: "Jump to previous date",
+    })
+    fireEvent.click(prevButton)
+
+    expect(getCameraPageForDateUrl).toHaveBeenCalledWith(
+      "test-location",
+      "testcam",
+      "2024-01-01"
+    )
+
+    // Test next button as well
+    const nextButton = screen.getByRole("button", {
+      name: "Jump to next date",
+    })
+    fireEvent.click(nextButton)
+
+    expect(getCameraPageForDateUrl).toHaveBeenCalledWith(
+      "test-location",
+      "testcam",
+      "2024-01-03"
+    )
   })
 })
 
