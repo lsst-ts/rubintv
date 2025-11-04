@@ -28,6 +28,14 @@ async def notify_ws_clients(
 ) -> None:
     service_loc_cam_chan = " ".join([service.value, loc_cam])
     to_notify = await get_clients_to_notify(service_loc_cam_chan)
+    if not to_notify:
+        return
+    logger.info(
+        "Notifying clients",
+        service=service.value,
+        message_type=message_type.value,
+        loc_cam=loc_cam,
+    )
     await notify_clients(to_notify, service, message_type, payload)
 
 
