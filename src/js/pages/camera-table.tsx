@@ -1,9 +1,7 @@
 import React from "react"
 import { createRoot } from "react-dom/client"
-import TableApp from "../components/TableApp"
-import PerDay from "../components/PerDay"
 import Banner from "../components/Banner"
-import RubinCalendar from "../components/RubinCalendar"
+import CameraTable from "js/components/CameraTable"
 import { _getById } from "../modules/utils"
 import { WebsocketClient } from "../modules/ws-service-client"
 import { Camera } from "../components/componentTypes"
@@ -42,55 +40,25 @@ import { Camera } from "../components/componentTypes"
 
   if (!isHistorical || isStale) {
     ws.subscribe("camera", locationName, camera.name)
-  } else {
-    const calendarElement = _getById("calendar")
-    if (!calendarElement) {
-      console.error("Calendar element not found")
-      return
-    }
-    const calendarRoot = createRoot(calendarElement)
-    calendarRoot.render(
-      <RubinCalendar
-        selectedDate={date}
-        initialCalendarData={calendar}
-        camera={camera}
-        locationName={locationName}
-      />
-    )
   }
 
-  const table = _getById("table")
-  if (!table) {
-    console.error("Table element not found")
+  const getCameraTableMain = _getById("camera-table-main")
+  if (!getCameraTableMain) {
+    console.error("Camera Table Main element not found")
     return
   }
-  const tableRoot = createRoot(table)
-  tableRoot.render(
-    <TableApp
+  const cameraTableMainRoot = createRoot(getCameraTableMain)
+  cameraTableMainRoot.render(
+    <CameraTable
       siteLocation={siteLocation}
       locationName={locationName}
       camera={camera}
-      initialDate={date}
-      isStale={isStale}
+      nightReportLink={nightReportLink}
+      date={date}
       isHistorical={isHistorical}
-      seqNum={seqNum}
       calendar={calendar}
-    />
-  )
-
-  const perDayElement = _getById("per-day")
-  if (!perDayElement) {
-    console.error("Per Day element not found")
-    return
-  }
-  const perDayRoot = createRoot(perDayElement)
-  perDayRoot.render(
-    <PerDay
-      camera={camera}
-      initialDate={date}
-      initialNRLink={nightReportLink}
-      locationName={locationName}
-      isHistorical={isHistorical}
+      isStale={isStale}
+      seqNum={seqNum}
     />
   )
 })()
