@@ -391,6 +391,8 @@ export interface RedisEndpoint {
  * @param {boolean} isHistorical - Whether the view is historical.
  * @param {string} siteLocation - Short site identifier (e.g. 'summit').
  * @param {boolean} isStale - Whether the data is stale.
+ * @param {number} [seqNum] - Optional sequence number(s) to highlight on load.
+ * @param {CalendarData} [calendar] - Optional calendar data for the camera.
  */
 export interface TableAppProps {
   camera: Camera
@@ -399,7 +401,8 @@ export interface TableAppProps {
   isHistorical: boolean
   siteLocation: string
   isStale: boolean
-  seqNum?: number
+  seqNum?: number | number[]
+  calendar?: CalendarData
 }
 
 /**
@@ -413,6 +416,7 @@ export interface TableAppProps {
  * @param {boolean} isHistorical - Whether the view is historical.
  */
 export interface AboveTableRowProps {
+  locationName: string
   camera: Camera
   availableColumns: string[]
   selected: string[]
@@ -420,6 +424,7 @@ export interface AboveTableRowProps {
   date: string
   metadata: Metadata
   isHistorical: boolean
+  calendar?: CalendarData
 }
 
 /**
@@ -520,6 +525,7 @@ export interface TableRowProps {
  * @param {MetadataColumn[]} metadataColumns - Metadata columns to include.
  * @param {Metadata} metadata - Metadata mapping for rows.
  * @param {SortingOptions} sortOn - Current sorting options.
+ * @param {number[]} [seqNumRange] - Optional range of sequence numbers to highlight.
  */
 export interface TableBodyProps {
   camera: Camera
