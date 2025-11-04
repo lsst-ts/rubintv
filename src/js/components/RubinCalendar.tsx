@@ -239,7 +239,7 @@ const RubinCalendar = ({
     return year == yearToDisplay ? "selected year-title" : "year-title"
   }
   return (
-    <div>
+    <>
       <div className="year-titles">
         <div className="year-button year-more"></div>
         <div className="year-title-viewbox">
@@ -272,7 +272,7 @@ const RubinCalendar = ({
           />
         ))}
       </div>
-    </div>
+    </>
   )
 }
 

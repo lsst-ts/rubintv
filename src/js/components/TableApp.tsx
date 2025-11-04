@@ -29,6 +29,7 @@ export default function TableApp({
   isStale,
   seqNums,
   calendar,
+  toggleCalendar,
 }: TableAppProps) {
   const [isReadyToDisplay, setIsReadyToDisplay] = useState(false)
   const [hasReceivedData, setHasReceivedData] = useState(false)
@@ -276,6 +277,7 @@ export default function TableApp({
               setSelected={handleSetSelected}
               date={date}
               calendar={calendar}
+              toggleCalendar={toggleCalendar}
               metadata={metadata}
               isHistorical={isHistorical}
             />
