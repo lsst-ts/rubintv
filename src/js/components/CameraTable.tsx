@@ -14,7 +14,7 @@ export default function CameraTable({
   isHistorical,
   calendar,
   isStale,
-  seqNum,
+  seqNums,
 }: CameraTableProps) {
   const [isClosed, setIsClosed] = React.useState(true)
   function toggleCalendar() {
@@ -50,7 +50,7 @@ export default function CameraTable({
         initialDate={date}
         isStale={isStale}
         isHistorical={isHistorical}
-        seqNum={seqNum}
+        seqNums={seqNums}
         calendar={calendar}
         toggleCalendar={toggleCalendar}
       />
