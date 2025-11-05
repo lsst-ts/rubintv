@@ -7,7 +7,7 @@ import {
   replaceInString,
   setCameraBaseUrl,
   isDevInstance,
-  rangeFromArray,
+  rangeSetFromLimits,
 } from "../modules/utils"
 import {
   RubinTVContextType,
@@ -234,14 +234,15 @@ function TableBody({
   )
   const seqs = applySorting(allSeqs, sortOn, metadata)
   const filledSeqRange =
-    seqNumRange !== undefined ? rangeFromArray(seqNumRange) : undefined
+    seqNumRange !== undefined ? rangeSetFromLimits(seqNumRange) : undefined
 
+  console.log("TableBody render: ", { seqNumRange, filledSeqRange })
   return (
     <tbody>
       {seqs.map((seqNum) => {
         const metadataRow = seqNum in metadata ? metadata[seqNum] : {}
         const channelRow = seqNum in channelData ? channelData[seqNum] : {}
-        const highlightRow = filledSeqRange?.includes(seqNum) ?? false
+        const highlightRow = filledSeqRange?.has(seqNum) ?? false
         return (
           <TableRow
             key={seqNum}
@@ -419,7 +420,7 @@ export default function TableView({
   sortOn,
   seqNumsToShow,
 }: TableViewProps) {
-  const seqNumRange = useMemo(() => {
+  const seqNumRange: [number, number] | undefined = useMemo(() => {
     if (seqNumsToShow === undefined) {
       return undefined
     }
@@ -430,6 +431,7 @@ export default function TableView({
   // Runs only once when component mounts.
   useLayoutEffect(() => {
     if (seqNumRange !== undefined && seqNumRange.length === 2) {
+      // Scroll to the larger seq num in the range
       const firstSeqNum = seqNumRange[1]
       const highlightedRow = document.getElementById(`seqNum-${firstSeqNum}`)
       if (highlightedRow) {
