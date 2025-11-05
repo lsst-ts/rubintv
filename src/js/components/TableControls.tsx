@@ -71,6 +71,15 @@ export default function AboveTableRow({
     )
   }
 
+  function handleKeyToggleCalendar(e: KeyboardEvent<HTMLSpanElement>) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault()
+      if (typeof toggleCalendar === "function") {
+        toggleCalendar()
+      }
+    }
+  }
+
   return (
     <div className="row">
       <h3 id="the-date">
@@ -84,9 +93,12 @@ export default function AboveTableRow({
           ></button>
         )}
         <span
+          role="button"
           className="date"
-          aria-label="toggle calendar view onClick"
+          aria-label="Toggle calendar view"
           onClick={toggleCalendar}
+          onKeyDown={handleKeyToggleCalendar}
+          tabIndex={0}
         >
           {date}
         </span>
