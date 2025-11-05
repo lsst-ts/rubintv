@@ -409,9 +409,7 @@ export default function TableView({
   // Runs only once when component mounts.
   useLayoutEffect(() => {
     if (seqNumRange !== undefined && seqNumRange.length === 2) {
-      // Scroll to the larger seq num in the range
-      const firstSeqNum = seqNumRange[1]
-      const highlightedRow = document.getElementById(`seqNum-${firstSeqNum}`)
+      const highlightedRow = document.querySelector(".highlight-row")
       if (highlightedRow) {
         highlightedRow.scrollIntoView({
           behavior: "smooth",
