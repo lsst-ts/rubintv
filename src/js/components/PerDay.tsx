@@ -22,7 +22,6 @@ function PerDayChannels({
     )
     return null
   }
-
   return (
     perDay &&
     Object.entries(perDay).length > 0 && (
@@ -146,9 +145,14 @@ export default function PerDay({
       window.removeEventListener("camera", handleCameraEvent as EventListener)
     }
   }, [date]) // Only reattach the event listener if the date changes
-  if (!perDay || Object.keys(perDay).length === 0 || nightReportLink === "") {
+
+  const hasPerDayData = perDay && Object.keys(perDay).length > 0
+  const hasNightReportLink = nightReportLink !== ""
+
+  if (!hasPerDayData && !hasNightReportLink) {
     return null
   }
+
   return (
     <div id="per-day" className="columns">
       <PerDayChannels
