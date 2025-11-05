@@ -433,3 +433,13 @@ export function findPrevNextDate(
 
   return { prevDate, nextDate }
 }
+
+export function isElementInViewport(element: HTMLElement): boolean {
+  const rect = element.getBoundingClientRect()
+  return (
+    rect.top < window.innerHeight &&
+    rect.bottom > 0 &&
+    rect.left < window.innerWidth &&
+    rect.right > 0
+  )
+}

@@ -4,6 +4,7 @@ import CurrentChannels from "./CurrentChannels"
 import PerDay from "./PerDay"
 import TableApp from "./TableApp"
 import { CameraTableProps } from "./componentTypes"
+import { isElementInViewport } from "../modules/utils"
 
 export default function CameraTable({
   siteLocation,
@@ -17,8 +18,15 @@ export default function CameraTable({
   seqNums,
 }: CameraTableProps) {
   const [isClosed, setIsClosed] = React.useState(true)
+
   function toggleCalendar() {
     setIsClosed(!isClosed)
+    if (isClosed) {
+      const calendarElement = document.getElementById("calendar")
+      if (calendarElement && !isElementInViewport(calendarElement)) {
+        calendarElement.scrollIntoView()
+      }
+    }
   }
   return (
     <StrictMode>
