@@ -536,7 +536,7 @@ export interface TableBodyProps {
   metadataColumns: MetadataColumn[]
   metadata: Metadata
   sortOn: SortingOptions
-  seqNumRange?: number[]
+  seqNumRange?: [number, number]
 }
 
 /**
