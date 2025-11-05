@@ -586,7 +586,7 @@ describe("JumpButtons Component", () => {
     const topButton = screen.getByTitle("to top")
     fireEvent.click(topButton)
 
-    expect(mockTable.scrollIntoView).toHaveBeenCalledWith()
+    expect(mockTable.scrollIntoView).toHaveBeenCalledWith(true)
   })
 
   it("scrolls to bottom when bottom button is clicked", () => {
