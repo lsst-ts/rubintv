@@ -1,6 +1,5 @@
 """Handlers for the app's external root, ``/rubintv/``."""
 
-import re
 from datetime import date
 
 from fastapi import APIRouter, HTTPException, Request
@@ -23,6 +22,7 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
     get_latest_metadata,
     get_most_recent_historical_day,
     get_prev_next_event,
+    parse_seq_nums,
     try_historical_call,
 )
 from lsst.ts.rubintv.handlers.pages_helpers import (
@@ -274,15 +274,7 @@ async def get_camera_for_date_page(
     if no_data_at_all and not historical_busy:
         template = "camera-empty"
 
-    seq_num_list: list[int] = []
-    if seq_num is not None:
-        sequence_input = re.sub(r"[^0-9,.]", "", seq_num)
-        elements = sequence_input.split(",")
-        for el in elements:
-            try:
-                seq_num_list.append(int(float(el)))
-            except ValueError:
-                pass
+    seq_num_list = parse_seq_nums(seq_num)
 
     title = build_title(location.title, camera.title, date_str)
 
