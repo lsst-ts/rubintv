@@ -191,3 +191,37 @@ async def get_all_channel_names_for_date_seq_num(
         seq_num,
     )
     return channel_data
+
+
+def parse_seq_nums(seq_num: str | None) -> list[int]:
+    """Parse sequence numbers from query string, handling invalid input
+    gracefully.
+
+    Parameters
+    ----------
+    seq_num: str
+        Comma-separated sequence numbers, may contain invalid characters
+
+    Returns
+    -------
+    seq_num_list: list[int]
+        List of valid sequence numbers
+    """
+    if not seq_num:
+        return []
+
+    seq_num_list: list[int] = []
+    elements = seq_num.split(",")
+
+    for element in elements:
+        clean_element = "".join(char for char in element if char.isdigit())
+
+        if clean_element:
+            try:
+                num = int(clean_element)
+                if 0 <= num <= 9999:
+                    seq_num_list.append(num)
+            except (ValueError, OverflowError):
+                continue
+
+    return seq_num_list
