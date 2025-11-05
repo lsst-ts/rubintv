@@ -420,7 +420,7 @@ export interface TableAppProps {
   isHistorical: boolean
   siteLocation: string
   isStale: boolean
-  seqNum?: number | number[]
+  seqNums?: number[]
   calendar?: CalendarData
   toggleCalendar?: () => void
 }
@@ -640,7 +640,7 @@ export interface TableViewProps {
   filteredRowsCount: number
   sortOn: SortingOptions
   siteLocation: string
-  seqNumToShow?: number | number[]
+  seqNumsToShow?: number[]
 }
 
 /**
@@ -1170,7 +1170,7 @@ export interface CameraTableProps {
   isHistorical: boolean
   calendar: CalendarData
   isStale: boolean
-  seqNum?: number | number[]
+  seqNums?: number[]
 }
 
 export interface CurrentChannelsProps {

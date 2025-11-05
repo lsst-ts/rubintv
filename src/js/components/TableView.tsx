@@ -396,16 +396,14 @@ export default function TableView({
   filterOn,
   filteredRowsCount,
   sortOn,
-  seqNumToShow,
+  seqNumsToShow,
 }: TableViewProps) {
   const seqNumRange = useMemo(() => {
-    if (seqNumToShow === undefined) {
+    if (seqNumsToShow === undefined) {
       return undefined
     }
-    return typeof seqNumToShow === "number"
-      ? [seqNumToShow, seqNumToShow]
-      : [Math.min(...seqNumToShow), Math.max(...seqNumToShow)]
-  }, [seqNumToShow])
+    return [Math.min(...seqNumsToShow), Math.max(...seqNumsToShow)]
+  }, [seqNumsToShow])
 
   // Scroll to highlighted row on initial render.
   // Runs only once when component mounts.
