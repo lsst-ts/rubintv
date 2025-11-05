@@ -27,7 +27,7 @@ export default function TableApp({
   isHistorical,
   siteLocation,
   isStale,
-  seqNum,
+  seqNums,
   calendar,
   toggleCalendar,
 }: TableAppProps) {
@@ -268,7 +268,7 @@ export default function TableApp({
             filteredRowsCount={filteredRowsCount}
             sortOn={sortOn}
             siteLocation={siteLocation}
-            seqNumToShow={seqNum}
+            seqNumsToShow={seqNums}
           />
         </ModalProvider>
       </div>
