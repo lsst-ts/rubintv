@@ -36,24 +36,28 @@ export default function CameraTable({
       {!isHistorical && (
         <CurrentChannels locationName={locationName} camera={camera} />
       )}
-      <PerDay
-        camera={camera}
-        initialDate={date}
-        initialNRLink={nightReportLink}
-        locationName={locationName}
-        isHistorical={isHistorical}
-      />
-      <TableApp
-        siteLocation={siteLocation}
-        locationName={locationName}
-        camera={camera}
-        initialDate={date}
-        isStale={isStale}
-        isHistorical={isHistorical}
-        seqNums={seqNums}
-        calendar={calendar}
-        toggleCalendar={toggleCalendar}
-      />
+      <section className="per-day-section">
+        <PerDay
+          camera={camera}
+          initialDate={date}
+          initialNRLink={nightReportLink}
+          locationName={locationName}
+          isHistorical={isHistorical}
+        />
+      </section>
+      <section className="table-section" id="table-section">
+        <TableApp
+          siteLocation={siteLocation}
+          locationName={locationName}
+          camera={camera}
+          initialDate={date}
+          isStale={isStale}
+          isHistorical={isHistorical}
+          seqNums={seqNums}
+          calendar={calendar}
+          toggleCalendar={toggleCalendar}
+        />
+      </section>
     </StrictMode>
   )
 }
