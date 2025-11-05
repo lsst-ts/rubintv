@@ -252,19 +252,22 @@ function TableControls({
 }
 
 export function JumpButtons() {
-  const table = _getById("table") as HTMLTableElement
   const jumpArrowImage = getImageAssetUrl("jump-arrow.svg")
+  const handleTableJump = (toTop: boolean) => {
+    const table = _getById("table-section") as HTMLTableElement
+    table.scrollIntoView(toTop)
+  }
   return (
     <div className="jump-buttons">
       <button
-        onClick={() => table.scrollIntoView()}
+        onClick={() => handleTableJump(true)}
         className="jump-button to-top"
         title="to top"
       >
         <img src={jumpArrowImage} />
       </button>
       <button
-        onClick={() => table.scrollIntoView(false)}
+        onClick={() => handleTableJump(false)}
         className="jump-button to-bottom"
         title="to bottom"
       >
