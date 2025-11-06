@@ -310,7 +310,7 @@ async def get_metadata_for_date(
     if not camera.online:
         raise HTTPException(status_code=404, detail="Camera not found.")
 
-    day_obs = date_validation(date_str)
+    _ = date_validation(date_str)
 
     historical: HistoricalPoller = request.app.state.historical
     if await historical.is_busy():
@@ -318,7 +318,7 @@ async def get_metadata_for_date(
             status_code=423, detail="Historical data is being processed"
         )
 
-    metadata = await historical.get_metadata_for_date(location, camera, day_obs)
+    metadata = await historical.get_metadata_for_date(location, camera, date_str)
     if not metadata:
         raise HTTPException(status_code=404, detail="Metadata not found for this date")
 
