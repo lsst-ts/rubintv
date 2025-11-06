@@ -144,7 +144,6 @@ class HistoricalPoller:
                     # Let the clients know the day has changed
                     await self.notify_clients_of_day_change()
 
-                    # Shift metadata cache for day rollover
                     await self._shift_metadata_cache_for_new_day()
 
                     await self.clear_all_data()
@@ -159,7 +158,6 @@ class HistoricalPoller:
 
                     await notify_all_status_change(historical_busy=False)
 
-                    # Start background metadata prefetch
                     await self._start_metadata_prefetch()
                 else:
                     if self.test_mode:
@@ -236,14 +234,11 @@ class HistoricalPoller:
             for date_str in available_dates:
                 # Pause prefetch if there are active requests
                 while self._prefetch_paused.is_set():
-                    # Brief pause before checking again to let bucket breathe
                     await asyncio.sleep(0.1)
 
-                # Skip if already cached
                 if date_str in cache:
                     continue
 
-                # Stop if we've prefetched enough
                 if prefetch_count >= self.METADATA_CACHE_DAYS:
                     break
 
@@ -258,9 +253,8 @@ class HistoricalPoller:
                         continue
 
                     try:
-                        target_date = date_str_to_date(date_str)
                         metadata = await self._fetch_metadata_from_s3(
-                            location, camera, target_date
+                            location, camera, date_str
                         )
                         if metadata:
                             # Add to cache (will be inserted at end due to
@@ -286,12 +280,11 @@ class HistoricalPoller:
                 logger.info(f"Prefetched {prefetch_count} metadata files for {loc_cam}")
 
     async def get_metadata_for_date(
-        self, location: Location, camera: Camera, day_obs: date
+        self, location: Location, camera: Camera, date_str: str
     ) -> dict | None:
         """Get metadata for a specific date with caching and interruption
         handling."""
         loc_cam = f"{location.name}/{camera.name}"
-        date_str = day_obs.isoformat()
 
         # Initialize cache for this loc_cam if needed
         if loc_cam not in self._metadata_cache:
@@ -325,7 +318,9 @@ class HistoricalPoller:
 
             # Fetch from S3
             try:
-                metadata = await self._fetch_metadata_from_s3(location, camera, day_obs)
+                metadata = await self._fetch_metadata_from_s3(
+                    location, camera, date_str
+                )
                 if metadata:
                     # Add to cache
                     cache[date_str] = metadata
@@ -353,11 +348,11 @@ class HistoricalPoller:
                         self._prefetch_paused.clear()
 
     async def _fetch_metadata_from_s3(
-        self, location: Location, camera: Camera, day_obs: date
+        self, location: Location, camera: Camera, date_str: str
     ) -> dict | None:
         """Fetch metadata from S3 for a specific date."""
         client = self._clients[location.name]
-        key = f"{camera.name}/{day_obs.isoformat()}/metadata.json"
+        key = f"{camera.name}/{date_str}/metadata.json"
 
         try:
             metadata = await client.async_get_object(key)
