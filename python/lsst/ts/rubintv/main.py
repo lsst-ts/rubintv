@@ -113,6 +113,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     else:
         yield
 
+    # Stop background tasks
+    await hp.stop_background_tasks()
+
     historical_polling.cancel()
     today_polling.cancel()
 
