@@ -113,6 +113,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     else:
         yield
 
+<<<<<<< HEAD
+=======
+    # Stop background tasks
+    await hp.stop_background_tasks()
+
+    if redis_task and redis_subscriber is not None:
+        await redis_subscriber.stop_async()
+        redis_task.cancel()
+        try:
+            await redis_task
+        except asyncio.CancelledError:
+            pass
+
+>>>>>>> ce5eb033 (Prefetch and cache metadata)
     historical_polling.cancel()
     today_polling.cancel()
 
