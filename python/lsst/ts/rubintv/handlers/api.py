@@ -306,16 +306,20 @@ async def get_night_report_for_date(
 async def get_metadata_for_date(
     location_name: str, camera_name: str, date_str: str, request: Request
 ) -> dict:
-    _, camera = await get_location_camera(location_name, camera_name, request)
+    location, camera = await get_location_camera(location_name, camera_name, request)
     if not camera.online:
         raise HTTPException(status_code=404, detail="Camera not found.")
 
     day_obs = date_validation(date_str)
 
-    s3_client: S3Client = request.app.state.s3_clients[location_name]
-    if not s3_client:
-        raise HTTPException(status_code=404, detail="Location not found.")
-    metadata = await s3_client.async_get_object(
-        f"{camera.name}/{day_obs}/metadata.json"
-    )
+    historical: HistoricalPoller = request.app.state.historical
+    if await historical.is_busy():
+        raise HTTPException(
+            status_code=423, detail="Historical data is being processed"
+        )
+
+    metadata = await historical.get_metadata_for_date(location, camera, day_obs)
+    if not metadata:
+        raise HTTPException(status_code=404, detail="Metadata not found for this date")
+
     return metadata

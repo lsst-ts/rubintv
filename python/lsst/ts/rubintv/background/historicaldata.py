@@ -1,4 +1,5 @@
 import asyncio
+from collections import OrderedDict
 from datetime import date
 from time import time
 
@@ -41,6 +42,8 @@ class HistoricalPoller:
 
     # polling period in seconds
     CHECK_NEW_DAY_PERIOD = 5
+    # Maximum days to cache metadata
+    METADATA_CACHE_DAYS = 60
 
     def __init__(
         self,
@@ -54,6 +57,19 @@ class HistoricalPoller:
 
         self._metadata_refs: dict[str, set[str]] = {}
         # Structure: {loc_cam: {date_str}}
+
+        # Metadata cache using OrderedDict for LRU behavior
+        self._metadata_cache: dict[str, OrderedDict[str, dict]] = {}
+        # Structure: {loc_cam: OrderedDict({date_str: metadata_dict})}
+
+        # Background prefetch control
+        self._metadata_prefetch_task: asyncio.Task | None = None
+        self._prefetch_paused = asyncio.Event()
+        self._active_requests = 0
+        self._request_lock = asyncio.Lock()
+
+        # Per-key locks to prevent duplicate fetches
+        self._fetch_locks: dict[str, asyncio.Lock] = {}
 
         self._structured_events: StructuredData = {}
         # Structure: {loc_cam: {date_str: {
@@ -95,7 +111,23 @@ class HistoricalPoller:
         self._nr_metadata = {}
         self._calendar = {}
 
+        # Reset request tracking
+        async with self._request_lock:
+            self._active_requests = 0
+            self._prefetch_paused.clear()
+
+        # Clean up fetch locks to prevent memory leaks
+        self._fetch_locks.clear()
+
+    async def clear_metadata_cache(self) -> None:
+        """Explicitly clear the metadata cache (for testing or manual
+        resets)"""
+        for loc_cam in self._metadata_cache:
+            self._metadata_cache[loc_cam].clear()
+        self._fetch_locks.clear()
+
     async def trigger_reload_everything(self) -> None:
+        await self.clear_metadata_cache()
         self._have_downloaded = False
 
     async def is_busy(self) -> bool:
@@ -112,6 +144,9 @@ class HistoricalPoller:
                     # Let the clients know the day has changed
                     await self.notify_clients_of_day_change()
 
+                    # Shift metadata cache for day rollover
+                    await self._shift_metadata_cache_for_new_day()
+
                     await self.clear_all_data()
                     for location in self._locations:
                         await self._refresh_location_store(location)
@@ -123,6 +158,9 @@ class HistoricalPoller:
                     logger.info("Historical polling took:", time_taken=time_taken)
 
                     await notify_all_status_change(historical_busy=False)
+
+                    # Start background metadata prefetch
+                    await self._start_metadata_prefetch()
                 else:
                     if self.test_mode:
                         break
@@ -130,6 +168,222 @@ class HistoricalPoller:
         except Exception:
             # log error with traceback
             logger.error("Error in check_for_new_day", exc_info=True)
+
+    async def _shift_metadata_cache_for_new_day(self) -> None:
+        """Shift the metadata cache when a new day rolls over."""
+        for loc_cam, cache in self._metadata_cache.items():
+            if len(cache) >= self.METADATA_CACHE_DAYS:
+                # Remove oldest entries to make room
+                while len(cache) >= self.METADATA_CACHE_DAYS:
+                    cache.popitem(last=False)  # Remove oldest (FIFO)
+
+    async def _start_metadata_prefetch(self) -> None:
+        """Start background metadata prefetching."""
+        if self._metadata_prefetch_task and not self._metadata_prefetch_task.done():
+            self._metadata_prefetch_task.cancel()
+            try:
+                await self._metadata_prefetch_task
+            except asyncio.CancelledError:
+                pass
+
+        self._prefetch_paused.clear()
+        self._metadata_prefetch_task = asyncio.create_task(
+            self._background_metadata_prefetch()
+        )
+
+    async def _background_metadata_prefetch(self) -> None:
+        """Background task to prefetch metadata for the last 60 days."""
+        try:
+            logger.info("Starting background metadata prefetch")
+
+            for location in self._locations:
+                await self._prefetch_location_metadata(location)
+
+            logger.info("Background metadata prefetch completed")
+
+        except asyncio.CancelledError:
+            logger.info("Metadata prefetch cancelled")
+        except Exception as e:
+            logger.error(f"Error in background metadata prefetch: {e}")
+
+    async def _prefetch_location_metadata(self, location: Location) -> None:
+        """Prefetch metadata for all cameras in a location."""
+        for camera in location.cameras:
+            if not camera.online:
+                continue
+
+            loc_cam = f"{location.name}/{camera.name}"
+
+            # Initialize cache for this loc_cam if needed
+            if loc_cam not in self._metadata_cache:
+                self._metadata_cache[loc_cam] = OrderedDict()
+
+            cache = self._metadata_cache[loc_cam]
+
+            # Get all available metadata dates for this camera, sorted newest
+            # first
+            available_dates = []
+            if loc_cam in self._metadata_refs:
+                available_dates = sorted(
+                    self._metadata_refs[loc_cam],
+                    key=lambda d: date_str_to_date(d),
+                    reverse=True,
+                )
+
+            # Prefetch up to last 60 found metadata files, skipping already
+            # cached dates
+            prefetch_count = 0
+            for date_str in available_dates:
+                # Pause prefetch if there are active requests
+                while self._prefetch_paused.is_set():
+                    # Brief pause before checking again to let bucket breathe
+                    await asyncio.sleep(0.1)
+
+                # Skip if already cached
+                if date_str in cache:
+                    continue
+
+                # Stop if we've prefetched enough
+                if prefetch_count >= self.METADATA_CACHE_DAYS:
+                    break
+
+                # Use per-key lock to prevent duplicate fetches
+                cache_key = f"{loc_cam}/{date_str}"
+                if cache_key not in self._fetch_locks:
+                    self._fetch_locks[cache_key] = asyncio.Lock()
+
+                async with self._fetch_locks[cache_key]:
+                    # Double-check cache after acquiring lock
+                    if date_str in cache:
+                        continue
+
+                    try:
+                        target_date = date_str_to_date(date_str)
+                        metadata = await self._fetch_metadata_from_s3(
+                            location, camera, target_date
+                        )
+                        if metadata:
+                            # Add to cache (will be inserted at end due to
+                            # OrderedDict)
+                            cache[date_str] = metadata
+                            # Move to end to mark as recently accessed
+                            cache.move_to_end(date_str)
+
+                            logger.debug(
+                                f"Prefetched metadata for {loc_cam}/{date_str}"
+                            )
+                            prefetch_count += 1
+
+                            # Small delay to prevent overwhelming S3
+                            await asyncio.sleep(0.1)
+
+                    except Exception as e:
+                        logger.debug(
+                            f"Failed to prefetch metadata for {loc_cam}/{date_str}: {e}"
+                        )
+
+            if prefetch_count > 0:
+                logger.info(f"Prefetched {prefetch_count} metadata files for {loc_cam}")
+
+    async def get_metadata_for_date(
+        self, location: Location, camera: Camera, day_obs: date
+    ) -> dict | None:
+        """Get metadata for a specific date with caching and interruption
+        handling."""
+        loc_cam = f"{location.name}/{camera.name}"
+        date_str = day_obs.isoformat()
+
+        # Initialize cache for this loc_cam if needed
+        if loc_cam not in self._metadata_cache:
+            self._metadata_cache[loc_cam] = OrderedDict()
+
+        cache = self._metadata_cache[loc_cam]
+
+        # Check cache first
+        if date_str in cache:
+            # Move to end (mark as recently used)
+            cache.move_to_end(date_str)
+            return cache[date_str]
+
+        # Use per-key lock to prevent duplicate fetches
+        cache_key = f"{loc_cam}/{date_str}"
+        if cache_key not in self._fetch_locks:
+            self._fetch_locks[cache_key] = asyncio.Lock()
+
+        async with self._fetch_locks[cache_key]:
+            # Double-check cache after acquiring lock
+            if date_str in cache:
+                cache.move_to_end(date_str)
+                return cache[date_str]
+
+            # Track active request and pause prefetch if needed
+            async with self._request_lock:
+                self._active_requests += 1
+                if self._active_requests == 1:
+                    # First active request - pause prefetch
+                    self._prefetch_paused.set()
+
+            # Fetch from S3
+            try:
+                metadata = await self._fetch_metadata_from_s3(location, camera, day_obs)
+                if metadata:
+                    # Add to cache
+                    cache[date_str] = metadata
+
+                    # Maintain cache size limit
+                    while len(cache) > self.METADATA_CACHE_DAYS:
+                        cache.popitem(last=False)  # Remove oldest
+
+                    # Move to end (mark as recently used)
+                    cache.move_to_end(date_str)
+
+                    logger.debug(f"Cached metadata for {loc_cam}/{date_str}")
+
+                return metadata
+
+            except Exception as e:
+                logger.error(f"Failed to fetch metadata for {loc_cam}/{date_str}: {e}")
+                return None
+            finally:
+                # Resume background prefetch when no active requests
+                async with self._request_lock:
+                    self._active_requests -= 1
+                    if self._active_requests == 0:
+                        # No more active requests - resume prefetch
+                        self._prefetch_paused.clear()
+
+    async def _fetch_metadata_from_s3(
+        self, location: Location, camera: Camera, day_obs: date
+    ) -> dict | None:
+        """Fetch metadata from S3 for a specific date."""
+        client = self._clients[location.name]
+        key = f"{camera.name}/{day_obs.isoformat()}/metadata.json"
+
+        try:
+            metadata = await client.async_get_object(key)
+            return metadata
+        except Exception:
+            return None
+
+    async def _metadata_exists_for_date(
+        self, location: Location, camera: Camera, day_obs: date
+    ) -> bool:
+        """Check if metadata exists for a specific date."""
+        loc_cam = f"{location.name}/{camera.name}"
+        date_str = day_obs.isoformat()
+
+        return (
+            loc_cam in self._metadata_refs and date_str in self._metadata_refs[loc_cam]
+        )
+
+    async def stop_background_tasks(self) -> None:
+        """Stop all background tasks."""
+        if self._metadata_prefetch_task and not self._metadata_prefetch_task.done():
+            self._metadata_prefetch_task.cancel()
+            try:
+                await self._metadata_prefetch_task
+            except asyncio.CancelledError:
+                pass
 
     async def notify_clients_of_day_change(self) -> None:
         """Notify the clients that the day has changed."""

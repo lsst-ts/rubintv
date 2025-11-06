@@ -101,6 +101,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     else:
         yield
 
+    # Stop background tasks
+    await hp.stop_background_tasks()
+
     if redis_task and redis_subscriber is not None:
         await redis_subscriber.stop_async()
         redis_task.cancel()
