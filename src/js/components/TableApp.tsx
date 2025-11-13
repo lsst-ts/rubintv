@@ -11,6 +11,7 @@ import {
   TableAppProps,
   ChannelData,
   Metadata,
+  MetadataRow,
   MetadataColumn,
   FilterOptions,
   SortingOptions,
@@ -42,6 +43,9 @@ export default function TableApp({
     column: "seq",
     order: "desc",
   } as SortingOptions)
+  const [lastKnownMetadataRow, setLastKnownMetadataRow] = useState<
+    MetadataRow | undefined
+  >(undefined)
 
   const [error, setError] = useState(null)
 
@@ -167,7 +171,22 @@ export default function TableApp({
         setError(data.error)
       }
 
+      // Before clearing metadata on day rollover, preserve the last metadata row
       if (datestamp && datestamp !== date) {
+        if (Object.keys(metadata).length > 0) {
+          const lastSeq = Object.keys(metadata)
+            .map(Number)
+            .sort((a, b) => a - b)
+            .pop()
+
+          if (lastSeq !== undefined) {
+            const lastRow = metadata[lastSeq]
+            if (lastRow && "Date begin" in lastRow) {
+              setLastKnownMetadataRow(lastRow)
+            }
+          }
+        }
+
         setDateAndUpdateHeader(datestamp)
         setMetadata({})
         setChannelData({})
@@ -175,11 +194,12 @@ export default function TableApp({
 
       if (dataType === "metadata") {
         setMetadata(data)
+        setLastKnownMetadataRow(undefined)
       } else if (dataType === "channelData") {
         setChannelData(data)
       }
     },
-    [date]
+    [date, metadata]
   )
 
   useEffect(() => {
@@ -226,6 +246,7 @@ export default function TableApp({
               calendar={calendar}
               toggleCalendar={toggleCalendar}
               metadata={metadata}
+              lastKnownMetadataRow={lastKnownMetadataRow}
               isHistorical={isHistorical}
             />
             <div className="table-header row">
