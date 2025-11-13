@@ -447,6 +447,7 @@ export interface AboveTableRowProps {
   isHistorical: boolean
   calendar?: CalendarData
   toggleCalendar?: () => void
+  lastKnownMetadataRow?: MetadataRow
 }
 
 /**
@@ -821,6 +822,7 @@ export interface CameraWithTimeSinceClock extends Camera {
  */
 export interface TimeSinceLastImageClockProps {
   metadata: Metadata
+  lastKnownMetadataRow?: MetadataRow
   camera: CameraWithTimeSinceClock
 }
 
