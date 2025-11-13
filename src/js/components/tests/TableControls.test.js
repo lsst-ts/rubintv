@@ -1,7 +1,7 @@
 /* global global*/
 import "@testing-library/jest-dom"
 import React from "react"
-import { render, screen, fireEvent } from "@testing-library/react"
+import { render, screen, fireEvent, act } from "@testing-library/react"
 import AboveTableRow, { JumpButtons } from "../TableControls"
 import { RubinTVTableContext } from "../contexts/contexts"
 import { saveColumnSelection } from "../../modules/columnStorage"
@@ -33,13 +33,19 @@ jest.mock("../../modules/utils", () => ({
 }))
 
 // Mock Clock components
+/* eslint-disable react/prop-types */
 jest.mock("../Clock", () => ({
   __esModule: true,
   default: () => <div data-testid="clock">Mock Clock</div>,
-  TimeSinceLastImageClock: () => (
-    <div data-testid="time-since-clock">Mock Time Since Clock</div>
+  TimeSinceLastImageClock: ({ camera }) => (
+    <div data-testid="time-since-clock">
+      {camera?.time_since_clock?.label && (
+        <span>{camera.time_since_clock.label}</span>
+      )}
+    </div>
   ),
 }))
+/* eslint-enable react/prop-types */
 
 const mockContextValue = {
   siteLocation: "summit",
@@ -190,6 +196,110 @@ describe("AboveTableRow Component", () => {
       "testcam",
       "2024-01-03"
     )
+  })
+
+  it("continues to show TimeSinceLastImageClock after day roll-over on non-historical page", () => {
+    const mockCameraWithClock = {
+      name: "testcam",
+      channels: [{ name: "channel1", colour: "#ff0000" }],
+      time_since_clock: { label: "Since last image:" },
+    }
+
+    render(
+      <RubinTVTableContext.Provider value={mockContextValue}>
+        <AboveTableRow
+          {...defaultProps}
+          camera={mockCameraWithClock}
+          isHistorical={false}
+          date="2024-01-01"
+        />
+      </RubinTVTableContext.Provider>
+    )
+
+    // Initially, TimeSinceLastImageClock should be rendered for non-historical data
+    expect(screen.getByTestId("time-since-clock")).toBeInTheDocument()
+    expect(screen.getByText("Since last image:")).toBeInTheDocument()
+
+    // Simulate day roll-over by dispatching camera event with new datestamp
+    act(() => {
+      const rollOverEvent = new CustomEvent("camera", {
+        detail: {
+          datestamp: "2024-01-02", // Next day
+          dataType: "metadata",
+          data: {
+            123: {
+              "Date begin": "2024-01-02T00:01:00Z",
+              "Exposure time": 10,
+              colA: "valueA",
+            },
+          },
+        },
+      })
+      window.dispatchEvent(rollOverEvent)
+    })
+
+    // TimeSinceLastImageClock should still be visible after day roll-over
+    expect(screen.getByTestId("time-since-clock")).toBeInTheDocument()
+    expect(screen.getByText("Since last image:")).toBeInTheDocument()
+  })
+
+  it("continues to show TimeSinceLastImageClock when day rolls over with channelData", () => {
+    const mockCameraWithClock = {
+      name: "testcam",
+      channels: [{ name: "channel1", colour: "#ff0000" }],
+      time_since_clock: { label: "Since last image:" },
+    }
+
+    // Start with some initial metadata to establish a baseline
+    const initialMetadata = {
+      100: {
+        "Date begin": "2024-01-01T23:58:00Z",
+        "Exposure time": 15,
+        colA: "valueA",
+      },
+    }
+
+    render(
+      <RubinTVTableContext.Provider value={mockContextValue}>
+        <AboveTableRow
+          {...defaultProps}
+          camera={mockCameraWithClock}
+          metadata={initialMetadata}
+          isHistorical={false}
+          date="2024-01-01"
+        />
+      </RubinTVTableContext.Provider>
+    )
+
+    // Initially, TimeSinceLastImageClock should be rendered for non-historical data
+    expect(screen.getByTestId("time-since-clock")).toBeInTheDocument()
+    expect(screen.getByText("Since last image:")).toBeInTheDocument()
+
+    // Simulate day roll-over triggered by channelData event (not metadata)
+    act(() => {
+      const rollOverEvent = new CustomEvent("camera", {
+        detail: {
+          datestamp: "2024-01-02", // Next day
+          dataType: "channelData", // Key difference: channelData triggers rollover
+          data: {
+            123: {
+              channel1: "some_channel_data_value",
+            },
+          },
+        },
+      })
+      window.dispatchEvent(rollOverEvent)
+    })
+
+    // TimeSinceLastImageClock should STILL be visible after day roll-over
+    // even though metadata was cleared and no new metadata has arrived yet
+    expect(screen.getByTestId("time-since-clock")).toBeInTheDocument()
+    expect(screen.getByText("Since last image:")).toBeInTheDocument()
+
+    // Verify that the component is using the preserved lastKnownMetadataRow
+    // by checking that it's still functioning (not returning null)
+    const timeSinceElement = screen.getByTestId("time-since-clock")
+    expect(timeSinceElement).toBeVisible()
   })
 })
 

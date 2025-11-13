@@ -41,6 +41,7 @@ function padZero(num: number): string {
 
 export function TimeSinceLastImageClock({
   metadata: propsMeta,
+  lastKnownMetadataRow,
   camera,
 }: TimeSinceLastImageClockProps) {
   const [isOnline, setIsOnline] = useState(true)
@@ -95,7 +96,11 @@ export function TimeSinceLastImageClock({
         .pop()
     : undefined
 
-  const row = lastSeq !== undefined ? metadata[lastSeq] : undefined
+  let row = lastSeq !== undefined ? metadata[lastSeq] : undefined
+
+  if (!row && lastKnownMetadataRow) {
+    row = lastKnownMetadataRow
+  }
 
   if (!row) {
     return null
