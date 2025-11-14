@@ -183,10 +183,6 @@ const RubinCalendar = ({
   const [calendarData, setCalendarData] = useState(initialCalendarData)
   const [dayObs, setDayObs] = useState(null)
 
-  if (Object.keys(calendarData).length === 0) {
-    return null
-  }
-
   const sortedYears = Object.keys(calendarData)
     .map(Number)
     .sort((a, b) => a - b)
@@ -233,7 +229,12 @@ const RubinCalendar = ({
         handleCalendarEvent as EventListener
       )
     }
-  }, [])
+  }, [calendarData])
+
+  if (Object.keys(calendarData).length === 0) {
+    return null
+  }
+
   const yearClass = (year: number) => {
     return year == yearToDisplay ? "selected year-title" : "year-title"
   }

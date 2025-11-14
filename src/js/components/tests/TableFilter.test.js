@@ -1,11 +1,11 @@
 import React from "react"
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { FilterDialog } from "../TableFilter"
-import { useModal } from "../Modal"
+import { useModal } from "../../hooks/useModal"
 
 /* global jest, describe, it, expect, beforeEach */
 
-jest.mock("../Modal", () => ({
+jest.mock("../../hooks/useModal", () => ({
   useModal: jest.fn(),
 }))
 

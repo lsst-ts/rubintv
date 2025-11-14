@@ -51,7 +51,7 @@ export default function MediaDisplay({
     return () => {
       window.removeEventListener("channel", handleChannelEvent as EL)
     }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!mediaEvent) {
     return null
