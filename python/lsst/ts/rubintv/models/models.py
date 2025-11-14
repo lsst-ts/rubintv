@@ -5,7 +5,7 @@ import dataclasses
 import re
 from datetime import date, datetime, timedelta, timezone
 from enum import Enum
-from typing import Any
+from typing import Any, TypedDict
 
 from lsst.ts.rubintv import __version__
 from lsst.ts.rubintv.config import config, rubintv_logger
@@ -212,7 +212,6 @@ class Location(HasButton):
 @dataclass
 class Event:
     key: str
-    hash: str = ""
     # derived fields:
     camera_name: str = ""
     day_obs: str = ""
@@ -358,6 +357,8 @@ class NightReportData:
         ) = self.parse_key()
 
     def __hash__(self) -> int:
+        if not re.match(r"^[0-9a-fA-F]+$", self.hash):
+            raise ValueError(f"Hash is not a valid hex value: {self.hash}")
         return int(f"0x{self.hash}", 0)
 
 
@@ -420,7 +421,7 @@ class Heartbeat:
         return {
             "serviceName": self.service_name,
             "isActive": bool(self.state.value),
-            "nextExpected": self.next_expected.isoformat(),  # Convert datetime to string
+            "nextExpected": self.next_expected.isoformat(),
         }
 
 
@@ -458,15 +459,63 @@ class KeyValue(BaseModel):
     value: str | int | float | bool | None = None
 
 
+type StructuredData = dict[str, dict[str, dict[str, set[int | str]]]]
+
+
+class ExtensionDict(TypedDict):
+    default: str
+    exceptions: dict[int | str, str]
+
+
+type ExtensionInfo = dict[str, ExtensionDict]
+type ChannelData = dict[int, dict[str, dict]]
+
+
 @dataclass
 class CameraPageData:
     """Data for a camera page."""
 
-    channel_data: dict[int, dict[str, dict]] = dataclasses.field(default_factory=dict)
-    metadata: dict[str, Any] = dataclasses.field(default_factory=dict)
     per_day: dict[str, dict] = dataclasses.field(default_factory=dict)
     nr_exists: bool = False
 
     def is_empty(self) -> bool:
         """Check if the data is empty."""
-        return not any([self.channel_data, self.metadata, self.per_day, self.nr_exists])
+        return not any(
+            [
+                self.per_day,
+                self.nr_exists,
+            ]
+        )
+
+
+@dataclass
+class HistoricalPageData(CameraPageData):
+    """Data for the historical page."""
+
+    metadata_exists: bool = False
+    structured_data: dict[str, set[int | str]] = dataclasses.field(default_factory=dict)
+    extension_info: ExtensionInfo = dataclasses.field(default_factory=dict)
+
+    def is_empty(self) -> bool:
+        """Check if the data is empty."""
+        base_empty = super().is_empty()
+        return base_empty and not any(
+            [
+                self.metadata_exists,
+                self.structured_data,
+                self.extension_info,
+            ]
+        )
+
+
+@dataclass
+class CurrentPageData(CameraPageData):
+    """Data for the current page."""
+
+    channel_data: ChannelData = dataclasses.field(default_factory=dict)
+    metadata: dict[str, Any] = dataclasses.field(default_factory=dict)
+
+    def is_empty(self) -> bool:
+        """Check if the data is empty."""
+        base_empty = super().is_empty()
+        return base_empty and not any([self.metadata, self.channel_data])

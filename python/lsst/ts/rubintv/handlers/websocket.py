@@ -1,5 +1,4 @@
 import json
-import re
 import traceback
 import uuid
 
@@ -37,11 +36,11 @@ async def data_websocket(
         async with clients_lock:
             clients[client_id] = websocket
             websocket_to_client[websocket] = client_id
-            logger.info("Num clients:", num_clients=len(clients))
+            logger.debug("Num clients:", num_clients=len(clients))
 
         while True:
             raw: str = await websocket.receive_text()
-            logger.info("Ws recvd:", raw=raw)
+            logger.debug("Ws recvd:", raw=raw)
             validated = await validate_raw_message(raw)
             if validated is None:
                 continue
@@ -49,7 +48,7 @@ async def data_websocket(
 
             if "message" in data:
                 service_loc_cam = data["message"]
-                logger.info("Attaching:", id=r_client_id, service=service_loc_cam)
+                logger.debug("Attaching:", id=r_client_id, service=service_loc_cam)
                 await attach_service(r_client_id, service_loc_cam, websocket)
             else:
                 logger.warn("No message:", client_id=r_client_id, data=data)
@@ -58,10 +57,10 @@ async def data_websocket(
         async with clients_lock:
             if websocket in websocket_to_client:
                 client_id = websocket_to_client[websocket]
-                logger.info("Unattaching:", client_id=client_id)
+                logger.debug("Unattaching:", client_id=client_id)
                 del clients[client_id]
                 del websocket_to_client[websocket]
-                logger.info("Num clients:", num_clients=len(clients))
+                logger.debug("Num clients:", num_clients=len(clients))
                 await remove_client_from_services(client_id)
     except Exception as e:
         # Catch all exceptions to prevent the websocket from crashing
@@ -86,7 +85,7 @@ async def validate_raw_message(raw: str) -> tuple[uuid.UUID, dict] | None:
 
 
 async def remove_client_from_services(client_id: uuid.UUID) -> None:
-    logger.info("Removing client from services list...", client_id=client_id)
+    logger.debug("Removing client from services list...", client_id=client_id)
     async with services_lock:
         # First remove the client_id from all services
         for _, client_ids in services_clients.items():
@@ -103,7 +102,7 @@ async def remove_client_from_services(client_id: uuid.UUID) -> None:
         # Finally, delete those services
         for service in services_to_remove:
             del services_clients[service]
-    logger.info("Removed client.")
+    logger.debug("Removed client.")
 
 
 async def attach_simple_service(
@@ -130,11 +129,7 @@ async def attach_simple_service(
         The key to use for storing in services_clients
     """
     # Register client for this service
-    async with services_lock:
-        if service_key not in services_clients:
-            services_clients[service_key] = [client_id]
-        else:
-            services_clients[service_key].append(client_id)
+    await register_client_service(client_id, service_key)
 
     payload = None
     if service == Service.HISTORICALSTATUS:
@@ -211,6 +206,14 @@ async def attach_service(
         return
 
     location = find_first(locations, "name", location_name)
+    if location is None:
+        logger.error(
+            "No such location:",
+            service=service,
+            client_id=client_id,
+            location=location_name,
+        )
+        return
 
     if extra:
         channel_name = extra[0]
@@ -219,25 +222,27 @@ async def attach_service(
             return
 
     await notify_new_client(websocket, location, camera, channel_name, service)
-
-    async with services_lock:
-        if full_service_name in services_clients:
-            services_clients[full_service_name].append(client_id)
-        else:
-            services_clients[full_service_name] = [client_id]
+    await register_client_service(client_id, full_service_name)
 
     # If registering a service with location and camera and channel,
-    # also register a service with just location and camera.
+    # also register a service with just location and camera. This
+    # allows to send notifications to all clients interested in
+    # that camera, regardless of channel.
     if not channel_name:
         return
 
     loc_cam_service = f"{service_str} {location_name}/{camera_name}"
+    await register_client_service(client_id, loc_cam_service)
 
+
+async def register_client_service(
+    client_id: uuid.UUID, client_service_identifier: str
+) -> None:
     async with services_lock:
-        if loc_cam_service in services_clients:
-            services_clients[loc_cam_service].append(client_id)
+        if client_service_identifier in services_clients:
+            services_clients[client_service_identifier].append(client_id)
         else:
-            services_clients[loc_cam_service] = [client_id]
+            services_clients[client_service_identifier] = [client_id]
 
 
 async def is_valid_client_request(data: dict) -> bool:
@@ -247,12 +252,6 @@ async def is_valid_client_request(data: dict) -> bool:
         logger.warn("Received json without client_id")
         return False
     return client_id in clients.keys()
-
-
-async def is_valid_service(service: str) -> bool:
-    services_str = "|".join(valid_services)
-    valid_req = re.compile(rf"^({services_str}) [\w-]+(\/\w+)+$")
-    return valid_req.fullmatch(service) is not None
 
 
 async def is_valid_location_camera(

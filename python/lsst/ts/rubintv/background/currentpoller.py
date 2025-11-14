@@ -611,7 +611,7 @@ class CurrentPoller:
                     yield MessageType.CAMERA_PER_DAY, latest_per_day
 
     async def get_all_channel_names_for_seq_num(
-        self, location_name: str, camera_name: str, seq_num: int
+        self, location_name: str, camera_name: str, seq_num: int | str
     ) -> list[str]:
         """Get all channel names for a given sequence number.
         Parameters

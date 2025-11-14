@@ -88,7 +88,7 @@ class RubinDataMocker:
                     if not camera.online:
                         continue
 
-                    self.location_channels[loc_name].append(camera.channels)
+                    self.location_channels[loc_name].extend(camera.channels)
                     self.add_seq_objs(location, camera)
 
     def add_seq_objs(
@@ -205,7 +205,11 @@ class RubinDataMocker:
         ]
 
     def mock_night_report_plot(
-        self, location: Location, camera: Camera
+        self,
+        location: Location,
+        camera: Camera,
+        date_str: str = today.isoformat(),
+        group: str = "Test",
     ) -> dict[str, str]:
         """Generate a mock night report for a camera.
 
@@ -221,7 +225,7 @@ class RubinDataMocker:
         night_report_object: `dict`[`str`, `str`]
             A simple dict that a `NightReport` instance can be made using.
         """
-        key = f"{camera.name}/{today}/night_report/Test/filename.test"
+        key = f"{camera.name}/{date_str}/night_report/{group}/filename.test"
         content = "".join([chr(random.randint(32, 126)) for _ in range(20)])
         hash: None | str = None
         if self.s3_required:
