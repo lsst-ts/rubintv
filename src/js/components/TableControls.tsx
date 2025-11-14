@@ -1,6 +1,18 @@
-import React, { useEffect, useState, useContext, KeyboardEvent } from "react"
+import React, {
+  useEffect,
+  useState,
+  useContext,
+  KeyboardEvent,
+  useMemo,
+} from "react"
 import Clock, { TimeSinceLastImageClock } from "./Clock"
-import { _getById, getImageAssetUrl } from "../modules/utils"
+import {
+  _getById,
+  findPrevNextDate,
+  getCameraPageForDateUrl,
+  getImageAssetUrl,
+  unpackCalendarAsDateList,
+} from "../modules/utils"
 import { saveColumnSelection } from "../modules/columnStorage"
 import {
   Metadata,
@@ -8,10 +20,12 @@ import {
   AboveTableRowProps,
   TableControlProps,
   DownloadMetadataButtonProps,
+  CalendarData,
 } from "./componentTypes"
 import { RubinTVTableContext } from "./contexts/contexts"
 
 export default function AboveTableRow({
+  locationName,
   camera,
   availableColumns,
   selected,
@@ -19,11 +33,84 @@ export default function AboveTableRow({
   date,
   metadata,
   isHistorical,
+  calendar,
+  toggleCalendar,
 }: AboveTableRowProps) {
+  const [calendarData, setCalendarData] = useState<CalendarData | null>(
+    calendar || null
+  )
+
+  useEffect(() => {
+    function handleCalendarEvent(event: CustomEvent) {
+      const { dataType, data: calendarData } = event.detail
+      if (dataType !== "calendarUpdate") {
+        return
+      }
+      setCalendarData(calendarData)
+    }
+    window.addEventListener("calendar", handleCalendarEvent as EventListener)
+    return () => {
+      window.removeEventListener(
+        "calendar",
+        handleCalendarEvent as EventListener
+      )
+    }
+  }, [calendar])
+
+  const dateList = useMemo(
+    () => unpackCalendarAsDateList(calendarData || {}),
+    [calendarData]
+  )
+  const { prevDate, nextDate } = findPrevNextDate(dateList, date)
+
+  function handleJumpToDate(targetDate: string) {
+    window.location.href = getCameraPageForDateUrl(
+      locationName,
+      camera.name,
+      targetDate
+    )
+  }
+
+  function handleKeyToggleCalendar(e: KeyboardEvent<HTMLSpanElement>) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault()
+      if (typeof toggleCalendar === "function") {
+        toggleCalendar()
+      }
+    }
+  }
+
   return (
     <div className="row">
       <h3 id="the-date">
-        Data for day: <span className="date">{date}</span>
+        {prevDate && (
+          <button
+            className="button jump-to-date prev-date"
+            onClick={() => {
+              handleJumpToDate(prevDate)
+            }}
+            aria-label="Jump to previous date"
+          ></button>
+        )}
+        <span
+          role="button"
+          className="date"
+          aria-label="Toggle calendar view"
+          onClick={toggleCalendar}
+          onKeyDown={handleKeyToggleCalendar}
+          tabIndex={0}
+        >
+          {date}
+        </span>
+        {nextDate && (
+          <button
+            className="button jump-to-date next-date"
+            onClick={() => {
+              handleJumpToDate(nextDate)
+            }}
+            aria-label="Jump to next date"
+          ></button>
+        )}
       </h3>
       <TableControls
         cameraName={camera.name}
@@ -177,19 +264,22 @@ function TableControls({
 }
 
 export function JumpButtons() {
-  const table = _getById("table") as HTMLTableElement
   const jumpArrowImage = getImageAssetUrl("jump-arrow.svg")
+  const handleTableJump = (toTop: boolean) => {
+    const table = _getById("table-section") as HTMLTableElement
+    table.scrollIntoView(toTop)
+  }
   return (
     <div className="jump-buttons">
       <button
-        onClick={() => table.scrollIntoView()}
+        onClick={() => handleTableJump(true)}
         className="jump-button to-top"
         title="to top"
       >
         <img src={jumpArrowImage} />
       </button>
       <button
-        onClick={() => table.scrollIntoView(false)}
+        onClick={() => handleTableJump(false)}
         className="jump-button to-bottom"
         title="to bottom"
       >

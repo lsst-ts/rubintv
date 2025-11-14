@@ -21,39 +21,10 @@
 {% block content %}
   {% if historicalBusy %}
     {% include "camera_parts/historical-busy-message.jinja" %}
-  {% else %}
-  <section id="calendar" class="calendar">
-   {# React Calendar root here #}
-  </section>
-
-  <div id="per-day" class="columns">
-    {# React PerDay root here #}
-  </div>
-  <section>
-    <nav id="per-image-menu" class="channel-menu" role="navigation">
-      <h3>Current image channels</h3>
-      <ul class="channels flr">
-        {# Use snake_cased per_day as it's an attribute in a Python object #}
-        {% for channel in camera.channels if not channel.per_day %}
-        <li class="channel service" id="{{ channel.name }}">
-          <a  class="button button-large {{ channel.name }}"
-              style="background-color: {{ channel.colour }}; color: {{ channel.text_colour}};"
-              href="{{url_for('current_event',
-                    location_name=location.name,
-                    camera_name=camera.name,
-                    channel_name=channel.name) }}" target="_blank">
-            <span>{{ channel.title }}</span>
-          </a>
-        </li>
-        {% endfor %}
-      </ul>
-    </nav>
-  </section>
-  <section id="table">
-    {# React TableApp root here #}
-  </section>
   {% endif %}
-
+  <div id="camera-table-main">
+    {# React CameraTable root here #}
+  </div>
 {% endblock content %}
 
 {% block footer_scripts %}
@@ -62,6 +33,7 @@
     window.APP_DATA.nightReportLink = {{ nr_link | tojson }}
     window.APP_DATA.calendar = {{ calendar | tojson }}
     window.APP_DATA.isHistorical = {{ isHistorical | tojson }}
+    window.APP_DATA.seqNums = {{ seqNums | tojson if seqNums is not none else 'undefined' }}
   </script>
   <script src='{{ url_for("static", path="assets/camera-table.js") }}'></script>
   {{ super() }}

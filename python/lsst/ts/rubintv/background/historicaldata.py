@@ -115,6 +115,7 @@ class HistoricalPoller:
                     logger.info("Historical polling took:", time_taken=time_taken)
 
                     await notify_all_status_change(historical_busy=False)
+                    await self.notify_update_all_calendars()
                 else:
                     if self.test_mode:
                         break
@@ -133,6 +134,26 @@ class HistoricalPoller:
                         MessageType.DAY_CHANGE,
                         f"{loc.name}/{cam.name}",
                         "from historical",
+                    )
+
+    async def notify_update_all_calendars(self) -> None:
+        """Notify all clients to update their calendars."""
+        await asyncio.sleep(3)  # slight delay to ensure data is ready
+        for loc in self._locations:
+            for cam in loc.cameras:
+                if cam.online:
+                    loc_cam = f"{loc.name}/{cam.name}"
+                    calendar = self._calendar.get(loc_cam, {})
+                    logger.info(
+                        "Notifying calendar update for",
+                        loc_cam=loc_cam,
+                        calendar_size=len(calendar),
+                    )
+                    await notify_ws_clients(
+                        Service.CALENDAR,
+                        MessageType.CALENDAR_UPDATE,
+                        loc_cam,
+                        calendar,
                     )
 
     async def _refresh_location_store(self, location: Location) -> None:

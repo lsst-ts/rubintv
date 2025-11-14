@@ -28,6 +28,14 @@ async def notify_ws_clients(
 ) -> None:
     service_loc_cam_chan = " ".join([service.value, loc_cam])
     to_notify = await get_clients_to_notify(service_loc_cam_chan)
+    if not to_notify:
+        return
+    logger.info(
+        "Notifying clients",
+        service=service.value,
+        message_type=message_type.value,
+        loc_cam=loc_cam,
+    )
     await notify_clients(to_notify, service, message_type, payload)
 
 
@@ -133,15 +141,23 @@ async def get_clients_to_notify(service_cam_id: str) -> list[UUID]:
     return to_notify
 
 
-async def notify_all_status_change(historical_busy: bool) -> None:
-    service = Service.HISTORICALSTATUS
-    messageType = MessageType.HISTORICAL_STATUS
-    key = service.value
-    tasks = []
+async def get_websockets_for_service(service_key: str) -> list[WebSocket]:
+    """Get all websockets for clients subscribed to a service.
+
+    Parameters
+    ----------
+    service_key : str
+        The service key to look up clients for
+
+    Returns
+    -------
+    list[WebSocket]
+        List of websockets for clients subscribed to the service
+    """
     async with services_lock:
-        if key not in services_clients:
-            return
-        client_ids = services_clients[key]
+        if service_key not in services_clients:
+            return []
+        client_ids = services_clients[service_key]
 
     # Gather websockets for the clients
     async with clients_lock:
@@ -149,13 +165,47 @@ async def notify_all_status_change(historical_busy: bool) -> None:
             clients[client_id] for client_id in client_ids if client_id in clients
         ]
 
-    # Prepare tasks for each websocket
-    for websocket in websockets:
-        task = send_notification(websocket, service, messageType, historical_busy)
-        tasks.append(task)
+    return websockets
 
-    # Use asyncio.gather to handle all tasks concurrently
+
+async def notify_service_clients(
+    service_key: str,
+    service: Service,
+    message_type: MessageType,
+    payload: Any,
+) -> None:
+    """Send notifications to all clients subscribed to a service.
+
+    Parameters
+    ----------
+    service_key : str
+        The service key to look up clients for
+    service : Service
+        The service enum value
+    message_type : MessageType
+        The message type enum value
+    payload : Any
+        The payload to send
+    """
+    websockets = await get_websockets_for_service(service_key)
+
+    if not websockets:
+        return
+
+    tasks = [
+        send_notification(websocket, service, message_type, payload)
+        for websocket in websockets
+    ]
+
     await asyncio.gather(*tasks, return_exceptions=True)
+
+
+async def notify_all_status_change(historical_busy: bool) -> None:
+    service = Service.HISTORICALSTATUS
+    message_type = MessageType.HISTORICAL_STATUS
+    service_key = service.value
+
+    await notify_service_clients(service_key, service, message_type, historical_busy)
 
 
 async def notify_redis_detector_status(data: dict) -> None:
@@ -172,24 +222,6 @@ async def notify_redis_detector_status(data: dict) -> None:
     """
     service = Service.DETECTORS
     message_type = MessageType.DETECTOR_STATUS
-    key = "detectors"
-    tasks = []
+    service_key = "detectors"
 
-    async with services_lock:
-        if key not in services_clients:
-            return
-        client_ids = services_clients[key]
-
-    # Gather websockets for the clients
-    async with clients_lock:
-        websockets = [
-            clients[client_id] for client_id in client_ids if client_id in clients
-        ]
-
-    # Prepare tasks for each websocket
-    for websocket in websockets:
-        task = send_notification(websocket, service, message_type, data)
-        tasks.append(task)
-
-    # Use asyncio.gather to handle all tasks concurrently
-    await asyncio.gather(*tasks, return_exceptions=True)
+    await notify_service_clients(service_key, service, message_type, data)

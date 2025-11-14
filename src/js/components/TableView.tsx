@@ -1,4 +1,4 @@
-import React, { useContext } from "react"
+import React, { useContext, useLayoutEffect, useMemo } from "react"
 import { useModal } from "../hooks/useModal"
 import { FilterDialog } from "./TableFilter"
 import {
@@ -6,6 +6,7 @@ import {
   _elWithAttrs,
   replaceInString,
   setCameraBaseUrl,
+  rangeSetFromLimits,
 } from "../modules/utils"
 import {
   RubinTVContextType,
@@ -118,6 +119,7 @@ function TableRow({
   channelRow,
   metadataColumns,
   metadataRow,
+  highlightRow,
 }: TableRowProps) {
   const { dayObs, siteLocation } = useContext(
     RubinTVTableContext
@@ -155,8 +157,10 @@ function TableRow({
     ? (metadataRow["controller"] as string)
     : undefined
 
+  const rowClass = highlightRow ? "highlight-row" : ""
+
   return (
-    <tr>
+    <tr className={rowClass}>
       <td className="grid-cell seq" id={`seqNum-${seqNum}`}>
         {seqNum}
       </td>
@@ -208,16 +212,21 @@ function TableBody({
   metadataColumns,
   metadata,
   sortOn,
+  seqNumRange,
 }: TableBodyProps) {
   const allSeqs = Array.from(
     new Set(Object.keys(channelData).concat(Object.keys(metadata)))
   )
   const seqs = applySorting(allSeqs, sortOn, metadata)
+  const filledSeqRange =
+    seqNumRange !== undefined ? rangeSetFromLimits(seqNumRange) : undefined
+
   return (
     <tbody>
       {seqs.map((seqNum) => {
         const metadataRow = seqNum in metadata ? metadata[seqNum] : {}
         const channelRow = seqNum in channelData ? channelData[seqNum] : {}
+        const highlightRow = filledSeqRange?.has(seqNum) ?? false
         return (
           <TableRow
             key={seqNum}
@@ -227,6 +236,7 @@ function TableBody({
             channelRow={channelRow}
             metadataColumns={metadataColumns}
             metadataRow={metadataRow}
+            highlightRow={highlightRow}
           />
         )
       })}
@@ -386,7 +396,29 @@ export default function TableView({
   filterOn,
   filteredRowsCount,
   sortOn,
+  seqNumsToShow,
 }: TableViewProps) {
+  const seqNumRange: [number, number] | undefined = useMemo(() => {
+    if (seqNumsToShow === undefined) {
+      return undefined
+    }
+    return [Math.min(...seqNumsToShow), Math.max(...seqNumsToShow)]
+  }, [seqNumsToShow])
+
+  // Scroll to highlighted row on initial render.
+  // Runs only once when component mounts.
+  useLayoutEffect(() => {
+    if (seqNumRange !== undefined && seqNumRange.length === 2) {
+      const highlightedRow = document.querySelector(".highlight-row")
+      if (highlightedRow) {
+        highlightedRow.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        })
+      }
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
   if (filterColumnSet && filteredRowsCount == 0) {
     return (
@@ -404,6 +436,7 @@ export default function TableView({
         metadataColumns={metadataColumns}
         metadata={metadata}
         sortOn={sortOn}
+        seqNumRange={seqNumRange}
       />
     </table>
   )

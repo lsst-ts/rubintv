@@ -1,41 +1,12 @@
 import React, { useState, useEffect } from "react"
 import { homeUrl } from "../config"
 import { getImageAssetUrl } from "../modules/utils"
+import Button from "./Button"
 import {
-  ButtonProps,
   PerDayChannelsProps,
   NightReportLinkProps,
   PerDayProps,
 } from "../components/componentTypes"
-
-function Button({
-  clsName,
-  url,
-  bckCol,
-  iconUrl,
-  logoURL,
-  label,
-  date,
-  textColour,
-  textShadow,
-}: ButtonProps) {
-  const style = {
-    backgroundColor: bckCol,
-    color: textColour,
-    backgroundImage: logoURL ? `url(${logoURL})` : "none",
-    backgroundSize: "contain",
-  }
-  clsName = logoURL ? clsName + " button-logo" : clsName
-  clsName = textShadow ? clsName + " t-shadow" : clsName
-
-  return (
-    <a className={`button button-large ${clsName}`} href={url} style={style}>
-      {iconUrl && <img src={iconUrl} />}
-      {label}
-      {date && <span className="date">{date}</span>}
-    </a>
-  )
-}
 
 function PerDayChannels({
   locationName,
@@ -51,7 +22,6 @@ function PerDayChannels({
     )
     return null
   }
-
   return (
     perDay &&
     Object.entries(perDay).length > 0 && (
@@ -176,8 +146,15 @@ export default function PerDay({
     }
   }, [date]) // Only reattach the event listener if the date changes
 
+  const hasPerDayData = perDay && Object.keys(perDay).length > 0
+  const hasNightReportLink = nightReportLink !== ""
+
+  if (!hasPerDayData && !hasNightReportLink) {
+    return null
+  }
+
   return (
-    <>
+    <div id="per-day" className="columns">
       <PerDayChannels
         locationName={locationName}
         camera={camera}
@@ -191,6 +168,6 @@ export default function PerDay({
         date={date}
         nightReportLink={nightReportLink}
       />
-    </>
+    </div>
   )
 }

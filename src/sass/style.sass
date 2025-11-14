@@ -164,7 +164,7 @@ h3
   margin-bottom: 0.5em
 
 section
-  padding-bottom: 2em
+  margin-bottom: 2em
 
 .columns
   display: flex
@@ -275,6 +275,31 @@ section
 #the-date
   font-size: 2.2em
   margin-bottom: 0
+  display: flex
+  align-items: center
+  border-radius: 12px
+  background: rgba(0,0,0,0.2)
+  padding: 0.1em 0
+  cursor: pointer
+  .date
+    margin: 0 0.2em
+
+  .jump-to-date
+    width: 32px
+    height: 32px
+    border: none
+    background-color: transparent
+    background-image: url(../images/sorting-indicator.svg)
+    background-repeat: no-repeat
+    background-position: center
+    background-size: contain
+    cursor: pointer
+    padding: 4px
+    box-shadow: none
+    &.prev-date
+      transform: rotate(90deg)
+    &.next-date
+      transform: rotate(270deg)
 
 .above-table-sticky
   min-width: 100%
@@ -300,6 +325,7 @@ section
       margin-bottom: 0
 
 .table-container
+  margin-top: -1em
   width: 100%
 
 .camera-table
@@ -307,6 +333,10 @@ section
   border-spacing: 2px
   margin-top: -2px
   border-collapse: separate
+
+  .highlight-row .grid-cell
+    mix-blend-mode: hard-light
+    background-color: #e9feff
 
 .grid-title
   position: absolute

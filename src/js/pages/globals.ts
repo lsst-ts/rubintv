@@ -35,6 +35,7 @@ declare global {
       event: ExposureEvent | null
       allChannelNames: string[]
       isStale: boolean
+      seqNums: number[] | undefined
     }
   }
 }
