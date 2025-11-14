@@ -26,7 +26,6 @@ class CIMemoryTestMocker(RubinDataMocker):
     def __init__(
         self,
         locations: list[Location],
-        num_sequences_per_channel: int = 50,  # Reduced for CI speed
         metadata_entries_per_camera: int = 20,  # Reduced for CI speed
         **kwargs: Any,
     ) -> None:
@@ -36,12 +35,9 @@ class CIMemoryTestMocker(RubinDataMocker):
         ----------
         locations : list[Location]
             List of locations to mock data for
-        num_sequences_per_channel : int
-            Number of sequence objects to create per channel (default: 50)
         metadata_entries_per_camera : int
             Number of metadata entries per camera (default: 20)
         """
-        self.num_sequences_per_channel = num_sequences_per_channel
         # Enable metadata creation with CI-appropriate amounts
         kwargs.setdefault("include_metadata", True)
         kwargs.setdefault("metadata_entries_per_camera", metadata_entries_per_camera)
@@ -202,7 +198,7 @@ async def setup_ci_memory_test() -> (
 
 @pytest.mark.asyncio
 async def test_comprehensive_memory_usage() -> None:
-    """Comprehensive memory leak test optimized for CI (runs for under 30
+    """Comprehensive memory leak test optimized for CI (runs for under 20
     seconds).
 
     This test validates:
@@ -225,13 +221,15 @@ async def test_comprehensive_memory_usage() -> None:
 
         # Let it run for a controlled period
         try:
-            await asyncio.wait_for(poller_task, timeout=12.0)  # 12s timeout with buffer
+            await asyncio.wait_for(poller_task, timeout=17.0)
         except asyncio.TimeoutError:
             # Expected if the poller doesn't self-terminate
             poller_task.cancel()
             try:
                 await poller_task
             except asyncio.CancelledError:
+                # Cancellation is expected when cleaning up the poller task
+                # after timeout.
                 pass
 
         # Measure final state

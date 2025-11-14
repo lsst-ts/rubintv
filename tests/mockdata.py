@@ -42,7 +42,7 @@ class RubinDataMocker:
             Set to True if S3 operations are required, otherwise defaults
             to False.
         populate: `bool`, `optional`
-            Set to False if an empty mocker is requires. Defaults to True.
+            Set to False if an empty mocker is required. Defaults to True.
         include_metadata : `bool`, `optional`
             Whether to create metadata files for cameras. Defaults to False.
         metadata_entries_per_camera : `int`, `optional`
@@ -98,7 +98,7 @@ class RubinDataMocker:
                     if not camera.online:
                         continue
 
-                    self.location_channels[loc_name].append(camera.channels)
+                    self.location_channels[loc_name].extend(camera.channels)
                     self.add_seq_objs(location, camera)
 
         # Create metadata files if enabled
@@ -346,7 +346,7 @@ class RubinDataMocker:
                     metadata_key = f"{loc_name}-{camera_name}-metadata-{i:03d}"
                     metadata_content = {
                         "seq_num": str(i),
-                        "date_obs": f"{self.day_obs}T10:00:00",
+                        "date_obs": f"{self.day_obs}",
                         "camera": camera_name,
                         "location": loc_name,
                         "image_type": "OBJECT",
@@ -364,12 +364,14 @@ class RubinDataMocker:
 
                 # Create S3 metadata file once per camera if S3 is required
                 if self.s3_required:
-                    self._create_s3_metadata(location, camera, 0, {})
+                    self._create_s3_metadata(location, camera)
 
         logger.info(f"Created {len(self.metadata_files)} metadata files for testing")
 
     def _create_s3_metadata(
-        self, location: Location, camera: Camera, seq_num: int, metadata_content: dict
+        self,
+        location: Location,
+        camera: Camera,
     ) -> None:
         """Create metadata files in S3 for a camera.
 
@@ -379,10 +381,6 @@ class RubinDataMocker:
             The location where the camera is located
         camera : Camera
             The camera to create metadata for
-        seq_num : int
-            The sequence number for this metadata entry
-        metadata_content : dict
-            The metadata content to store
         """
         bucket_name = location.bucket_name
         # Use the expected metadata.json pattern that CurrentPoller recognizes
@@ -402,7 +400,7 @@ class RubinDataMocker:
                     "camera": camera.name,
                     "day_obs": str(self.day_obs),
                     "seq_num": i,
-                    "timestamp": f"{self.day_obs}T{i:02d}:00:00.000000",
+                    "timestamp": f"{self.day_obs}",
                     "image_type": "OBJECT",
                     "exposure_time": 30.0,
                     "filter": "r",

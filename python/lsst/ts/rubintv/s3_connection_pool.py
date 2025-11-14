@@ -110,6 +110,17 @@ class S3ConnectionPool:
                 "gc_threshold": self._gc_threshold,
             }
 
+    def force_gc_and_reset(self) -> None:
+        """Force garbage collection and reset access counter.
+
+        This is useful for testing or when you want to ensure
+        memory is cleaned up immediately.
+        """
+        with self._lock:
+            gc.collect()
+            self._access_count = 0
+        logger.info("Forced garbage collection and reset access counter")
+
 
 # Global connection pool instance
 _global_pool = S3ConnectionPool()
@@ -165,7 +176,4 @@ def force_garbage_collection() -> None:
     This is useful for testing or when you want to ensure
     memory is cleaned up immediately.
     """
-    gc.collect()
-    with _global_pool._lock:
-        _global_pool._access_count = 0
-    logger.info("Forced garbage collection and reset access counter")
+    _global_pool.force_gc_and_reset()
