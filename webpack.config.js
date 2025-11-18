@@ -68,11 +68,12 @@ module.exports = {
         },
         common: {
           name: "common",
-          minChunks: 1,
+          minChunks: 2,
           chunks: "all",
           priority: -20,
           reuseExistingChunk: true,
           enforce: true,
+          test: /[\\/]src[\\/]js[\\/]modules[\\/]/, // Only bundle modules, not pages
         },
       },
     },
