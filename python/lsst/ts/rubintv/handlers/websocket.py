@@ -141,7 +141,7 @@ async def attach_simple_service(
         payload = await websocket.app.state.historical.is_busy()
     elif service == Service.DETECTORS:
         if hasattr(websocket.app.state, "redis_subscriber"):
-            payload = await websocket.app.state.redis_subscriber.read_initial_state()
+            payload = await websocket.app.state.redis_subscriber.get_current_state()
     if payload:
         await send_notification(
             websocket,
