@@ -73,7 +73,7 @@ module.exports = {
           priority: -20,
           reuseExistingChunk: true,
           enforce: true,
-          test: /[\\/]src[\\/]js[\\/]modules[\\/]/, // Only bundle modules, not pages
+          test: /[\\/]src[\\/]js[\\/](modules|components)[\\/]/,
         },
       },
     },

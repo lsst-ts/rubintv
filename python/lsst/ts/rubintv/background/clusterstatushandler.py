@@ -79,7 +79,8 @@ class DetectorStatusHandler:
 
     async def read_initial_state(self) -> None:
         """Read the latest entry from each stream to get current state and
-        send notifications."""
+        send notifications.
+        """
         for stream_key, name in self.stream_keys.items():
             try:
                 # Get just the latest entry since we have maxlen=2
@@ -113,7 +114,7 @@ class DetectorStatusHandler:
 
         Returns
         -------
-        dict[str, DecodedRedisValue] | None
+        `dict` [`str`, `DecodedRedisValue`] | None
             Dictionary mapping stream names to their current decoded state,
             or None if no state is available.
         """
@@ -182,13 +183,13 @@ def _decode_stream_message(data: dict[bytes, bytes]) -> DecodedRedisValue:
 
     Parameters
     ----------
-    data : dict[bytes, bytes]
+    data : `dict` [`bytes`, `bytes`]
         Raw Redis stream message data. Expected to contain a 'data' field
         with JSON encoded detector status information.
 
     Returns
     -------
-    DecodedRedisValue
+    decoded : `DecodedRedisValue`
         Decoded message data in the expected format
     """
     try:
