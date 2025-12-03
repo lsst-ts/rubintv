@@ -103,7 +103,7 @@ async def remove_client_from_services(client_id: UUID | None) -> None:
     services and remove the client from the clients dictionary.
     Parameters
     ----------
-    client_id : UUID | None
+    client_id : `UUID` | `None`
         The ID of the client to remove. If None, do nothing.
     """
     if client_id is None:
@@ -173,7 +173,7 @@ async def notify_redis_detector_status(data: dict) -> None:
 
     Parameters
     ----------
-    data : dict
+    data : `dict`
         The detector status data to send to clients. Contains:
         - set: The name of the set (e.g., 'sfmset0', 'aosset0')
         - event: The event type
@@ -210,7 +210,7 @@ async def notify_controls_readback_change(data: dict) -> None:
 
     Parameters
     ----------
-    data : dict
+    data : `dict`
         The controls readback data to send to clients. Contains:
         - key: The key of the control
         - value: The actual readback value from Redis

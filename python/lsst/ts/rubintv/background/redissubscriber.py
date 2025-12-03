@@ -14,11 +14,15 @@ class RedisSubscriber:
     async def subscribe_to_keys(self, keys: list[str]) -> Any:
         """Subscribe to notifications for specific key patterns.
 
-        Args:
-            keys: List of key patterns to monitor
+        Parameters
+        ----------
+        keys: `list` `[`str`]
+            List of key patterns to monitor.
 
-        Returns:
-            Redis PubSub object
+        Returns
+        -------
+        `dict`
+            Redis PubSub object.
         """
         pubsub = self.redis_client.pubsub()
 
@@ -32,14 +36,26 @@ class RedisSubscriber:
         return pubsub
 
     async def listen(self, pubsub: Any) -> None:
-        """Listen for keyspace notifications and retrieve updated values."""
+        """Listen for keyspace notifications and retrieve updated values.
+        Parameters
+        ----------
+        pubsub: `dict`
+            Redis PubSub object.
+        """
         while True:
             message = await pubsub.get_message(ignore_subscribe_messages=True)
             if message:
                 await self.handle_keyspace_event(message)
 
     async def handle_keyspace_event(self, message: dict[str, Any]) -> None:
-        """Handle keyspace notification and retrieve the new value."""
+        """Handle keyspace notification and retrieve the new value.
+        Notifications are sent when keys are modified in Redis.
+
+        Parameters
+        ----------
+        message: `dict`
+            Message received from Redis PubSub.
+        """
         # Extract key from channel name
         # Channel format: __keyspace@0__:actual_key
         channel = message.get("channel", b"").decode("utf-8")
