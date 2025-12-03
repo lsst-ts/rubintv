@@ -33,19 +33,19 @@ class RubinDataMocker:
 
         Parameters
         ----------
-        locations : `list[`Location`]`
+        locations : `list` [`Location`]
             A list of Location objects representing various observation
             locations.
-        day_obs : `date`, `optional`
+        day_obs : `date`, optional
             The observation day, defaults to today.
-        s3_required : `bool`, `optional`
+        s3_required : `bool`, optional
             Set to True if S3 operations are required, otherwise defaults
             to False.
-        populate: `bool`, `optional`
+        populate: `bool`, optional
             Set to False if an empty mocker is required. Defaults to True.
-        include_metadata : `bool`, `optional`
+        include_metadata : `bool`, optional
             Whether to create metadata files for cameras. Defaults to False.
-        metadata_entries_per_camera : `int`, `optional`
+        metadata_entries_per_camera : `int`, optional
             Number of metadata entries per camera. Defaults to 100.
         """
         self.last_seq: dict[str, int] = {}
@@ -205,12 +205,16 @@ class RubinDataMocker:
 
         Parameters
         ----------
-        location : Location
+        location : `Location`
             The location for which to retrieve the sequence events.
+        camera : `Camera`
+            The camera for which to retrieve the sequence events.
+        channel : `Channel`
+            The channel for which to retrieve the sequence events.
 
         Returns
         -------
-        list[Event]
+        `list` [`Event`]
             A list of Event objects representing sequence events.
         """
         loc_cam = f"{location.name}/{camera.name}"
@@ -377,9 +381,9 @@ class RubinDataMocker:
 
         Parameters
         ----------
-        location : Location
+        location : `Location`
             The location where the camera is located
-        camera : Camera
+        camera : `Camera`
             The camera to create metadata for
         """
         bucket_name = location.bucket_name
@@ -425,7 +429,7 @@ class RubinDataMocker:
 
         Returns
         -------
-        list[str]
+        metadata_files : `list` [`str`]
             List of metadata file keys that were created
         """
         return self.metadata_files.copy()
@@ -435,12 +439,12 @@ class RubinDataMocker:
 
         Parameters
         ----------
-        key : str
+        key : `str`
             The metadata key to retrieve
 
         Returns
         -------
-        dict | None
+        metadata : `dict` | `None`
             The metadata content, or None if not found
         """
         return self.metadata.get(key)

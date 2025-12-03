@@ -37,11 +37,11 @@ class S3ConnectionPool:
 
         Parameters
         ----------
-        profile_name : str
+        profile_name : `str`
             AWS profile name for authentication
-        bucket_name : str
+        bucket_name : `str`
             S3 bucket name
-        endpoint_url : str | None
+        endpoint_url : `str` | `None`
             S3 endpoint URL, None for default
 
         Returns
@@ -100,7 +100,7 @@ class S3ConnectionPool:
 
         Returns
         -------
-        dict[str, int]
+        `dict` [`str`, `int`]
             dictionary with 'cached_clients' count and access statistics
         """
         with self._lock:
@@ -136,11 +136,11 @@ def get_shared_s3_client(
 
     Parameters
     ----------
-    profile_name : str
+    profile_name : `str`
         AWS profile name for authentication
-    bucket_name : str
+    bucket_name : `str`
         S3 bucket name
-    endpoint_url : str | None
+    endpoint_url : `str` | None
         S3 endpoint URL, None for default
 
     Returns
@@ -164,7 +164,7 @@ def get_s3_pool_stats() -> dict[str, int]:
 
     Returns
     -------
-    dict[str, int]
+    `dict` [`str`, `int`]
         dictionary with connection pool statistics
     """
     return _global_pool.get_pool_stats()

@@ -33,9 +33,9 @@ class CIMemoryTestMocker(RubinDataMocker):
 
         Parameters
         ----------
-        locations : list[Location]
+        locations : `list` [`Location`]
             List of locations to mock data for
-        metadata_entries_per_camera : int
+        metadata_entries_per_camera : `int`
             Number of metadata entries per camera (default: 20)
         """
         # Enable metadata creation with CI-appropriate amounts
@@ -69,12 +69,22 @@ class CIMemoryTestMocker(RubinDataMocker):
                 original_camera_channels = camera.channels
                 camera.channels = original_channels + expanded_channels
 
+                print(
+                    f"Mocking extra channels for camera {camera.name} at location {loc_name}"
+                )
+                print(f"  Original channels: {[ch.name for ch in original_channels]}")
+                print(f"  Expanded channels: {[ch.name for ch in camera.channels]}")
+
                 try:
                     self.location_channels[loc_name] = camera.channels
                     self.add_seq_objs(location, camera, include_empty_channel=False)
                 finally:
                     # Restore original channels
                     camera.channels = original_camera_channels
+                    print(
+                        f"Restored original channels for camera {camera.name} at location {loc_name}"
+                    )
+                    print(f"  Current channels: {[ch.name for ch in camera.channels]}")
 
 
 class FastCurrentPoller(CurrentPoller):
@@ -95,9 +105,9 @@ class FastCurrentPoller(CurrentPoller):
 
         Parameters
         ----------
-        max_iterations : int
+        max_iterations : `int`
             Maximum number of polling iterations (default: 100)
-        test_duration : int
+        test_duration : `int`
             Maximum test duration in seconds (default: 10)
         """
         super().__init__(*args, **kwargs)
