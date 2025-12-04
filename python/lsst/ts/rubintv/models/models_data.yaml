@@ -854,6 +854,7 @@ admin_redis_menus:
       - REFIT_WCS
       - TARTS
       - AI_DONUT
+      - UNPAIRED_DANISH
 
   - title: "Chip selection"
     key: RUBINTV_CONTROL_CHIP_SELECTION
