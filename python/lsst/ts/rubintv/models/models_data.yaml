@@ -852,7 +852,7 @@ admin_redis_menus:
       - DANISH
       - TIE
       - REFIT_WCS
-      - TARTS
+      - TARTS_UNPAIRED
       - AI_DONUT
       - UNPAIRED_DANISH
 
