@@ -184,6 +184,15 @@ function TableRow({
           />
         </td>
       )}
+      {camera.quicklook_viewer_link && (
+        <td className="grid-cell">
+          <a
+            href={replaceInString(camera.quicklook_viewer_link, dayObs, seqNum)}
+            className="button button-table quicklook-viewer-link"
+            aria-label="Open quicklook viewer"
+          />
+        </td>
+      )}
       {channels.map((chan) => (
         <ChannelCell
           key={`${seqNum}_${chan.name}`}
@@ -359,6 +368,9 @@ export function TableHeader({
       )}
       {camera.image_viewer_link && siteLocHasCCS && (
         <div className="grid-title sideways">CCS Image Viewer</div>
+      )}
+      {camera.quicklook_viewer_link && (
+        <div className="grid-title sideways">Quicklook Viewer</div>
       )}
       {columns.map((channel) => {
         return (

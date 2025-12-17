@@ -145,8 +145,17 @@ export function replaceInString(
       (_, __, defaultValue) => controller || defaultValue || ""
     )
     .replace("{dayObs}", dayObs)
-    .replace("{seqNum}", seqNum.padStart(6, "0"))
+    .replace(/{seqNum:\d+}/g, (match) => replaceWithPadding(match, seqNum))
   return formattedLink
+}
+
+export function replaceWithPadding(template: string, seqNum: string): string {
+  return template.replace(/{(\w+):(\d+)}/g, (match, key, padLength) => {
+    if (key === "seqNum") {
+      return seqNum.padStart(parseInt(padLength), "0")
+    }
+    return match
+  })
 }
 
 // A helper function to mimic Jinja2's groupby
