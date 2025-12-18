@@ -852,9 +852,15 @@ admin_redis_menus:
       - DANISH
       - TIE
       - REFIT_WCS
-      - TARTS_UNPAIRED
       - AI_DONUT
       - UNPAIRED_DANISH
+      - TARTS_UNPAIRED
+
+  - title: "AOS FAM Pipeline"
+    key: RUBINTV_CONTROL_AOS_FAM_PIPELINE
+    items:
+      - DANISH
+      - TIE
 
   - title: "Chip selection"
     key: RUBINTV_CONTROL_CHIP_SELECTION
