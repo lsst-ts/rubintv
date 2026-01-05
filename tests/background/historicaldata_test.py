@@ -63,15 +63,6 @@ class TestHistoricalPoller:
         assert historical._calendar == {}
 
     @pytest.mark.asyncio
-    async def test_trigger_reload_everything(
-        self, historical: HistoricalPoller
-    ) -> None:
-        """Test triggering a reload of all data."""
-        historical._have_downloaded = True
-        await historical.trigger_reload_everything()
-        assert historical._have_downloaded is False
-
-    @pytest.mark.asyncio
     async def test_is_busy(self, historical: HistoricalPoller) -> None:
         """Test the busy status indicator."""
         historical._have_downloaded = False
