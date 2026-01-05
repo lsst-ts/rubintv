@@ -2,7 +2,7 @@ import gc
 from asyncio import Event as AsyncioEvent
 from asyncio import sleep
 from time import time
-from typing import AsyncGenerator
+from typing import TYPE_CHECKING, AsyncGenerator
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.config import rubintv_logger
@@ -25,6 +25,9 @@ from lsst.ts.rubintv.models.models_helpers import (
 from lsst.ts.rubintv.s3_connection_pool import get_shared_s3_client
 from lsst.ts.rubintv.s3client import S3Client
 
+if TYPE_CHECKING:
+    from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
+
 logger = rubintv_logger()
 
 
@@ -44,6 +47,7 @@ class CurrentPoller:
         test_mode: bool = False,
     ) -> None:
         self._s3clients: dict[str, S3Client] = {}
+        self._historical_poller: HistoricalPoller | None = None
         self._objects: dict[str, list] = {}
         self._events: dict[str, list[Event]] = {}
         self._metadata: dict[str, dict] = {}
@@ -61,11 +65,15 @@ class CurrentPoller:
         self.completed_first_poll_event = first_pass_event
 
         self.locations = locations
-        self._current_day_obs = get_current_day_obs()
+        self._last_day_obs = get_current_day_obs()
         for location in locations:
             self._s3clients[location.name] = get_shared_s3_client(
                 location.profile_name, location.bucket_name, location.endpoint_url
             )
+
+    def set_historical_poller(self, hp: "HistoricalPoller") -> None:
+        """Set reference to HistoricalPoller for day rollover integration."""
+        self._historical_poller = hp
 
     async def clear_todays_data(self) -> None:
         self._objects = {}
@@ -102,7 +110,7 @@ class CurrentPoller:
                 ]
                 loc_prefixes = self._yesterday_prefixes[location.name]
                 for chan in missing_chans:
-                    prefix = f"{camera.name}/{self._current_day_obs}/{chan.name}"
+                    prefix = f"{camera.name}/{self._last_day_obs}/{chan.name}"
                     loc_prefixes.append(prefix)
 
     async def poll_buckets_for_todays_data(self, test_day: str = "") -> None:
@@ -110,10 +118,14 @@ class CurrentPoller:
         while True:
             timer_start = time()
             try:
-                if self._current_day_obs != get_current_day_obs():
+                if self._last_day_obs != get_current_day_obs():
+                    # Day has changed - integrate with historical before
+                    # clearing
+                    if self._historical_poller:
+                        await self._historical_poller.integrate_todays_data(self)
                     await self.check_for_empty_per_day_channels()
                     await self.clear_todays_data()
-                day_obs = self._current_day_obs = get_current_day_obs()
+                day_obs = self._last_day_obs = get_current_day_obs()
 
                 for location in self.locations:
                     client = self._s3clients[location.name]
