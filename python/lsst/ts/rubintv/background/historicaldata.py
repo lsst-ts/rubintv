@@ -7,10 +7,7 @@ from typing import TYPE_CHECKING
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.config import rubintv_logger
-from lsst.ts.rubintv.handlers.websocket_notifiers import (
-    notify_all_status_change,
-    notify_ws_clients,
-)
+from lsst.ts.rubintv.handlers.websocket_notifiers import notify_ws_clients
 from lsst.ts.rubintv.models.models import (
     Camera,
     Channel,
@@ -33,6 +30,7 @@ from lsst.ts.rubintv.models.models_helpers import (
 from lsst.ts.rubintv.s3_connection_pool import get_shared_s3_client
 
 if TYPE_CHECKING:
+    from lsst.ts.rubintv.background.currentpoller import CurrentPoller
     from lsst.ts.rubintv.s3client import S3Client
 
 logger = rubintv_logger()
@@ -98,7 +96,6 @@ class HistoricalPoller:
         }
 
         self._have_downloaded = False
-        self._last_reload = get_current_day_obs()
 
         self.test_mode = test_mode
         self.test_date_start: date | None = None
@@ -127,6 +124,23 @@ class HistoricalPoller:
         # Clean up fetch locks to prevent memory leaks
         self._fetch_locks.clear()
 
+    async def run(self) -> None:
+        while True:
+            if not self._have_downloaded:
+                logger.info("Starting initial historical data download")
+                start_time = time()
+                for location in self._locations:
+                    await self._initialise_location_store(location)
+                self._have_downloaded = True
+                elapsed = time() - start_time
+                logger.info(
+                    "Completed initial historical data download",
+                    elapsed_time_seconds=elapsed,
+                )
+                # Start background metadata prefetching
+                await self._start_metadata_prefetch()
+            await asyncio.sleep(self.CHECK_NEW_DAY_PERIOD)
+
     async def clear_metadata_cache(self) -> None:
         """Explicitly clear the metadata cache (for testing or manual
         resets)"""
@@ -134,53 +148,54 @@ class HistoricalPoller:
             self._metadata_cache[loc_cam].clear()
         self._fetch_locks.clear()
 
-    async def trigger_reload_everything(self) -> None:
-        await self.clear_metadata_cache()
-        self._have_downloaded = False
+    async def integrate_todays_data(self, current_poller: "CurrentPoller") -> None:
+        """Integrate today's data into the historical store."""
+        try:
+            logger.info("Integrating today's data from CurrentPoller")
+
+            for location in self._locations:
+                for camera in location.cameras:
+                    if not camera.online:
+                        continue
+
+                    loc_cam = f"{location.name}/{camera.name}"
+
+                    # Get today's events from CurrentPoller
+                    events = await current_poller.get_current_events(
+                        location.name, camera
+                    )
+                    if events:
+                        await self.store_events_structured(events, location.name)
+
+                    # Get today's metadata from CurrentPoller
+                    metadata = await current_poller.get_current_metadata(
+                        location.name, camera
+                    )
+                    if metadata:
+                        today = current_poller._last_day_obs.isoformat()
+                        self._metadata_refs.setdefault(loc_cam, set()).add(today)
+                        self.add_to_calendar(loc_cam, today, 0)
+
+                    # Get today's night reports from CurrentPoller
+                    night_report = await current_poller.get_current_night_report(
+                        location.name, camera.name
+                    )
+                    if night_report != NightReport():
+                        self._nr_metadata.setdefault(location.name, []).extend(
+                            night_report.plots if night_report.plots else []
+                        )
+
+                    await self._shift_metadata_cache_for_new_day()
+                    await self.notify_clients_of_day_change()
+
+            logger.info("Completed integration of today's data from CurrentPoller")
+
+        except Exception as e:
+            logger.error(f"Error integrating today's data: {e}")
+            return
 
     async def is_busy(self) -> bool:
         return not self._have_downloaded
-
-    async def check_for_new_day(self) -> None:
-        try:
-            while True:
-                if (
-                    not self._have_downloaded
-                    or self._last_reload < get_current_day_obs()
-                ):
-                    time_start = time()
-                    # Let the clients know the day has changed
-                    await self.notify_clients_of_day_change()
-
-                    await self._shift_metadata_cache_for_new_day()
-
-                    await self.clear_all_data()
-                    for location in self._locations:
-                        await self._refresh_location_store(location)
-
-                    self._last_reload = get_current_day_obs()
-                    self._have_downloaded = True
-
-                    time_taken = time() - time_start
-                    logger.info("Historical polling took:", time_taken=time_taken)
-
-                    # Force garbage collection after completing data refresh
-                    gc.collect()
-                    logger.debug(
-                        "Completed historical data refresh and triggered garbage collection"
-                    )
-
-                    await notify_all_status_change(historical_busy=False)
-                    await self.notify_update_all_calendars()
-
-                    await self._start_metadata_prefetch()
-                else:
-                    if self.test_mode:
-                        break
-                    await asyncio.sleep(self.CHECK_NEW_DAY_PERIOD)
-        except Exception:
-            # log error with traceback
-            logger.error("Error in check_for_new_day", exc_info=True)
 
     async def _shift_metadata_cache_for_new_day(self) -> None:
         """Shift the metadata cache when a new day rolls over."""
@@ -427,7 +442,7 @@ class HistoricalPoller:
                         calendar,
                     )
 
-    async def _refresh_location_store(self, location: Location) -> None:
+    async def _initialise_location_store(self, location: Location) -> None:
         try:
             up_to_date_objects = await self._get_objects_for_location(location)
             await self.filter_convert_store_objects(up_to_date_objects, location)
