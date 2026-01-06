@@ -59,7 +59,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     models = ModelsInitiator()
 
     # initialise the background bucket pollers
-    hp = HistoricalPoller(models.locations, prefix_extra="2025-10-1")
+    hp = HistoricalPoller(models.locations)
 
     # initialise the redis client
     redis_client = None
