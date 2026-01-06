@@ -124,6 +124,10 @@ class HistoricalPoller:
         # Clean up fetch locks to prevent memory leaks
         self._fetch_locks.clear()
 
+    async def trigger_reload_everything(self) -> None:
+        """Trigger a full reload of all historical data."""
+        await self.clear_all_data()
+
     async def run(self) -> None:
         while True:
             if not self._have_downloaded:
