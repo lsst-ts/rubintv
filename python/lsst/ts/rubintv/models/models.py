@@ -433,6 +433,7 @@ class ServiceTypes(str, Enum):
     HISTORICALSTATUS = "historicalStatus"
     CALENDAR = "calendar"
     DETECTORS = "detectors"
+    ADMIN = "admin"
 
 
 class ServiceMessageTypes(Enum):
@@ -449,6 +450,7 @@ class ServiceMessageTypes(Enum):
     PREV_NEXT = "prevNext"
     ALL_CHANNELS = "allChannels"
     DETECTOR_STATUS = "detectorStatus"
+    CONTROL_READBACK_CHANGE = "controlReadback"
 
 
 class KeyValue(BaseModel):

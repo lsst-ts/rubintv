@@ -78,14 +78,16 @@ class DetectorStatusHandler:
                 logger.error(f"Error checking stream {stream_key}: {e}")
 
     async def read_initial_state(self) -> None:
-        """Read the latest entry from each stream to get current state."""
+        """Read the latest entry from each stream to get current state and
+        send notifications.
+        """
         for stream_key, name in self.stream_keys.items():
             try:
                 # Get just the latest entry since we have maxlen=2
                 entries = await self.redis_client.xrevrange(stream_key, count=1)
                 if not entries:
                     logger.warning(f"No initial state found for stream {stream_key}")
-                    break
+                    continue
                 # Get the latest state
                 _, raw_data = entries[0]
                 # Convert the raw data into a dictionary with byte keys
@@ -105,6 +107,47 @@ class DetectorStatusHandler:
                     exc_info=True,
                     raw_data=str(raw_data) if "raw_data" in locals() else None,
                 )
+
+    async def get_current_state(self) -> dict[str, DecodedRedisValue] | None:
+        """Get the current state from all streams for initial WebSocket
+        payload.
+
+        Returns
+        -------
+        `dict` [`str`, `DecodedRedisValue`] | None
+            Dictionary mapping stream names to their current decoded state,
+            or None if no state is available.
+        """
+        current_state = {}
+
+        for stream_key, name in self.stream_keys.items():
+            try:
+                # Get just the latest entry since we have maxlen=2
+                entries = await self.redis_client.xrevrange(stream_key, count=1)
+                if not entries:
+                    logger.warning(f"No current state found for stream {stream_key}")
+                    continue
+
+                # Get the latest state
+                _, raw_data = entries[0]
+                # Convert the raw data into a dictionary with byte keys
+                data = {
+                    k.encode() if isinstance(k, str) else k: (
+                        v.encode() if isinstance(v, str) else v
+                    )
+                    for k, v in raw_data.items()
+                }
+
+                decoded = _decode_stream_message(data)
+                current_state[name] = decoded
+
+            except Exception as e:
+                logger.error(
+                    f"Error reading current state from {stream_key}: {e}",
+                    exc_info=True,
+                )
+
+        return current_state if current_state else None
 
     async def run_async(self) -> None:
         """Start reading from streams."""
@@ -140,13 +183,13 @@ def _decode_stream_message(data: dict[bytes, bytes]) -> DecodedRedisValue:
 
     Parameters
     ----------
-    data : dict[bytes, bytes]
+    data : `dict` [`bytes`, `bytes`]
         Raw Redis stream message data. Expected to contain a 'data' field
         with JSON encoded detector status information.
 
     Returns
     -------
-    DecodedRedisValue
+    decoded : `DecodedRedisValue`
         Decoded message data in the expected format
     """
     try:

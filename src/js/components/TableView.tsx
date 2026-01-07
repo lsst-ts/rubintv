@@ -1,6 +1,6 @@
 import React, { useContext } from "react"
+import { useModal } from "../hooks/useModal"
 import { FilterDialog } from "./TableFilter"
-import { useModal } from "./Modal"
 import {
   indicatorForAttr,
   _elWithAttrs,
@@ -418,10 +418,11 @@ function seqChannels(camera: Camera): Channel[] {
  * the table is clicked.
  */
 function FoldoutCell({ seqNum, columnName, data }: TableFoldoutCellProps) {
+  const { showModal } = useModal()
+
   if (!data || typeof data !== "object") {
     return null
   }
-  const { showModal } = useModal()
 
   let toDisplay: string = ""
   if (Array.isArray(data)) {

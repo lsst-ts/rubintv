@@ -248,6 +248,9 @@ cameras:
       - name: timing_diagram
         title: Timing Diagram
         colour: "#85e986"
+      - name: aos_timing
+        title: AOS Timing
+        colour: "#e7a9df"
 
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
       {seqNum}}, \"detector\": 0}"
@@ -849,8 +852,15 @@ admin_redis_menus:
       - DANISH
       - TIE
       - REFIT_WCS
-      - TARTS
       - AI_DONUT
+      - UNPAIRED_DANISH
+      - TARTS_UNPAIRED
+
+  - title: "AOS FAM Pipeline"
+    key: RUBINTV_CONTROL_AOS_FAM_PIPELINE
+    items:
+      - DANISH
+      - TIE
 
   - title: "Chip selection"
     key: RUBINTV_CONTROL_CHIP_SELECTION

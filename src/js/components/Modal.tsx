@@ -1,20 +1,9 @@
-import React, { useState, useEffect, createContext, useContext } from "react"
+import React, { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
+import { ModalContext } from "./contexts/contexts"
 import { ConfirmationModalProps } from "./componentTypes"
 
-interface ModalContextType {
-  modalContent: React.ReactNode | null
-  setModalContent: (content: React.ReactNode | null) => void
-}
-
-// Create a Context for the modal
-/* istanbul ignore next */
-const ModalContext = createContext<ModalContextType>({
-  modalContent: null,
-  setModalContent: () => {},
-})
-
-export function ModalProvider({ children }: { children: React.ReactNode }) {
+export const ModalProvider = ({ children }: { children: React.ReactNode }) => {
   const [modalContent, setModalContent] = useState<React.ReactNode | null>(null)
 
   // Create or get modal-root element lazily
@@ -61,24 +50,6 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
         )}
     </ModalContext.Provider>
   )
-}
-
-export function useModal(): {
-  modalContent: React.ReactNode | null
-  showModal: (content: React.ReactNode) => void
-  closeModal: () => void
-} {
-  const { modalContent, setModalContent } = useContext(ModalContext)
-
-  const showModal = (content: React.ReactNode) => {
-    setModalContent(content)
-  }
-
-  const closeModal = () => {
-    setModalContent(null)
-  }
-
-  return { modalContent, showModal, closeModal }
 }
 
 export const ConfirmationModal = ({
