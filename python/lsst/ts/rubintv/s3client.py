@@ -72,9 +72,6 @@ class S3Client:
         try:
             obj = self._client.get_object(Bucket=self._bucket_name, Key=key)
             data = json.loads(obj["Body"].read())
-            assert isinstance(data, dict)
-            for k in data.keys():
-                assert isinstance(k, str)
             return data
         except ClientError as e:
             if e.response["Error"]["Code"] == "NoSuchKey":
@@ -90,7 +87,6 @@ class S3Client:
         try:
             obj = self._client.get_object(Bucket=self._bucket_name, Key=key)
             data = obj["Body"]
-            assert isinstance(data, StreamingBody)
             return data
         except ClientError:
             raise HTTPException(status_code=404, detail=f"No such file for: {key}")

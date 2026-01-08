@@ -385,8 +385,30 @@ class NightReportData:
         return int(f"0x{self.hash}", 0)
 
 
+class NightReportTextItem(BaseModel):
+    """A text item in a night report.
+
+    Properties
+    ----------
+    type : `str`
+        The type of text item, i.e. "multiline" or "keyvalues" or "links".
+    key : `str`
+        The unique key for the text item.
+    title : `str`
+        The title of the text item.
+    content : `str` | `list`[`dict`[`str`, `str`]]
+        The content of the text item, either as a string or a list of
+        dictionaries for tables.
+    """
+
+    key: str = ""
+    type: str
+    title: str
+    content: str | list[dict[str, str]]
+
+
 class NightReport(BaseModel):
-    text: dict[str, Any] | None = {}
+    text: list[NightReportTextItem] | None = []
     plots: list[NightReportData] | None = []
 
 
