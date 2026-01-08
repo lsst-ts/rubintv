@@ -148,8 +148,11 @@ class TestDayRolloverIntegration:
 
             # Verify metadata references were stored
             today_iso = current_poller._last_day_obs.isoformat()
-            assert loc_cam in historical_poller._metadata_refs
-            assert today_iso in historical_poller._metadata_refs[loc_cam]
+            assert loc_cam in historical_poller._metadata_collector._metadata_refs
+            assert (
+                today_iso
+                in historical_poller._metadata_collector._metadata_refs[loc_cam]
+            )
 
     @pytest.mark.asyncio
     async def test_integrate_todays_night_report(
@@ -342,18 +345,18 @@ class TestDayRolloverIntegration:
         await historical_poller._initialise_location_store(location)
 
         # Initialize metadata cache
-        await historical_poller._start_metadata_prefetch()
+        await historical_poller._metadata_collector.start_prefetch([location])
 
         # Verify cache was initialized
         await asyncio.sleep(0.1)  # Give prefetch a moment
-        assert historical_poller._metadata_prefetch_task is not None
+        assert historical_poller._metadata_collector._metadata_prefetch_task is not None
 
         # Now integrate new day's data
         await current_poller.poll_buckets_for_todays_data()
         await historical_poller.integrate_todays_data(current_poller)
 
         # Verify metadata cache was updated with today's data
-        assert len(historical_poller._metadata_refs) > 0
+        assert len(historical_poller._metadata_collector._metadata_refs) > 0
 
     @pytest.mark.asyncio
     async def test_concurrent_access_during_integration(
