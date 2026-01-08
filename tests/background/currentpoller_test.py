@@ -264,7 +264,7 @@ async def test_pick_up_yesterdays_movie(
 
     await current_poller.poll_buckets_for_todays_data()
 
-    events = mocked.get_mocked_events(location, camera, channel)
+    events = mocked.get_mocked_events_for_channel(location, camera, channel)
     assert events is not []
     last_event = max(events)
     assert last_event

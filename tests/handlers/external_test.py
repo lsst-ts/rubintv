@@ -200,7 +200,9 @@ async def test_get_event_from_type_and_visit(
     for location in m.locations:
         for camera in location.cameras:
             for seq_chan in camera.seq_channels():
-                events = data_mocker.get_mocked_events(location, camera, seq_chan)
+                events = data_mocker.get_mocked_events_for_channel(
+                    location, camera, seq_chan
+                )
                 for event in events:
                     visit = day_obs + f"{event.seq_num:05}"
                     event_type = event.channel_name
