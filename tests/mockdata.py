@@ -197,7 +197,7 @@ class RubinDataMocker:
         events = [Event(**cd) for cd in channel_dicts]
         return events
 
-    def get_mocked_events(
+    def get_mocked_events_for_channel(
         self, location: Location, camera: Camera, channel: Channel
     ) -> list[Event]:
         """
@@ -221,6 +221,27 @@ class RubinDataMocker:
         return [
             e for e in self.events.get(loc_cam, []) if e.channel_name == channel.name
         ]
+
+    def get_mocked_events_for_camera(
+        self, location: Location, camera: Camera
+    ) -> list[Event]:
+        """
+        Retrieve events for a given location.
+
+        Parameters
+        ----------
+        location : `Location`
+            The location for which to retrieve the sequence events.
+        camera : `Camera`
+            The camera for which to retrieve the sequence events.
+
+        Returns
+        -------
+        `list` [`Event`]
+            A list of Event objects representing sequence events.
+        """
+        loc_cam = f"{location.name}/{camera.name}"
+        return self.events.get(loc_cam, [])
 
     def mock_night_report_plot(
         self,
