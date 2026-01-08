@@ -39,7 +39,7 @@ class TestHistoricalPoller:
         """Test HistoricalPoller initialization."""
         assert historical._have_downloaded is False
         assert len(historical._clients) == len(m.locations)
-        assert historical._metadata_refs == {}
+        assert historical._metadata_collector.metadata_refs == {}
         assert historical._structured_events == {}
         assert historical._nr_metadata == {}
         assert historical._calendar == {}
@@ -49,7 +49,7 @@ class TestHistoricalPoller:
         """Test clearing all cached data."""
         # Populate some test data
         historical._have_downloaded = True
-        historical._metadata_refs["test"] = {"2024-01-15"}
+        historical._metadata_collector.register_metadata_ref("test", "2024-01-15")
         historical._structured_events["test"] = {"2024-01-15": {"channel1": {1, 2}}}
         historical._nr_metadata["test"] = []
         historical._calendar["test"] = {}
@@ -57,7 +57,7 @@ class TestHistoricalPoller:
         await historical.clear_all_data()
 
         assert historical._have_downloaded is False
-        assert historical._metadata_refs == {}
+        assert historical._metadata_collector.metadata_refs == {}
         assert historical._structured_events == {}
         assert historical._nr_metadata == {}
         assert historical._calendar == {}
@@ -479,8 +479,8 @@ class TestHistoricalPollerWithMockData:
         )
 
         # Verify metadata was stored
-        assert loc_cam in historical._metadata_refs
-        assert "2024-02-15" in historical._metadata_refs[loc_cam]
+        assert loc_cam in historical._metadata_collector.metadata_refs
+        assert "2024-02-15" in historical._metadata_collector.metadata_refs[loc_cam]
 
         # Verify calendar was updated
         assert loc_cam in historical._calendar
@@ -662,11 +662,10 @@ class TestHistoricalPollerWithMockData:
         # Process objects
         objects = [metadata_obj, nr_plot1, nr_plot2]
         await historical.filter_convert_store_objects(objects, location)
-
         # Verify metadata was stored
         loc_cam = f"{location.name}/{camera.name}"
-        assert loc_cam in historical._metadata_refs
-        assert date_str in historical._metadata_refs[loc_cam]
+        assert loc_cam in historical._metadata_collector.metadata_refs
+        assert date_str in historical._metadata_collector.metadata_refs[loc_cam]
 
         # Verify night report data was stored
         assert location.name in historical._nr_metadata
