@@ -315,7 +315,7 @@ async def test_notify_new_night_report_plot(
         Service.NIGHTREPORT,
         MessageType.NIGHT_REPORT,
         loc_cam,
-        NightReport(text={}, plots=[first_plot]).model_dump(),
+        NightReport(text=[], plots=[first_plot]).model_dump(),
     )
 
     second_plot = mocked.mock_night_report_plot(location, camera)
@@ -333,7 +333,7 @@ async def test_notify_new_night_report_plot(
         Service.NIGHTREPORT,
         MessageType.NIGHT_REPORT,
         loc_cam,
-        NightReport(text={}, plots=[second_plot]).model_dump(),
+        NightReport(text=[], plots=[second_plot]).model_dump(),
     )
 
 
