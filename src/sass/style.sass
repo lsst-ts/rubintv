@@ -27,6 +27,9 @@
 .center-text
   text-align: center
 
+.monospaced
+  font-family: "Red Hat Mono", monospace
+
 a
   text-decoration: none
   display: inline-block
@@ -59,6 +62,7 @@ header
 a
   text-decoration: underline
   display: inline-block
+  color: #000
 
 .header-wrap
   gap: 1em
@@ -531,6 +535,9 @@ section
       width: 100%
       color: #000
 
+.tabs
+  margin-top: 2em
+
 .tab-titles
   display: flex
   flex-direction: row
@@ -555,9 +562,16 @@ section
   &.selected
     background: #fff
     border-color: #666
+    border-bottom: 1px solid #fff
 
-.tab-content:not(.selected)
-  display: none
+.tab-content
+  padding: 1em
+  background: #ddd
+  color: #333
+  border-radius: 0 6px 6px 6px
+  border: 1px solid #666
+  &:not(.selected)
+    display: none
 
 .plots-grid
   display: grid
