@@ -79,8 +79,11 @@ class HistoricalPoller:
         self._metadata_collector = MetadataCollector(self._clients, self._locations)
 
         self._structured_events: StructuredData = {}
-        # Structure:
-        # {(Location, Camera): {date: {Channel: {seq_num1, seq_num2, ...}}}}
+        # Structure: {loc_cam: {date_str: {
+        #  channel_name: {seq_num1, seq_num2, ...}}}}
+
+        # Initialize metadata collector
+        self._metadata_collector = MetadataCollector(self._clients, self._locations)
 
         self._channel_default_extensions: dict[LocCamDateChan, str] = {}
         # Structure: {LocCamDateChan: "default_ext"}
