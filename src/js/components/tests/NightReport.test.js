@@ -23,12 +23,26 @@ const mockCamera = {
 }
 
 const mockNightReport = {
-  text: {
-    text_efficiency_1: "Efficiency report line 1\nLine 2 with  double spaces",
-    text_efficiency_2: "Another efficiency report",
-    qa_link_1: "http://example.com/qa1",
-    qa_link_2: "http://example.com/qa2",
-  },
+  text: [
+    {
+      title: "Efficiency",
+      type: "multiline",
+      content: "Efficiency report line 1\nLine 2 with  double spaces",
+    },
+    {
+      title: "QA Plots",
+      type: "links",
+      content: [
+        { label: "qa_link_1", url: "http://example.com/qa1" },
+        { label: "qa_link_2", url: "http://example.com/qa2" },
+      ],
+    },
+    {
+      type: "keyvalues",
+      title: "Text Validation",
+      content: { key1: "value1", key2: "value2" },
+    },
+  ],
   plots: [
     {
       filename: "plot1.png",
@@ -87,7 +101,7 @@ describe("NightReport", () => {
       )
 
       expect(
-        screen.getByText("There is no night report for today yet")
+        screen.getByText("There is no Test Camera Night Report for today yet")
       ).toBeInTheDocument()
     })
 
@@ -227,7 +241,6 @@ describe("NightReport", () => {
       render(<NightReport {...defaultProps} />)
 
       expect(screen.getByText(/Efficiency report line 1/)).toBeInTheDocument()
-      expect(screen.getByText(/Another efficiency report/)).toBeInTheDocument()
     })
 
     it("renders QA plots as links", () => {
@@ -297,7 +310,9 @@ describe("NightReport", () => {
       render(<NightReport {...defaultProps} />)
 
       const newNightReport = {
-        text: { text_new: "New efficiency report" },
+        text: [
+          { title: "New Text", type: "multiline", content: "New content" },
+        ],
         plots: [
           { filename: "new-plot.png", group: "New Group", hash: "new-hash" },
         ],
@@ -346,7 +361,13 @@ describe("NightReport", () => {
   describe("Edge cases", () => {
     it("handles night report with only text data", () => {
       const textOnlyReport = {
-        text: { text_efficiency: "Only text data" },
+        text: [
+          {
+            title: "Efficiency",
+            type: "multiline",
+            content: "Only text data",
+          },
+        ],
       }
 
       render(
@@ -372,11 +393,18 @@ describe("NightReport", () => {
 
     it("handles empty text values", () => {
       const reportWithEmptyText = {
-        text: {
-          text_efficiency: "",
-          text_valid: "Valid text",
-          qa_empty: "",
-        },
+        text: [
+          {
+            title: "Empty Section",
+            type: "multiline",
+            content: "",
+          },
+          {
+            title: "Valid Section",
+            type: "multiline",
+            content: "Valid text",
+          },
+        ],
       }
 
       render(

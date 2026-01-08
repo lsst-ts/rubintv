@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react"
 import {
+  NightReportType,
   NightReportProps,
   NightReportTabProps,
   NightReportPlot,
-  NightReportPlotProps,
-  NightReportType,
-  NightReportTextProps,
+  NightReportPlotsTabProps,
+  NightReportTextTabProps,
   TabType,
-  TextTabType,
 } from "./componentTypes"
 import { groupBy, sanitiseString } from "../modules/utils"
 import { DEFAULT_HIDDEN_TABS } from "../config"
@@ -32,41 +31,62 @@ function MultilineText({ text }: { text: string }) {
   )
 }
 
-function NightReportText({ tab, selected }: NightReportTextProps) {
-  if (!tab || tab.id !== selected) return null
-  const data = tab.data || {}
-  return (
-    <div
-      id={`tabgroup-${tab.id}`}
-      className={`tab-content ${tab.id === selected ? "selected" : ""}`}
-    >
-      {tab.id === "efficiency" ? (
-        <ul className="dashboard-text">
-          {Object.entries(data)
-            .filter(([key]) => key.startsWith("text_"))
-            .map(([textName, text]) =>
-              text ? (
-                <li key={textName}>
-                  <MultilineText text={text} />
-                </li>
-              ) : null
-            )}
-        </ul>
-      ) : (
+function NightReportTextTab({ tab, selected }: NightReportTextTabProps) {
+  if (!tab || tab.id !== selected || tab.type !== "text") return null
+
+  const textItem = tab.data
+
+  if (textItem.type === "multiline") {
+    return (
+      <div
+        id={`tabgroup-${tab.id}`}
+        className="tab-content selected monospaced"
+      >
+        <MultilineText text={textItem.content as string} />
+      </div>
+    )
+  }
+
+  if (textItem.type === "keyvalues") {
+    return (
+      <div id={`tabgroup-${tab.id}`} className="tab-content selected">
         <ul>
-          {Object.entries(data)
-            .filter(([key]) => !key.startsWith("text_"))
-            .map(([title, link]) => (
-              <li key={link}>
-                <a href={link} target="_blank" rel="noreferrer">
-                  {title}
+          {Object.entries(textItem.content as Record<string, string>).map(
+            ([key, value]) => (
+              <li key={key}>
+                {key}: {value}
+              </li>
+            )
+          )}
+        </ul>
+      </div>
+    )
+  }
+
+  if (textItem.type === "links") {
+    return (
+      <div id={`tabgroup-${tab.id}`} className="tab-content selected">
+        <ul>
+          {(textItem.content as Array<{ label: string; url: string }>).map(
+            (link) => (
+              <li key={link.url}>
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={link.label}
+                >
+                  {link.label}
                 </a>
               </li>
-            ))}
+            )
+          )}
         </ul>
-      )}
-    </div>
-  )
+      </div>
+    )
+  }
+
+  return null
 }
 
 function NightReportTabs({ tabs, selected, setSelected }: NightReportTabProps) {
@@ -132,13 +152,13 @@ function NightReportTabs({ tabs, selected, setSelected }: NightReportTabProps) {
   )
 }
 
-function NightReportPlots({
+function NightReportPlotsTab({
   tab,
   selected,
   camera,
   locationName,
   homeUrl,
-}: NightReportPlotProps) {
+}: NightReportPlotsTabProps) {
   if (!tab || tab.id !== selected) return null
   const groupedPlots = tab.data
   return (
@@ -162,43 +182,48 @@ function NightReportPlots({
 }
 
 // Helper to build tabs array from nightReport
-function getTabs(nightReport: NightReportType): Array<TabType | TextTabType> {
-  const tabs = []
+function getTabs(nightReport: NightReportType): TabType[] {
+  const tabs: TabType[] = []
+
+  // Add text tabs
   if (nightReport.text) {
-    const hasEfficiency = Object.keys(nightReport.text).some((k) =>
-      k.startsWith("text_")
-    )
-    const hasQA = Object.keys(nightReport.text).some(
-      (k) => !k.startsWith("text_")
-    )
-    if (hasEfficiency) {
-      tabs.push({
-        id: "efficiency",
-        label: "Efficiency",
-        type: "text" as const,
-        data: nightReport.text,
-      })
+    if (!Array.isArray(nightReport.text)) {
+      console.warn(
+        "nightReport.text is not an array. Skipping text tabs generation.",
+        JSON.stringify(nightReport.text)
+      )
+      return tabs
     }
-    if (hasQA) {
+    nightReport.text.forEach((textItem) => {
+      if (!textItem.title || !textItem.type || !textItem.content) {
+        console.warn(
+          "Skipping invalid night report text item:",
+          JSON.stringify(textItem)
+        )
+        return
+      }
       tabs.push({
-        id: "qa_plots",
-        label: "QA Plots",
-        type: "text" as const,
-        data: nightReport.text,
+        id: sanitiseString(textItem.title),
+        label: textItem.title,
+        type: "text",
+        data: textItem,
       })
-    }
+    })
   }
+
+  // Add plot tabs grouped by group
   if (nightReport.plots) {
     const grouped = groupBy(nightReport.plots, (plot) => plot.group)
-    for (const [group, plots] of grouped) {
+    grouped.forEach(([group, plots]) => {
       tabs.push({
         id: sanitiseString(group),
         label: group,
-        type: "plot" as const,
+        type: "plot",
         data: plots,
       })
-    }
+    })
   }
+
   return tabs
 }
 
@@ -218,7 +243,9 @@ function NightReport({
     let storedSelected = localStorage.getItem("night-report-selected")
     if (!storedSelected || !tabIds.includes(storedSelected)) {
       storedSelected = tabIds[0]
-      localStorage.setItem("night-report-selected", storedSelected)
+      if (storedSelected) {
+        localStorage.setItem("night-report-selected", storedSelected)
+      }
     }
     return storedSelected
   })
@@ -231,6 +258,22 @@ function NightReport({
       }
       if (dataType === "nightReport") {
         setNightReport(data)
+        // After updating the night report, validate the selection against new tabs
+        const newTabs = getTabs(data)
+        const newTabIds = newTabs.map((tab) => tab.id)
+        const storedSelected = localStorage.getItem("night-report-selected")
+
+        if (storedSelected && newTabIds.includes(storedSelected)) {
+          // Stored selection is still valid in new tabs
+          setSelected(storedSelected)
+        } else {
+          // Stored selection doesn't exist in new tabs, default to first tab
+          const defaultSelection = newTabIds[0]
+          if (defaultSelection) {
+            localStorage.setItem("night-report-selected", defaultSelection)
+            setSelected(defaultSelection)
+          }
+        }
       }
     }
     window.addEventListener("nightreport", handleNightReportEvent as EL)
@@ -240,7 +283,11 @@ function NightReport({
   }, [date])
 
   if (Object.entries(nightReport).length === 0) {
-    return <h3>There is no night report for today yet</h3>
+    return (
+      <div className="tabs">
+        <h3>There is no {camera.night_report_label} for today yet</h3>
+      </div>
+    )
   }
 
   const selectedTab = tabs.find((tab) => tab.id === selected)
@@ -250,19 +297,19 @@ function NightReport({
       <h3 id="the-date">
         {camera.night_report_label} for: {initialDate}
       </h3>
-      <div className="plots-section tabs">
+      <div className="tabs">
         <NightReportTabs
           tabs={tabs}
           selected={selected}
           setSelected={setSelected}
         />
-        <NightReportText
+        <NightReportTextTab
           tab={
             selectedTab && selectedTab.type === "text" ? selectedTab : undefined
           }
           selected={selected}
         />
-        <NightReportPlots
+        <NightReportPlotsTab
           tab={
             selectedTab && selectedTab.type === "plot" ? selectedTab : undefined
           }
