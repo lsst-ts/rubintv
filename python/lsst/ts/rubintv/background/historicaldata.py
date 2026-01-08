@@ -1,13 +1,16 @@
 import asyncio
 import gc
-from collections import OrderedDict
 from datetime import date
 from time import time
 from typing import TYPE_CHECKING
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
+from lsst.ts.rubintv.background.metadata_collector import MetadataCollector
 from lsst.ts.rubintv.config import rubintv_logger
-from lsst.ts.rubintv.handlers.websocket_notifiers import notify_ws_clients
+from lsst.ts.rubintv.handlers.websocket_notifiers import (
+    notify_all_status_change,
+    notify_ws_clients,
+)
 from lsst.ts.rubintv.models.models import (
     Camera,
     Channel,
@@ -38,15 +41,14 @@ logger = rubintv_logger()
 
 class HistoricalPoller:
     """Provide a cache of the historical data.
-
-    Provides a cache of the historical data which updates when the day rolls
-    over.
+    This class downloads and stores historical data from S3 buckets for
+    multiple locations and cameras. It maintains structured data for efficient
+    retrieval of events, metadata, and night reports. It also supports
+    integration of current data and notifies clients of day changes.
     """
 
-    # polling period in seconds
-    CHECK_NEW_DAY_PERIOD = 5
-    # Maximum days to cache metadata
-    METADATA_CACHE_DAYS = 60
+    # re-polling period in seconds
+    RECHECK_BUCKET_PERIOD = 60 * 60  # 60 minutes
 
     def __init__(
         self,
@@ -57,22 +59,16 @@ class HistoricalPoller:
         test_date_end: str | None = None,
     ) -> None:
         self._clients: dict[str, S3Client] = {}
+        self._locations = locations
+        self._clients = {
+            location.name: get_shared_s3_client(
+                location.profile_name, location.bucket_name, location.endpoint_url
+            )
+            for location in locations
+        }
 
-        self._metadata_refs: dict[str, set[str]] = {}
-        # Structure: {loc_cam: {date_str}}
-
-        # Metadata cache using OrderedDict for LRU behavior
-        self._metadata_cache: dict[str, OrderedDict[str, dict]] = {}
-        # Structure: {loc_cam: OrderedDict({date_str: metadata_dict})}
-
-        # Background prefetch control
-        self._metadata_prefetch_task: asyncio.Task | None = None
-        self._prefetch_paused = asyncio.Event()
-        self._active_requests = 0
-        self._request_lock = asyncio.Lock()
-
-        # Per-key locks to prevent duplicate fetches
-        self._fetch_locks: dict[str, asyncio.Lock] = {}
+        # Initialize metadata collector
+        self._metadata_collector = MetadataCollector(self._clients)
 
         self._structured_events: StructuredData = {}
         # Structure: {loc_cam: {date_str: {
@@ -87,13 +83,6 @@ class HistoricalPoller:
 
         self._nr_metadata: dict[str, list[NightReportData]] = {}
         self._calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
-        self._locations = locations
-        self._clients = {
-            location.name: get_shared_s3_client(
-                location.profile_name, location.bucket_name, location.endpoint_url
-            )
-            for location in locations
-        }
 
         self._have_downloaded = False
 
@@ -106,29 +95,26 @@ class HistoricalPoller:
             self.test_date_end = date_str_to_date(test_date_end)
         self.prefix_extra = prefix_extra
 
+        # Add lock for thread-safe access during updates
+        self._data_lock = asyncio.Lock()
+
     async def clear_all_data(self) -> None:
         self._have_downloaded = False
-        self._metadata_refs = {}
         self._structured_events = {}
         self._nr_metadata = {}
         self._calendar = {}
+        await self._metadata_collector.clear_cache()
         # Force garbage collection after clearing large data structures
         gc.collect()
         logger.debug("Cleared all historical data and triggered garbage collection")
-
-        # Reset request tracking
-        async with self._request_lock:
-            self._active_requests = 0
-            self._prefetch_paused.clear()
-
-        # Clean up fetch locks to prevent memory leaks
-        self._fetch_locks.clear()
 
     async def trigger_reload_everything(self) -> None:
         """Trigger a full reload of all historical data."""
         await self.clear_all_data()
 
     async def run(self) -> None:
+        t = time()
+        time_elapsed = 0.0
         while True:
             if not self._have_downloaded:
                 logger.info("Starting initial historical data download")
@@ -141,16 +127,275 @@ class HistoricalPoller:
                     "Completed initial historical data download",
                     elapsed_time_seconds=elapsed,
                 )
+                await notify_all_status_change(historical_busy=False)
                 # Start background metadata prefetching
-                await self._start_metadata_prefetch()
-            await asyncio.sleep(self.CHECK_NEW_DAY_PERIOD)
+                await self._metadata_collector.start_prefetch(self._locations)
+                time_elapsed = time() - t
+                logger.info(
+                    "HistoricalPoller initial run completed",
+                    total_elapsed_time_seconds=time_elapsed,
+                )
+            if time_elapsed < self.RECHECK_BUCKET_PERIOD:
+                sleep_time = self.RECHECK_BUCKET_PERIOD - time_elapsed
+                logger.info(
+                    "HistoricalPoller sleeping until next recheck",
+                    sleep_time_seconds=sleep_time,
+                )
+                await asyncio.sleep(sleep_time)
+                t = time()
+            else:
+                await self.repoll_buckets_and_update()
+                t = time()
+
+    async def repoll_buckets_and_update(self) -> None:
+        """Recheck buckets for changes and update structured data if
+        differences are found."""
+        logger.info("Starting bucket recheck for changes")
+        start_time = time()
+
+        for location in self._locations:
+            try:
+                await self._check_location_for_changes(location)
+            except Exception as e:
+                logger.error(f"Error checking location for changes: {e}")
+
+        elapsed = time() - start_time
+        logger.info(
+            "Completed bucket recheck",
+            elapsed_time_seconds=elapsed,
+        )
+
+    async def _check_location_for_changes(self, location: Location) -> None:
+        """Check a specific location for changes in bucket data."""
+        for camera in location.cameras:
+            if not camera.online:
+                continue
+
+            loc_cam = f"{location.name}/{camera.name}"
+
+            try:
+                # Get current objects from bucket
+                new_objects = await self._get_objects_for_location_camera(
+                    location, camera
+                )
+
+                # Compare with cached objects and update if different
+                await self._update_if_changed(loc_cam, new_objects, location)
+            except Exception as e:
+                logger.error(
+                    f"Error checking camera for changes: {e}",
+                    location=location.name,
+                    camera=camera.name,
+                )
+
+    async def _get_objects_for_location_camera(
+        self, location: Location, camera: Camera
+    ) -> list[dict[str, str]]:
+        """Get objects from bucket for a specific camera."""
+        objects = []
+        prefixes = []
+
+        if self.test_date_start and self.test_date_end:
+            for aDate in daterange(
+                self.test_date_start,
+                self.test_date_end,
+            ):
+                date_str = aDate.isoformat()
+                prefixes.append(f"{camera.name}/{date_str}/{self.prefix_extra}")
+        else:
+            prefixes.append(camera.name + "/" + self.prefix_extra)
+
+        for prefix in prefixes:
+            try:
+                objects.extend(await self._get_objects_for_prefix(location, prefix))
+            except Exception as e:
+                logger.error(f"Error fetching prefix: {e}")
+
+        return objects
+
+    def _parse_structured_key(self, key: str) -> tuple[str, str, str, int | str] | None:
+        """Parse an S3 key into structured components.
+
+        Parameters
+        ----------
+        key : `str`
+            S3 object key in format: camera/date/channel/seq_num/filename.ext
+
+        Returns
+        -------
+        `tuple`[`str`, `str`, `str`, `int` | `str`] | `None`
+            Tuple of (camera_name, date_str, channel_name, seq_num) or None
+            if key cannot be parsed.
+        """
+        parts = key.split("/")
+        if len(parts) < 5:
+            return None
+
+        camera_name = parts[0]
+        date_str = parts[1]
+        channel_name = parts[2]
+        seq_part = parts[3]
+
+        try:
+            seq_num: int | str = int(seq_part)
+        except ValueError:
+            seq_num = seq_part  # e.g., 'final'
+
+        return (camera_name, date_str, channel_name, seq_num)
+
+    async def _update_if_changed(
+        self,
+        loc_cam: str,
+        new_objects: list[dict[str, str]],
+        location: Location,
+    ) -> None:
+        """Compare new objects with cached data and update only if changed."""
+        # Parse new object keys to extract structured components
+        new_keys_set = set()
+
+        for obj in new_objects:
+            key = obj["key"]
+            # Only process event objects (skip metadata and night_report)
+            if "metadata.json" not in key and "night_report" not in key:
+                parsed = self._parse_structured_key(key)
+                if parsed:
+                    new_keys_set.add(parsed)
+
+        # Build cached keys from structured data
+        cached_keys_set = set()
+        if loc_cam in self._structured_events:
+            for date_str in self._structured_events[loc_cam]:
+                for channel_name in self._structured_events[loc_cam][date_str]:
+                    for seq_num in self._structured_events[loc_cam][date_str][
+                        channel_name
+                    ]:
+                        camera_name = loc_cam.split("/")[1]
+                        struct_key = (camera_name, date_str, channel_name, seq_num)
+                        cached_keys_set.add(struct_key)
+
+        # Check for differences
+        if new_keys_set != cached_keys_set:
+            logger.info(
+                "Changes detected in bucket",
+                loc_cam=loc_cam,
+                added=len(new_keys_set - cached_keys_set),
+                removed=len(cached_keys_set - new_keys_set),
+            )
+
+            # Convert objects to events WITHOUT holding the lock
+            if new_objects:
+                # Filter to only event objects
+                event_objects = [
+                    obj
+                    for obj in new_objects
+                    if "metadata.json" not in obj["key"]
+                    and "night_report" not in obj["key"]
+                ]
+                # Convert and build temporary structured data (no lock needed)
+                temp_structured = await self._convert_objects_to_structured(
+                    event_objects, location
+                )
+
+                # Now acquire lock and swap out old data with new
+                async with self._data_lock:
+                    # Delete old cached data for this location/camera
+                    if loc_cam in self._structured_events:
+                        del self._structured_events[loc_cam]
+
+                    # Store the new data
+                    for key, value in temp_structured.items():
+                        self._structured_events[key] = value
+        else:
+            logger.debug(
+                "No changes detected in bucket",
+                loc_cam=loc_cam,
+            )
+
+    async def _convert_objects_to_structured(
+        self, event_objects: list[dict[str, str]], location: Location
+    ) -> dict:
+        """Convert objects to events and build structured data without lock.
+
+        Returns a dictionary with the same structure as _structured_events
+        that can be merged in atomically under the lock.
+        """
+        temp_structured: dict[str, dict[str, dict[str, set[int | str]]]] = {}
+        temp_extensions: dict[str, str] = {}
+        temp_exceptions: dict[str, dict[int | str, str]] = {}
+
+        # Group events by channel-date for extension analysis
+        channel_date_groups: dict[str, list[Event]] = {}
+
+        # Process objects through the normal conversion pipeline
+        async for events_batch in objects_to_events(event_objects):
+            for event in events_batch:
+                loc_cam = f"{location.name}/{event.camera_name}"
+                date_str = event.day_obs
+                channel_name = event.channel_name
+                channel_date_key = f"{loc_cam}/{date_str}/{channel_name}"
+
+                # Build temporary structure
+                if loc_cam not in temp_structured:
+                    temp_structured[loc_cam] = {}
+                if date_str not in temp_structured[loc_cam]:
+                    temp_structured[loc_cam][date_str] = {}
+                if channel_name not in temp_structured[loc_cam][date_str]:
+                    temp_structured[loc_cam][date_str][channel_name] = set()
+
+                temp_structured[loc_cam][date_str][channel_name].add(event.seq_num)
+
+                # Group for extension analysis
+                if channel_date_key not in channel_date_groups:
+                    channel_date_groups[channel_date_key] = []
+                channel_date_groups[channel_date_key].append(event)
+
+                # Update calendar
+                self.add_to_calendar(
+                    loc_cam,
+                    date_str,
+                    event.seq_num if isinstance(event.seq_num, int) else 0,
+                )
+
+        # Analyze extensions for each channel-date group
+        for channel_date_key, events in channel_date_groups.items():
+            extension_counts: dict[str, int] = {}
+            event_extensions: dict[int | str, str] = {}
+
+            for event in events:
+                ext = event.ext
+                extension_counts[ext] = extension_counts.get(ext, 0) + 1
+                event_extensions[event.seq_num] = ext
+
+            # Determine default extension
+            if extension_counts:
+                default_ext = max(
+                    extension_counts, key=lambda ext: extension_counts[ext]
+                )
+                temp_extensions[channel_date_key] = default_ext
+
+                # Store only exceptions
+                exceptions = {
+                    seq_num: ext
+                    for seq_num, ext in event_extensions.items()
+                    if ext != default_ext
+                }
+                if exceptions:
+                    temp_exceptions[channel_date_key] = exceptions
+
+        # Update the extension tracking dictionaries atomically
+        # (this will happen under lock in _update_if_changed)
+        for key, ext in temp_extensions.items():
+            self._channel_default_extensions[key] = ext
+
+        for key, excs in temp_exceptions.items():
+            self._extension_exceptions[key] = excs
+
+        return temp_structured
 
     async def clear_metadata_cache(self) -> None:
         """Explicitly clear the metadata cache (for testing or manual
         resets)"""
-        for loc_cam in self._metadata_cache:
-            self._metadata_cache[loc_cam].clear()
-        self._fetch_locks.clear()
+        await self._metadata_collector.clear_cache()
 
     async def integrate_todays_data(self, current_poller: "CurrentPoller") -> None:
         """Integrate today's data into the historical store."""
@@ -169,7 +414,9 @@ class HistoricalPoller:
                         location.name, camera
                     )
                     if events:
-                        await self.store_events_structured(events, location.name)
+                        # Acquire lock before modifying structured data
+                        async with self._data_lock:
+                            await self.store_events_structured(events, location.name)
 
                     # Get today's metadata from CurrentPoller
                     metadata = await current_poller.get_current_metadata(
@@ -177,7 +424,7 @@ class HistoricalPoller:
                     )
                     if metadata:
                         today = current_poller._last_day_obs.isoformat()
-                        self._metadata_refs.setdefault(loc_cam, set()).add(today)
+                        self._metadata_collector.register_metadata_ref(loc_cam, today)
                         self.add_to_calendar(loc_cam, today, 0)
 
                     # Get today's night reports from CurrentPoller
@@ -189,7 +436,7 @@ class HistoricalPoller:
                             night_report.plots if night_report.plots else []
                         )
 
-                    await self._shift_metadata_cache_for_new_day()
+                    await self._metadata_collector.shift_cache_for_new_day()
                     await self.notify_clients_of_day_change()
 
             logger.info("Completed integration of today's data from CurrentPoller")
@@ -203,216 +450,43 @@ class HistoricalPoller:
 
     async def _shift_metadata_cache_for_new_day(self) -> None:
         """Shift the metadata cache when a new day rolls over."""
-        for loc_cam, cache in self._metadata_cache.items():
-            if len(cache) >= self.METADATA_CACHE_DAYS:
-                # Remove oldest entries to make room
-                while len(cache) >= self.METADATA_CACHE_DAYS:
-                    cache.popitem(last=False)  # Remove oldest (FIFO)
-
-    async def _start_metadata_prefetch(self) -> None:
-        """Start background metadata prefetching."""
-        if self._metadata_prefetch_task and not self._metadata_prefetch_task.done():
-            self._metadata_prefetch_task.cancel()
-            try:
-                await self._metadata_prefetch_task
-            except asyncio.CancelledError:
-                pass
-
-        self._prefetch_paused.clear()
-        self._metadata_prefetch_task = asyncio.create_task(
-            self._background_metadata_prefetch()
-        )
-
-    async def _background_metadata_prefetch(self) -> None:
-        """Background task to prefetch metadata for the last 60 days."""
-        try:
-            logger.info("Starting background metadata prefetch")
-
-            for location in self._locations:
-                await self._prefetch_location_metadata(location)
-
-            logger.info("Background metadata prefetch completed")
-
-        except asyncio.CancelledError:
-            logger.info("Metadata prefetch cancelled")
-        except Exception as e:
-            logger.error(f"Error in background metadata prefetch: {e}")
-
-    async def _prefetch_location_metadata(self, location: Location) -> None:
-        """Prefetch metadata for all cameras in a location."""
-        for camera in location.cameras:
-            if not camera.online:
-                continue
-
-            loc_cam = f"{location.name}/{camera.name}"
-
-            # Initialize cache for this loc_cam if needed
-            if loc_cam not in self._metadata_cache:
-                self._metadata_cache[loc_cam] = OrderedDict()
-
-            cache = self._metadata_cache[loc_cam]
-
-            # Get all available metadata dates for this camera, sorted newest
-            # first
-            available_dates = []
-            if loc_cam in self._metadata_refs:
-                available_dates = sorted(
-                    self._metadata_refs[loc_cam],
-                    key=lambda d: date_str_to_date(d),
-                    reverse=True,
-                )
-
-            # Prefetch up to last 60 found metadata files, skipping already
-            # cached dates
-            prefetch_count = 0
-            for date_str in available_dates:
-                # Pause prefetch if there are active requests
-                while self._prefetch_paused.is_set():
-                    await asyncio.sleep(0.1)
-
-                if date_str in cache:
-                    continue
-
-                if prefetch_count >= self.METADATA_CACHE_DAYS:
-                    break
-
-                # Use per-key lock to prevent duplicate fetches
-                cache_key = f"{loc_cam}/{date_str}"
-                if cache_key not in self._fetch_locks:
-                    self._fetch_locks[cache_key] = asyncio.Lock()
-
-                async with self._fetch_locks[cache_key]:
-                    # Double-check cache after acquiring lock
-                    if date_str in cache:
-                        continue
-
-                    try:
-                        metadata = await self._fetch_metadata_from_s3(
-                            location, camera, date_str
-                        )
-                        if metadata:
-                            # Add to cache (will be inserted at end due to
-                            # OrderedDict)
-                            cache[date_str] = metadata
-                            # Move to end to mark as recently accessed
-                            cache.move_to_end(date_str)
-
-                            logger.debug(
-                                f"Prefetched metadata for {loc_cam}/{date_str}"
-                            )
-                            prefetch_count += 1
-
-                            # Small delay to prevent overwhelming S3
-                            await asyncio.sleep(0.1)
-
-                    except Exception as e:
-                        logger.debug(
-                            f"Failed to prefetch metadata for {loc_cam}/{date_str}: {e}"
-                        )
-
-            if prefetch_count > 0:
-                logger.info(f"Prefetched {prefetch_count} metadata files for {loc_cam}")
+        await self._metadata_collector.shift_cache_for_new_day()
 
     async def get_metadata_for_date(
         self, location: Location, camera: Camera, date_str: str
     ) -> dict | None:
-        """Get metadata for a specific date with caching and interruption
-        handling."""
-        loc_cam = f"{location.name}/{camera.name}"
+        """Get metadata for a specific date with caching.
 
-        # Initialize cache for this loc_cam if needed
-        if loc_cam not in self._metadata_cache:
-            self._metadata_cache[loc_cam] = OrderedDict()
+        Parameters
+        ----------
+        location : `Location`
+            The location object.
+        camera : `Camera`
+            The camera object.
+        date_str : `str`
+            ISO format date string.
 
-        cache = self._metadata_cache[loc_cam]
-
-        # Check cache first
-        if date_str in cache:
-            # Move to end (mark as recently used)
-            cache.move_to_end(date_str)
-            return cache[date_str]
-
-        # Use per-key lock to prevent duplicate fetches
-        cache_key = f"{loc_cam}/{date_str}"
-        if cache_key not in self._fetch_locks:
-            self._fetch_locks[cache_key] = asyncio.Lock()
-
-        async with self._fetch_locks[cache_key]:
-            # Double-check cache after acquiring lock
-            if date_str in cache:
-                cache.move_to_end(date_str)
-                return cache[date_str]
-
-            # Track active request and pause prefetch if needed
-            async with self._request_lock:
-                self._active_requests += 1
-                if self._active_requests == 1:
-                    # First active request - pause prefetch
-                    self._prefetch_paused.set()
-
-            # Fetch from S3
-            try:
-                metadata = await self._fetch_metadata_from_s3(
-                    location, camera, date_str
-                )
-                if metadata:
-                    # Add to cache
-                    cache[date_str] = metadata
-
-                    # Maintain cache size limit
-                    while len(cache) > self.METADATA_CACHE_DAYS:
-                        cache.popitem(last=False)  # Remove oldest
-
-                    # Move to end (mark as recently used)
-                    cache.move_to_end(date_str)
-
-                    logger.debug(f"Cached metadata for {loc_cam}/{date_str}")
-
-                return metadata
-
-            except Exception as e:
-                logger.error(f"Failed to fetch metadata for {loc_cam}/{date_str}: {e}")
-                return None
-            finally:
-                # Resume background prefetch when no active requests
-                async with self._request_lock:
-                    self._active_requests -= 1
-                    if self._active_requests == 0:
-                        # No more active requests - resume prefetch
-                        self._prefetch_paused.clear()
-
-    async def _fetch_metadata_from_s3(
-        self, location: Location, camera: Camera, date_str: str
-    ) -> dict | None:
-        """Fetch metadata from S3 for a specific date."""
-        client = self._clients[location.name]
-        key = f"{camera.name}/{date_str}/metadata.json"
-
-        try:
-            metadata = await client.async_get_object(key)
-            return metadata
-        except Exception:
-            return None
+        Returns
+        -------
+        metadata : `dict` | `None`
+            The metadata dictionary, or None if not found.
+        """
+        return await self._metadata_collector.get_metadata_for_date(
+            location, camera, date_str
+        )
 
     async def _metadata_exists_for_date(
         self, location: Location, camera: Camera, day_obs: date
     ) -> bool:
         """Check if metadata exists for a specific date."""
-        loc_cam = f"{location.name}/{camera.name}"
         date_str = day_obs.isoformat()
-
-        return (
-            loc_cam in self._metadata_refs and date_str in self._metadata_refs[loc_cam]
+        return await self._metadata_collector.metadata_exists_for_date(
+            location, camera, date_str
         )
 
     async def stop_background_tasks(self) -> None:
         """Stop all background tasks."""
-        if self._metadata_prefetch_task and not self._metadata_prefetch_task.done():
-            self._metadata_prefetch_task.cancel()
-            try:
-                await self._metadata_prefetch_task
-            except asyncio.CancelledError:
-                pass
+        await self._metadata_collector.stop_background_tasks()
 
     async def notify_clients_of_day_change(self) -> None:
         """Notify the clients that the day has changed."""
@@ -629,13 +703,14 @@ class HistoricalPoller:
         loc_cam = f"{location.name}/{camera.name}"
         date_str = a_date.isoformat()
 
-        if (
-            loc_cam not in self._structured_events
-            or date_str not in self._structured_events[loc_cam]
-        ):
-            return {}
+        async with self._data_lock:
+            if (
+                loc_cam not in self._structured_events
+                or date_str not in self._structured_events[loc_cam]
+            ):
+                return {}
 
-        return self._structured_events[loc_cam][date_str]
+            return self._structured_events[loc_cam][date_str]
 
     async def get_all_extensions_for_date(
         self, location: Location, camera: Camera, a_date: date
@@ -676,20 +751,21 @@ class HistoricalPoller:
         loc_cam = f"{location.name}/{camera.name}"
         date_str = a_date.isoformat()
 
-        if (
-            loc_cam not in self._structured_events
-            or date_str not in self._structured_events[loc_cam]
-        ):
-            return []
+        async with self._data_lock:
+            if (
+                loc_cam not in self._structured_events
+                or date_str not in self._structured_events[loc_cam]
+            ):
+                return []
 
-        events = []
-        for channel_name, seq_data in self._structured_events[loc_cam][
-            date_str
-        ].items():
-            for seq_num in seq_data:
-                ext = self.get_extension_for_event(
-                    loc_cam, date_str, channel_name, seq_num
-                )
+            events = []
+            for channel_name, seq_data in self._structured_events[loc_cam][
+                date_str
+            ].items():
+                for seq_num in seq_data:
+                    ext = self.get_extension_for_event(
+                        loc_cam, date_str, channel_name, seq_num
+                    )
 
                 # Reconstruct filename and key
                 filename = self.reconstruct_filename(
@@ -704,7 +780,7 @@ class HistoricalPoller:
                     key = f"{camera.name}/{date_str}/{channel_name}/{seq_num:06d}/{filename}"
                 events.append(Event(key=key))
 
-        return events
+            return events
 
     def add_to_calendar(self, loc_cam: str, date_str: str, seq_num: int) -> None:
         year_str, month_str, day_str = date_str.split("-")
@@ -730,7 +806,7 @@ class HistoricalPoller:
             storage_name = locname + "/" + key.split("/metadata")[0]
             _, cam_name, date_str = storage_name.split("/")
             loc_cam = f"{locname}/{cam_name}"
-            self._metadata_refs.setdefault(loc_cam, set()).add(date_str)
+            self._metadata_collector.register_metadata_ref(loc_cam, date_str)
             self.add_to_calendar(loc_cam, date_str, 0)
 
     async def get_night_report_payload(
@@ -823,10 +899,9 @@ class HistoricalPoller:
         self, location: Location, camera: Camera, day_obs: date
     ) -> bool:
         date_str = day_obs.isoformat()
-        loc_cam = f"{location.name}/{camera.name}"
-        if loc_cam in self._metadata_refs and date_str in self._metadata_refs[loc_cam]:
-            return True
-        return False
+        return await self._metadata_collector.metadata_exists_for_date(
+            location, camera, date_str
+        )
 
     def flatten_calendar(self, location: Location, camera: Camera) -> dict[str, int]:
         """Flatten the calendar for a given location and camera.
@@ -930,7 +1005,7 @@ class HistoricalPoller:
         return self._calendar.get(loc_cam, {})
 
     async def get_all_channel_names_for_date_and_seq_num(
-        self, location: Location, camera: Camera, date: str, seq_num: int
+        self, location: Location, camera: Camera, day_obs: date, seq_num: int
     ) -> list[str]:
         """Returns a list of Events for the given date and seq_num.
 
@@ -938,7 +1013,7 @@ class HistoricalPoller:
         ----------
         camera : `Camera`
             The given Camera.
-        date : `str`
+        day_obs : `date`
             The given date.
         seq_num : `int`
             The given sequence number.
@@ -949,15 +1024,18 @@ class HistoricalPoller:
             A list of channel names for the given date and seq_num.
         """
         loc_cam = f"{location.name}/{camera.name}"
+        date_str = day_obs.isoformat()
 
         if (
             loc_cam not in self._structured_events
-            or date not in self._structured_events[loc_cam]
+            or date_str not in self._structured_events[loc_cam]
         ):
             return []
 
         channel_names = []
-        for channel_name, seq_data in self._structured_events[loc_cam][date].items():
+        for channel_name, seq_data in self._structured_events[loc_cam][
+            date_str
+        ].items():
             if seq_num in seq_data:
                 channel_names.append(channel_name)
 
