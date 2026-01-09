@@ -38,13 +38,14 @@ logger = rubintv_logger()
 
 class HistoricalPoller:
     """Provide a cache of the historical data.
-
-    Provides a cache of the historical data which updates when the day rolls
-    over.
+    This class downloads and stores historical data from S3 buckets for
+    multiple locations and cameras. It maintains structured data for efficient
+    retrieval of events, metadata, and night reports. It also supports
+    integration of current data and notifies clients of day changes.
     """
 
-    # polling period in seconds
-    CHECK_NEW_DAY_PERIOD = 5
+    # re-polling period in seconds
+    RECHECK_BUCKET_PERIOD = 60 * 60  # 60 minutes
 
     def __init__(
         self,
@@ -91,6 +92,9 @@ class HistoricalPoller:
             self.test_date_end = date_str_to_date(test_date_end)
         self.prefix_extra = prefix_extra
 
+        # Add lock for thread-safe access during updates
+        self._data_lock = asyncio.Lock()
+
     async def clear_all_data(self) -> None:
         self._have_downloaded = False
         self._structured_events = {}
@@ -106,6 +110,8 @@ class HistoricalPoller:
         await self.clear_all_data()
 
     async def run(self) -> None:
+        t = time()
+        time_elapsed = 0.0
         while True:
             if not self._have_downloaded:
                 logger.info("Starting initial historical data download")
@@ -120,7 +126,177 @@ class HistoricalPoller:
                 )
                 # Start background metadata prefetching
                 await self._metadata_collector.start_prefetch(self._locations)
-            await asyncio.sleep(self.CHECK_NEW_DAY_PERIOD)
+                time_elapsed = time() - t
+                logger.info(
+                    "HistoricalPoller initial run completed",
+                    total_elapsed_time_seconds=time_elapsed,
+                )
+            if time_elapsed < self.RECHECK_BUCKET_PERIOD:
+                sleep_time = self.RECHECK_BUCKET_PERIOD - time_elapsed
+                logger.info(
+                    "HistoricalPoller sleeping until next recheck",
+                    sleep_time_seconds=sleep_time,
+                )
+                await asyncio.sleep(sleep_time)
+                t = time()
+            else:
+                await self.repoll_buckets_and_update()
+                t = time()
+
+    async def repoll_buckets_and_update(self) -> None:
+        """Recheck buckets for changes and update structured data if
+        differences are found."""
+        logger.info("Starting bucket recheck for changes")
+        start_time = time()
+
+        for location in self._locations:
+            try:
+                await self._check_location_for_changes(location)
+            except Exception as e:
+                logger.error(f"Error checking location for changes: {e}")
+
+        elapsed = time() - start_time
+        logger.info(
+            "Completed bucket recheck",
+            elapsed_time_seconds=elapsed,
+        )
+
+    async def _check_location_for_changes(self, location: Location) -> None:
+        """Check a specific location for changes in bucket data."""
+        for camera in location.cameras:
+            if not camera.online:
+                continue
+
+            loc_cam = f"{location.name}/{camera.name}"
+
+            try:
+                # Get current objects from bucket
+                new_objects = await self._get_objects_for_location_camera(
+                    location, camera
+                )
+
+                # Compare with cached objects and update if different
+                await self._update_if_changed(loc_cam, new_objects, location)
+            except Exception as e:
+                logger.error(
+                    f"Error checking camera for changes: {e}",
+                    location=location.name,
+                    camera=camera.name,
+                )
+
+    async def _get_objects_for_location_camera(
+        self, location: Location, camera: Camera
+    ) -> list[dict[str, str]]:
+        """Get objects from bucket for a specific camera."""
+        objects = []
+        prefixes = []
+
+        if self.test_date_start and self.test_date_end:
+            for aDate in daterange(
+                self.test_date_start,
+                self.test_date_end,
+            ):
+                date_str = aDate.isoformat()
+                prefixes.append(f"{camera.name}/{date_str}/{self.prefix_extra}")
+        else:
+            prefixes.append(camera.name + "/" + self.prefix_extra)
+
+        for prefix in prefixes:
+            try:
+                objects.extend(await self._get_objects_for_prefix(location, prefix))
+            except Exception as e:
+                logger.error(f"Error fetching prefix: {e}")
+
+        return objects
+
+    def _parse_structured_key(self, key: str) -> tuple[str, str, str, int | str] | None:
+        """Parse an S3 key into structured components.
+
+        Parameters
+        ----------
+        key : `str`
+            S3 object key in format: camera/date/channel/seq_num/filename.ext
+
+        Returns
+        -------
+        `tuple`[`str`, `str`, `str`, `int` | `str`] | `None`
+            Tuple of (camera_name, date_str, channel_name, seq_num) or None
+            if key cannot be parsed.
+        """
+        parts = key.split("/")
+        if len(parts) < 5:
+            return None
+
+        camera_name = parts[0]
+        date_str = parts[1]
+        channel_name = parts[2]
+        seq_part = parts[3]
+
+        try:
+            seq_num: int | str = int(seq_part)
+        except ValueError:
+            seq_num = seq_part  # e.g., 'final'
+
+        return (camera_name, date_str, channel_name, seq_num)
+
+    async def _update_if_changed(
+        self,
+        loc_cam: str,
+        new_objects: list[dict[str, str]],
+        location: Location,
+    ) -> None:
+        """Compare new objects with cached data and update only if changed."""
+        # Parse new object keys to extract structured components
+        new_keys_set = set()
+        new_keys_map: dict[tuple, dict[str, str]] = {}
+
+        for obj in new_objects:
+            key = obj["key"]
+            # Only process event objects (skip metadata and night_report)
+            if "metadata.json" not in key and "night_report" not in key:
+                parsed = self._parse_structured_key(key)
+                if parsed:
+                    struct_key = parsed
+                    new_keys_set.add(struct_key)
+                    new_keys_map[struct_key] = obj
+
+        # Build cached keys from structured data
+        cached_keys_set = set()
+        if loc_cam in self._structured_events:
+            for date_str in self._structured_events[loc_cam]:
+                for channel_name in self._structured_events[loc_cam][date_str]:
+                    for seq_num in self._structured_events[loc_cam][date_str][
+                        channel_name
+                    ]:
+                        camera_name = loc_cam.split("/")[1]
+                        struct_key = (camera_name, date_str, channel_name, seq_num)
+                        cached_keys_set.add(struct_key)
+
+        # Check for differences
+        if new_keys_set != cached_keys_set:
+            logger.info(
+                "Changes detected in bucket",
+                loc_cam=loc_cam,
+                added=len(new_keys_set - cached_keys_set),
+                removed=len(cached_keys_set - new_keys_set),
+            )
+
+            # Convert objects to events WITHOUT holding the lock
+            if new_keys_map:
+                changed_objects = list(new_keys_map.values())
+                # This conversion can take time - do it before acquiring lock
+                await self.filter_convert_store_objects(changed_objects, location)
+
+            # Only clear/update the structured events after conversion is done
+            async with self._data_lock:
+                # Clear existing data for this location/camera
+                if loc_cam in self._structured_events:
+                    del self._structured_events[loc_cam]
+        else:
+            logger.debug(
+                "No changes detected in bucket",
+                loc_cam=loc_cam,
+            )
 
     async def clear_metadata_cache(self) -> None:
         """Explicitly clear the metadata cache (for testing or manual
@@ -144,7 +320,9 @@ class HistoricalPoller:
                         location.name, camera
                     )
                     if events:
-                        await self.store_events_structured(events, location.name)
+                        # Acquire lock before modifying structured data
+                        async with self._data_lock:
+                            await self.store_events_structured(events, location.name)
 
                     # Get today's metadata from CurrentPoller
                     metadata = await current_poller.get_current_metadata(
@@ -446,13 +624,14 @@ class HistoricalPoller:
         loc_cam = f"{location.name}/{camera.name}"
         date_str = a_date.isoformat()
 
-        if (
-            loc_cam not in self._structured_events
-            or date_str not in self._structured_events[loc_cam]
-        ):
-            return {}
+        async with self._data_lock:
+            if (
+                loc_cam not in self._structured_events
+                or date_str not in self._structured_events[loc_cam]
+            ):
+                return {}
 
-        return self._structured_events[loc_cam][date_str]
+            return self._structured_events[loc_cam][date_str]
 
     async def get_all_extensions_for_date(
         self, location: Location, camera: Camera, a_date: date
@@ -493,35 +672,34 @@ class HistoricalPoller:
         loc_cam = f"{location.name}/{camera.name}"
         date_str = a_date.isoformat()
 
-        if (
-            loc_cam not in self._structured_events
-            or date_str not in self._structured_events[loc_cam]
-        ):
-            return []
+        async with self._data_lock:
+            if (
+                loc_cam not in self._structured_events
+                or date_str not in self._structured_events[loc_cam]
+            ):
+                return []
 
-        events = []
-        for channel_name, seq_data in self._structured_events[loc_cam][
-            date_str
-        ].items():
-            for seq_num in seq_data:
-                ext = self.get_extension_for_event(
-                    loc_cam, date_str, channel_name, seq_num
-                )
-
-                # Reconstruct filename and key
-                filename = self.reconstruct_filename(
-                    camera.name, channel_name, seq_num, ext
-                )
-                if isinstance(seq_num, str):
-                    # seq_num is 'final' or similar non-integer
-                    key = (
-                        f"{camera.name}/{date_str}/{channel_name}/{seq_num}/{filename}"
+            events = []
+            for channel_name, seq_data in self._structured_events[loc_cam][
+                date_str
+            ].items():
+                for seq_num in seq_data:
+                    ext = self.get_extension_for_event(
+                        loc_cam, date_str, channel_name, seq_num
                     )
-                else:
-                    key = f"{camera.name}/{date_str}/{channel_name}/{seq_num:06d}/{filename}"
-                events.append(Event(key=key))
 
-        return events
+                    # Reconstruct filename and key
+                    filename = self.reconstruct_filename(
+                        camera.name, channel_name, seq_num, ext
+                    )
+                    if isinstance(seq_num, str):
+                        # seq_num is 'final' or similar non-integer
+                        key = f"{camera.name}/{date_str}/{channel_name}/{seq_num}/{filename}"
+                    else:
+                        key = f"{camera.name}/{date_str}/{channel_name}/{seq_num:06d}/{filename}"
+                    events.append(Event(key=key))
+
+            return events
 
     def add_to_calendar(self, loc_cam: str, date_str: str, seq_num: int) -> None:
         year_str, month_str, day_str = date_str.split("-")
