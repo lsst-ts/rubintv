@@ -248,7 +248,6 @@ class HistoricalPoller:
         """Compare new objects with cached data and update only if changed."""
         # Parse new object keys to extract structured components
         new_keys_set = set()
-        new_keys_map: dict[tuple, dict[str, str]] = {}
 
         for obj in new_objects:
             key = obj["key"]
@@ -256,9 +255,7 @@ class HistoricalPoller:
             if "metadata.json" not in key and "night_report" not in key:
                 parsed = self._parse_structured_key(key)
                 if parsed:
-                    struct_key = parsed
-                    new_keys_set.add(struct_key)
-                    new_keys_map[struct_key] = obj
+                    new_keys_set.add(parsed)
 
         # Build cached keys from structured data
         cached_keys_set = set()
@@ -282,21 +279,114 @@ class HistoricalPoller:
             )
 
             # Convert objects to events WITHOUT holding the lock
-            if new_keys_map:
-                changed_objects = list(new_keys_map.values())
-                # This conversion can take time - do it before acquiring lock
-                await self.filter_convert_store_objects(changed_objects, location)
+            if new_objects:
+                # Filter to only event objects
+                event_objects = [
+                    obj
+                    for obj in new_objects
+                    if "metadata.json" not in obj["key"]
+                    and "night_report" not in obj["key"]
+                ]
+                # Convert and build temporary structured data (no lock needed)
+                temp_structured = await self._convert_objects_to_structured(
+                    event_objects, location
+                )
 
-            # Only clear/update the structured events after conversion is done
-            async with self._data_lock:
-                # Clear existing data for this location/camera
-                if loc_cam in self._structured_events:
-                    del self._structured_events[loc_cam]
+                # Now acquire lock and swap out old data with new
+                async with self._data_lock:
+                    # Delete old cached data for this location/camera
+                    if loc_cam in self._structured_events:
+                        del self._structured_events[loc_cam]
+
+                    # Store the new data
+                    for key, value in temp_structured.items():
+                        self._structured_events[key] = value
         else:
             logger.debug(
                 "No changes detected in bucket",
                 loc_cam=loc_cam,
             )
+
+    async def _convert_objects_to_structured(
+        self, event_objects: list[dict[str, str]], location: Location
+    ) -> dict:
+        """Convert objects to events and build structured data without lock.
+
+        Returns a dictionary with the same structure as _structured_events
+        that can be merged in atomically under the lock.
+        """
+        temp_structured: dict[str, dict[str, dict[str, set[int | str]]]] = {}
+        temp_extensions: dict[str, str] = {}
+        temp_exceptions: dict[str, dict[int | str, str]] = {}
+
+        # Group events by channel-date for extension analysis
+        channel_date_groups: dict[str, list[Event]] = {}
+
+        # Process objects through the normal conversion pipeline
+        async for events_batch in objects_to_events(event_objects):
+            for event in events_batch:
+                loc_cam = f"{location.name}/{event.camera_name}"
+                date_str = event.day_obs
+                channel_name = event.channel_name
+                channel_date_key = f"{loc_cam}/{date_str}/{channel_name}"
+
+                # Build temporary structure
+                if loc_cam not in temp_structured:
+                    temp_structured[loc_cam] = {}
+                if date_str not in temp_structured[loc_cam]:
+                    temp_structured[loc_cam][date_str] = {}
+                if channel_name not in temp_structured[loc_cam][date_str]:
+                    temp_structured[loc_cam][date_str][channel_name] = set()
+
+                temp_structured[loc_cam][date_str][channel_name].add(event.seq_num)
+
+                # Group for extension analysis
+                if channel_date_key not in channel_date_groups:
+                    channel_date_groups[channel_date_key] = []
+                channel_date_groups[channel_date_key].append(event)
+
+                # Update calendar
+                self.add_to_calendar(
+                    loc_cam,
+                    date_str,
+                    event.seq_num if isinstance(event.seq_num, int) else 0,
+                )
+
+        # Analyze extensions for each channel-date group
+        for channel_date_key, events in channel_date_groups.items():
+            extension_counts: dict[str, int] = {}
+            event_extensions: dict[int | str, str] = {}
+
+            for event in events:
+                ext = event.ext
+                extension_counts[ext] = extension_counts.get(ext, 0) + 1
+                event_extensions[event.seq_num] = ext
+
+            # Determine default extension
+            if extension_counts:
+                default_ext = max(
+                    extension_counts, key=lambda ext: extension_counts[ext]
+                )
+                temp_extensions[channel_date_key] = default_ext
+
+                # Store only exceptions
+                exceptions = {
+                    seq_num: ext
+                    for seq_num, ext in event_extensions.items()
+                    if ext != default_ext
+                }
+                if exceptions:
+                    temp_exceptions[channel_date_key] = exceptions
+
+        # Update the extension tracking dictionaries atomically
+        # (this will happen under lock in _update_if_changed)
+        for key, ext in temp_extensions.items():
+            self._channel_default_extensions[key] = ext
+
+        for key, excs in temp_exceptions.items():
+            self._extension_exceptions[key] = excs
+
+        return temp_structured
 
     async def clear_metadata_cache(self) -> None:
         """Explicitly clear the metadata cache (for testing or manual

@@ -753,3 +753,312 @@ class TestHistoricalPollerWithMockData:
         assert next_event is None
         assert prev_event is not None
         assert prev_event.get("seq_num") == 4
+
+    @pytest.mark.asyncio
+    async def test_cache_updates_when_new_events_added(
+        self, historical: HistoricalPoller, rubin_data_mocker: RubinDataMocker
+    ) -> None:
+        """Test that cache updates when new events are added to the bucket."""
+        location = m.locations[0]
+        camera = location.cameras[0]
+        loc_cam = f"{location.name}/{camera.name}"
+        channel = camera.channels[0]
+
+        # Initial download
+        await historical._initialise_location_store(location)
+
+        # Get initial event count
+        initial_events = await historical.get_events_for_date(
+            location, camera, datetime.date.today()
+        )
+        initial_count = len(initial_events)
+
+        # Add more events to the mock bucket
+        rubin_data_mocker.add_seq_objs_for_channel(
+            location, camera, channel, num_objs=3
+        )
+
+        # Get new objects from bucket (simulating recheck)
+        new_objects = await historical._get_objects_for_location_camera(
+            location, camera
+        )
+
+        # Simulate recheck - this should detect changes
+        await historical._update_if_changed(loc_cam, new_objects, location)
+
+        # Verify cache was updated with new events
+        updated_events = await historical.get_events_for_date(
+            location, camera, datetime.date.today()
+        )
+        assert len(updated_events) > initial_count
+
+    @pytest.mark.asyncio
+    async def test_cache_detects_added_keys(self, historical: HistoricalPoller) -> None:
+        """Test that _update_if_changed detects added keys correctly."""
+        location = m.locations[0]
+        camera = location.cameras[0]
+        loc_cam = f"{location.name}/{camera.name}"
+        channel = camera.channels[0]
+
+        # Create initial batch of objects
+        objects_batch_1 = []
+        for i in range(1, 4):
+            objects_batch_1.append(
+                {
+                    "key": (
+                        f"{camera.name}/2024-06-15/{channel.name}/{i:06d}/"
+                        f"{camera.name}_{channel.name}_{i:06d}.jpg"
+                    ),
+                    "hash": f"hash{i}",
+                }
+            )
+
+        # Process initial objects
+        await historical.filter_convert_store_objects(objects_batch_1, location)
+
+        # Verify initial state
+        assert loc_cam in historical._structured_events
+        assert "2024-06-15" in historical._structured_events[loc_cam]
+        initial_count = len(
+            historical._structured_events[loc_cam]["2024-06-15"][channel.name]
+        )
+        assert initial_count == 3
+
+        # Add new objects to bucket
+        objects_batch_2 = []
+        for i in range(4, 7):
+            objects_batch_2.append(
+                {
+                    "key": (
+                        f"{camera.name}/2024-06-15/{channel.name}/{i:06d}/"
+                        f"{camera.name}_{channel.name}_{i:06d}.jpg"
+                    ),
+                    "hash": f"hash{i}",
+                }
+            )
+
+        # Combine all objects (simulating bucket list with new items)
+        all_objects = objects_batch_1 + objects_batch_2
+
+        # Simulate recheck with new objects
+        await historical._update_if_changed(loc_cam, all_objects, location)
+
+        # Verify new seq_nums were added
+        seq_nums = historical._structured_events[loc_cam]["2024-06-15"][channel.name]
+        assert len(seq_nums) == 6
+        assert 4 in seq_nums
+        assert 5 in seq_nums
+        assert 6 in seq_nums
+
+    @pytest.mark.asyncio
+    async def test_cache_handles_removed_keys(
+        self, historical: HistoricalPoller
+    ) -> None:
+        """Test that cache is cleared and rebuilt when objects are removed from
+        bucket."""
+        location = m.locations[0]
+        camera = location.cameras[0]
+        loc_cam = f"{location.name}/{camera.name}"
+        channel = camera.channels[0]
+
+        # Add initial objects
+        objects_batch_1 = []
+        for i in range(1, 6):
+            objects_batch_1.append(
+                {
+                    "key": (
+                        f"{camera.name}/2024-06-15/{channel.name}/{i:06d}/"
+                        f"{camera.name}_{channel.name}_{i:06d}.jpg"
+                    ),
+                    "hash": f"hash{i}",
+                }
+            )
+
+        await historical.filter_convert_store_objects(objects_batch_1, location)
+
+        # Verify initial state
+        assert (
+            len(historical._structured_events[loc_cam]["2024-06-15"][channel.name]) == 5
+        )
+
+        # Simulate bucket now has fewer objects (only 3-5)
+        objects_batch_2 = []
+        for i in range(3, 6):
+            objects_batch_2.append(
+                {
+                    "key": (
+                        f"{camera.name}/2024-06-15/{channel.name}/{i:06d}/"
+                        f"{camera.name}_{channel.name}_{i:06d}.jpg"
+                    ),
+                    "hash": f"hash{i}",
+                }
+            )
+
+        # Run recheck with fewer objects (simulating deletion)
+        await historical._update_if_changed(loc_cam, objects_batch_2, location)
+
+        # Verify cache was cleared and rebuilt with only remaining items
+        if loc_cam in historical._structured_events:
+            if "2024-06-15" in historical._structured_events[loc_cam]:
+                seq_nums = historical._structured_events[loc_cam]["2024-06-15"][
+                    channel.name
+                ]
+                assert len(seq_nums) == 3
+                assert 1 not in seq_nums
+                assert 2 not in seq_nums
+                assert 3 in seq_nums
+                assert 4 in seq_nums
+                assert 5 in seq_nums
+
+    @pytest.mark.asyncio
+    async def test_cache_handles_no_changes(self, historical: HistoricalPoller) -> None:
+        """Test that cache is not modified when bucket contents haven't
+        changed."""
+        location = m.locations[0]
+        camera = location.cameras[0]
+        loc_cam = f"{location.name}/{camera.name}"
+        channel = camera.channels[0]
+
+        # Add initial objects
+        objects = []
+        for i in range(1, 4):
+            objects.append(
+                {
+                    "key": (
+                        f"{camera.name}/2024-06-15/{channel.name}/{i:06d}/"
+                        f"{camera.name}_{channel.name}_{i:06d}.jpg"
+                    ),
+                    "hash": f"hash{i}",
+                }
+            )
+
+        await historical.filter_convert_store_objects(objects, location)
+
+        # Get initial structured data
+        initial_data = historical._structured_events[loc_cam]["2024-06-15"][
+            channel.name
+        ].copy()
+        initial_extensions = historical._channel_default_extensions.copy()
+
+        # Run recheck with identical objects (no changes)
+        await historical._update_if_changed(loc_cam, objects, location)
+
+        # Verify cache still exists and is unchanged
+        assert loc_cam in historical._structured_events
+        assert (
+            historical._structured_events[loc_cam]["2024-06-15"][channel.name]
+            == initial_data
+        )
+        # Extensions should remain the same
+        assert historical._channel_default_extensions == initial_extensions
+
+    @pytest.mark.asyncio
+    async def test_cache_with_mixed_object_types(
+        self, historical: HistoricalPoller, rubin_data_mocker: RubinDataMocker
+    ) -> None:
+        """Test bucket change detection with mixed object types (events,
+        metadata, night reports)."""
+        location = m.locations[0]
+        camera = location.cameras[0]
+        loc_cam = f"{location.name}/{camera.name}"
+        channel = camera.channels[0]
+        date_str = "2024-07-10"
+
+        # Create objects with different types
+        objects = [
+            # Event objects
+            {
+                "key": f"{camera.name}/{date_str}/{channel.name}/000001/"
+                f"{camera.name}_{channel.name}_000001.jpg",
+                "hash": "hash1",
+            },
+            {
+                "key": f"{camera.name}/{date_str}/{channel.name}/000002/"
+                f"{camera.name}_{channel.name}_000002.jpg",
+                "hash": "hash2",
+            },
+            # Metadata object (should be skipped in comparison)
+            {"key": f"{camera.name}/{date_str}/metadata.json", "hash": "hash_meta"},
+            # Night report object (should be skipped in comparison)
+            {
+                "key": f"{camera.name}/{date_str}/night_report/group1/plot.png",
+                "hash": "hash_nr",
+            },
+        ]
+
+        # Process initial objects
+        await historical.filter_convert_store_objects(objects, location)
+
+        # Verify only event objects are in structured data
+        assert loc_cam in historical._structured_events
+        assert date_str in historical._structured_events[loc_cam]
+        seq_nums = historical._structured_events[loc_cam][date_str][channel.name]
+        assert len(seq_nums) == 2
+        assert 1 in seq_nums
+        assert 2 in seq_nums
+
+        # Add a new event object (metadata and night report added too, but
+        # should be ignored in key comparison)
+        new_objects = objects + [
+            {
+                "key": f"{camera.name}/{date_str}/{channel.name}/000003/"
+                f"{camera.name}_{channel.name}_000003.jpg",
+                "hash": "hash3",
+            },
+            {
+                "key": f"{camera.name}/{date_str}/night_report/group2/plot2.png",
+                "hash": "hash_nr2",
+            },
+        ]
+
+        # Simulate recheck
+        await historical._update_if_changed(loc_cam, new_objects, location)
+
+        # Verify only the new event object was added (night report ignored in
+        # key comparison)
+        updated_seq_nums = historical._structured_events[loc_cam][date_str][
+            channel.name
+        ]
+        assert len(updated_seq_nums) == 3
+        assert 3 in updated_seq_nums
+
+    @pytest.mark.asyncio
+    async def test_parse_structured_key_valid_keys(
+        self, historical: HistoricalPoller
+    ) -> None:
+        """Test _parse_structured_key with various valid key formats."""
+        # Test with numeric seq_num
+        key = "camera1/2024-06-15/channel1/000042/camera1_channel1_000042.jpg"
+        parsed = historical._parse_structured_key(key)
+        assert parsed == ("camera1", "2024-06-15", "channel1", 42)
+
+        # Test with 'final' seq_num
+        key = "camera1/2024-06-15/channel1/final/camera1_channel1_final.jpg"
+        parsed = historical._parse_structured_key(key)
+        assert parsed == ("camera1", "2024-06-15", "channel1", "final")
+
+        # Test with underscores in names
+        key = "cam_name/2024-06-15/chan_name/000001/cam_name_chan_name_000001.fits"
+        parsed = historical._parse_structured_key(key)
+        assert parsed == ("cam_name", "2024-06-15", "chan_name", 1)
+
+    @pytest.mark.asyncio
+    async def test_parse_structured_key_invalid_keys(
+        self, historical: HistoricalPoller
+    ) -> None:
+        """Test _parse_structured_key with invalid key formats."""
+        # Test with too few parts
+        key = "camera1/2024-06-15/channel1"
+        parsed = historical._parse_structured_key(key)
+        assert parsed is None
+
+        # Test with invalid seq_num (not numeric and not 'final')
+        # Actually, this would parse successfully since we allow non-numeric
+        key = "camera1/2024-06-15/channel1/invalid/file.jpg"
+        parsed = historical._parse_structured_key(key)
+        assert parsed == ("camera1", "2024-06-15", "channel1", "invalid")
+
+        # Test empty string
+        key = ""
+        parsed = historical._parse_structured_key(key)
+        assert parsed is None
