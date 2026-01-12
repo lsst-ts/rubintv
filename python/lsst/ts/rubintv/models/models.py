@@ -3,6 +3,7 @@
 import asyncio
 import dataclasses
 import re
+from abc import ABC, abstractmethod
 from datetime import date, datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, TypedDict
@@ -13,6 +14,23 @@ from pydantic import BaseModel, ConfigDict
 from pydantic.dataclasses import dataclass
 
 logger = rubintv_logger()
+
+
+def to_camel(string: str) -> str:
+    """Convert snake_case to camelCase.
+
+    Parameters
+    ----------
+    string : str
+        Snake case string (e.g., "foo_bar_baz")
+
+    Returns
+    -------
+    str
+        Camel case string (e.g., "fooBarBaz")
+    """
+    components = string.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
 
 
 class Metadata(BaseModel):
@@ -475,8 +493,14 @@ type ChannelData = dict[int, dict[str, dict]]
 
 
 @dataclass
-class CameraPageData:
-    """Data for a camera page."""
+class CameraPageData(ABC):
+    """Base class for camera page data (current or historical).
+
+    This abstract base class defines the interface for camera page data
+    that can be either current (real-time) or historical (past date).
+    Subclasses implement get_response_dict() to provide their specific
+    response format.
+    """
 
     per_day: dict[str, dict] = dataclasses.field(default_factory=dict)
     nr_exists: bool = False
@@ -490,10 +514,30 @@ class CameraPageData:
             ]
         )
 
+    @abstractmethod
+    def get_response_dict(self) -> dict[str, Any]:
+        """Build response dictionary with data-specific fields.
+
+        Each subclass implements this to include its specific fields
+        (e.g., CurrentPageData includes channelData and metadata,
+        while HistoricalPageData includes structuredData and extensionInfo).
+
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary with data-specific fields ready for API response.
+            Must include the fields appropriate for that data type.
+        """
+        pass
+
 
 @dataclass
 class HistoricalPageData(CameraPageData):
-    """Data for the historical page."""
+    """Data for a historical date query.
+
+    Contains raw structured data and extension information that the frontend
+    can transform into display format using createTableFromStructuredData().
+    """
 
     metadata_exists: bool = False
     structured_data: dict[str, set[int | str]] = dataclasses.field(default_factory=dict)
@@ -510,10 +554,28 @@ class HistoricalPageData(CameraPageData):
             ]
         )
 
+    def get_response_dict(self) -> dict[str, Any]:
+        """Build response dictionary with historical data fields.
+
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary with structuredData, extensionInfo, and metadataExists.
+        """
+        return {
+            "structuredData": self.structured_data,
+            "extensionInfo": self.extension_info,
+            "metadataExists": self.metadata_exists,
+        }
+
 
 @dataclass
 class CurrentPageData(CameraPageData):
-    """Data for the current page."""
+    """Data for the current day query.
+
+    Contains pre-processed channel data and metadata ready for display
+    in the UI without additional transformation needed.
+    """
 
     channel_data: ChannelData = dataclasses.field(default_factory=dict)
     metadata: dict[str, Any] = dataclasses.field(default_factory=dict)
@@ -522,3 +584,42 @@ class CurrentPageData(CameraPageData):
         """Check if the data is empty."""
         base_empty = super().is_empty()
         return base_empty and not any([self.metadata, self.channel_data])
+
+    def get_response_dict(self) -> dict[str, Any]:
+        """Build response dictionary with current data fields.
+
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary with channelData and metadata.
+        """
+        return {
+            "channelData": self.channel_data,
+            "metadata": self.metadata,
+        }
+
+
+class DataResponse(BaseModel):
+    """Standard response wrapper for generic data endpoint.
+
+    Used by the `/api/data` endpoint to provide a consistent response format
+    for all queries, with metadata about the request and response.
+
+    Attributes
+    ----------
+    status : `str`
+        "success" or "error"
+    data : `Any`
+        The requested data, varies by query type
+    meta : `dict[str, Any]`
+        Metadata about the response (timestamp, type, echoed query params)
+    error : `str | None`
+        Error message if status is "error"
+    """
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    status: str  # "success" or "error"
+    data: Any
+    meta: dict[str, Any]
+    error: str | None = None

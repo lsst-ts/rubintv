@@ -25,6 +25,7 @@ from .background.historicaldata import HistoricalPoller
 from .background.redissubscriber import RedisSubscriber
 from .config import REDIS_CONTROL_READBACK_SUFFIX, config, rubintv_logger
 from .handlers.api import api_router
+from .handlers.api_data import api_data_router
 from .handlers.ddv_routes_handler import ddv_router
 from .handlers.ddv_websocket_handler import ddv_client_ws_router, internal_ws_router
 from .handlers.heartbeat_server import heartbeat_ws_router
@@ -256,6 +257,7 @@ def create_app() -> FastAPI:
     )
 
     # External HTTP routing:
+    app.include_router(api_data_router, prefix=f"{config.path_prefix}/api")
     app.include_router(api_router, prefix=f"{config.path_prefix}/api")
     app.include_router(proxies_router, prefix=f"{config.path_prefix}")
     app.include_router(pages_router, prefix=f"{config.path_prefix}")

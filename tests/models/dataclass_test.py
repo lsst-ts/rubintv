@@ -1,13 +1,10 @@
-from lsst.ts.rubintv.models.models import (
-    CameraPageData,
-    CurrentPageData,
-    HistoricalPageData,
-)
+from lsst.ts.rubintv.models.models import CurrentPageData, HistoricalPageData
 
 
 def test_camera_page_data_initialization() -> None:
-    """Test initializing CameraPageData."""
-    data = CameraPageData()
+    """Test initializing CameraPageData (via CurrentPageData)."""
+    # CameraPageData is abstract, so test via a concrete subclass
+    data = CurrentPageData()
     assert data.per_day == {}
     assert data.nr_exists is False
     assert data.is_empty() is True

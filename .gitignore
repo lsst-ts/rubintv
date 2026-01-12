@@ -166,3 +166,6 @@ local_scripts/
 
 # jest
 coverage/
+
+# github prompts
+.github/prompts/*
