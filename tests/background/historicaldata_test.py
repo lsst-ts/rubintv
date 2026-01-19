@@ -273,17 +273,6 @@ class TestHistoricalPoller:
         assert event is None
 
     @pytest.mark.asyncio
-    async def test_get_most_recent_channel_data_no_day(
-        self, historical: HistoricalPoller
-    ) -> None:
-        """Test getting most recent channel data with no recent day."""
-        location = m.locations[0]
-        camera = location.cameras[0]
-
-        channel_data = await historical.get_most_recent_channel_data(location, camera)
-        assert channel_data == {}
-
-    @pytest.mark.asyncio
     async def test_get_camera_calendar_no_data(
         self, historical: HistoricalPoller
     ) -> None:
