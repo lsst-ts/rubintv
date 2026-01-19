@@ -48,9 +48,9 @@ def test_current_page_data_initialization() -> None:
     assert data.nr_exists is False
 
     # Check subclass attributes
-    assert data.channel_data == {}
+    assert data.structured_data == {}
     assert data.is_empty() is True
 
     # Test with subclass data
-    data.channel_data = {1: {"channel1": {}}}
+    data.structured_data = {"channel1": {1, 2, 3}}
     assert data.is_empty() is False

@@ -206,10 +206,24 @@ export default function TableApp({
         setMetadata(data)
         setLastKnownMetadataRow(undefined)
       } else if (dataType === "channelData") {
-        setChannelData(data)
+        // Handle both old expanded format and new structured format
+        // If data has structuredData and extensionInfo, convert it
+        if (data.structuredData && data.extensionInfo) {
+          const expandedChannelData = createTableFromStructuredData(
+            camera.name,
+            date,
+            data.structuredData,
+            data.extensionInfo,
+            camera.channels
+          )
+          setChannelData(expandedChannelData)
+        } else {
+          // Legacy: direct channel data (old expanded table format)
+          setChannelData(data)
+        }
       }
     },
-    [date, metadata]
+    [date, metadata, camera]
   )
 
   useEffect(() => {

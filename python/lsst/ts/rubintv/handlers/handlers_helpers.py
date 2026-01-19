@@ -36,13 +36,15 @@ async def get_camera_current_data(
     # wait for the first poll to complete
     await first_pass.wait()
 
-    channel_data = await current_poller.get_current_channel_table(location.name, camera)
+    structured_data = await current_poller.get_current_structured_data(
+        location.name, camera
+    )
     metadata = await current_poller.get_current_metadata(location.name, camera)
     per_day = await current_poller.get_current_per_day_data(location.name, camera)
     nr_exists = current_poller.night_report_exists(location.name, camera.name)
 
     return CurrentPageData(
-        channel_data=channel_data,
+        structured_data=structured_data,
         per_day=per_day,
         metadata=metadata,
         nr_exists=nr_exists,

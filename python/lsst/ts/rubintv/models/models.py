@@ -298,15 +298,14 @@ class Event:
 @dataclass
 class NightReportData:
     """Wrapper for a night report file metadata object.
+    -   Night Reports can be located in a given bucket using the prefix:
+        ``f"/{camera_name}/{date_str}/night_report/"``.
 
-        -   Night Reports can be located in a given bucket using the prefix:
-            ``f"/{camera_name}/{date_str}/night_report/"``.
+    -   Plots take the form:
+        ``f"/{camera_name}/{date_str}/night_report/{group}/{filename}.{ext}"``.
 
-        -   Plots take the form:
-            ``f"/{camera_name}/{date_str}/night_report/{group}/{filename}.{ext}"``.
-
-        -   Metadata takes the form:
-             ``f"/{camera_name}/{date_str}/night_report/{filename}_md.json"``.
+    -   Metadata takes the form:
+            ``f"/{camera_name}/{date_str}/night_report/{filename}_md.json"``.
 
 
     Parameters
@@ -480,7 +479,8 @@ class KeyValue(BaseModel):
     value: str | int | float | bool | None = None
 
 
-type StructuredData = dict[str, dict[str, dict[str, set[int | str]]]]
+type StructuredData = dict[str, set[int | str]]
+type StoredStructuredData = dict[str, dict[str, StructuredData]]
 
 
 class ExtensionDict(TypedDict):
@@ -573,17 +573,19 @@ class HistoricalPageData(CameraPageData):
 class CurrentPageData(CameraPageData):
     """Data for the current day query.
 
-    Contains pre-processed channel data and metadata ready for display
-    in the UI without additional transformation needed.
+    Contains compressed structured data in the same format as historical data
+    for consistent handling and efficient WebSocket transmission.
+    The frontend uses createTableFromStructuredData() to expand into display
+    format.
     """
 
-    channel_data: ChannelData = dataclasses.field(default_factory=dict)
+    structured_data: StructuredData = dataclasses.field(default_factory=dict)
     metadata: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     def is_empty(self) -> bool:
         """Check if the data is empty."""
         base_empty = super().is_empty()
-        return base_empty and not any([self.metadata, self.channel_data])
+        return base_empty and not any([self.metadata, self.structured_data])
 
     def get_response_dict(self) -> dict[str, Any]:
         """Build response dictionary with current data fields.
@@ -591,10 +593,11 @@ class CurrentPageData(CameraPageData):
         Returns
         -------
         dict[str, Any]
-            Dictionary with channelData and metadata.
+            Dictionary with structuredData and metadata (same as historical
+            format).
         """
         return {
-            "channelData": self.channel_data,
+            "structuredData": self.structured_data,
             "metadata": self.metadata,
         }
 
