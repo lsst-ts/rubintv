@@ -203,6 +203,20 @@ function TableRow({
           />
         </td>
       )}
+      {camera.quicklook_viewer_link && siteLocHasFOV && (
+        <td className="grid-cell">
+          <a
+            href={replaceInString(
+              camera.quicklook_viewer_link,
+              dayObs,
+              seqNum,
+              { isDevInstance: isDevInstance }
+            )}
+            className="button button-table quicklook-viewer-link"
+            aria-label="Open quicklook viewer"
+          />
+        </td>
+      )}
       {channels.map((chan) => (
         <ChannelCell
           key={`${seqNum}_${chan.name}`}
