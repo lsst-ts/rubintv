@@ -120,6 +120,7 @@ export interface Camera {
   copy_row_template?: string
   metadata_columns?: Record<string, string>
   image_viewer_link?: string
+  quicklook_viewer_link?: string
   time_since_clock?: { label: string }
   mosaic_view_meta?: Array<MosaicSingleView>
   night_report_label?: string

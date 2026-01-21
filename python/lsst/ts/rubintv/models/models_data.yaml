@@ -171,6 +171,10 @@ cameras:
       ?image=MC_{controller:default=O}_{dayObs}_{seqNum}&raft=all&color=grey\
       &bias=Simple+Overscan+Correction&scale=Per-Segment&source=raw"
 
+    quicklook_viewer_link:
+      "https://usdf-rsp{dev}.slac.stanford.edu/fov-quicklook/\
+      visits/raw:{dayObs}{seqNum:05}"
+
   - name: lsstcam_aos
     title: LSSTCamAOS
     online: True

@@ -7,6 +7,7 @@ import {
   replaceInString,
   setCameraBaseUrl,
   rangeSetFromLimits,
+  isDevInstance,
 } from "../modules/utils"
 import {
   RubinTVContextType,
@@ -25,12 +26,7 @@ import {
   TableFoldoutCellProps,
 } from "./componentTypes"
 import { RubinTVTableContext } from "./contexts/contexts"
-// TODO: this should be set in the backend
-// See DM-50192
-const hasCCS = (siteLoc: string) => {
-  return ["summit", "base"].includes(siteLoc)
-}
-
+import { hasCCS, hasFOV } from "../config"
 function MetadataCell({
   data,
   indicator,
@@ -125,6 +121,7 @@ function TableRow({
     RubinTVTableContext
   ) as RubinTVContextType
   const siteLocHasCCS = hasCCS(siteLocation)
+  const siteLocHasFOV = hasFOV(siteLocation)
 
   // Entries in metadata keyed `"@{channel_name}"` will have their
   // values show up in the table instead of a blank space.
@@ -185,6 +182,20 @@ function TableRow({
             })}
             className="button button-table image-viewer-link"
             aria-label="Open image viewer"
+          />
+        </td>
+      )}
+      {camera.quicklook_viewer_link && siteLocHasFOV && (
+        <td className="grid-cell">
+          <a
+            href={replaceInString(
+              camera.quicklook_viewer_link,
+              dayObs,
+              seqNum,
+              { isDevInstance: isDevInstance }
+            )}
+            className="button button-table quicklook-viewer-link"
+            aria-label="Open quicklook viewer"
           />
         </td>
       )}
@@ -351,6 +362,7 @@ export function TableHeader({
 }: TableHeaderProps) {
   const { siteLocation } = useContext(RubinTVTableContext) as RubinTVContextType
   const siteLocHasCCS = hasCCS(siteLocation)
+  const siteLocHasFOV = hasFOV(siteLocation)
   const channelColumns = seqChannels(camera) as (Channel | MetadataColumn)[]
   const columns = channelColumns.concat(metadataColumns)
   const sorting = sortOn.column == "seq"
@@ -369,6 +381,9 @@ export function TableHeader({
       )}
       {camera.image_viewer_link && siteLocHasCCS && (
         <div className="grid-title sideways">CCS Image Viewer</div>
+      )}
+      {camera.quicklook_viewer_link && siteLocHasFOV && (
+        <div className="grid-title sideways">Quicklook Viewer</div>
       )}
       {columns.map((channel) => {
         return (
