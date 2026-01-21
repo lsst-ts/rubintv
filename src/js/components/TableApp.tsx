@@ -27,6 +27,7 @@ export default function TableApp({
   siteLocation,
   isStale,
 }: TableAppProps) {
+  const [isReadyToDisplay, setIsReadyToDisplay] = useState(false)
   const [hasReceivedData, setHasReceivedData] = useState(false)
   const [date, setDate] = useState(initialDate)
   const [channelData, setChannelData] = useState({} as ChannelData)
@@ -149,7 +150,10 @@ export default function TableApp({
   ).length
 
   useEffect(() => {
-    redrawHeaderWidths()
+    const redrawn = redrawHeaderWidths()
+    if (redrawn) {
+      setIsReadyToDisplay(true)
+    }
   }, [filteredMetadata, filteredChannelData, selected])
 
   const handleCameraEvent = useCallback(
@@ -207,6 +211,9 @@ export default function TableApp({
     )
   }
 
+  const displayReadyClass = isReadyToDisplay ? "opaque" : "transparent"
+  const tableHeaderClass = `table-header row ${displayReadyClass} transition-opacity`
+
   return (
     <StrictMode>
       <RubinTVTableContext.Provider
@@ -224,7 +231,7 @@ export default function TableApp({
                 metadata={metadata}
                 isHistorical={isHistorical}
               />
-              <div className="table-header row">
+              <div className={tableHeaderClass}>
                 <TableHeader
                   camera={camera}
                   metadataColumns={metaColumnsToDisplay}
@@ -317,7 +324,7 @@ function redrawHeaderWidths() {
   const columns = getTableColumnWidths()
   const headers = Array.from(document.querySelectorAll(".grid-title"))
   if (columns.length !== headers.length) {
-    return
+    return false
   }
   let sum = 0
   for (let ix = 0; ix < headers.length; ix++) {
@@ -338,5 +345,7 @@ function redrawHeaderWidths() {
     if (tableHeader) {
       tableHeader.style.width = sumWidth
     }
+    return true
   }
+  return false
 }
