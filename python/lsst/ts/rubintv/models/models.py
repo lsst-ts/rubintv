@@ -154,6 +154,8 @@ class Camera(HasButton):
         None.
     image_viewer_link : str, optional
         A link to the image viewer. Defaults to an empty string.
+    quicklook_viewer_link : str, optional
+        A link to the quicklook viewer. Defaults to an empty string.
     copy_row_template : str, optional
         Template string for copying a row. Defaults to an empty string.
     mosaic_view_meta : list[MosaicViewMeta], optional

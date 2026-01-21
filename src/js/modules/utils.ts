@@ -113,13 +113,18 @@ export function sanitiseString(str: string): string {
 interface ReplaceOptions {
   siteLocation?: string
   controller?: string
+  isDevInstance?: boolean
 }
 
 export function replaceInString(
   link: string,
   dayObs: string,
   seqNum: string,
-  { siteLocation = "", controller = "" }: ReplaceOptions = {}
+  {
+    siteLocation = "",
+    controller = "",
+    isDevInstance = false,
+  }: ReplaceOptions = {}
 ): string {
   interface SiteLocMap {
     [key: string]: string
@@ -139,6 +144,7 @@ export function replaceInString(
     return siteLocMap[siteLocation] || ""
   }
   const formattedLink = link
+    .replace("{dev}", isDevInstance ? "-dev" : "")
     .replace("{siteLoc}", siteLocToDomain(siteLocation))
     .replace(
       /{controller(:default=(\w+))?}/,
@@ -397,3 +403,7 @@ export const sanitiseRedisValue = (value: string): string => {
   value = value.toUpperCase() // Convert to uppercase
   return value
 }
+
+export const isDevInstance =
+  window.location.href.includes("-dev") ||
+  window.location.href.includes("localhost")
