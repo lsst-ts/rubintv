@@ -225,3 +225,21 @@ async def notify_redis_detector_status(data: dict) -> None:
     service_key = "detectors"
 
     await notify_service_clients(service_key, service, message_type, data)
+
+
+async def notify_controls_readback_change(data: dict) -> None:
+    """Notify all clients subscribed to the ControlsReadback service about
+    readback changes.
+
+    Parameters
+    ----------
+    data : `dict`
+        The controls readback data to send to clients. Contains:
+        - key: The key of the control
+        - value: The actual readback value from Redis
+    """
+    service = Service.ADMIN
+    message_type = MessageType.CONTROL_READBACK_CHANGE
+    service_key = service.value
+
+    await notify_service_clients(service_key, service, message_type, data)
