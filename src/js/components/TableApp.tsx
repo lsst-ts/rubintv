@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, StrictMode } from "react"
 import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
 import { _getById, union, getHistoricalData } from "../modules/utils"
+import { createTableFromStructuredData } from "../modules/convertTableData"
 import {
   loadColumnSelection,
   saveColumnSelection,
@@ -26,6 +27,9 @@ export default function TableApp({
   isHistorical,
   siteLocation,
   isStale,
+  seqNums,
+  calendar,
+  toggleCalendar,
 }: TableAppProps) {
   const [isReadyToDisplay, setIsReadyToDisplay] = useState(false)
   const [hasReceivedData, setHasReceivedData] = useState(false)
@@ -104,7 +108,21 @@ export default function TableApp({
       .then((json) => {
         const data = JSON.parse(json)
         if (data.metadata) setMetadata(data.metadata)
-        if (data.channelData) setChannelData(data.channelData)
+
+        // Convert structured data to channel data format
+        if (data.structuredData && data.extensionInfo) {
+          const convertedChannelData = createTableFromStructuredData(
+            camera.name,
+            date,
+            data.structuredData,
+            data.extensionInfo,
+            camera.channels
+          )
+          setChannelData(convertedChannelData)
+        } else if (data.channelData) {
+          setChannelData(data.channelData)
+        }
+
         setDateAndUpdateHeader(data.date, isStale)
         setHasReceivedData(true)
       })
@@ -231,6 +249,8 @@ export default function TableApp({
                 metadata={metadata}
                 isHistorical={isHistorical}
                 locationName={locationName}
+                calendar={calendar}
+                toggleCalendar={toggleCalendar}
               />
               <div className={tableHeaderClass}>
                 <TableHeader
@@ -255,6 +275,7 @@ export default function TableApp({
               filteredRowsCount={filteredRowsCount}
               sortOn={sortOn}
               siteLocation={siteLocation}
+              seqNumsToShow={seqNums}
             />
           </ModalProvider>
         </div>
