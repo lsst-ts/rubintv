@@ -255,7 +255,7 @@ class TestHistoricalPoller:
 
         report = await historical.get_night_report_payload(location, camera, test_date)
         assert isinstance(report, NightReport)
-        assert report.text == {}
+        assert report.text == []
         assert report.plots == []
 
     @pytest.mark.asyncio
