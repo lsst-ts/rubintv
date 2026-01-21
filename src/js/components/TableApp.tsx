@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, StrictMode } from "react"
 import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
 import { _getById, union, getHistoricalData } from "../modules/utils"
-import { createTableFromStructuredData } from "../modules/convertTableData"
 import {
   loadColumnSelection,
   saveColumnSelection,
@@ -12,7 +11,6 @@ import {
   TableAppProps,
   ChannelData,
   Metadata,
-  MetadataRow,
   MetadataColumn,
   FilterOptions,
   SortingOptions,
@@ -28,9 +26,6 @@ export default function TableApp({
   isHistorical,
   siteLocation,
   isStale,
-  seqNums,
-  calendar,
-  toggleCalendar,
 }: TableAppProps) {
   const [isReadyToDisplay, setIsReadyToDisplay] = useState(false)
   const [hasReceivedData, setHasReceivedData] = useState(false)
@@ -41,13 +36,11 @@ export default function TableApp({
     column: "",
     value: "",
   } as FilterOptions)
+
   const [sortOn, setSortOn] = useState({
     column: "seq",
     order: "desc",
   } as SortingOptions)
-  const [lastKnownMetadataRow, setLastKnownMetadataRow] = useState<
-    MetadataRow | undefined
-  >(undefined)
 
   const [error, setError] = useState(null)
 
@@ -111,16 +104,7 @@ export default function TableApp({
       .then((json) => {
         const data = JSON.parse(json)
         if (data.metadata) setMetadata(data.metadata)
-        if (data.structuredData && data.extensionInfo) {
-          const channelData = createTableFromStructuredData(
-            camera.name,
-            date,
-            data.structuredData,
-            data.extensionInfo,
-            camera.channels
-          )
-          setChannelData(channelData)
-        }
+        if (data.channelData) setChannelData(data.channelData)
         setDateAndUpdateHeader(data.date, isStale)
         setHasReceivedData(true)
       })
@@ -185,22 +169,7 @@ export default function TableApp({
         setError(data.error)
       }
 
-      // Before clearing metadata on day rollover, preserve the last metadata row
       if (datestamp && datestamp !== date) {
-        if (Object.keys(metadata).length > 0) {
-          const lastSeq = Object.keys(metadata)
-            .map(Number)
-            .sort((a, b) => a - b)
-            .pop()
-
-          if (lastSeq !== undefined) {
-            const lastRow = metadata[lastSeq]
-            if (lastRow && "Date begin" in lastRow) {
-              setLastKnownMetadataRow(lastRow)
-            }
-          }
-        }
-
         setDateAndUpdateHeader(datestamp)
         setMetadata({})
         setChannelData({})
@@ -208,12 +177,11 @@ export default function TableApp({
 
       if (dataType === "metadata") {
         setMetadata(data)
-        setLastKnownMetadataRow(undefined)
       } else if (dataType === "channelData") {
         setChannelData(data)
       }
     },
-    [date, metadata]
+    [date]
   )
 
   useEffect(() => {
@@ -247,53 +215,51 @@ export default function TableApp({
   const tableHeaderClass = `table-header row ${displayReadyClass} transition-opacity`
 
   return (
-    <RubinTVTableContext.Provider
-      value={{ siteLocation, locationName, camera, dayObs: date }}
-    >
-      <div className="table-container">
-        <ModalProvider>
-          <div className="above-table-sticky">
-            <AboveTableRow
-              locationName={locationName}
-              camera={camera}
-              availableColumns={availableColumns}
-              selected={selected}
-              setSelected={handleSetSelected}
-              date={date}
-              calendar={calendar}
-              toggleCalendar={toggleCalendar}
-              metadata={metadata}
-              lastKnownMetadataRow={lastKnownMetadataRow}
-              isHistorical={isHistorical}
-            />
-            <div className={tableHeaderClass}>
-              <TableHeader
+    <StrictMode>
+      <RubinTVTableContext.Provider
+        value={{ siteLocation, locationName, camera, dayObs: date }}
+      >
+        <div className="table-container">
+          <ModalProvider>
+            <div className="above-table-sticky">
+              <AboveTableRow
                 camera={camera}
-                metadataColumns={metaColumnsToDisplay}
-                filterOn={filterOn}
-                setFilterOn={setFilterOn}
-                filteredRowsCount={filteredRowsCount}
-                unfilteredRowsCount={unfilteredRowsCount}
-                sortOn={sortOn}
-                setSortOn={setSortOn}
+                availableColumns={availableColumns}
+                selected={selected}
+                setSelected={handleSetSelected}
+                date={date}
+                metadata={metadata}
+                isHistorical={isHistorical}
+                locationName={locationName}
               />
+              <div className={tableHeaderClass}>
+                <TableHeader
+                  camera={camera}
+                  metadataColumns={metaColumnsToDisplay}
+                  filterOn={filterOn}
+                  setFilterOn={setFilterOn}
+                  filteredRowsCount={filteredRowsCount}
+                  unfilteredRowsCount={unfilteredRowsCount}
+                  sortOn={sortOn}
+                  setSortOn={setSortOn}
+                />
+              </div>
+              <JumpButtons></JumpButtons>
             </div>
-            <JumpButtons></JumpButtons>
-          </div>
-          <TableView
-            camera={camera}
-            channelData={filteredChannelData}
-            metadata={filteredMetadata}
-            metadataColumns={metaColumnsToDisplay}
-            filterOn={filterOn}
-            filteredRowsCount={filteredRowsCount}
-            sortOn={sortOn}
-            siteLocation={siteLocation}
-            seqNumsToShow={seqNums}
-          />
-        </ModalProvider>
-      </div>
-    </RubinTVTableContext.Provider>
+            <TableView
+              camera={camera}
+              channelData={filteredChannelData}
+              metadata={filteredMetadata}
+              metadataColumns={metaColumnsToDisplay}
+              filterOn={filterOn}
+              filteredRowsCount={filteredRowsCount}
+              sortOn={sortOn}
+              siteLocation={siteLocation}
+            />
+          </ModalProvider>
+        </div>
+      </RubinTVTableContext.Provider>
+    </StrictMode>
   )
 }
 
