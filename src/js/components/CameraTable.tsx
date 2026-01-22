@@ -1,4 +1,4 @@
-import React, { StrictMode } from "react"
+import React, { StrictMode, useRef } from "react"
 import RubinCalendar from "./RubinCalendar"
 import CurrentChannels from "./CurrentChannels"
 import PerDay from "./PerDay"
@@ -17,23 +17,21 @@ export default function CameraTable({
   isStale,
   seqNums,
 }: CameraTableProps) {
-  const [isClosed, setIsClosed] = React.useState(true)
+  const calendarRef = React.useRef<HTMLElement>(null)
+  const isClosed = useRef(true)
 
   function toggleCalendar() {
-    setIsClosed(!isClosed)
-    if (isClosed) {
-      const calendarElement = document.getElementById("calendar")
-      if (calendarElement && !isElementInViewport(calendarElement)) {
-        calendarElement.scrollIntoView()
+    isClosed.current = !isClosed.current
+    if (calendarRef.current) {
+      calendarRef.current.classList.toggle("closed")
+      if (!isClosed.current && !isElementInViewport(calendarRef.current)) {
+        calendarRef.current.scrollIntoView()
       }
     }
   }
   return (
     <StrictMode>
-      <section
-        id="calendar"
-        className={`calendar ${isClosed ? "closed" : "open"}`}
-      >
+      <section ref={calendarRef} id="calendar" className="calendar closed">
         <RubinCalendar
           selectedDate={date}
           initialCalendarData={calendar}
