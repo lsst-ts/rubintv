@@ -345,9 +345,10 @@ section
   margin-top: -2px
   border-collapse: separate
 
-  .highlight-row .grid-cell
-    mix-blend-mode: hard-light
-    background-color: #e9feff
+  // Highlight entire row, except for color cells
+  .highlight-row .grid-cell:not([class$="color"])
+    background-color: #848484
+    color: #fff
 
 .grid-title
   position: absolute
