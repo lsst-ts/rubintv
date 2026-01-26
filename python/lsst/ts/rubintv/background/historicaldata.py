@@ -11,7 +11,10 @@ from lsst.ts.rubintv.background.background_helpers import (
 )
 from lsst.ts.rubintv.background.metadata_collector import MetadataCollector
 from lsst.ts.rubintv.config import rubintv_logger
-from lsst.ts.rubintv.handlers.websocket_notifiers import notify_ws_clients
+from lsst.ts.rubintv.handlers.websocket_notifiers import (
+    notify_all_status_change,
+    notify_ws_clients,
+)
 from lsst.ts.rubintv.models.models import (
     Camera,
     Channel,
@@ -135,6 +138,7 @@ class HistoricalPoller:
                     "HistoricalPoller initial run completed",
                     total_elapsed_time_seconds=time_elapsed,
                 )
+                await notify_all_status_change(historical_busy=False)
             if time_elapsed < self.RECHECK_BUCKET_PERIOD:
                 sleep_time = self.RECHECK_BUCKET_PERIOD - time_elapsed
                 logger.info(
