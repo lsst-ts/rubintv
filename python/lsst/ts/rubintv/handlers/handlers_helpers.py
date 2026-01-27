@@ -170,7 +170,23 @@ async def get_prev_next_event(
 
 
 def date_validation(date_str: str) -> date:
-    """Validate the date string and return a date object."""
+    """Validate the date string and return a date object.
+
+    Parameters
+    ----------
+    date_str : `str`
+        The date string to validate.
+
+    Returns
+    -------
+    day_obs : `date`
+        The validated date object.
+
+    Raises
+    -------
+    `HTTPException`
+        If the date string is invalid.
+    """
     try:
         day_obs = date_str_to_date(date_str)
     except ValueError:
