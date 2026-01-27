@@ -178,6 +178,8 @@ function TableRow({
             })}
             className="button button-table image-viewer-link"
             aria-label="Open image viewer"
+            target="_blank"
+            rel="noreferrer"
           />
         </td>
       )}
@@ -192,6 +194,8 @@ function TableRow({
             )}
             className="button button-table quicklook-viewer-link"
             aria-label="Open quicklook viewer"
+            target="_blank"
+            rel="noreferrer"
           />
         </td>
       )}
