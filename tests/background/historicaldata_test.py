@@ -3,7 +3,7 @@ from typing import Any, Iterator
 
 import pytest
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
-from lsst.ts.rubintv.models.models import Event
+from lsst.ts.rubintv.models.models import Event, get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import date_str_to_date
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
 
@@ -758,7 +758,7 @@ class TestHistoricalPollerWithMockData:
 
         # Get initial event count
         initial_events = await historical.get_events_for_date(
-            location, camera, datetime.date.today()
+            location, camera, get_current_day_obs()
         )
         initial_count = len(initial_events)
 
@@ -777,7 +777,7 @@ class TestHistoricalPollerWithMockData:
 
         # Verify cache was updated with new events
         updated_events = await historical.get_events_for_date(
-            location, camera, datetime.date.today()
+            location, camera, get_current_day_obs()
         )
         assert len(updated_events) > initial_count
 
