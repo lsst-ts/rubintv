@@ -156,17 +156,12 @@ async def get_camera_events_for_date_api(
     data: CameraPageData = await get_camera_events_for_date(
         location, camera, day_obs, request
     )
-    metadata = None
-    if data.metadata_exists:
-        metadata = await get_metadata_for_date(
-            location_name, camera_name, date_str, request
-        )
     if not data.is_empty():
         return {
             "date": day_obs,
             "structuredData": data.structured_data,
             "extensionInfo": data.extension_info,
-            "metadata": metadata,
+            "metadata": data.metadata,
             "perDay": data.per_day,
             "nightReportExists": data.nr_exists,
         }
@@ -310,7 +305,7 @@ async def get_metadata_for_date(
     if not camera.online:
         raise HTTPException(status_code=404, detail="Camera not found.")
 
-    _ = date_validation(date_str)
+    day_obs = date_validation(date_str)
 
     historical: HistoricalPoller = request.app.state.historical
     if await historical.is_busy():
@@ -318,7 +313,7 @@ async def get_metadata_for_date(
             status_code=423, detail="Historical data is being processed"
         )
 
-    metadata = await historical.get_metadata_for_date(location, camera, date_str)
+    metadata = await historical.get_metadata_for_date(location, camera, day_obs)
     if not metadata:
         raise HTTPException(status_code=404, detail="Metadata not found for this date")
 

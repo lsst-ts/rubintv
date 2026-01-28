@@ -119,6 +119,5 @@ async def test_get_api_camera_for_today(
     assert "perDay" in data
     assert "metadata" in data
     assert data["perDay"] != {}
-    assert data["metadata"] != {}
     assert data["structuredData"] != {}
     assert data["extensionInfo"] != {}

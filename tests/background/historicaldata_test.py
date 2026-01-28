@@ -668,8 +668,8 @@ class TestHistoricalPollerWithMockData:
         # Check calendar entry
         test_date = date_str_to_date(date_str)
         assert (
-            await historical.check_for_metadata_for_date(location, camera, test_date)
-            is True
+            await historical.get_metadata_for_date(location, camera, test_date)
+            is not None
         )
 
         # Test night report existence check

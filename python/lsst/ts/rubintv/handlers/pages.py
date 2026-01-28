@@ -34,7 +34,6 @@ from lsst.ts.rubintv.handlers.pages_helpers import (
 from lsst.ts.rubintv.models.models import (
     CameraPageData,
     Channel,
-    CurrentPageData,
     Location,
     NightReport,
     get_current_day_obs,
@@ -231,7 +230,7 @@ async def get_camera_for_date_page(
     if not camera.online:
         raise HTTPException(404, "Camera not online.")
 
-    data: CameraPageData = CurrentPageData()
+    data: CameraPageData = CameraPageData()
     is_stale = False
     no_data_at_all = False
 

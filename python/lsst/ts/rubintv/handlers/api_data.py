@@ -18,12 +18,11 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
     date_validation,
     get_camera_calendar,
     get_camera_current_data,
-    get_camera_events_for_date,
+    get_camera_events_for_date_data_api,
     get_most_recent_historical_day,
 )
 from lsst.ts.rubintv.models.models import (
     CameraPageData,
-    CurrentPageData,
     DataResponse,
     Location,
     get_current_day_obs,
@@ -188,10 +187,9 @@ async def _handle_camera_data(
 ) -> dict[str, Any]:
     """Handle camera_data query type.
 
-    Returns combined camera page data including channel data (or structured
-    data for historical), metadata, calendar availability, and per_day
-    information. This is a combined response that includes what was previously
-    split between camera_page_data, event_metadata, and calendar endpoints.
+    Returns combined camera page data including structured
+    data, metadata, calendar availability, and per_day
+    information. Supports both current and historical data.
 
     Parameters
     ----------
@@ -209,13 +207,12 @@ async def _handle_camera_data(
     reposonse: dict[`str`, `Any`]
         Combined response with:
         - date: ISO format date string
+        - structuredData, extensionInfo, metadata: for tables
+        - perDay: dict with per-day data
         - isCurrent: bool indicating if this is current day data
         - isHistorical: bool indicating if this is historical data
-        - perDay: dict with per-day data
         - nrExists: bool indicating if night report exists
         - calendar: dict with calendar availability
-        - For current data: channelData, metadata
-        - For historical data: structuredData, extensionInfo, metadataExists
 
     Raises
     ------
@@ -249,9 +246,10 @@ async def _handle_camera_data(
     else:
         day_obs = get_current_day_obs()
 
-    data_obj: CameraPageData = CurrentPageData()
     is_current = False
     is_historical = False
+
+    data_obj: CameraPageData = CameraPageData()
 
     # Try to get current data if querying today
     current_day_obs = get_current_day_obs()
@@ -265,7 +263,9 @@ async def _handle_camera_data(
         most_recent = await get_most_recent_historical_day(location, cam, request)
         if most_recent:
             day_obs = most_recent
-            data_obj = await get_camera_events_for_date(location, cam, day_obs, request)
+            data_obj = await get_camera_events_for_date_data_api(
+                location, cam, day_obs, request
+            )
             is_historical = True
 
     # Get calendar data for the month
@@ -277,16 +277,15 @@ async def _handle_camera_data(
     # Build combined response
     response: dict[str, Any] = {
         "date": day_obs.isoformat() if day_obs else None,
+        "perDay": data_obj.per_day,
+        "structuredData": data_obj.structured_data,
+        "extensionInfo": data_obj.extension_info,
+        "metadata": data_obj.metadata,
         "isCurrent": is_current,
         "isHistorical": is_historical,
-        "perDay": data_obj.per_day,
         "nrExists": data_obj.nr_exists,
         "calendar": calendar,
     }
-
-    # Add data-specific fields using polymorphic method
-    # No type checking needed - each subclass knows its own structure
-    response.update(data_obj.get_response_dict())
 
     return response
 

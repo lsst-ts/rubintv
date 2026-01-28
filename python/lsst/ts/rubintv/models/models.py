@@ -3,7 +3,6 @@
 import asyncio
 import dataclasses
 import re
-from abc import ABC, abstractmethod
 from datetime import date, datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, TypedDict
@@ -493,113 +492,24 @@ type ChannelData = dict[int, dict[str, dict]]
 
 
 @dataclass
-class CameraPageData(ABC):
-    """Base class for camera page data (current or historical).
-
-    This abstract base class defines the interface for camera page data
-    that can be either current (real-time) or historical (past date).
-    Subclasses implement get_response_dict() to provide their specific
-    response format.
-    """
-
-    per_day: dict[str, dict] = dataclasses.field(default_factory=dict)
+class CameraPageData:
     nr_exists: bool = False
-
-    def is_empty(self) -> bool:
-        """Check if the data is empty."""
-        return not any(
-            [
-                self.per_day,
-                self.nr_exists,
-            ]
-        )
-
-    @abstractmethod
-    def get_response_dict(self) -> dict[str, Any]:
-        """Build response dictionary with data-specific fields.
-
-        Each subclass implements this to include its specific fields
-        (e.g., CurrentPageData includes channelData and metadata,
-        while HistoricalPageData includes structuredData and extensionInfo).
-
-        Returns
-        -------
-        dict[str, Any]
-            Dictionary with data-specific fields ready for API response.
-            Must include the fields appropriate for that data type.
-        """
-        pass
-
-
-@dataclass
-class HistoricalPageData(CameraPageData):
-    """Data for a historical date query.
-
-    Contains raw structured data and extension information that the frontend
-    can transform into display format using createTableFromStructuredData().
-    """
-
-    metadata_exists: bool = False
-    structured_data: dict[str, set[int | str]] = dataclasses.field(default_factory=dict)
-    extension_info: ExtensionInfo = dataclasses.field(default_factory=dict)
-
-    def is_empty(self) -> bool:
-        """Check if the data is empty."""
-        base_empty = super().is_empty()
-        return base_empty and not any(
-            [
-                self.metadata_exists,
-                self.structured_data,
-                self.extension_info,
-            ]
-        )
-
-    def get_response_dict(self) -> dict[str, Any]:
-        """Build response dictionary with historical data fields.
-
-        Returns
-        -------
-        dict[str, Any]
-            Dictionary with structuredData, extensionInfo, and metadataExists.
-        """
-        return {
-            "structuredData": self.structured_data,
-            "extensionInfo": self.extension_info,
-            "metadataExists": self.metadata_exists,
-        }
-
-
-@dataclass
-class CurrentPageData(CameraPageData):
-    """Data for the current day query.
-
-    Contains compressed structured data in the same format as historical data
-    for consistent handling and efficient WebSocket transmission.
-    The frontend uses createTableFromStructuredData() to expand into display
-    format.
-    """
-
+    per_day: dict[str, dict] = dataclasses.field(default_factory=dict)
     structured_data: StructuredData = dataclasses.field(default_factory=dict)
+    extension_info: ExtensionInfo = dataclasses.field(default_factory=dict)
     metadata: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     def is_empty(self) -> bool:
-        """Check if the data is empty."""
-        base_empty = super().is_empty()
-        return base_empty and not any([self.metadata, self.structured_data])
-
-    def get_response_dict(self) -> dict[str, Any]:
-        """Build response dictionary with current data fields.
+        """Check if the data object is empty.
 
         Returns
         -------
-        dict[str, Any]
-            Dictionary with structuredData and metadata (same as historical
-            format).
+        is_empty: `bool`
+            True if the data object has no data, false otherwise.
         """
-        return {
-            "structuredData": self.structured_data,
-            "metadata": self.metadata,
-        }
+        return not any(
+            [self.per_day, self.structured_data, self.extension_info, self.metadata]
+        )
 
 
 class DataResponse(BaseModel):

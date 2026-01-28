@@ -918,29 +918,8 @@ class HistoricalPoller:
         else:
             return False
 
-    async def check_for_metadata_for_date(
-        self, location: Location, camera: Camera, day_obs: date
-    ) -> bool:
-        """Check if metadata exists for a specific date.
-        Parameters
-        ----------
-        location : `Location`
-            The location object.
-        camera : `Camera`
-            The camera object.
-        date_str : `str`
-            ISO format date string.
-        Returns
-        -------
-        exists : `bool`
-            True if metadata exists, False otherwise.
-        """
-        return await self._metadata_collector.metadata_exists_for_date(
-            location, camera, day_obs.isoformat()
-        )
-
     async def get_metadata_for_date(
-        self, location: Location, camera: Camera, date_str: str
+        self, location: Location, camera: Camera, a_date: date
     ) -> dict | None:
         """Get metadata for a specific date with caching.
 
@@ -959,7 +938,7 @@ class HistoricalPoller:
             The metadata dictionary, or None if not found.
         """
         return await self._metadata_collector.get_metadata_for_date(
-            location, camera, date_str
+            location, camera, a_date.isoformat()
         )
 
     async def get_events_for_date(
