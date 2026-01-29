@@ -184,7 +184,7 @@ async def get_all_channel_names_for_date_seq_num(
     connection: HTTPConnection,
 ) -> list[str]:
     """Get all channels for a given date and sequence number."""
-    if day_obs == get_current_day_obs().isoformat():
+    if day_obs == get_current_day_obs():
         cp: CurrentPoller = connection.app.state.current_poller
         channel_data = await cp.get_all_channel_names_for_seq_num(
             location.name, camera.name, seq_num

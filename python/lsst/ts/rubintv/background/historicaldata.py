@@ -926,7 +926,7 @@ class HistoricalPoller:
         return self._calendar.get(loc_cam, {})
 
     async def get_all_channel_names_for_date_and_seq_num(
-        self, location: Location, camera: Camera, date: str, seq_num: int
+        self, location: Location, camera: Camera, day_obs: date, seq_num: int
     ) -> list[str]:
         """Returns a list of Events for the given date and seq_num.
 
@@ -934,7 +934,7 @@ class HistoricalPoller:
         ----------
         camera : `Camera`
             The given Camera.
-        date : `str`
+        day_obs : `date`
             The given date.
         seq_num : `int`
             The given sequence number.
@@ -945,15 +945,18 @@ class HistoricalPoller:
             A list of channel names for the given date and seq_num.
         """
         loc_cam = f"{location.name}/{camera.name}"
+        date_str = day_obs.isoformat()
 
         if (
             loc_cam not in self._structured_events
-            or date not in self._structured_events[loc_cam]
+            or date_str not in self._structured_events[loc_cam]
         ):
             return []
 
         channel_names = []
-        for channel_name, seq_data in self._structured_events[loc_cam][date].items():
+        for channel_name, seq_data in self._structured_events[loc_cam][
+            date_str
+        ].items():
             if seq_num in seq_data:
                 channel_names.append(channel_name)
 

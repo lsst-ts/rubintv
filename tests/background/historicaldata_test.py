@@ -312,7 +312,7 @@ class TestHistoricalPoller:
         camera = location.cameras[0]
 
         channel_names = await historical.get_all_channel_names_for_date_and_seq_num(
-            location, camera, "2024-01-15", 42
+            location, camera, date_str_to_date("2024-01-15"), 42
         )
         assert channel_names == []
 
