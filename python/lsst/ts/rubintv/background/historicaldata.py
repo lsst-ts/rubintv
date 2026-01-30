@@ -609,13 +609,18 @@ class HistoricalPoller:
         return self._channel_default_extensions.get(channel_date_key, "jpg")
 
     def reconstruct_filename(
-        self, camera_name: str, channel_name: str, seq_num: int | str, ext: str
+        self,
+        camera_name: str,
+        channel_name: str,
+        date_str: str,
+        seq_num: int | str,
+        ext: str,
     ) -> str:
         """Reconstruct filename from components."""
         if isinstance(seq_num, str):
-            base_name = f"{camera_name}_{channel_name}_{seq_num}"
+            base_name = f"{camera_name}_{channel_name}_{date_str}_{seq_num}"
         else:
-            base_name = f"{camera_name}_{channel_name}_{seq_num:06d}"
+            base_name = f"{camera_name}_{channel_name}_{date_str}_{seq_num:06d}"
         return f"{base_name}.{ext}"
 
     async def get_structured_data_for_date(
@@ -689,7 +694,7 @@ class HistoricalPoller:
 
                 # Reconstruct filename and key
                 filename = self.reconstruct_filename(
-                    camera.name, channel_name, seq_num, ext
+                    camera.name, channel_name, date_str, seq_num, ext
                 )
                 if isinstance(seq_num, str):
                     # seq_num is 'final' or similar non-integer
