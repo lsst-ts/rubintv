@@ -182,21 +182,14 @@ describe("ConfirmationModal", () => {
   it("renders with default props", () => {
     render(<ConfirmationModal />)
 
-    expect(screen.getByText("Confirmation")).toBeInTheDocument()
     expect(screen.getByText("Are you sure?")).toBeInTheDocument()
     expect(screen.getByText("Yes")).toBeInTheDocument()
     expect(screen.getByText("No")).toBeInTheDocument()
   })
 
   it("renders with custom props", () => {
-    render(
-      <ConfirmationModal
-        title="Delete Item"
-        message="This action cannot be undone."
-      />
-    )
+    render(<ConfirmationModal message="This action cannot be undone." />)
 
-    expect(screen.getByText("Delete Item")).toBeInTheDocument()
     expect(
       screen.getByText("This action cannot be undone.")
     ).toBeInTheDocument()
@@ -244,7 +237,8 @@ describe("ConfirmationModal", () => {
                   message="Are you sure you want to delete this file?"
                   onConfirm={handleConfirm}
                   onCancel={handleCancel}
-                />
+                />,
+                "Delete File"
               )
             }
             data-testid="show-confirmation"
