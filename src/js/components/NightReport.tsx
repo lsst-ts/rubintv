@@ -7,6 +7,7 @@ import {
   NightReportPlotsTabProps,
   NightReportTextTabProps,
   TabType,
+  NightReportText,
 } from "./componentTypes"
 import { groupBy, sanitiseString } from "../modules/utils"
 import { DEFAULT_HIDDEN_TABS } from "../config"
@@ -189,26 +190,41 @@ function getTabs(nightReport: NightReportType): TabType[] {
   if (nightReport.text) {
     if (!Array.isArray(nightReport.text)) {
       console.warn(
-        "nightReport.text is not an array. Skipping text tabs generation.",
+        "nightReport.text is not an array. Attempting to process as old object style.",
         JSON.stringify(nightReport.text)
       )
-      return tabs
-    }
-    nightReport.text.forEach((textItem) => {
-      if (!textItem.title || !textItem.type || !textItem.content) {
+      const converted = convertOldTextFormat(nightReport.text)
+      if (converted.length > 0) {
+        converted.forEach((textItem) => {
+          tabs.push({
+            id: sanitiseString(textItem.title),
+            label: textItem.title,
+            type: "text",
+            data: textItem,
+          })
+        })
+      } else {
         console.warn(
-          "Skipping invalid night report text item:",
-          JSON.stringify(textItem)
+          "No valid text items found after converting old text format. Skipping text tabs."
         )
-        return
       }
-      tabs.push({
-        id: sanitiseString(textItem.title),
-        label: textItem.title,
-        type: "text",
-        data: textItem,
+    } else {
+      nightReport.text.forEach((textItem) => {
+        if (!textItem.title || !textItem.type || !textItem.content) {
+          console.warn(
+            "Skipping invalid night report text item:",
+            JSON.stringify(textItem)
+          )
+          return
+        }
+        tabs.push({
+          id: sanitiseString(textItem.title),
+          label: textItem.title,
+          type: "text",
+          data: textItem,
+        })
       })
-    })
+    }
   }
 
   // Add plot tabs grouped by group
@@ -225,6 +241,52 @@ function getTabs(nightReport: NightReportType): TabType[] {
   }
 
   return tabs
+}
+
+function convertOldTextFormat(oldText: Record<string, any>): NightReportText[] {
+  const converted: NightReportText[] = []
+  for (const [key, value] of Object.entries(oldText)) {
+    if (typeof value === "string") {
+      converted.push({
+        key,
+        title: key,
+        type: "multiline",
+        content: value,
+      })
+    } else if (typeof value === "object" && !Array.isArray(value)) {
+      converted.push({
+        key,
+        title: key,
+        type: "keyvalues",
+        content: value,
+      })
+    } else if (
+      Array.isArray(value) &&
+      value.every(
+        (item) =>
+          typeof item === "object" &&
+          "label" in item &&
+          "url" in item &&
+          typeof item.label === "string" &&
+          typeof item.url === "string"
+      )
+    ) {
+      converted.push({
+        key,
+        title: key,
+        type: "links",
+        content: value,
+      })
+    } else {
+      console.warn(
+        "Skipping unsupported text item format for key:",
+        key,
+        "value:",
+        value
+      )
+    }
+  }
+  return converted
 }
 
 function NightReport({
