@@ -2,14 +2,11 @@
 
 import asyncio
 from collections import OrderedDict
-from typing import TYPE_CHECKING
 
 from lsst.ts.rubintv.config import rubintv_logger
+from lsst.ts.rubintv.models.models import Camera, Location
 from lsst.ts.rubintv.models.models_helpers import date_str_to_date
-
-if TYPE_CHECKING:
-    from lsst.ts.rubintv.models.models import Camera, Location
-    from lsst.ts.rubintv.s3client import S3Client
+from lsst.ts.rubintv.s3client import S3Client
 
 logger = rubintv_logger()
 
@@ -24,7 +21,7 @@ class MetadataCollector:
     # Maximum days to cache metadata
     METADATA_CACHE_DAYS = 60
 
-    def __init__(self, s3_clients: dict[str, "S3Client"]) -> None:
+    def __init__(self, s3_clients: dict[str, S3Client]) -> None:
         """Initialize the metadata collector.
 
         Parameters
@@ -70,7 +67,7 @@ class MetadataCollector:
         self._metadata_refs.setdefault(loc_cam, set()).add(date_str)
 
     async def get_metadata_for_date(
-        self, location: "Location", camera: "Camera", date_str: str
+        self, location: Location, camera: Camera, date_str: str
     ) -> dict | None:
         """Get metadata for a specific date with caching.
 
@@ -156,7 +153,7 @@ class MetadataCollector:
                         self._prefetch_paused.clear()
 
     async def _fetch_metadata_from_s3(
-        self, location: "Location", camera: "Camera", date_str: str
+        self, location: Location, camera: Camera, date_str: str
     ) -> dict | None:
         """Fetch metadata from S3 for a specific date.
 
@@ -183,7 +180,7 @@ class MetadataCollector:
         except Exception:
             return None
 
-    async def start_prefetch(self, locations: list["Location"]) -> None:
+    async def start_prefetch(self, locations: list[Location]) -> None:
         """Start background metadata prefetching.
 
         Parameters
@@ -203,7 +200,7 @@ class MetadataCollector:
             self._background_metadata_prefetch(locations)
         )
 
-    async def _background_metadata_prefetch(self, locations: list["Location"]) -> None:
+    async def _background_metadata_prefetch(self, locations: list[Location]) -> None:
         """Background task to prefetch metadata for the last 60 days.
 
         Parameters
@@ -224,7 +221,7 @@ class MetadataCollector:
         except Exception as e:
             logger.error(f"Error in background metadata prefetch: {e}")
 
-    async def _prefetch_location_metadata(self, location: "Location") -> None:
+    async def _prefetch_location_metadata(self, location: Location) -> None:
         """Prefetch metadata for all cameras in a location.
 
         Parameters
@@ -330,7 +327,7 @@ class MetadataCollector:
                 pass
 
     async def metadata_exists_for_date(
-        self, location: "Location", camera: "Camera", date_str: str
+        self, location: Location, camera: Camera, date_str: str
     ) -> bool:
         """Check if metadata exists for a specific date.
 
