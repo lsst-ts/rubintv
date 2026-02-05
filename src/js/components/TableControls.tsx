@@ -82,7 +82,7 @@ export default function AboveTableRow({
 
   return (
     <div className="row">
-      <h3 id="the-date">
+      <h3 id="the-date" className="clickable-date">
         {prevDate && (
           <button
             className="button jump-to-date prev-date"
