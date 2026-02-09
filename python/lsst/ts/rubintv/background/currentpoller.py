@@ -506,15 +506,18 @@ class CurrentPoller:
 
     async def get_current_structured_data(
         self, location_name: str, camera: Camera
-    ) -> StructuredData:
+    ) -> dict[str, list[int | str]]:
         """Get compressed structured data for current day.
 
         Returns:
-            {channel_name: {seq_num1, seq_num2, ...}}
+            {channel_name: [seq_num1, seq_num2, ...]}
         """
         loc_cam = self._get_loc_cam(location_name, camera)
         structured = self._structured_events.get(loc_cam, {})
-        return structured
+        replaced_sets: dict[str, list[int | str]] = {
+            chan: list(seq_nums) for chan, seq_nums in structured.items()
+        }
+        return replaced_sets
 
     async def get_current_per_day_data(
         self, location_name: str, camera: Camera
@@ -606,10 +609,17 @@ class CurrentPoller:
     ) -> AsyncGenerator:
         match service:
             case Service.CAMERA:
-                channel_data = await self.get_current_channel_table(
+                structured = await self.get_current_structured_data(
                     location.name, camera
                 )
-                yield MessageType.CAMERA_TABLE, channel_data
+                ext_info = self._extension_info.get(
+                    f"{location.name}/{camera.name}", {}
+                )
+                ws_payload = {
+                    "structuredData": structured,
+                    "extensionInfo": ext_info,
+                }
+                yield MessageType.CAMERA_TABLE, ws_payload
 
                 metadata = await self.get_current_metadata(location.name, camera)
                 yield MessageType.CAMERA_METADATA, metadata

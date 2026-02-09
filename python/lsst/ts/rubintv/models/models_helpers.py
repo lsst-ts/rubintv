@@ -203,7 +203,7 @@ def daterange(start_date: date, end_date: date) -> Iterator[date]:
     `date`
         Each date in the range from start_date to end_date (exclusive).
     """
-    if start_date >= end_date:
+    if start_date > end_date:
         raise ValueError("start_date must be before end_date")
     if not isinstance(start_date, date) or not isinstance(end_date, date):
         raise TypeError("start_date and end_date must be of type date")
