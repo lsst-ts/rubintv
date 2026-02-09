@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react"
 import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
-import { _getById, union, getHistoricalData } from "../modules/utils"
+import {
+  _getById,
+  union,
+  getHistoricalData,
+  deserializeCompressedData,
+} from "../modules/utils"
 import { createTableFromStructuredData } from "../modules/convertTableData"
 import {
   loadColumnSelection,
@@ -109,7 +114,10 @@ export default function TableApp({
     getHistoricalData(locationName, camera.name, date)
       .then((json) => {
         const data = JSON.parse(json)
-        if (data.metadata) setMetadata(data.metadata)
+        if (data.metadata) {
+          const metadata = deserializeCompressedData(data.metadata)
+          setMetadata(metadata)
+        }
         if (data.structuredData && data.extensionInfo) {
           const channelData = createTableFromStructuredData(
             camera.name,

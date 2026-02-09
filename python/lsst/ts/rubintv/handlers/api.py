@@ -4,7 +4,7 @@ from typing import Annotated
 
 import redis.exceptions  # type: ignore
 from fastapi import APIRouter, HTTPException, Query, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import ORJSONResponse, RedirectResponse
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
 from lsst.ts.rubintv.config import REDIS_CONTROL_READBACK_SUFFIX as RC_SUFFIX
@@ -144,7 +144,7 @@ async def get_location_camera(
 
 @api_router.get(
     "/{location_name}/{camera_name}/date/{date_str}",
-    response_model=dict,
+    response_class=ORJSONResponse,
 )
 async def get_camera_events_for_date_api(
     location_name: str, camera_name: str, date_str: str, request: Request

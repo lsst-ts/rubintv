@@ -16,7 +16,10 @@ from lsst.ts.rubintv.models.models import (
     NightReport,
     get_current_day_obs,
 )
-from lsst.ts.rubintv.models.models_helpers import date_str_to_date
+from lsst.ts.rubintv.models.models_helpers import (
+    compress_serialize_data,
+    date_str_to_date,
+)
 from starlette.requests import HTTPConnection
 
 logger = rubintv_logger()
@@ -39,13 +42,14 @@ async def get_camera_current_data(
         location.name, camera
     )
     metadata = await current_poller.get_current_metadata(location.name, camera)
+    compressed_metadata = await compress_serialize_data(metadata)
     per_day = await current_poller.get_current_per_day_data(location.name, camera)
     nr_exists = current_poller.night_report_exists(location.name, camera.name)
 
     return CameraPageData(
         structured_data=structured_data,
         per_day=per_day,
-        metadata=metadata,
+        metadata=compressed_metadata,
         nr_exists=nr_exists,
     )
 
@@ -99,6 +103,7 @@ async def get_camera_events_for_date(
         location, camera, day_obs
     )
     metadata = await historical.get_metadata_for_date(location, camera, day_obs)
+    compressed_metadata = await compress_serialize_data(metadata)
     per_day = await historical.get_per_day_for_date(location, camera, day_obs)
     nr_exists = await historical.night_report_exists_for(location, camera, day_obs)
 
@@ -106,7 +111,7 @@ async def get_camera_events_for_date(
         structured_data=structured_data,
         extension_info=extension_info,
         per_day=per_day,
-        metadata=metadata if metadata else {},
+        metadata=compressed_metadata,
         nr_exists=nr_exists,
     )
 
@@ -125,6 +130,7 @@ async def get_camera_events_for_date_data_api(
         location, camera, day_obs
     )
     metadata = await historical.get_metadata_for_date(location, camera, day_obs)
+    compressed_metadata = await compress_serialize_data(metadata)
     per_day = await historical.get_per_day_for_date(location, camera, day_obs)
     nr_exists = await historical.night_report_exists_for(location, camera, day_obs)
 
@@ -132,7 +138,7 @@ async def get_camera_events_for_date_data_api(
         structured_data=structured_data,
         extension_info=extension_info,
         per_day=per_day,
-        metadata=metadata if metadata else {},
+        metadata=compressed_metadata,
         nr_exists=nr_exists,
     )
 

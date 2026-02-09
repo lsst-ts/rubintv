@@ -1,6 +1,6 @@
 import ReconnectingWebSocket from "reconnecting-websocket"
 import { validate } from "uuid"
-import { decodeUnpackWSPayload, getWebSockURL } from "./utils"
+import { deserializeCompressedData, getWebSockURL } from "./utils"
 
 interface WebsocketClientInterface {
   connectionID: string | null
@@ -127,7 +127,7 @@ export class WebsocketClient implements WebsocketClientInterface {
 
     const detail = {
       dataType: data.dataType,
-      data: decodeUnpackWSPayload(data.payload),
+      data: deserializeCompressedData(data.payload),
       datestamp: data.datestamp,
     }
     console.debug(`Received message for service ${data.service}:`, detail)

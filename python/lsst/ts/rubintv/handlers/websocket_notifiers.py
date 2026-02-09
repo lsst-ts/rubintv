@@ -1,6 +1,4 @@
 import asyncio
-import base64
-import gzip
 import time
 from typing import Any, Mapping
 from uuid import UUID
@@ -19,6 +17,7 @@ from lsst.ts.rubintv.handlers.websockets_clients import (
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
 from lsst.ts.rubintv.models.models import ServiceTypes as Service
 from lsst.ts.rubintv.models.models import get_current_day_obs
+from lsst.ts.rubintv.models.models_helpers import compress_serialize_data
 
 logger: structlog.stdlib.BoundLogger = rubintv_logger()
 
@@ -74,16 +73,7 @@ async def send_notification(
     datestamp = get_current_day_obs().isoformat()
 
     try:
-
-        def default_serializer(obj: Any) -> Any:
-            # Convert sets to lists for JSON serialization.
-            if isinstance(obj, set):
-                return list(obj)
-            raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
-
-        payload_bytes = orjson.dumps(payload, default=default_serializer)
-        zipped = gzip.compress(payload_bytes)
-        encoded = base64.b64encode(zipped).decode("utf-8")
+        encoded = await compress_serialize_data(payload)
 
         message = {
             "service": service.value,
@@ -99,7 +89,7 @@ async def send_notification(
             logger.warning(
                 "Slow websocket notification",
                 process_time=process_time,
-                payload_size=len(payload_bytes),
+                payload_size=len(payload) if payload else 0,
                 service=service.value,
             )
 

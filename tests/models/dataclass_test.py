@@ -8,7 +8,7 @@ def test_camera_page_data_initialization() -> None:
     assert data.nr_exists is False
     assert data.structured_data == {}
     assert data.extension_info == {}
-    assert data.metadata == {}
+    assert data.metadata == ""
     assert data.is_empty() is True
 
 
@@ -34,7 +34,7 @@ def test_camera_page_data_with_extension_info() -> None:
 
 def test_camera_page_data_with_metadata() -> None:
     """Test CameraPageData is not empty when metadata has data."""
-    data = CameraPageData(metadata={"key": "value"})
+    data = CameraPageData(metadata="not empty")
     assert data.is_empty() is False
 
 
@@ -50,7 +50,7 @@ def test_camera_page_data_combined_data() -> None:
         per_day={"channel1": {}},
         structured_data={"channel1": {1, 2, 3}},
         extension_info={"channel1": {"default": "jpg", "exceptions": {}}},
-        metadata={"key": "value"},
+        metadata="encoded_metadata",
         nr_exists=True,
     )
     assert data.is_empty() is False
@@ -58,4 +58,4 @@ def test_camera_page_data_combined_data() -> None:
     assert data.per_day == {"channel1": {}}
     assert data.structured_data == {"channel1": {1, 2, 3}}
     assert data.extension_info == {"channel1": {"default": "jpg", "exceptions": {}}}
-    assert data.metadata == {"key": "value"}
+    assert data.metadata == "encoded_metadata"
