@@ -506,7 +506,7 @@ class CurrentPoller:
 
     async def get_current_structured_data(
         self, location_name: str, camera: Camera
-    ) -> dict[str, list[int | str]]:
+    ) -> dict[str, set[int | str]]:
         """Get compressed structured data for current day.
 
         Returns:
@@ -514,10 +514,10 @@ class CurrentPoller:
         """
         loc_cam = self._get_loc_cam(location_name, camera)
         structured = self._structured_events.get(loc_cam, {})
-        replaced_sets: dict[str, list[int | str]] = {
-            chan: list(seq_nums) for chan, seq_nums in structured.items()
-        }
-        return replaced_sets
+        # replaced_sets: dict[str, list[int | str]] = {
+        #     chan: list(seq_nums) for chan, seq_nums in structured.items()
+        # }
+        return structured
 
     async def get_current_per_day_data(
         self, location_name: str, camera: Camera

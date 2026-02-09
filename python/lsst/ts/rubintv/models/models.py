@@ -495,7 +495,7 @@ type ChannelData = dict[int, dict[str, dict]]
 class CameraPageData:
     nr_exists: bool = False
     per_day: dict[str, dict] = dataclasses.field(default_factory=dict)
-    structured_data: StructuredData = dataclasses.field(default_factory=dict)
+    structured_data: dict[str, set[int | str]] = dataclasses.field(default_factory=dict)
     extension_info: ExtensionInfo = dataclasses.field(default_factory=dict)
     metadata: dict[str, Any] = dataclasses.field(default_factory=dict)
 

@@ -1,11 +1,11 @@
 import asyncio
 import base64
 import gzip
-import json
 import time
 from typing import Any, Mapping
 from uuid import UUID
 
+import orjson
 import structlog
 from fastapi import WebSocket
 from lsst.ts.rubintv.config import rubintv_logger
@@ -74,8 +74,15 @@ async def send_notification(
     datestamp = get_current_day_obs().isoformat()
 
     try:
-        payload_string = json.dumps(payload)
-        zipped = gzip.compress(bytes(payload_string, "utf-8"))
+
+        def default_serializer(obj: Any) -> Any:
+            # Convert sets to lists for JSON serialization.
+            if isinstance(obj, set):
+                return list(obj)
+            raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
+        payload_bytes = orjson.dumps(payload, default=default_serializer)
+        zipped = gzip.compress(payload_bytes)
         encoded = base64.b64encode(zipped).decode("utf-8")
 
         message = {
@@ -92,7 +99,7 @@ async def send_notification(
             logger.warning(
                 "Slow websocket notification",
                 process_time=process_time,
-                payload_size=len(payload_string),
+                payload_size=len(payload_bytes),
                 service=service.value,
             )
 
