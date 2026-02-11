@@ -2,28 +2,25 @@
 
 from typing import Annotated
 
-import redis.exceptions  # type: ignore
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
-from lsst.ts.rubintv.config import REDIS_CONTROL_READBACK_SUFFIX as RC_SUFFIX
 from lsst.ts.rubintv.config import rubintv_logger
-from lsst.ts.rubintv.handlers.handlers_helpers import (
-    date_validation,
-    get_camera_events_for_date,
-    get_current_night_report_payload,
+from lsst.ts.rubintv.handlers.api_logic import (
+    get_camera_date_data,
+    get_current_channel_event_logic,
+    get_current_night_report_logic,
+    get_historical_metadata_logic,
+    get_historical_night_report_logic,
+    get_location_and_camera,
+    get_redis_control_values_with_menus,
+    get_specific_channel_event_logic,
+    set_redis_value_logic,
 )
-from lsst.ts.rubintv.models.models import (
-    Camera,
-    CameraPageData,
-    Event,
-    KeyValue,
-    Location,
-    NightReport,
-)
+from lsst.ts.rubintv.handlers.handlers_helpers import date_validation
+from lsst.ts.rubintv.models.models import Camera, Event, KeyValue, Location, NightReport
 from lsst.ts.rubintv.models.models_helpers import find_first
-from lsst.ts.rubintv.s3client import S3Client
 from redis.asyncio import Redis  # type: ignore
 
 api_router = APIRouter()
@@ -51,58 +48,19 @@ async def redis_get(request: Request) -> list[KeyValue]:
     redis_client: Redis = request.app.state.redis_client
     if not redis_client:
         raise HTTPException(500, "Redis client not initialized")
-    results = []
     admin_redis_menus = request.app.state.models.admin_redis_menus
-    try:
-        for menu in admin_redis_menus:
-            key = menu["key"] + RC_SUFFIX
-            value = await redis_client.get(key)
-            if value:
-                value = value.decode("utf-8")
-            else:
-                value = ""
-            results.append({"key": key, "value": value})
-    except redis.exceptions.ResponseError:
-        raise HTTPException(500, "Failed to get Redis key: No response")
-    except redis.exceptions.TimeoutError:
-        raise HTTPException(500, "Failed to get Redis key: Timeout")
-    except redis.exceptions.ConnectionError:
-        raise HTTPException(500, "Failed to get Redis key: Connection error")
-    except redis.exceptions.RedisError as e:
-        raise HTTPException(500, f"Failed to get Redis key: {e}")
-    logger.info("Fetched Redis control values", extra={"results": results})
-    return results
+    return await get_redis_control_values_with_menus(redis_client, admin_redis_menus)
 
 
 @api_router.post("/redis")
 async def redis_post(request: Request, message: KeyValue) -> dict:
-    response: bool | None
     redis_client: Redis = request.app.state.redis_client
     if not redis_client:
         raise HTTPException(500, "Redis client not initialized")
     key, value = message.key, message.value
     if not key:
         raise HTTPException(400, "Message must contain a 'key' key")
-    if key == "clear_redis":
-        try:
-            response = await redis_client.flushdb()
-            logger.info("Redis database cleared")
-        except Exception as e:
-            raise HTTPException(500, f"Failed to clear Redis database: {e}")
-    else:
-        logger.info("Setting Redis key", extra={"key": key, "value": value})
-        if value is None:
-            raise HTTPException(400, "Message must contain a 'value' key")
-        try:
-            response = await redis_client.set(key, value)
-        except redis.exceptions.ResponseError:
-            raise HTTPException(500, "Failed to set Redis key: No response")
-        except redis.exceptions.TimeoutError:
-            raise HTTPException(500, "Failed to set Redis key: Timeout")
-        except redis.exceptions.ConnectionError:
-            raise HTTPException(500, "Failed to set Redis key: Connection error")
-        except redis.exceptions.RedisError as e:
-            raise HTTPException(500, f"Failed to set Redis key: {e}")
+    response = await set_redis_value_logic(redis_client, key, value)
     return {"response": response}
 
 
@@ -149,24 +107,11 @@ async def get_location_camera(
 async def get_camera_events_for_date_api(
     location_name: str, camera_name: str, date_str: str, request: Request
 ) -> dict:
-    location, camera = await get_location_camera(location_name, camera_name, request)
-
-    day_obs = date_validation(date_str)
-
-    data: CameraPageData = await get_camera_events_for_date(
-        location, camera, day_obs, request
+    location, camera = await get_location_and_camera(
+        location_name, camera_name, request.app.state.models.locations
     )
-    if not data.is_empty():
-        return {
-            "date": day_obs,
-            "structuredData": data.structured_data,
-            "extensionInfo": data.extension_info,
-            "metadata": data.metadata,
-            "perDay": data.per_day,
-            "nightReportExists": data.nr_exists,
-        }
-    else:
-        return {}
+    day_obs = date_validation(date_str)
+    return await get_camera_date_data(location, camera, day_obs, request)
 
 
 @api_router.get(
@@ -182,18 +127,7 @@ async def get_current_channel_event(
     ):
         raise HTTPException(status_code=404, detail="Channel not found.")
 
-    event = None
-    if camera.online:
-        current_poller: CurrentPoller = request.app.state.current_poller
-        event = await current_poller.get_current_channel_event(
-            location_name, camera_name, channel_name
-        )
-        if not event:
-            historical: HistoricalPoller = request.app.state.historical
-            if await historical.is_busy():
-                raise HTTPException(423, "Historical data is being processed")
-            event = await historical.get_most_recent_event(location, camera, channel)
-    return event
+    return await get_current_channel_event_logic(location, camera, channel, request)
 
 
 @api_router.get(
@@ -236,34 +170,8 @@ async def get_specific_channel_event(
     HTTPException
         404: If the location or camera is not found.
     """
-    allowed_extensions = ["png", "jpg", "jpeg", "mp4"]
     _, camera = await get_location_camera(location_name, camera_name, request)
-    if not camera.online or not key:
-        return None
-    has_ext = any(key.endswith(f".{ext}") for ext in allowed_extensions)
-    if not has_ext:
-        # There is no file extension given, so we need to establish it
-        # by looking it up in the bucket
-        s3_client: S3Client = request.app.state.s3_clients[location_name]
-        if not s3_client:
-            raise HTTPException(status_code=404, detail="Location not found.")
-        # Check if the key exists in the bucket
-        objects = await s3_client.async_list_objects(key)
-        if not objects:
-            raise HTTPException(status_code=404, detail="Key not found.")
-        # Get the first object that matches the key
-        for obj in objects:
-            if obj["key"].startswith(key):
-                key = obj["key"]
-                break
-        else:
-            raise HTTPException(status_code=404, detail="Key not found.")
-    event = Event(key=key)
-    if event.ext not in allowed_extensions:
-        raise HTTPException(
-            status_code=400, detail=f"Invalid file extension: {event.ext}"
-        )
-    return event
+    return await get_specific_channel_event_logic(location_name, key, camera, request)
 
 
 @api_router.get(
@@ -274,8 +182,7 @@ async def get_current_night_report_api(
     location_name: str, camera_name: str, request: Request
 ) -> dict:
     location, camera = await get_location_camera(location_name, camera_name, request)
-    day_obs, nr = await get_current_night_report_payload(location, camera, request)
-    return {"date": day_obs, "night_report": nr}
+    return await get_current_night_report_logic(location, camera, request)
 
 
 @api_router.get(
@@ -286,15 +193,8 @@ async def get_night_report_for_date(
     location_name: str, camera_name: str, date_str: str, request: Request
 ) -> NightReport:
     location, camera = await get_location_camera(location_name, camera_name, request)
-
     day_obs = date_validation(date_str)
-
-    historical: HistoricalPoller = request.app.state.historical
-    if await historical.is_busy():
-        raise HTTPException(423, "Historical data is being processed")
-
-    nr = await historical.get_night_report_payload(location, camera, day_obs)
-    return nr
+    return await get_historical_night_report_logic(location, camera, day_obs, request)
 
 
 @api_router.get("/{location_name}/{camera_name}/metadata/{date_str}")
@@ -302,19 +202,5 @@ async def get_metadata_for_date(
     location_name: str, camera_name: str, date_str: str, request: Request
 ) -> dict:
     location, camera = await get_location_camera(location_name, camera_name, request)
-    if not camera.online:
-        raise HTTPException(status_code=404, detail="Camera not found.")
-
     day_obs = date_validation(date_str)
-
-    historical: HistoricalPoller = request.app.state.historical
-    if await historical.is_busy():
-        raise HTTPException(
-            status_code=423, detail="Historical data is being processed"
-        )
-
-    metadata = await historical.get_metadata_for_date(location, camera, day_obs)
-    if not metadata:
-        raise HTTPException(status_code=404, detail="Metadata not found for this date")
-
-    return metadata
+    return await get_historical_metadata_logic(location, camera, day_obs, request)
