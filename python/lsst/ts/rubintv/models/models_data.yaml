@@ -173,7 +173,7 @@ cameras:
 
     quicklook_viewer_link:
       "https://usdf-rsp{dev}.slac.stanford.edu/fov-quicklook/\
-      visits/raw:{dayObs}{seqNum:05}"
+      visits/embargo:raw:{dayObs}{seqNum:05}"
 
   - name: lsstcam_aos
     title: LSSTCamAOS
