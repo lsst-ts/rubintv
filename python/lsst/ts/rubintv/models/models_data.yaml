@@ -869,6 +869,7 @@ admin_redis_menus:
       - AI_DONUT
       - UNPAIRED_DANISH
       - TARTS_UNPAIRED
+      - WCS_DANISH
 
   - title: "AOS FAM Pipeline"
     key: RUBINTV_CONTROL_AOS_FAM_PIPELINE
