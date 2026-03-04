@@ -13,6 +13,7 @@ os.environ.pop("S3_ENDPOINT_URL", None)
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, AsyncIterator, Iterator, Tuple
+from unittest.mock import patch
 
 import boto3
 import pytest
@@ -20,7 +21,6 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-from lsst.ts.rubintv.main import create_app
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
 from moto import mock_aws
 
@@ -46,14 +46,17 @@ def mock_s3_client(aws_credentials: Any) -> Iterator[Any]:
 async def mocked_client(
     mock_s3_client: Any,
 ) -> AsyncIterator[Tuple[AsyncClient, FastAPI, RubinDataMocker]]:
-    app = create_app()
-    models = ModelsInitiator()
-    mocker = RubinDataMocker(models.locations, s3_required=True)
-    async with LifespanManager(app):
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://127.0.0.1:8000/"
-        ) as client:
-            yield client, app, mocker
+    with patch("lsst.ts.rubintv.main._makeRedis", return_value=None):
+        from lsst.ts.rubintv.main import create_app
+
+        app = create_app()
+        models = ModelsInitiator()
+        mocker = RubinDataMocker(models.locations, s3_required=True)
+        async with LifespanManager(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://127.0.0.1:8000/"
+            ) as client:
+                yield client, app, mocker
 
 
 @contextmanager
