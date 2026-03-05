@@ -43,7 +43,7 @@ async def create_test_client() -> AsyncGenerator[redis.Redis, None]:
     try:
         yield client
     finally:
-        await client.aclose()
+        await client.aclose()  # type: ignore
 
 
 async def main() -> None:

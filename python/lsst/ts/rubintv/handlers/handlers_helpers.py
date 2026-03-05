@@ -29,19 +29,21 @@ async def get_camera_current_data(
 ) -> CameraPageData:
     """Get the current data for a camera."""
     if not camera.online:
-        return None
+        return CameraPageData()
     current_poller: CurrentPoller = connection.app.state.current_poller
     first_pass: asyncio.Event = connection.app.state.first_pass_event
     # wait for the first poll to complete
     await first_pass.wait()
 
-    channel_data = await current_poller.get_current_channel_table(location.name, camera)
+    structured_data = await current_poller.get_current_structured_data(
+        location.name, camera
+    )
     metadata = await current_poller.get_current_metadata(location.name, camera)
     per_day = await current_poller.get_current_per_day_data(location.name, camera)
     nr_exists = current_poller.night_report_exists(location.name, camera.name)
 
     return CameraPageData(
-        channel_data=channel_data,
+        structured_data=structured_data,
         per_day=per_day,
         metadata=metadata,
         nr_exists=nr_exists,
@@ -90,15 +92,47 @@ async def get_camera_events_for_date(
     historical: HistoricalPoller = connection.app.state.historical
     if await historical.is_busy():
         raise HTTPException(423, "Historical data is being processed")
-    channel_data = await historical.get_channel_data_for_date(location, camera, day_obs)
+    structured_data = await historical.get_structured_data_for_date(
+        location, camera, day_obs
+    )
+    extension_info = await historical.get_all_extensions_for_date(
+        location, camera, day_obs
+    )
     metadata = await historical.get_metadata_for_date(location, camera, day_obs)
     per_day = await historical.get_per_day_for_date(location, camera, day_obs)
     nr_exists = await historical.night_report_exists_for(location, camera, day_obs)
 
     return CameraPageData(
-        channel_data=channel_data,
+        structured_data=structured_data,
+        extension_info=extension_info,
         per_day=per_day,
-        metadata=metadata,
+        metadata=metadata if metadata else {},
+        nr_exists=nr_exists,
+    )
+
+
+async def get_camera_events_for_date_data_api(
+    location: Location, camera: Camera, day_obs: date, connection: HTTPConnection
+) -> CameraPageData:
+    """Get the camera events for a particular date."""
+    historical: HistoricalPoller = connection.app.state.historical
+    if await historical.is_busy():
+        raise HTTPException(423, "Historical data is being processed")
+    structured_data = await historical.get_structured_data_for_date(
+        location, camera, day_obs
+    )
+    extension_info = await historical.get_all_extensions_for_date(
+        location, camera, day_obs
+    )
+    metadata = await historical.get_metadata_for_date(location, camera, day_obs)
+    per_day = await historical.get_per_day_for_date(location, camera, day_obs)
+    nr_exists = await historical.night_report_exists_for(location, camera, day_obs)
+
+    return CameraPageData(
+        structured_data=structured_data,
+        extension_info=extension_info,
+        per_day=per_day,
+        metadata=metadata if metadata else {},
         nr_exists=nr_exists,
     )
 
@@ -159,7 +193,23 @@ async def get_prev_next_event(
 
 
 def date_validation(date_str: str) -> date:
-    """Validate the date string and return a date object."""
+    """Validate the date string and return a date object.
+
+    Parameters
+    ----------
+    date_str : `str`
+        The date string to validate.
+
+    Returns
+    -------
+    day_obs : `date`
+        The validated date object.
+
+    Raises
+    -------
+    `HTTPException`
+        If the date string is invalid.
+    """
     try:
         day_obs = date_str_to_date(date_str)
     except ValueError:
@@ -171,7 +221,7 @@ async def get_all_channel_names_for_date_seq_num(
     location: Location,
     camera: Camera,
     day_obs: date,
-    seq_num: int,
+    seq_num: int | str,
     connection: HTTPConnection,
 ) -> list[str]:
     """Get all channels for a given date and sequence number."""
@@ -191,3 +241,37 @@ async def get_all_channel_names_for_date_seq_num(
         seq_num,
     )
     return channel_data
+
+
+def parse_seq_nums(seq_num: str | None) -> list[int]:
+    """Parse sequence numbers from query string, handling invalid input
+    gracefully.
+
+    Parameters
+    ----------
+    seq_num: str
+        Comma-separated sequence numbers, may contain invalid characters
+
+    Returns
+    -------
+    seq_num_list: list[int]
+        List of valid sequence numbers
+    """
+    if not seq_num:
+        return []
+
+    seq_num_list: list[int] = []
+    elements = seq_num.split(",")
+
+    for element in elements:
+        clean_element = "".join(char for char in element if char.isdigit())
+
+        if clean_element:
+            try:
+                num = int(clean_element)
+                if 0 <= num <= 9999:
+                    seq_num_list.append(num)
+            except (ValueError, OverflowError):
+                continue
+
+    return seq_num_list

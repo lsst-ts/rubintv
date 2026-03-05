@@ -3,7 +3,13 @@ from datetime import date, timedelta
 from typing import Any, AsyncGenerator, Iterable, Iterator
 
 from lsst.ts.rubintv.config import rubintv_logger
-from lsst.ts.rubintv.models.models import Camera, Channel, Event, NightReportData
+from lsst.ts.rubintv.models.models import (
+    Camera,
+    Channel,
+    ChannelData,
+    Event,
+    NightReportData,
+)
 
 __all__ = [
     "find_first",
@@ -137,17 +143,6 @@ async def objects_to_ngt_report_data(objects: list[dict]) -> list[NightReportDat
     return night_reports
 
 
-async def event_list_to_channel_keyed_dict(
-    event_list: list[Event], channels: list[Channel]
-) -> dict[str, list[Event]]:
-    days_events_dict = {}
-    for channel in channels:
-        days_events_dict[channel.name] = [
-            event for event in event_list if event.channel_name == channel.name
-        ]
-    return days_events_dict
-
-
 def get_image_viewer_link(camera: Camera, day_obs: date, seq_num: int) -> str:
     """Returns the url for the camera's external image viewer for a given date
     and seq num.
@@ -175,7 +170,7 @@ def get_image_viewer_link(camera: Camera, day_obs: date, seq_num: int) -> str:
 
 async def make_table_from_event_list(
     events: list[Event], channels: list[Channel]
-) -> dict[int, dict[str, dict]]:
+) -> ChannelData:
     d: dict[int, dict[str, dict]] = {}
     for chan in channels:
         chan_events = [e for e in events if e.channel_name == chan.name]
@@ -208,7 +203,7 @@ def daterange(start_date: date, end_date: date) -> Iterator[date]:
     `date`
         Each date in the range from start_date to end_date (exclusive).
     """
-    if start_date >= end_date:
+    if start_date > end_date:
         raise ValueError("start_date must be before end_date")
     if not isinstance(start_date, date) or not isinstance(end_date, date):
         raise TypeError("start_date and end_date must be of type date")
