@@ -1,7 +1,7 @@
 import json
 import logging
 import random
-from datetime import date, timedelta
+from datetime import date
 from itertools import chain
 from pathlib import Path
 from typing import Any
@@ -12,9 +12,6 @@ from lsst.ts.rubintv.models.models import Channel, Event, get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.models.models_init import Camera, Location
 
-today = get_current_day_obs()
-the_past = today - timedelta(days=100)
-
 
 class RubinDataMocker:
     FIRST_SEQ = 0
@@ -22,7 +19,7 @@ class RubinDataMocker:
     def __init__(
         self,
         locations: list[Location],
-        day_obs: date = today,
+        day_obs: date | None = None,
         s3_required: bool = False,
         populate: bool = True,
         include_metadata: bool = False,
@@ -54,6 +51,8 @@ class RubinDataMocker:
             self.s3_client = boto3.client("s3", region_name="us-east-1")
             self.create_buckets()
         self.s3_required = s3_required
+        if day_obs is None:
+            day_obs = get_current_day_obs()
         self.day_obs = day_obs
         self.location_channels: dict[str, list[Channel]] = {}
         self.empty_channel: dict[str, str] = {}
@@ -226,7 +225,7 @@ class RubinDataMocker:
         self,
         location: Location,
         camera: Camera,
-        date_str: str = today.isoformat(),
+        date_str: str = "",
         group: str = "Test",
     ) -> dict[str, str]:
         """Generate a mock night report for a camera.
@@ -243,6 +242,8 @@ class RubinDataMocker:
         night_report_object: `dict`[`str`, `str`]
             A simple dict that a `NightReport` instance can be made using.
         """
+        if not date_str:
+            date_str = self.day_obs.isoformat()
         key = f"{camera.name}/{date_str}/night_report/{group}/filename.test"
         content = "".join([chr(random.randint(32, 126)) for _ in range(20)])
         hash: None | str = None

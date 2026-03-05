@@ -107,6 +107,9 @@ async def test_get_api_camera_for_today(
     """Test that api location/camera/current day obs yields a result"""
     client, app, _ = mocked_client
 
+    first_pass: asyncio.Event = app.state.first_pass_event
+    await first_pass.wait()
+
     hp: HistoricalPoller = app.state.historical
     while await hp.is_busy():
         await asyncio.sleep(0.1)
