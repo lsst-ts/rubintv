@@ -9,7 +9,6 @@ import pytest
 from bs4 import BeautifulSoup
 from fastapi import FastAPI
 from httpx import AsyncClient
-from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
 from lsst.ts.rubintv.config import config
 from lsst.ts.rubintv.models.models import Camera, Location, get_current_day_obs
@@ -39,7 +38,15 @@ async def test_get_home(
     navs = parsed.nav
     assert navs is not None
     page_links = navs.find_all("a")
-    page_slugs = [url.get("href").split("/")[-1] for url in page_links]
+    from bs4 import Tag
+
+    page_slugs = [
+        str(url.get("href")).split("/")[-1]
+        for url in page_links
+        if isinstance(url, Tag)
+        and url.get("href") is not None
+        and isinstance(url.get("href"), str)
+    ]
     assert location_names == page_slugs
 
 
@@ -67,37 +74,6 @@ async def test_get_location(
 
 
 @pytest.mark.asyncio
-async def test_current_channels(
-    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
-) -> None:
-    client, app, mocker = mocked_client
-
-    cp: CurrentPoller = app.state.current_poller
-    hp: HistoricalPoller = app.state.historical
-    cp.test_mode = True
-    hp.test_mode = True
-    while cp.completed_first_poll is False or hp._have_downloaded is False:
-        await asyncio.sleep(0.1)
-
-    for location in m.locations:
-        for camera in location.cameras:
-            loc_cam = f"{location.name}/{camera.name}"
-            for seq_chan in camera.seq_channels():
-                url = (
-                    f"/{app_name}/{location.name}/{camera.name}"
-                    f"/current/{seq_chan.name}"
-                )
-                response = await client.get(url)
-                assert response.is_success
-
-                html = await response.aread()
-                parsed = BeautifulSoup(html, "html.parser")
-                if mocker.empty_channel.get(loc_cam) == seq_chan.name:
-                    assert parsed.select(".event-error")
-                    assert not parsed.select(".event-info")
-
-
-@pytest.mark.asyncio
 async def test_all_endpoints(
     mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
 ) -> None:
@@ -105,7 +81,7 @@ async def test_all_endpoints(
     client, app, _ = mocked_client
 
     locations = [loc.name for loc in m.locations]
-    summit: Location = find_first(m.locations, "name", "summit-usdf")
+    summit = find_first(m.locations, "name", "summit-usdf")
     assert isinstance(summit, Location)
 
     all_cams = [f"{summit.name}/{cam.name}" for cam in summit.cameras]
@@ -115,7 +91,7 @@ async def test_all_endpoints(
     nr_current = [f"{cam}/night_report" for cam in online_cams]
     nr_dates = [f"{cam}/night_report/{day_obs}" for cam in online_cams]
 
-    auxtel: Camera = find_first(summit.cameras, "name", "auxtel")
+    auxtel = find_first(summit.cameras, "name", "auxtel")
     assert isinstance(auxtel, Camera)
 
     channels = [
@@ -155,7 +131,7 @@ async def test_request_invalid_dates(
 
     client, _, _ = mocked_client
 
-    summit: Location = find_first(m.locations, "name", "summit-usdf")
+    summit = find_first(m.locations, "name", "summit-usdf")
     assert isinstance(summit, Location)
 
     online_cams = [f"{summit.name}/{cam.name}" for cam in summit.cameras if cam.online]

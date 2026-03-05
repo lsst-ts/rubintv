@@ -1,9 +1,19 @@
 import asyncio
+import base64
+import gzip
 from datetime import date, timedelta
 from typing import Any, AsyncGenerator, Iterable, Iterator
 
+# using orjson for faster serialization
+import orjson
 from lsst.ts.rubintv.config import rubintv_logger
-from lsst.ts.rubintv.models.models import Camera, Channel, Event, NightReportData
+from lsst.ts.rubintv.models.models import (
+    Camera,
+    Channel,
+    ChannelData,
+    Event,
+    NightReportData,
+)
 
 __all__ = [
     "find_first",
@@ -14,6 +24,8 @@ __all__ = [
     "all_objects_to_events",
     "objects_to_ngt_report_data",
 ]
+
+logger = rubintv_logger()
 
 
 def find_first(a_list: list[Any], key: str, to_match: str) -> Any | None:
@@ -137,17 +149,6 @@ async def objects_to_ngt_report_data(objects: list[dict]) -> list[NightReportDat
     return night_reports
 
 
-async def event_list_to_channel_keyed_dict(
-    event_list: list[Event], channels: list[Channel]
-) -> dict[str, list[Event]]:
-    days_events_dict = {}
-    for channel in channels:
-        days_events_dict[channel.name] = [
-            event for event in event_list if event.channel_name == channel.name
-        ]
-    return days_events_dict
-
-
 def get_image_viewer_link(camera: Camera, day_obs: date, seq_num: int) -> str:
     """Returns the url for the camera's external image viewer for a given date
     and seq num.
@@ -175,7 +176,7 @@ def get_image_viewer_link(camera: Camera, day_obs: date, seq_num: int) -> str:
 
 async def make_table_from_event_list(
     events: list[Event], channels: list[Channel]
-) -> dict[int, dict[str, dict]]:
+) -> ChannelData:
     d: dict[int, dict[str, dict]] = {}
     for chan in channels:
         chan_events = [e for e in events if e.channel_name == chan.name]
@@ -208,10 +209,56 @@ def daterange(start_date: date, end_date: date) -> Iterator[date]:
     `date`
         Each date in the range from start_date to end_date (exclusive).
     """
-    if start_date >= end_date:
+    if start_date > end_date:
         raise ValueError("start_date must be before end_date")
     if not isinstance(start_date, date) or not isinstance(end_date, date):
         raise TypeError("start_date and end_date must be of type date")
     days = int((end_date - start_date).days)
     for n in range(days):
         yield start_date + timedelta(n)
+
+
+async def compress_serialize_data(data: Any) -> str:
+    """Compress and serialize data for WebSocket transmission.
+
+    Parameters
+    ----------
+    data: `Any`
+        The data to compress and serialize.
+
+    Returns
+    -------
+    encoded: `str`
+        The compressed and serialized data as a base64-encoded string.
+    """
+    try:
+        json_bytes = orjson.dumps(data, default=default_serializer)
+        zipped = gzip.compress(bytes(json_bytes))
+        encoded = base64.b64encode(zipped).decode("utf-8")
+        return encoded
+    except Exception as e:
+        logger.error(f"Error compressing and serializing data: {e}")
+        raise e
+
+
+def default_serializer(obj: Any) -> list:
+    """Default serializer for objects not serializable by orjson.
+
+    Parameters
+    ----------
+    obj: `Any`
+        The object to serialize.
+
+    Returns
+    -------
+    list: `list`
+        A list representation of the object if it's a set.
+
+    Raises
+    ------
+    `TypeError`
+        If the object is not a set and cannot be serialized.
+    """
+    if isinstance(obj, set):
+        return list(obj)
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")

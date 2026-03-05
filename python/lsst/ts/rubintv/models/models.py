@@ -5,7 +5,7 @@ import dataclasses
 import re
 from datetime import date, datetime, timedelta, timezone
 from enum import Enum
-from typing import Any
+from typing import Any, TypedDict
 
 from lsst.ts.rubintv import __version__
 from lsst.ts.rubintv.config import config, rubintv_logger
@@ -13,6 +13,23 @@ from pydantic import BaseModel, ConfigDict
 from pydantic.dataclasses import dataclass
 
 logger = rubintv_logger()
+
+
+def to_camel(string: str) -> str:
+    """Convert snake_case to camelCase.
+
+    Parameters
+    ----------
+    string : str
+        Snake case string (e.g., "foo_bar_baz")
+
+    Returns
+    -------
+    str
+        Camel case string (e.g., "fooBarBaz")
+    """
+    components = string.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
 
 
 class Metadata(BaseModel):
@@ -212,7 +229,6 @@ class Location(HasButton):
 @dataclass
 class Event:
     key: str
-    hash: str = ""
     # derived fields:
     camera_name: str = ""
     day_obs: str = ""
@@ -281,15 +297,14 @@ class Event:
 @dataclass
 class NightReportData:
     """Wrapper for a night report file metadata object.
+    -   Night Reports can be located in a given bucket using the prefix:
+        ``f"/{camera_name}/{date_str}/night_report/"``.
 
-        -   Night Reports can be located in a given bucket using the prefix:
-            ``f"/{camera_name}/{date_str}/night_report/"``.
+    -   Plots take the form:
+        ``f"/{camera_name}/{date_str}/night_report/{group}/{filename}.{ext}"``.
 
-        -   Plots take the form:
-            ``f"/{camera_name}/{date_str}/night_report/{group}/{filename}.{ext}"``.
-
-        -   Metadata takes the form:
-             ``f"/{camera_name}/{date_str}/night_report/{filename}_md.json"``.
+    -   Metadata takes the form:
+            ``f"/{camera_name}/{date_str}/night_report/{filename}_md.json"``.
 
 
     Parameters
@@ -358,6 +373,8 @@ class NightReportData:
         ) = self.parse_key()
 
     def __hash__(self) -> int:
+        if not re.match(r"^[0-9a-fA-F]+$", self.hash):
+            raise ValueError(f"Hash is not a valid hex value: {self.hash}")
         return int(f"0x{self.hash}", 0)
 
 
@@ -420,7 +437,7 @@ class Heartbeat:
         return {
             "serviceName": self.service_name,
             "isActive": bool(self.state.value),
-            "nextExpected": self.next_expected.isoformat(),  # Convert datetime to string
+            "nextExpected": self.next_expected.isoformat(),
         }
 
 
@@ -447,6 +464,7 @@ class ServiceMessageTypes(Enum):
     NIGHT_REPORT = "nightReport"
     HISTORICAL_STATUS = "historicalStatus"
     DAY_CHANGE = "dayChange"
+    CALENDAR_UPDATE = "calendarUpdate"
     PREV_NEXT = "prevNext"
     ALL_CHANNELS = "allChannels"
     DETECTOR_STATUS = "detectorStatus"
@@ -460,15 +478,61 @@ class KeyValue(BaseModel):
     value: str | int | float | bool | None = None
 
 
+type StructuredData = dict[str, set[int | str]]
+type StoredStructuredData = dict[str, dict[str, StructuredData]]
+
+
+class ExtensionDict(TypedDict):
+    default: str
+    exceptions: dict[int | str, str]
+
+
+type ExtensionInfo = dict[str, ExtensionDict]
+type ChannelData = dict[int, dict[str, dict]]
+
+
 @dataclass
 class CameraPageData:
-    """Data for a camera page."""
-
-    channel_data: dict[int, dict[str, dict]] = dataclasses.field(default_factory=dict)
-    metadata: dict[str, Any] = dataclasses.field(default_factory=dict)
-    per_day: dict[str, dict] = dataclasses.field(default_factory=dict)
     nr_exists: bool = False
+    per_day: dict[str, dict] = dataclasses.field(default_factory=dict)
+    structured_data: dict[str, set[int | str]] = dataclasses.field(default_factory=dict)
+    extension_info: ExtensionInfo = dataclasses.field(default_factory=dict)
+    metadata: str = ""
 
     def is_empty(self) -> bool:
-        """Check if the data is empty."""
-        return not any([self.channel_data, self.metadata, self.per_day, self.nr_exists])
+        """Check if the data object is empty.
+
+        Returns
+        -------
+        is_empty: `bool`
+            True if the data object has no data, false otherwise.
+        """
+        return not any(
+            [self.per_day, self.structured_data, self.extension_info, self.metadata]
+        )
+
+
+class DataResponse(BaseModel):
+    """Standard response wrapper for generic data endpoint.
+
+    Used by the `/api/data` endpoint to provide a consistent response format
+    for all queries, with metadata about the request and response.
+
+    Attributes
+    ----------
+    status : `str`
+        "success" or "error"
+    data : `Any`
+        The requested data, varies by query type
+    meta : `dict[str, Any]`
+        Metadata about the response (timestamp, type, echoed query params)
+    error : `str | None`
+        Error message if status is "error"
+    """
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    status: str  # "success" or "error"
+    data: Any
+    meta: dict[str, Any]
+    error: str | None = None

@@ -13,6 +13,11 @@ The codebase aims to be modular and easy to extend: a backend built with FastAPI
 
 This repository contains the core services and documentation to get started quickly and to follow project conventions.
 
+## API discovery
+
+As per every FastAPI project, the full API can be found at `/docs`
+e.g. for the [dev deployment at USDF](https://usdf-rsp-dev.slac.stanford.edu/rubintv/docs)
+
 ## Project layout (typical)
 
 - `python/lsst/ts/rubintv` - FastAPI application and service code
