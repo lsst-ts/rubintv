@@ -157,6 +157,8 @@ class HistoricalPoller:
         logger.info("Starting re-poll of yesterday's data")
         start_time = time()
 
+        # await self._metadata_collector.check_for_changed_metadata()
+
         yesterday = get_current_day_obs() - timedelta(days=1)
         for location in self._locations:
             for camera in location.cameras:

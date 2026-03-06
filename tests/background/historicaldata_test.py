@@ -54,7 +54,6 @@ class TestHistoricalPoller:
         from datetime import date
 
         historical._have_downloaded = True
-<<<<<<< HEAD
         historical._metadata_collector.register_metadata_ref(
             f"{location.name}/{camera.name}",
             date_str="2024-01-15",
@@ -63,12 +62,9 @@ class TestHistoricalPoller:
         historical._structured_events[(location, camera)] = {date(2024, 1, 15): {}}
         historical._nr_metadata[location] = []
         historical._calendar[(location, camera)] = {}
-=======
-        historical._metadata_collector.register_metadata_ref("test", "2024-01-15")
-        historical._structured_events["test"] = {"2024-01-15": {"channel1": {1, 2}}}
-        historical._nr_metadata["test"] = []
-        historical._calendar["test"] = {}
->>>>>>> 7140e6aa (Refactor historical metadata collection)
+        historical._metadata_collector.register_metadata_ref(
+            "test", date_str="2024-01-15", metadata_hash="mock_hash"
+        )
 
         await historical.clear_all_data()
 
@@ -506,7 +502,6 @@ class TestHistoricalPollerWithMockData:
         )
 
         # Verify metadata was stored
-<<<<<<< HEAD
         assert (
             location.name + "/" + camera.name
             in historical._metadata_collector.metadata_refs
@@ -518,10 +513,13 @@ class TestHistoricalPollerWithMockData:
             ]
         }
         assert "2024-02-15" in metadata_dates
-=======
         assert loc_cam in historical._metadata_collector.metadata_refs
         assert "2024-02-15" in historical._metadata_collector.metadata_refs[loc_cam]
->>>>>>> 7140e6aa (Refactor historical metadata collection)
+        metadata_dates = {
+            ref.date_str
+            for ref in historical._metadata_collector.metadata_refs[loc_cam]
+        }
+        assert "2024-02-15" in metadata_dates
 
         # Verify calendar was updated
         assert loc_cam in historical._calendar
@@ -704,15 +702,11 @@ class TestHistoricalPollerWithMockData:
         # Verify metadata was stored
         loc_cam = f"{location.name}/{camera.name}"
         assert loc_cam in historical._metadata_collector.metadata_refs
-<<<<<<< HEAD
         metadata_dates = {
             ref.date_str
             for ref in historical._metadata_collector.metadata_refs[loc_cam]
         }
         assert date_str in metadata_dates
-=======
-        assert date_str in historical._metadata_collector.metadata_refs[loc_cam]
->>>>>>> 7140e6aa (Refactor historical metadata collection)
 
         # Verify night report data was stored
         assert location in historical._nr_metadata
@@ -808,7 +802,6 @@ class TestHistoricalPollerWithMockData:
         """Test that cache updates when new events are added to the bucket."""
         location = m.locations[0]
         camera = location.cameras[0]
-<<<<<<< HEAD
         channel = camera.channels[0]
 
         # Use the date from the mock data (today, since RubinDataMocker
@@ -819,21 +812,6 @@ class TestHistoricalPollerWithMockData:
         await historical._initialise_location_store(location)
 
         # Add more events to the mock bucket for today
-=======
-        loc_cam = f"{location.name}/{camera.name}"
-        channel = camera.channels[0]
-
-        # Initial download
-        await historical._initialise_location_store(location)
-
-        # Get initial event count
-        initial_events = await historical.get_events_for_date(
-            location, camera, datetime.date.today()
-        )
-        initial_count = len(initial_events)
-
-        # Add more events to the mock bucket
->>>>>>> 7140e6aa (Refactor historical metadata collection)
         rubin_data_mocker.add_seq_objs_for_channel(
             location, camera, channel, num_objs=3
         )
@@ -843,7 +821,6 @@ class TestHistoricalPollerWithMockData:
             location, camera
         )
 
-<<<<<<< HEAD
         # Simulate recheck - this should detect changes and update cache
         await historical._update_if_changed(location, camera, new_objects)
 
@@ -856,26 +833,12 @@ class TestHistoricalPollerWithMockData:
         # cached)
         # The key point is that the operation completed without error
         assert updated_events is not None
-=======
-        # Simulate recheck - this should detect changes
-        await historical._update_if_changed(loc_cam, new_objects, location)
-
-        # Verify cache was updated with new events
-        updated_events = await historical.get_events_for_date(
-            location, camera, datetime.date.today()
-        )
-        assert len(updated_events) > initial_count
->>>>>>> 7140e6aa (Refactor historical metadata collection)
 
     @pytest.mark.asyncio
     async def test_cache_detects_added_keys(self, historical: HistoricalPoller) -> None:
         """Test that _update_if_changed detects added keys correctly."""
         location = m.locations[0]
         camera = location.cameras[0]
-<<<<<<< HEAD
-=======
-        loc_cam = f"{location.name}/{camera.name}"
->>>>>>> 7140e6aa (Refactor historical metadata collection)
         channel = camera.channels[0]
 
         # Create initial batch of objects
@@ -895,7 +858,6 @@ class TestHistoricalPollerWithMockData:
         await historical.filter_convert_store_objects(objects_batch_1, location)
 
         # Verify initial state
-<<<<<<< HEAD
         assert (location, camera) in historical._structured_events
         assert (
             datetime.date(2024, 6, 15)
@@ -905,12 +867,6 @@ class TestHistoricalPollerWithMockData:
             historical._structured_events[(location, camera)][
                 datetime.date(2024, 6, 15)
             ][channel]
-=======
-        assert loc_cam in historical._structured_events
-        assert "2024-06-15" in historical._structured_events[loc_cam]
-        initial_count = len(
-            historical._structured_events[loc_cam]["2024-06-15"][channel.name]
->>>>>>> 7140e6aa (Refactor historical metadata collection)
         )
         assert initial_count == 3
 
@@ -931,19 +887,12 @@ class TestHistoricalPollerWithMockData:
         all_objects = objects_batch_1 + objects_batch_2
 
         # Simulate recheck with new objects
-<<<<<<< HEAD
         await historical._update_if_changed(location, camera, all_objects)
 
         # Verify new seq_nums were added
         seq_nums = historical._structured_events[(location, camera)][
             datetime.date(2024, 6, 15)
         ][channel]
-=======
-        await historical._update_if_changed(loc_cam, all_objects, location)
-
-        # Verify new seq_nums were added
-        seq_nums = historical._structured_events[loc_cam]["2024-06-15"][channel.name]
->>>>>>> 7140e6aa (Refactor historical metadata collection)
         assert len(seq_nums) == 6
         assert 4 in seq_nums
         assert 5 in seq_nums
@@ -957,10 +906,6 @@ class TestHistoricalPollerWithMockData:
         bucket."""
         location = m.locations[0]
         camera = location.cameras[0]
-<<<<<<< HEAD
-=======
-        loc_cam = f"{location.name}/{camera.name}"
->>>>>>> 7140e6aa (Refactor historical metadata collection)
         channel = camera.channels[0]
 
         # Add initial objects
@@ -980,16 +925,12 @@ class TestHistoricalPollerWithMockData:
 
         # Verify initial state
         assert (
-<<<<<<< HEAD
             len(
                 historical._structured_events[(location, camera)][
                     datetime.date(2024, 6, 15)
                 ][channel]
             )
             == 5
-=======
-            len(historical._structured_events[loc_cam]["2024-06-15"][channel.name]) == 5
->>>>>>> 7140e6aa (Refactor historical metadata collection)
         )
 
         # Simulate bucket now has fewer objects (only 3-5)
@@ -1006,7 +947,6 @@ class TestHistoricalPollerWithMockData:
             )
 
         # Run recheck with fewer objects (simulating deletion)
-<<<<<<< HEAD
         await historical._update_if_changed(location, camera, objects_batch_2)
 
         # Verify cache was cleared and rebuilt with only remaining items
@@ -1018,16 +958,6 @@ class TestHistoricalPollerWithMockData:
                 seq_nums = historical._structured_events[(location, camera)][
                     datetime.date(2024, 6, 15)
                 ][channel]
-=======
-        await historical._update_if_changed(loc_cam, objects_batch_2, location)
-
-        # Verify cache was cleared and rebuilt with only remaining items
-        if loc_cam in historical._structured_events:
-            if "2024-06-15" in historical._structured_events[loc_cam]:
-                seq_nums = historical._structured_events[loc_cam]["2024-06-15"][
-                    channel.name
-                ]
->>>>>>> 7140e6aa (Refactor historical metadata collection)
                 assert len(seq_nums) == 3
                 assert 1 not in seq_nums
                 assert 2 not in seq_nums
@@ -1041,10 +971,6 @@ class TestHistoricalPollerWithMockData:
         changed."""
         location = m.locations[0]
         camera = location.cameras[0]
-<<<<<<< HEAD
-=======
-        loc_cam = f"{location.name}/{camera.name}"
->>>>>>> 7140e6aa (Refactor historical metadata collection)
         channel = camera.channels[0]
 
         # Add initial objects
@@ -1063,7 +989,6 @@ class TestHistoricalPollerWithMockData:
         await historical.filter_convert_store_objects(objects, location)
 
         # Get initial structured data
-<<<<<<< HEAD
         initial_data = historical._structured_events[(location, camera)][
             datetime.date(2024, 6, 15)
         ][channel].copy()
@@ -1078,20 +1003,6 @@ class TestHistoricalPollerWithMockData:
             historical._structured_events[(location, camera)][
                 datetime.date(2024, 6, 15)
             ][channel]
-=======
-        initial_data = historical._structured_events[loc_cam]["2024-06-15"][
-            channel.name
-        ].copy()
-        initial_extensions = historical._channel_default_extensions.copy()
-
-        # Run recheck with identical objects (no changes)
-        await historical._update_if_changed(loc_cam, objects, location)
-
-        # Verify cache still exists and is unchanged
-        assert loc_cam in historical._structured_events
-        assert (
-            historical._structured_events[loc_cam]["2024-06-15"][channel.name]
->>>>>>> 7140e6aa (Refactor historical metadata collection)
             == initial_data
         )
         # Extensions should remain the same
@@ -1105,10 +1016,6 @@ class TestHistoricalPollerWithMockData:
         metadata, night reports)."""
         location = m.locations[0]
         camera = location.cameras[0]
-<<<<<<< HEAD
-=======
-        loc_cam = f"{location.name}/{camera.name}"
->>>>>>> 7140e6aa (Refactor historical metadata collection)
         channel = camera.channels[0]
         date_str = "2024-07-10"
 
@@ -1138,7 +1045,6 @@ class TestHistoricalPollerWithMockData:
         await historical.filter_convert_store_objects(objects, location)
 
         # Verify only event objects are in structured data
-<<<<<<< HEAD
         assert (location, camera) in historical._structured_events
         assert (
             datetime.date(2024, 7, 10)
@@ -1148,11 +1054,6 @@ class TestHistoricalPollerWithMockData:
         seq_nums = historical._structured_events[(location, camera)][
             datetime.date(2024, 7, 10)
         ][channel]
-=======
-        assert loc_cam in historical._structured_events
-        assert date_str in historical._structured_events[loc_cam]
-        seq_nums = historical._structured_events[loc_cam][date_str][channel.name]
->>>>>>> 7140e6aa (Refactor historical metadata collection)
         assert len(seq_nums) == 2
         assert 1 in seq_nums
         assert 2 in seq_nums
@@ -1172,7 +1073,6 @@ class TestHistoricalPollerWithMockData:
         ]
 
         # Simulate recheck
-<<<<<<< HEAD
         await historical._update_if_changed(location, camera, new_objects)
 
         # Verify only the new event object was added (night report ignored in
@@ -1180,14 +1080,6 @@ class TestHistoricalPollerWithMockData:
         date_obj = datetime.date.fromisoformat(date_str)
         updated_seq_nums = historical._structured_events[(location, camera)][date_obj][
             channel
-=======
-        await historical._update_if_changed(loc_cam, new_objects, location)
-
-        # Verify only the new event object was added (night report ignored in
-        # key comparison)
-        updated_seq_nums = historical._structured_events[loc_cam][date_str][
-            channel.name
->>>>>>> 7140e6aa (Refactor historical metadata collection)
         ]
         assert len(updated_seq_nums) == 3
         assert 3 in updated_seq_nums
@@ -1197,7 +1089,6 @@ class TestHistoricalPollerWithMockData:
         self, historical: HistoricalPoller
     ) -> None:
         """Test _parse_structured_key with various valid key formats."""
-<<<<<<< HEAD
         location = m.locations[0]
         camera = location.cameras[0]
         channel = camera.channels[0]
@@ -1228,29 +1119,12 @@ class TestHistoricalPollerWithMockData:
         assert parsed[1] == datetime.date(2024, 6, 15)
         assert parsed[2] == channel
         assert parsed[3] == 1
-=======
-        # Test with numeric seq_num
-        key = "camera1/2024-06-15/channel1/000042/camera1_channel1_000042.jpg"
-        parsed = historical._parse_structured_key(key)
-        assert parsed == ("camera1", "2024-06-15", "channel1", 42)
-
-        # Test with 'final' seq_num
-        key = "camera1/2024-06-15/channel1/final/camera1_channel1_final.jpg"
-        parsed = historical._parse_structured_key(key)
-        assert parsed == ("camera1", "2024-06-15", "channel1", "final")
-
-        # Test with underscores in names
-        key = "cam_name/2024-06-15/chan_name/000001/cam_name_chan_name_000001.fits"
-        parsed = historical._parse_structured_key(key)
-        assert parsed == ("cam_name", "2024-06-15", "chan_name", 1)
->>>>>>> 7140e6aa (Refactor historical metadata collection)
 
     @pytest.mark.asyncio
     async def test_parse_structured_key_invalid_keys(
         self, historical: HistoricalPoller
     ) -> None:
         """Test _parse_structured_key with invalid key formats."""
-<<<<<<< HEAD
         location = m.locations[0]
         camera = location.cameras[0]
         channel = camera.channels[0]
@@ -1273,20 +1147,4 @@ class TestHistoricalPollerWithMockData:
         # Test empty string
         key = ""
         parsed = historical._parse_structured_key(key, camera)
-=======
-        # Test with too few parts
-        key = "camera1/2024-06-15/channel1"
-        parsed = historical._parse_structured_key(key)
-        assert parsed is None
-
-        # Test with invalid seq_num (not numeric and not 'final')
-        # Actually, this would parse successfully since we allow non-numeric
-        key = "camera1/2024-06-15/channel1/invalid/file.jpg"
-        parsed = historical._parse_structured_key(key)
-        assert parsed == ("camera1", "2024-06-15", "channel1", "invalid")
-
-        # Test empty string
-        key = ""
-        parsed = historical._parse_structured_key(key)
->>>>>>> 7140e6aa (Refactor historical metadata collection)
         assert parsed is None
