@@ -1,6 +1,6 @@
 import asyncio
 import gc
-from datetime import date
+from datetime import date, timedelta
 from time import time
 from typing import TYPE_CHECKING
 
@@ -48,7 +48,8 @@ class HistoricalPoller:
     """
 
     # re-polling period in seconds
-    RECHECK_BUCKET_PERIOD = 60 * 60  # 60 minutes
+    REPOLL_BUCKET_PERIOD = 60 * 60  # 60 minutes
+    REPOLL_YESTERDAY_PERIOD = 60 * 2  # 2 minutes
 
     def __init__(
         self,
@@ -113,8 +114,6 @@ class HistoricalPoller:
         await self.clear_all_data()
 
     async def run(self) -> None:
-        t = time()
-        time_elapsed = 0.0
         while True:
             if not self._have_downloaded:
                 logger.info("Starting initial historical data download")
@@ -130,22 +129,50 @@ class HistoricalPoller:
                 await notify_all_status_change(historical_busy=False)
                 # Start background metadata prefetching
                 await self._metadata_collector.start_prefetch(self._locations)
-                time_elapsed = time() - t
                 logger.info(
                     "HistoricalPoller initial run completed",
-                    total_elapsed_time_seconds=time_elapsed,
+                    total_elapsed_time_seconds=elapsed,
                 )
-            if time_elapsed < self.RECHECK_BUCKET_PERIOD:
-                sleep_time = self.RECHECK_BUCKET_PERIOD - time_elapsed
-                logger.info(
-                    "HistoricalPoller sleeping until next recheck",
-                    sleep_time_seconds=sleep_time,
-                )
-                await asyncio.sleep(sleep_time)
-                t = time()
-            else:
-                await self.repoll_buckets_and_update()
-                t = time()
+
+            # Re-poll yesterday's data until main recheck period elapsed
+            loop_start = time()
+            while time() - loop_start < self.REPOLL_BUCKET_PERIOD:
+                await self.repoll_yesterday()
+                elapsed = time() - loop_start
+                if elapsed < self.REPOLL_YESTERDAY_PERIOD:
+                    await asyncio.sleep(self.REPOLL_YESTERDAY_PERIOD - elapsed)
+
+            await self.repoll_buckets_and_update()
+
+    async def repoll_yesterday(self) -> None:
+        """Re-poll just yesterday's data to catch any late arrivals."""
+        logger.info("Starting re-poll of yesterday's data")
+        start_time = time()
+
+        yesterday = get_current_day_obs() - timedelta(days=1)
+        for location in self._locations:
+            for camera in location.cameras:
+                if camera.online:
+                    loc_cam = f"{location.name}/{camera.name}"
+                    try:
+                        new_objects = await self._get_objects_for_location_camera(
+                            location, camera, prefix_extra=yesterday.isoformat()
+                        )
+                        await self._update_if_changed(
+                            loc_cam, new_objects, location, yesterday
+                        )
+                    except Exception as e:
+                        logger.error(
+                            f"Error re-polling yesterday's data: {e}",
+                            location=location.name,
+                            camera=camera.name,
+                        )
+
+        elapsed = time() - start_time
+        logger.info(
+            "Completed re-poll of yesterday's data",
+            elapsed_time_seconds=elapsed,
+        )
 
     async def repoll_buckets_and_update(self) -> None:
         """Recheck buckets for changes and update structured data if
@@ -176,7 +203,7 @@ class HistoricalPoller:
             try:
                 # Get current objects from bucket
                 new_objects = await self._get_objects_for_location_camera(
-                    location, camera
+                    location, camera, self.prefix_extra
                 )
 
                 # Compare with cached objects and update if different
@@ -189,7 +216,7 @@ class HistoricalPoller:
                 )
 
     async def _get_objects_for_location_camera(
-        self, location: Location, camera: Camera
+        self, location: Location, camera: Camera, prefix_extra: str = ""
     ) -> list[dict[str, str]]:
         """Get objects from bucket for a specific camera."""
         objects = []
@@ -201,9 +228,9 @@ class HistoricalPoller:
                 self.test_date_end,
             ):
                 date_str = aDate.isoformat()
-                prefixes.append(f"{camera.name}/{date_str}/{self.prefix_extra}")
+                prefixes.append(f"{camera.name}/{date_str}/{prefix_extra}")
         else:
-            prefixes.append(camera.name + "/" + self.prefix_extra)
+            prefixes.append(camera.name + "/" + prefix_extra)
 
         for prefix in prefixes:
             try:
@@ -248,8 +275,61 @@ class HistoricalPoller:
         loc_cam: str,
         new_objects: list[dict[str, str]],
         location: Location,
+        day_obs: date | None = None,
     ) -> None:
         """Compare new objects with cached data and update only if changed."""
+        new_keys_set = await self._parse_new_objects(new_objects)
+
+        # Build cached keys from structured data
+        cached_keys_set = set()
+        if day_obs is not None:
+            date_str = day_obs.isoformat()
+            if (
+                loc_cam in self._structured_events
+                and date_str in self._structured_events[loc_cam]
+            ):
+                cached_keys_set.update(
+                    await self._build_keys_from_structured_data_for_date(
+                        loc_cam, date_str
+                    )
+                )
+        else:
+            if loc_cam in self._structured_events:
+                for date_str in self._structured_events[loc_cam]:
+                    cached_keys_set.update(
+                        await self._build_keys_from_structured_data_for_date(
+                            loc_cam, date_str
+                        )
+                    )
+        # Check for differences
+        if new_keys_set != cached_keys_set:
+            message = f"Changes detected for {loc_cam}"
+            if day_obs is not None:
+                message += f" for {day_obs.isoformat()}"
+            logger.info(
+                message,
+                loc_cam=loc_cam,
+                date=day_obs.isoformat() if day_obs else None,
+                added=len(new_keys_set - cached_keys_set),
+                removed=len(cached_keys_set - new_keys_set),
+            )
+            # If there are changes, cache them.
+            if new_objects:
+                await self._convert_and_cache_structured_data(
+                    new_objects, location, day_obs
+                )
+        else:
+            message = f"No changes detected for {loc_cam}"
+            if day_obs is not None:
+                message += f" on {day_obs.isoformat()}"
+            logger.debug(
+                message,
+                loc_cam=loc_cam,
+                date=day_obs.isoformat() if day_obs else None,
+            )
+
+    async def _parse_new_objects(self, new_objects: list[dict[str, str]]) -> set:
+        """Parse new objects into structured data format."""
         # Parse new object keys to extract structured components
         new_keys_set = set()
 
@@ -260,56 +340,69 @@ class HistoricalPoller:
                 parsed = self._parse_structured_key(key)
                 if parsed:
                     new_keys_set.add(parsed)
+        return new_keys_set
 
-        # Build cached keys from structured data
+    async def _build_keys_from_structured_data_for_date(
+        self, loc_cam: str, date_str: str
+    ) -> set:
+        """Build a set of keys from the current structured data for a specific
+        date."""
         cached_keys_set = set()
-        if loc_cam in self._structured_events:
-            for date_str in self._structured_events[loc_cam]:
-                for channel_name in self._structured_events[loc_cam][date_str]:
-                    for seq_num in self._structured_events[loc_cam][date_str][
-                        channel_name
-                    ]:
-                        camera_name = loc_cam.split("/")[1]
-                        struct_key = (camera_name, date_str, channel_name, seq_num)
-                        cached_keys_set.add(struct_key)
+        if (
+            loc_cam in self._structured_events
+            and date_str in self._structured_events[loc_cam]
+        ):
+            for channel_name in self._structured_events[loc_cam][date_str]:
+                for seq_num in self._structured_events[loc_cam][date_str][channel_name]:
+                    camera_name = loc_cam.split("/")[1]
+                    struct_key = (camera_name, date_str, channel_name, seq_num)
+                    cached_keys_set.add(struct_key)
+        return cached_keys_set
 
-        # Check for differences
-        if new_keys_set != cached_keys_set:
-            logger.info(
-                "Changes detected in bucket",
-                loc_cam=loc_cam,
-                added=len(new_keys_set - cached_keys_set),
-                removed=len(cached_keys_set - new_keys_set),
-            )
-
-            # Convert objects to events WITHOUT holding the lock
-            if new_objects:
-                # Filter to only event objects
-                event_objects = [
-                    obj
-                    for obj in new_objects
-                    if "metadata.json" not in obj["key"]
-                    and "night_report" not in obj["key"]
-                ]
-                # Convert and build temporary structured data (no lock needed)
-                temp_structured = await self._convert_objects_to_structured(
-                    event_objects, location
-                )
-
-                # Now acquire lock and swap out old data with new
-                async with self._data_lock:
-                    # Delete old cached data for this location/camera
+    async def _convert_and_cache_structured_data(
+        self,
+        new_objects: list[dict[str, str]],
+        location: Location,
+        day_obs: date | None = None,
+    ) -> None:
+        """Convert new objects to structured data and cache it."""
+        # Filter to only event objects
+        event_objects = [
+            obj
+            for obj in new_objects
+            if "metadata.json" not in obj["key"] and "night_report" not in obj["key"]
+        ]
+        # Convert and build temporary structured data (no lock needed)
+        temp_structured = await self._convert_objects_to_structured(
+            event_objects, location
+        )
+        # Now acquire lock and swap out old data with new
+        async with self._data_lock:
+            # Delete old cached data for all loc_cams in temp_structured
+            for loc_cam in temp_structured.keys():
+                if day_obs is not None:
+                    date_str = day_obs.isoformat()
+                    if (
+                        loc_cam in self._structured_events
+                        and date_str in self._structured_events[loc_cam]
+                    ):
+                        del self._structured_events[loc_cam][date_str]
+                else:
                     if loc_cam in self._structured_events:
                         del self._structured_events[loc_cam]
-
-                    # Store the new data
-                    for key, value in temp_structured.items():
-                        self._structured_events[key] = value
-        else:
-            logger.debug(
-                "No changes detected in bucket",
-                loc_cam=loc_cam,
-            )
+            # Store the new data
+            if day_obs is not None:
+                date_str = day_obs.isoformat()
+                for loc_cam, dates_data in temp_structured.items():
+                    if loc_cam not in self._structured_events:
+                        self._structured_events[loc_cam] = {}
+                    if date_str in dates_data:
+                        self._structured_events[loc_cam][date_str] = dates_data[
+                            date_str
+                        ]
+            else:
+                for key, value in temp_structured.items():
+                    self._structured_events[key] = value
 
     async def _convert_objects_to_structured(
         self, event_objects: list[dict[str, str]], location: Location
