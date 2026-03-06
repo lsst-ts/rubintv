@@ -372,9 +372,9 @@ export const setCameraBaseUrl = (locationName: string, cameraName: string) => {
   const cameraBaseUrl = new URL(`${locationName}/${cameraName}/`, homeUrl)
   return {
     getEventUrl: (event: ExposureEvent) => {
-      const { channel_name, day_obs, seq_num } = event
+      const { channel_name, day_obs, seq_num, ext } = event
       return new URL(
-        `event?channel_name=${channel_name}&date_str=${day_obs}&seq_num=${seq_num}`,
+        `event?channel_name=${channel_name}&date_str=${day_obs}&seq_num=${seq_num}&ext=${ext}`,
         cameraBaseUrl
       ).toString()
     },

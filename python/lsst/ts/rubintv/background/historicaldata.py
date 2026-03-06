@@ -149,6 +149,8 @@ class HistoricalPoller:
         logger.info("Starting re-poll of yesterday's data")
         start_time = time()
 
+        # await self._metadata_collector.check_for_changed_metadata()
+
         yesterday = get_current_day_obs() - timedelta(days=1)
         for location in self._locations:
             for camera in location.cameras:
@@ -516,8 +518,13 @@ class HistoricalPoller:
                         location.name, camera
                     )
                     if metadata:
+                        hash = await current_poller.get_latest_metadata_hash(
+                            location.name, camera
+                        )
                         today = current_poller._last_day_obs.isoformat()
-                        self._metadata_collector.register_metadata_ref(loc_cam, today)
+                        self._metadata_collector.register_metadata_ref(
+                            loc_cam, today, hash
+                        )
                         self.add_to_calendar(loc_cam, today, 0)
 
                     # Get today's night reports from CurrentPoller
@@ -890,8 +897,6 @@ class HistoricalPoller:
     async def store_metadata_dates(
         self, locname: str, metadata_objs: list[dict[str, str]]
     ) -> None:
-
-        logger.info("Fetching metadata for:", locname=locname)
         for md_obj in metadata_objs:
             key = md_obj.get("key")
             if not key:
@@ -899,7 +904,8 @@ class HistoricalPoller:
             storage_name = locname + "/" + key.split("/metadata")[0]
             _, cam_name, date_str = storage_name.split("/")
             loc_cam = f"{locname}/{cam_name}"
-            self._metadata_collector.register_metadata_ref(loc_cam, date_str)
+            hash = md_obj.get("hash", "")
+            self._metadata_collector.register_metadata_ref(loc_cam, date_str, hash)
             self.add_to_calendar(loc_cam, date_str, 0)
 
     async def get_night_report_payload(

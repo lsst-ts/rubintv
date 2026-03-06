@@ -51,6 +51,7 @@ class CurrentPoller:
         self._objects: dict[str, list] = {}
         self._events: dict[str, list[Event]] = {}
         self._metadata: dict[str, dict] = {}
+        self._metadata_hashes: dict[str, str] = {}
         self._table: dict[str, dict[int, dict[str, dict]]] = {}
         self._per_day: dict[str, dict[str, dict]] = {}
         self._yesterday_prefixes: dict[str, list[str]] = {}
@@ -79,6 +80,7 @@ class CurrentPoller:
         self._objects = {}
         self._events = {}
         self._metadata = {}
+        self._metadata_hashes = {}
         self._table = {}
         self._per_day = {}
         self._most_recent_events = {}
@@ -358,6 +360,7 @@ class CurrentPoller:
     ) -> None:
         loc_cam = self._get_loc_cam(location.name, camera)
         md_key = md_obj["key"]
+        self._metadata_hashes[loc_cam] = md_obj["hash"]
         client = self._s3clients[location.name]
         data = await client.async_get_object(md_key)
         if data and (loc_cam not in self._metadata or data != self._metadata[loc_cam]):
@@ -653,3 +656,7 @@ class CurrentPoller:
         relevant_events = [e for e in events if e.seq_num == seq_num]
         chan_names = [event.channel_name for event in relevant_events]
         return chan_names
+
+    async def get_latest_metadata_hash(self, location_name: str, camera: Camera) -> str:
+        loc_cam = self._get_loc_cam(location_name, camera)
+        return self._metadata_hashes.get(loc_cam, "")

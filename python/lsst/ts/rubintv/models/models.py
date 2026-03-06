@@ -34,6 +34,19 @@ class Metadata(BaseModel):
     """The URL of the application's documentation."""
 
 
+class MetadataRefData(BaseModel):
+    """A reference to a metadata file for a given location, camera and
+    day_obs."""
+
+    date_str: str
+    """ISO format date string."""
+    metadata_hash: str
+    """Metadata hash from bucket."""
+
+    def __hash__(self) -> int:
+        return hash((self.date_str, self.metadata_hash))
+
+
 class Channel(BaseModel):
     name: str
     title: str
