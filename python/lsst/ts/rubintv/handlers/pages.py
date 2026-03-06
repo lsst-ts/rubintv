@@ -402,6 +402,7 @@ async def get_specific_channel_event_page(
     channel_name: str | None = None,
     date_str: str | None = None,
     seq_num: int | None = None,
+    ext: str | None = None,
     type: str | None = None,
     visit: str | None = None,
 ) -> Response:
@@ -424,6 +425,8 @@ async def get_specific_channel_event_page(
         The channel name, by default None
     date_str : str | None, optional
         The date string in ISO format, by default None
+    ext : str | None, optional
+        The file extension, by default None
     seq_num : int | None, optional
         The sequence number, by default None
     visit : str | None, optional
@@ -444,9 +447,7 @@ async def get_specific_channel_event_page(
                 status_code=404, detail=f"Key not found for type={type} & visit={visit}"
             )
         key = await get_key_from_type_and_visit(
-            camera_name=camera_name,
-            type=type,
-            visit=visit,
+            camera_name=camera_name, type=type, visit=visit, ext=ext
         )
         if not key:
             raise HTTPException(status_code=404, detail="Key not found.")

@@ -50,7 +50,9 @@ class TestHistoricalPoller:
         """Test clearing all cached data."""
         # Populate some test data
         historical._have_downloaded = True
-        historical._metadata_collector.register_metadata_ref("test", "2024-01-15")
+        historical._metadata_collector.register_metadata_ref(
+            "test", date_str="2024-01-15", metadata_hash="mock_hash"
+        )
         historical._structured_events["test"] = {"2024-01-15": {"channel1": {1, 2}}}
         historical._nr_metadata["test"] = []
         historical._calendar["test"] = {}
@@ -508,7 +510,11 @@ class TestHistoricalPollerWithMockData:
 
         # Verify metadata was stored
         assert loc_cam in historical._metadata_collector.metadata_refs
-        assert "2024-02-15" in historical._metadata_collector.metadata_refs[loc_cam]
+        metadata_dates = {
+            ref.date_str
+            for ref in historical._metadata_collector.metadata_refs[loc_cam]
+        }
+        assert "2024-02-15" in metadata_dates
 
         # Verify calendar was updated
         assert loc_cam in historical._calendar
@@ -693,7 +699,11 @@ class TestHistoricalPollerWithMockData:
         # Verify metadata was stored
         loc_cam = f"{location.name}/{camera.name}"
         assert loc_cam in historical._metadata_collector.metadata_refs
-        assert date_str in historical._metadata_collector.metadata_refs[loc_cam]
+        metadata_dates = {
+            ref.date_str
+            for ref in historical._metadata_collector.metadata_refs[loc_cam]
+        }
+        assert date_str in metadata_dates
 
         # Verify night report data was stored
         assert location.name in historical._nr_metadata

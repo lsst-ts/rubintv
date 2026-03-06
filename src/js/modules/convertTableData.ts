@@ -97,7 +97,7 @@ export function createTableFromStructuredData(
       }
 
       // Reconstruct the filename
-      const filename = `${cameraName}_${channelName}_${String(seqNum).padStart(6, "0")}.${extension}`
+      const filename = `${cameraName}_${channelName}_${dateStr}_${String(seqNum).padStart(6, "0")}.${extension}`
 
       // Reconstruct the key
       const key = `${cameraName}/${dateStr}/${channelName}/${String(seqNum).padStart(6, "0")}/${filename}`
