@@ -1,11 +1,11 @@
-import { _getById, getWebSockURL } from "./modules/utils"
+import { _getById, getWebSockURL, isDevInstance } from "./modules/utils"
 
 window.addEventListener("DOMContentLoaded", () => {
   const display = []
   if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
     display.push("localhost")
   }
-  if (window.location.href.includes("-dev")) {
+  if (isDevInstance) {
     display.push("development")
   }
   if (display.length > 0) {
