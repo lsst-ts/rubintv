@@ -35,13 +35,6 @@ describe("FilterDialog", () => {
   }
 
   describe("Rendering", () => {
-    it("renders the filter dialog with correct heading", () => {
-      renderFilterDialog()
-      expect(
-        screen.getByRole("heading", { name: "filter on name" })
-      ).toBeInTheDocument()
-    })
-
     it("renders input with correct placeholder", () => {
       renderFilterDialog()
       expect(screen.getByPlaceholderText("Enter name...")).toBeInTheDocument()
@@ -70,133 +63,129 @@ describe("FilterDialog", () => {
       expect(screen.getByText("10 of 20 total rows")).toBeInTheDocument()
     })
 
-    it("renders with different column name", () => {
-      renderFilterDialog({ column: "email" })
-      expect(
-        screen.getByRole("heading", { name: "filter on email" })
-      ).toBeInTheDocument()
-      expect(screen.getByPlaceholderText("Enter email...")).toBeInTheDocument()
-    })
-  })
-
-  describe("Focus behavior", () => {
-    it("focuses the input on mount", async () => {
-      renderFilterDialog()
-      const input = screen.getByPlaceholderText("Enter name...")
-      await waitFor(() => {
-        expect(input).toHaveFocus()
-      })
-    })
-  })
-
-  describe("User interactions", () => {
-    it("calls setFilterOn and closeModal when Apply button is clicked", async () => {
-      renderFilterDialog()
-
-      const input = screen.getByPlaceholderText("Enter name...")
-      fireEvent.input(input, { target: { value: "test value" } })
-      fireEvent.click(screen.getByRole("button", { name: "Apply" }))
-
-      expect(mockSetFilterOn).toHaveBeenCalledWith({
-        column: "name",
-        value: "test value",
-      })
-      expect(mockCloseModal).toHaveBeenCalled()
-    })
-
-    it("trims whitespace from input value when applying filter", async () => {
-      renderFilterDialog()
-
-      const input = screen.getByPlaceholderText("Enter name...")
-      fireEvent.input(input, { target: { value: "  test value  " } })
-      fireEvent.click(screen.getByRole("button", { name: "Apply" }))
-
-      expect(mockSetFilterOn).toHaveBeenCalledWith({
-        column: "name",
-        value: "test value",
+    describe("Focus behavior", () => {
+      it("focuses the input on mount", async () => {
+        renderFilterDialog()
+        const input = screen.getByPlaceholderText("Enter name...")
+        await waitFor(() => {
+          expect(input).toHaveFocus()
+        })
       })
     })
 
-    it("calls setFilterOn with empty values and closeModal when Clear button is clicked", async () => {
-      renderFilterDialog()
+    describe("User interactions", () => {
+      it("calls setFilterOn and closeModal when Apply button is clicked", async () => {
+        renderFilterDialog()
 
-      fireEvent.click(screen.getByRole("button", { name: "Clear" }))
+        const input = screen.getByPlaceholderText("Enter name...")
+        fireEvent.input(input, { target: { value: "test value" } })
+        fireEvent.click(screen.getByRole("button", { name: "Apply" }))
 
-      expect(mockSetFilterOn).toHaveBeenCalledWith({
-        column: "",
-        value: "",
+        expect(mockSetFilterOn).toHaveBeenCalledWith({
+          column: "name",
+          value: "test value",
+        })
+        expect(mockCloseModal).toHaveBeenCalled()
       })
-      expect(mockCloseModal).toHaveBeenCalled()
+
+      it("trims whitespace from input value when applying filter", async () => {
+        renderFilterDialog()
+
+        const input = screen.getByPlaceholderText("Enter name...")
+        fireEvent.input(input, { target: { value: "  test value  " } })
+        fireEvent.click(screen.getByRole("button", { name: "Apply" }))
+
+        expect(mockSetFilterOn).toHaveBeenCalledWith({
+          column: "name",
+          value: "test value",
+        })
+      })
+
+      it("calls setFilterOn with empty values and closeModal when Clear button is clicked", async () => {
+        renderFilterDialog()
+
+        fireEvent.click(screen.getByRole("button", { name: "Clear" }))
+
+        expect(mockSetFilterOn).toHaveBeenCalledWith({
+          column: "",
+          value: "",
+        })
+        expect(mockCloseModal).toHaveBeenCalled()
+      })
+
+      it("applies filter when Enter key is pressed", async () => {
+        renderFilterDialog()
+
+        const input = screen.getByPlaceholderText("Enter name...")
+        fireEvent.input(input, { target: { value: "test value" } })
+        fireEvent.keyDown(input, { key: "Enter", code: "Enter", charCode: 13 })
+
+        expect(mockSetFilterOn).toHaveBeenCalledWith({
+          column: "name",
+          value: "test value",
+        })
+        expect(mockCloseModal).toHaveBeenCalled()
+      })
+
+      it("does not apply filter when other keys are pressed", async () => {
+        renderFilterDialog()
+
+        const input = screen.getByPlaceholderText("Enter name...")
+        fireEvent.input(input, { target: { value: "test" } })
+        fireEvent.keyDown(input, {
+          key: "Escape",
+          code: "Escape",
+          charCode: 27,
+        })
+
+        expect(mockSetFilterOn).not.toHaveBeenCalled()
+        expect(mockCloseModal).not.toHaveBeenCalled()
+      })
     })
 
-    it("applies filter when Enter key is pressed", async () => {
-      renderFilterDialog()
+    describe("Edge cases", () => {
+      it("handles empty input value when applying filter", async () => {
+        renderFilterDialog()
 
-      const input = screen.getByPlaceholderText("Enter name...")
-      fireEvent.input(input, { target: { value: "test value" } })
-      fireEvent.keyDown(input, { key: "Enter", code: "Enter", charCode: 13 })
+        fireEvent.click(screen.getByRole("button", { name: "Apply" }))
 
-      expect(mockSetFilterOn).toHaveBeenCalledWith({
-        column: "name",
-        value: "test value",
+        expect(mockSetFilterOn).toHaveBeenCalledWith({
+          column: "name",
+          value: "",
+        })
+        expect(mockCloseModal).toHaveBeenCalled()
       })
-      expect(mockCloseModal).toHaveBeenCalled()
-    })
 
-    it("does not apply filter when other keys are pressed", async () => {
-      renderFilterDialog()
+      it("handles whitespace-only input value when applying filter", async () => {
+        renderFilterDialog()
 
-      const input = screen.getByPlaceholderText("Enter name...")
-      fireEvent.input(input, { target: { value: "test" } })
-      fireEvent.keyDown(input, { key: "Escape", code: "Escape", charCode: 27 })
+        const input = screen.getByPlaceholderText("Enter name...")
+        fireEvent.input(input, { target: { value: "   " } })
+        fireEvent.click(screen.getByRole("button", { name: "Apply" }))
 
-      expect(mockSetFilterOn).not.toHaveBeenCalled()
-      expect(mockCloseModal).not.toHaveBeenCalled()
-    })
-  })
-
-  describe("Edge cases", () => {
-    it("handles empty input value when applying filter", async () => {
-      renderFilterDialog()
-
-      fireEvent.click(screen.getByRole("button", { name: "Apply" }))
-
-      expect(mockSetFilterOn).toHaveBeenCalledWith({
-        column: "name",
-        value: "",
+        expect(mockSetFilterOn).toHaveBeenCalledWith({
+          column: "name",
+          value: "",
+        })
       })
-      expect(mockCloseModal).toHaveBeenCalled()
-    })
 
-    it("handles whitespace-only input value when applying filter", async () => {
-      renderFilterDialog()
-
-      const input = screen.getByPlaceholderText("Enter name...")
-      fireEvent.input(input, { target: { value: "   " } })
-      fireEvent.click(screen.getByRole("button", { name: "Apply" }))
-
-      expect(mockSetFilterOn).toHaveBeenCalledWith({
-        column: "name",
-        value: "",
+      it("shows correct row counts with different numbers", () => {
+        renderFilterDialog({
+          filterOn: { column: "name", value: "test" },
+          filteredRowsCount: 5,
+          unfilteredRowsCount: 100,
+        })
+        expect(screen.getByText("5 of 100 total rows")).toBeInTheDocument()
       })
-    })
 
-    it("shows correct row counts with different numbers", () => {
-      renderFilterDialog({
-        filterOn: { column: "name", value: "test" },
-        filteredRowsCount: 5,
-        unfilteredRowsCount: 100,
+      it("handles zero filtered rows", () => {
+        renderFilterDialog({
+          filterOn: { column: "name", value: "test" },
+          filteredRowsCount: 0,
+          unfilteredRowsCount: 50,
+        })
+        expect(screen.getByText("0 of 50 total rows")).toBeInTheDocument()
       })
-      expect(screen.getByText("5 of 100 total rows")).toBeInTheDocument()
-    })
-
-    it("handles zero filtered rows", () => {
-      renderFilterDialog({
-        filterOn: { column: "name", value: "test" },
-        filteredRowsCount: 0,
-        unfilteredRowsCount: 50,
-      })
-      expect(screen.getByText("0 of 50 total rows")).toBeInTheDocument()
     })
   })
 })

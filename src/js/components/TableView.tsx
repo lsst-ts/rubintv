@@ -303,6 +303,7 @@ function ChannelHeader({
   const handleColumnClick = (event: React.MouseEvent, column: string) => {
     handleSortClick(event, column, setSortOn)
     if (!event.shiftKey) {
+      const header = `Filter on: ${column}`
       showModal(
         <FilterDialog
           column={channel.name}
@@ -310,7 +311,8 @@ function ChannelHeader({
           filterOn={filterOn}
           filteredRowsCount={filteredRowsCount}
           unfilteredRowsCount={unfilteredRowsCount}
-        />
+        />,
+        header
       )
     }
   }
@@ -456,9 +458,6 @@ function FoldoutCell({ seqNum, columnName, data }: TableFoldoutCellProps) {
   const handleClick = () => {
     const content = (
       <div className="cell-dict-modal">
-        <div className="modal-header">
-          <h3>{`Seq Num: ${seqNum} - ${columnName}`}</h3>
-        </div>
         <table className="cell-dict">
           <tbody>
             {Object.entries(data).map(
@@ -474,7 +473,8 @@ function FoldoutCell({ seqNum, columnName, data }: TableFoldoutCellProps) {
         </table>
       </div>
     )
-    showModal(content)
+    const header = `Seq Num: ${seqNum} - ${columnName}`
+    showModal(content, header)
   }
   return (
     <button onClick={handleClick} className="button button-table">

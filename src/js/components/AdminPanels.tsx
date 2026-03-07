@@ -286,14 +286,14 @@ export function AdminSendRedisValue({
     e.preventDefault()
     showModal(
       <ConfirmationModal
-        title={title}
         message={`Are you sure you want to send value "${valueToSend}" to key "${keyToSend}"?`}
         onConfirm={() => {
           handleSubmit(e)
-          showModal(null)
+          showModal(null, null)
         }}
-        onCancel={() => showModal(null)}
-      />
+        onCancel={() => showModal(null, null)}
+      />,
+      title
     )
   }
 
@@ -419,14 +419,14 @@ export function AdminDangerPanel({
     e.preventDefault()
     showModal(
       <ConfirmationModal
-        title="Clear Redis"
         message="Are you sure you want to clear Redis?"
         onConfirm={() => {
           clearRedis()
-          showModal(null)
+          showModal(null, null)
         }}
-        onCancel={() => showModal(null)}
-      />
+        onCancel={() => showModal(null, null)}
+      />,
+      "Clear Redis"
     )
   }
 

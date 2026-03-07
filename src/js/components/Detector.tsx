@@ -118,13 +118,13 @@ const ResetButton = ({ redisKey }: { redisKey: string }) => {
   const onClick = () => {
     showModal(
       <ConfirmationModal
-        title="Confirm Reset"
         message="Are you sure you want to restart these workers?"
         onConfirm={() => {
           void handleReset()
         }}
         onCancel={closeModal}
-      />
+      />,
+      "Confirm Reset"
     )
   }
 
