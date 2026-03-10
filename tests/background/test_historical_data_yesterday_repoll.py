@@ -69,8 +69,7 @@ class TestRepollYesterday:
         )
 
         # Execute _update_if_changed with specific date
-        loc_cam = f"{location.name}/{camera.name}"
-        await historical._update_if_changed(loc_cam, new_objects, location, yesterday)
+        await historical._update_if_changed(location, camera, new_objects, yesterday)
 
         # Verify new events were added to cache
         updated_events = await historical.get_events_for_date(
@@ -123,8 +122,7 @@ class TestRepollYesterday:
         )
 
         # Execute _update_if_changed
-        loc_cam = f"{location.name}/{camera.name}"
-        await historical._update_if_changed(loc_cam, new_objects, location, yesterday)
+        await historical._update_if_changed(location, camera, new_objects, yesterday)
 
         # Verify events were removed from cache
         updated_events = await historical.get_events_for_date(
@@ -158,8 +156,7 @@ class TestRepollYesterday:
         )
 
         # Execute _update_if_changed
-        loc_cam = f"{location.name}/{camera.name}"
-        await historical._update_if_changed(loc_cam, new_objects, location, yesterday)
+        await historical._update_if_changed(location, camera, new_objects, yesterday)
 
         # Verify cache remains unchanged
         updated_events = await historical.get_events_for_date(
@@ -199,12 +196,11 @@ class TestRepollYesterday:
         # Re-poll yesterday's data for each camera
         for camera in location.cameras:
             if camera.online:
-                loc_cam = f"{location.name}/{camera.name}"
                 new_objects = await historical._get_objects_for_location_camera(
                     location, camera, prefix_extra=yesterday.isoformat()
                 )
                 await historical._update_if_changed(
-                    loc_cam, new_objects, location, yesterday
+                    location, camera, new_objects, yesterday
                 )
 
         # Verify all cameras were updated
@@ -284,8 +280,7 @@ class TestUpdateIfChanged:
         )
 
         # Execute _update_if_changed
-        loc_cam = f"{location.name}/{camera.name}"
-        await historical._update_if_changed(loc_cam, new_objects, location, yesterday)
+        await historical._update_if_changed(location, camera, new_objects, yesterday)
 
         # Verify new events were added
         updated_events = await historical.get_events_for_date(
@@ -323,8 +318,7 @@ class TestUpdateIfChanged:
         )
 
         # Execute _update_if_changed
-        loc_cam = f"{location.name}/{camera.name}"
-        await historical._update_if_changed(loc_cam, new_objects, location, yesterday)
+        await historical._update_if_changed(location, camera, new_objects, yesterday)
 
         # Verify events were removed
         updated_events = await historical.get_events_for_date(
@@ -357,8 +351,7 @@ class TestUpdateIfChanged:
         )
 
         # Execute _update_if_changed
-        loc_cam = f"{location.name}/{camera.name}"
-        await historical._update_if_changed(loc_cam, new_objects, location, yesterday)
+        await historical._update_if_changed(location, camera, new_objects, yesterday)
 
         # Verify cache remains unchanged
         updated_events = await historical.get_events_for_date(
@@ -398,8 +391,7 @@ class TestUpdateIfChanged:
             location, camera, prefix_extra=yesterday.isoformat()
         )
 
-        loc_cam = f"{location.name}/{camera.name}"
-        await historical._update_if_changed(loc_cam, new_objects, location, yesterday)
+        await historical._update_if_changed(location, camera, new_objects, yesterday)
 
         # Verify first channel was updated
         updated_events = await historical.get_events_for_date(
@@ -435,8 +427,7 @@ class TestUpdateIfChanged:
             location, camera, prefix_extra=yesterday.isoformat()
         )
 
-        loc_cam = f"{location.name}/{camera.name}"
-        await historical._update_if_changed(loc_cam, new_objects, location, yesterday)
+        await historical._update_if_changed(location, camera, new_objects, yesterday)
 
         # Verify metadata was processed
         has_metadata = await historical.check_for_metadata_for_date(
@@ -464,8 +455,7 @@ class TestUpdateIfChanged:
             location, camera, prefix_extra=yesterday.isoformat()
         )
 
-        loc_cam = f"{location.name}/{camera.name}"
-        await historical._update_if_changed(loc_cam, new_objects, location, yesterday)
+        await historical._update_if_changed(location, camera, new_objects, yesterday)
 
         # Get the structured data
         structured_data = await historical.get_structured_data_for_date(
@@ -530,8 +520,7 @@ class TestUpdateIfChanged:
             location, camera, prefix_extra=yesterday.isoformat()
         )
 
-        loc_cam = f"{location.name}/{camera.name}"
-        await historical._update_if_changed(loc_cam, new_objects, location, yesterday)
+        await historical._update_if_changed(location, camera, new_objects, yesterday)
 
         # Verify yesterday was updated
         events_yesterday_after = await historical.get_events_for_date(

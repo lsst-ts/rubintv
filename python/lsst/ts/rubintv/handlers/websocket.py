@@ -1,6 +1,7 @@
 import json
 import traceback
 import uuid
+from datetime import date
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
@@ -201,7 +202,7 @@ async def attach_service(
         logger.error("Bad request", service=service_str, client_id=client_id)
         return
 
-    channel_name = ""
+    extra_component = ""
     location_name, camera_name, *extra = full_location.split("/")
     locations = websocket.app.state.models.locations
     if not (
@@ -225,20 +226,29 @@ async def attach_service(
         )
         return
 
+    extra_component = ""
     if extra:
-        channel_name = extra[0]
-        if not await is_valid_channel(camera, channel_name):
-            logger.error("No such channel", service=service, client_id=client_id)
+        extra_component = extra[0]
+        if not await is_valid_channel(
+            camera, extra_component
+        ) and not await is_valid_date(extra_component):
+            logger.error(
+                "No such channel or date:",
+                service=service,
+                client_id=client_id,
+                extra_component=extra_component,
+            )
             return
 
-    await notify_new_client(websocket, location, camera, channel_name, service)
+    if service == Service.CAMERA or service == Service.CALENDAR:
+        await notify_new_client(websocket, location, camera, extra_component, service)
     await register_client_service(client_id, full_service_name)
 
     # If registering a service with location and camera and channel,
     # also register a service with just location and camera. This
     # allows to send notifications to all clients interested in
     # that camera, regardless of channel.
-    if not channel_name:
+    if not extra_component:
         return
 
     loc_cam_service = f"{service_str} {location_name}/{camera_name}"
@@ -282,6 +292,15 @@ async def is_valid_channel(camera: Camera, channel_name: str) -> bool:
     return camera.channels is not None and channel_name in [
         chan.name for chan in camera.channels
     ]
+
+
+async def is_valid_date(date_str: str) -> bool:
+    try:
+        year, month, day = map(int, date_str.split("-"))
+        _ = date(year, month, day)
+        return True
+    except Exception:
+        return False
 
 
 async def notify_new_client(

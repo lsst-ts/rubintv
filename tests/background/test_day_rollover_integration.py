@@ -107,7 +107,6 @@ class TestDayRolloverIntegration:
     ) -> None:
         """Test that today's events are integrated into historical store."""
         camera, location = get_test_camera_and_location()
-        loc_cam = f"{location.name}/{camera.name}"
 
         # Poll to populate current data
         await current_poller.poll_buckets_for_todays_data()
@@ -120,9 +119,9 @@ class TestDayRolloverIntegration:
         await historical_poller.integrate_todays_data(current_poller)
 
         # Verify events were stored
-        today_iso = current_poller._last_day_obs.isoformat()
-        assert loc_cam in historical_poller._structured_events
-        assert today_iso in historical_poller._structured_events[loc_cam]
+        today = current_poller._last_day_obs
+        assert (location, camera) in historical_poller._structured_events
+        assert today in historical_poller._structured_events[(location, camera)]
 
     @pytest.mark.asyncio
     async def test_integrate_todays_metadata(
@@ -133,7 +132,6 @@ class TestDayRolloverIntegration:
     ) -> None:
         """Test that today's metadata is integrated into historical store."""
         camera, location = get_test_camera_and_location()
-        loc_cam = f"{location.name}/{camera.name}"
 
         # Poll to populate current data
         await current_poller.poll_buckets_for_todays_data()
@@ -148,11 +146,14 @@ class TestDayRolloverIntegration:
 
             # Verify metadata references were stored
             today_iso = current_poller._last_day_obs.isoformat()
-            assert loc_cam in historical_poller._metadata_collector._metadata_refs
             assert (
-                today_iso
-                in historical_poller._metadata_collector._metadata_refs[loc_cam]
-            )
+                f"{location.name}/{camera.name}"
+            ) in historical_poller._metadata_collector._metadata_refs
+            metadata_refs = historical_poller._metadata_collector._metadata_refs[
+                f"{location.name}/{camera.name}"
+            ]
+            metadata_dates = {ref.date_str for ref in metadata_refs}
+            assert today_iso in metadata_dates
 
     @pytest.mark.asyncio
     async def test_integrate_todays_night_report(
@@ -190,7 +191,7 @@ class TestDayRolloverIntegration:
     ) -> None:
         """Test that calendar is updated when integrating today's data."""
         camera, location = get_test_camera_and_location()
-        loc_cam = f"{location.name}/{camera.name}"
+        loc_cam = (location, camera)
 
         # Poll to populate current data
         await current_poller.poll_buckets_for_todays_data()
@@ -302,7 +303,7 @@ class TestDayRolloverIntegration:
     ) -> None:
         """Test that events remain consistent after day rollover."""
         camera, location = get_test_camera_and_location()
-        loc_cam = f"{location.name}/{camera.name}"
+        loc_cam = (location, camera)
 
         # Get events from first day
         await current_poller.poll_buckets_for_todays_data()
@@ -311,12 +312,12 @@ class TestDayRolloverIntegration:
 
         # Integrate to historical
         await historical_poller.integrate_todays_data(current_poller)
-        day1_iso = current_poller._last_day_obs.isoformat()
+        day1 = current_poller._last_day_obs
 
         if day1_count > 0:
             historical_day1_events = historical_poller._structured_events.get(
                 loc_cam, {}
-            ).get(day1_iso, {})
+            ).get(day1, {})
             assert len(historical_day1_events) > 0
 
         # Simulate day rollover
@@ -329,7 +330,7 @@ class TestDayRolloverIntegration:
 
         # Day 1 data should still be in historical
         if day1_count > 0:
-            assert day1_iso in historical_poller._structured_events.get(loc_cam, {})
+            assert day1 in historical_poller._structured_events.get(loc_cam, {})
 
     @pytest.mark.asyncio
     async def test_metadata_cache_shifted_on_day_change(
