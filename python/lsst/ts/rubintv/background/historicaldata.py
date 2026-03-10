@@ -15,17 +15,19 @@ from lsst.ts.rubintv.models.models import (
     Camera,
     Channel,
     Event,
-    ExtensionInfo,
+    ExtensionDict,
     Location,
+    LocCamDateChan,
+    LocCamKey,
     NightReport,
     NightReportData,
 )
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
 from lsst.ts.rubintv.models.models import ServiceTypes as Service
-from lsst.ts.rubintv.models.models import StructuredData, get_current_day_obs
+from lsst.ts.rubintv.models.models import get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import (
     date_str_to_date,
-    daterange,
+    find_first,
     make_table_from_event_list,
     objects_to_events,
     objects_to_ngt_report_data,
@@ -38,6 +40,13 @@ if TYPE_CHECKING:
 
 logger = rubintv_logger()
 
+type StructuredData = dict[LocCamKey, dict[date, dict[Channel, set[int | str]]]]
+type ExtensionInfo = dict[LocCamDateChan, ExtensionDict]
+type TransmissableExtInfo = dict[str, ExtensionDict]
+type TransmissableStructuredData = dict[
+    str, dict[str, dict[str, dict[str, list[int | str] | str | dict[int | str, str]]]]
+]
+
 
 class HistoricalPoller:
     """Provide a cache of the historical data.
@@ -48,7 +57,7 @@ class HistoricalPoller:
     """
 
     # re-polling period in seconds
-    REPOLL_BUCKET_PERIOD = 60 * 60  # 60 minutes
+    REPOLL_BUCKET_PERIOD = 60 * 60 * 12  # 12 hours
     REPOLL_YESTERDAY_PERIOD = 60 * 2  # 2 minutes
 
     def __init__(
@@ -56,8 +65,6 @@ class HistoricalPoller:
         locations: list[Location],
         test_mode: bool = False,
         prefix_extra: str = "",
-        test_date_start: str | None = None,
-        test_date_end: str | None = None,
     ) -> None:
         self._clients: dict[str, S3Client] = {}
         self._locations = locations
@@ -69,31 +76,24 @@ class HistoricalPoller:
         }
 
         # Initialize metadata collector
-        self._metadata_collector = MetadataCollector(self._clients)
+        self._metadata_collector = MetadataCollector(self._clients, self._locations)
 
         self._structured_events: StructuredData = {}
-        # Structure: {loc_cam: {date_str: {
-        #  channel_name: {seq_num1, seq_num2, ...}}}}
+        # Structure:
+        # {(Location, Camera): {date: {Channel: {seq_num1, seq_num2, ...}}}}
 
-        self._channel_default_extensions: dict[str, str] = {}
-        # Structure: {f"{loc_cam}/{date_str}/{channel_name}": "default_ext"}
+        self._channel_default_extensions: dict[LocCamDateChan, str] = {}
+        # Structure: {LocCamDateChan: "default_ext"}
 
-        self._extension_exceptions: dict[str, dict[int | str, str]] = {}
-        # Structure: {f"{loc_cam}/{date_str}/{channel_name}":
-        #   {seq_num: "different_ext"}}
+        self._extension_exceptions: dict[LocCamDateChan, dict[int | str, str]] = {}
+        # Structure: {LocCamDateChan: {seq_num: "different_ext"}}
 
-        self._nr_metadata: dict[str, list[NightReportData]] = {}
-        self._calendar: dict[str, dict[int, dict[int, dict[int, int]]]] = {}
+        self._nr_metadata: dict[Location, list[NightReportData]] = {}
+        self._calendar: dict[LocCamKey, dict[int, dict[int, dict[int, int]]]] = {}
 
         self._have_downloaded = False
 
         self.test_mode = test_mode
-        self.test_date_start: date | None = None
-        self.test_date_end: date | None = None
-        if test_date_start:
-            self.test_date_start = date_str_to_date(test_date_start)
-        if test_date_end:
-            self.test_date_end = date_str_to_date(test_date_end)
         self.prefix_extra = prefix_extra
 
         # Add lock for thread-safe access during updates
@@ -102,6 +102,8 @@ class HistoricalPoller:
     async def clear_all_data(self) -> None:
         self._have_downloaded = False
         self._structured_events = {}
+        self._channel_default_extensions = {}
+        self._extension_exceptions = {}
         self._nr_metadata = {}
         self._calendar = {}
         await self._metadata_collector.clear_cache()
@@ -134,11 +136,14 @@ class HistoricalPoller:
                     total_elapsed_time_seconds=elapsed,
                 )
 
+            await asyncio.sleep(self.REPOLL_YESTERDAY_PERIOD)
+
             # Re-poll yesterday's data until main recheck period elapsed
             loop_start = time()
             while time() - loop_start < self.REPOLL_BUCKET_PERIOD:
+                repoll_start = time()
                 await self.repoll_yesterday()
-                elapsed = time() - loop_start
+                elapsed = time() - repoll_start
                 if elapsed < self.REPOLL_YESTERDAY_PERIOD:
                     await asyncio.sleep(self.REPOLL_YESTERDAY_PERIOD - elapsed)
 
@@ -149,19 +154,18 @@ class HistoricalPoller:
         logger.info("Starting re-poll of yesterday's data")
         start_time = time()
 
-        # await self._metadata_collector.check_for_changed_metadata()
-
         yesterday = get_current_day_obs() - timedelta(days=1)
         for location in self._locations:
             for camera in location.cameras:
                 if camera.online:
-                    loc_cam = f"{location.name}/{camera.name}"
                     try:
                         new_objects = await self._get_objects_for_location_camera(
-                            location, camera, prefix_extra=yesterday.isoformat()
+                            location,
+                            camera,
+                            prefix_extra=yesterday.isoformat(),
                         )
                         await self._update_if_changed(
-                            loc_cam, new_objects, location, yesterday
+                            location, camera, new_objects, yesterday
                         )
                     except Exception as e:
                         logger.error(
@@ -170,6 +174,7 @@ class HistoricalPoller:
                             camera=camera.name,
                         )
 
+        await self._metadata_collector.check_for_changed_metadata()
         elapsed = time() - start_time
         logger.info(
             "Completed re-poll of yesterday's data",
@@ -200,8 +205,6 @@ class HistoricalPoller:
             if not camera.online:
                 continue
 
-            loc_cam = f"{location.name}/{camera.name}"
-
             try:
                 # Get current objects from bucket
                 new_objects = await self._get_objects_for_location_camera(
@@ -209,7 +212,7 @@ class HistoricalPoller:
                 )
 
                 # Compare with cached objects and update if different
-                await self._update_if_changed(loc_cam, new_objects, location)
+                await self._update_if_changed(location, camera, new_objects)
             except Exception as e:
                 logger.error(
                     f"Error checking camera for changes: {e}",
@@ -217,22 +220,23 @@ class HistoricalPoller:
                     camera=camera.name,
                 )
 
+    def _build_prefixes_for_camera(
+        self,
+        camera: Camera,
+        prefix_extra: str = "",
+    ) -> list[str]:
+        """Build bucket prefixes for a camera."""
+        return [camera.name + "/" + prefix_extra]
+
     async def _get_objects_for_location_camera(
-        self, location: Location, camera: Camera, prefix_extra: str = ""
+        self,
+        location: Location,
+        camera: Camera,
+        prefix_extra: str = "",
     ) -> list[dict[str, str]]:
         """Get objects from bucket for a specific camera."""
         objects = []
-        prefixes = []
-
-        if self.test_date_start and self.test_date_end:
-            for aDate in daterange(
-                self.test_date_start,
-                self.test_date_end,
-            ):
-                date_str = aDate.isoformat()
-                prefixes.append(f"{camera.name}/{date_str}/{prefix_extra}")
-        else:
-            prefixes.append(camera.name + "/" + prefix_extra)
+        prefixes = self._build_prefixes_for_camera(camera, prefix_extra)
 
         for prefix in prefixes:
             try:
@@ -242,18 +246,26 @@ class HistoricalPoller:
 
         return objects
 
-    def _parse_structured_key(self, key: str) -> tuple[str, str, str, int | str] | None:
-        """Parse an S3 key into structured components.
+    def _parse_structured_key(
+        self, key: str, camera: Camera, day_obs: date | None = None
+    ) -> tuple[Camera, date, Channel, int | str] | None:
+        """Parse an S3 key into structured components using the expected
+        format and return them as a tuple. If the key cannot be parsed,
+        return None.
 
         Parameters
         ----------
         key : `str`
             S3 object key in format: camera/date/channel/seq_num/filename.ext
+        camera : `Camera`
+            The camera identifier.
+        day_obs : `date` | `None`, optional
+            The specific date to validate against, by default None.
 
         Returns
         -------
-        `tuple`[`str`, `str`, `str`, `int` | `str`] | `None`
-            Tuple of (camera_name, date_str, channel_name, seq_num) or None
+        `tuple`[`Camera`, `date`, `Channel`, `int` | `str`] | `None`
+            Tuple of (camera, date, channel, seq_num) or None
             if key cannot be parsed.
         """
         parts = key.split("/")
@@ -265,210 +277,495 @@ class HistoricalPoller:
         channel_name = parts[2]
         seq_part = parts[3]
 
+        # Validate camera name
+        if camera_name != camera.name:
+            logger.debug(
+                "Camera name in key does not match expected camera",
+                key=key,
+                expected=camera.name,
+            )
+            return None
+
+        # Parse and validate date
+        try:
+            parsed_date = date_str_to_date(date_str)
+        except ValueError:
+            logger.debug(
+                "Date string in key is not a valid date",
+                key=key,
+                date_str=date_str,
+            )
+            return None
+
+        # If day_obs provided, validate it matches
+        if day_obs is not None and parsed_date != day_obs:
+            logger.debug(
+                "Date in key does not match expected date",
+                key=key,
+                expected=day_obs.isoformat(),
+                actual=parsed_date.isoformat(),
+            )
+            return None
+
+        # Validate channel exists for this camera
+        channel = find_first(camera.channels, "name", channel_name)
+        if channel is None:
+            logger.debug(
+                "Channel name in key does not match any known channel",
+                key=key,
+                channel=channel_name,
+                expected_channels=[c.name for c in camera.channels],
+            )
+            return None
+
+        # Parse seq_num (int or string like 'final')
         try:
             seq_num: int | str = int(seq_part)
         except ValueError:
-            seq_num = seq_part  # e.g., 'final'
+            seq_num = seq_part
 
-        return (camera_name, date_str, channel_name, seq_num)
+        return (camera, parsed_date, channel, seq_num)
 
     async def _update_if_changed(
         self,
-        loc_cam: str,
-        new_objects: list[dict[str, str]],
         location: Location,
+        camera: Camera,
+        new_objects: list[dict[str, str]],
         day_obs: date | None = None,
     ) -> None:
         """Compare new objects with cached data and update only if changed."""
-        new_keys_set = await self._parse_new_objects(new_objects)
+        new_keys_set = await self._parse_new_objects(new_objects, camera, day_obs)
 
         # Build cached keys from structured data
-        cached_keys_set = set()
-        if day_obs is not None:
-            date_str = day_obs.isoformat()
-            if (
-                loc_cam in self._structured_events
-                and date_str in self._structured_events[loc_cam]
-            ):
-                cached_keys_set.update(
-                    await self._build_keys_from_structured_data_for_date(
-                        loc_cam, date_str
-                    )
-                )
-        else:
-            if loc_cam in self._structured_events:
-                for date_str in self._structured_events[loc_cam]:
-                    cached_keys_set.update(
-                        await self._build_keys_from_structured_data_for_date(
-                            loc_cam, date_str
-                        )
-                    )
+        cached_keys_set = await self._build_keys_from_structured_data(
+            location, camera, day_obs
+        )
         # Check for differences
         if new_keys_set != cached_keys_set:
-            message = f"Changes detected for {loc_cam}"
+            message = f"Changes detected for {location.name}/{camera.name}"
             if day_obs is not None:
                 message += f" for {day_obs.isoformat()}"
             logger.info(
                 message,
-                loc_cam=loc_cam,
+                location=location.name,
+                camera=camera.name,
                 date=day_obs.isoformat() if day_obs else None,
                 added=len(new_keys_set - cached_keys_set),
                 removed=len(cached_keys_set - new_keys_set),
             )
             # If there are changes, cache them.
             if new_objects:
-                await self._convert_and_cache_structured_data(
-                    new_objects, location, day_obs
+                await self._ingest_objects(
+                    location,
+                    new_objects,
+                    camera=camera,
+                    day_obs=day_obs,
+                    replace_night_reports=False,
+                    notify_structured_updates=True,
                 )
         else:
-            message = f"No changes detected for {loc_cam}"
+            message = f"No changes detected for {location.name}/{camera.name}"
             if day_obs is not None:
                 message += f" on {day_obs.isoformat()}"
             logger.debug(
                 message,
-                loc_cam=loc_cam,
+                location=location.name,
+                camera=camera.name,
                 date=day_obs.isoformat() if day_obs else None,
             )
 
-    async def _parse_new_objects(self, new_objects: list[dict[str, str]]) -> set:
+    async def _build_keys_from_structured_data(
+        self, location: Location, camera: Camera, day_obs: date | None = None
+    ) -> set:
+        """Build a set of keys from the current structured data for a specific
+        date or all dates if day_obs is None.
+
+        example of structured key: (camera_name, date_str, channel_name,
+        seq_num)
+
+        Parameters
+        ----------
+        location : `Location`
+            The location identifier.
+        camera : `Camera`
+            The camera identifier.
+        day_obs : `date` | `None`, optional
+            The specific date to build keys for, by default None (build keys
+            for all dates).
+
+        Returns
+        -------
+        cached_keys_set : `set`
+            A set of structured keys for the specified location and date(s).
+        """
+        loc_cam = (location, camera)
+        cached_keys_set = set()
+        if day_obs is not None:
+            if (
+                loc_cam in self._structured_events
+                and day_obs in self._structured_events[loc_cam]
+            ):
+                cached_keys_set.update(
+                    await self._build_keys_from_structured_data_for_date(
+                        location, camera, day_obs
+                    )
+                )
+        else:
+            if loc_cam in self._structured_events:
+                for day_obs in self._structured_events[loc_cam]:
+                    cached_keys_set.update(
+                        await self._build_keys_from_structured_data_for_date(
+                            location, camera, day_obs
+                        )
+                    )
+        return cached_keys_set
+
+    async def _parse_new_objects(
+        self,
+        new_objects: list[dict[str, str]],
+        camera: Camera,
+        day_obs: date | None = None,
+    ) -> set[tuple[Camera, date, Channel, int | str]]:
         """Parse new objects into structured data format."""
         # Parse new object keys to extract structured components
-        new_keys_set = set()
+        new_keys_set: set[tuple[Camera, date, Channel, int | str]] = set()
+
+        # Only process event objects (skip metadata and night_report)
+        new_objects = (await self._split_objects_by_type(new_objects))["events"]
 
         for obj in new_objects:
             key = obj["key"]
-            # Only process event objects (skip metadata and night_report)
-            if "metadata.json" not in key and "night_report" not in key:
-                parsed = self._parse_structured_key(key)
-                if parsed:
-                    new_keys_set.add(parsed)
+            parsed = self._parse_structured_key(key, camera, day_obs)
+            if parsed is not None:
+                new_keys_set.add(parsed)
         return new_keys_set
 
     async def _build_keys_from_structured_data_for_date(
-        self, loc_cam: str, date_str: str
-    ) -> set:
+        self, location: Location, camera: Camera, day_obs: date
+    ) -> set[tuple[Camera, date, Channel, int | str]]:
         """Build a set of keys from the current structured data for a specific
         date."""
-        cached_keys_set = set()
+        cached_keys_set: set[tuple[Camera, date, Channel, int | str]] = set()
+        loc_cam = (location, camera)
         if (
             loc_cam in self._structured_events
-            and date_str in self._structured_events[loc_cam]
+            and day_obs in self._structured_events[loc_cam]
         ):
-            for channel_name in self._structured_events[loc_cam][date_str]:
-                for seq_num in self._structured_events[loc_cam][date_str][channel_name]:
-                    camera_name = loc_cam.split("/")[1]
-                    struct_key = (camera_name, date_str, channel_name, seq_num)
+            for channel in self._structured_events[loc_cam][day_obs]:
+                for seq_num in self._structured_events[loc_cam][day_obs][channel]:
+                    struct_key = (camera, day_obs, channel, seq_num)
                     cached_keys_set.add(struct_key)
         return cached_keys_set
+
+    async def _cache_structured_data(
+        self,
+        structured_data: StructuredData,
+        extension_info: ExtensionInfo,
+        location: Location | None = None,
+        camera: Camera | None = None,
+        day_obs: date | None = None,
+    ) -> None:
+        """Cache the structured data with thread-safe access. If location,
+        camera, and day_obs are provided, only update that specific subset of
+        the data.
+
+        Parameters
+        ----------
+        structured_data : `StructuredData`
+            The structured data to cache.
+        extension_info : `ExtensionInfo`
+            The extension information to cache.
+        location : `Location` | `None`, optional
+            The specific location to update, by default None (update all).
+        camera : `Camera` | `None`, optional
+            The specific camera to update, by default None (update all).
+        day_obs : `date` | `None`, optional
+            The specific date to update, by default None (update all).
+        """
+        async with self._data_lock:
+            # Remove old data for the affected location/camera/date if it
+            # exists.
+            if location is not None and camera is not None:
+                loc_cam = (location, camera)
+                if day_obs is not None:
+                    if (
+                        loc_cam in self._structured_events
+                        and day_obs in self._structured_events[loc_cam]
+                    ):
+                        del self._structured_events[loc_cam][day_obs]
+                        await self._delete_calendar_section(location, camera, day_obs)
+                else:
+                    if loc_cam in self._structured_events:
+                        del self._structured_events[loc_cam]
+                        await self._delete_calendar_section(location, camera)
+            # Store the new data
+            if day_obs is not None:
+                for loc_cam, date_channel_data in structured_data.items():
+                    location, camera = loc_cam
+                    if loc_cam not in self._structured_events:
+                        self._structured_events[loc_cam] = {}
+                    await self._delete_calendar_section(location, camera, day_obs)
+                    if day_obs in date_channel_data:
+                        self._structured_events[loc_cam][day_obs] = date_channel_data[
+                            day_obs
+                        ]
+            else:
+                for key, value in structured_data.items():
+                    self._structured_events[key] = value
+
+            # Update extension info
+            for channel_date_key, ext_info in extension_info.items():
+                self._channel_default_extensions[channel_date_key] = ext_info["default"]
+                if channel_date_key in self._extension_exceptions:
+                    del self._extension_exceptions[channel_date_key]
+                if ext_info["exceptions"]:
+                    self._extension_exceptions[channel_date_key] = ext_info[
+                        "exceptions"
+                    ]
+
+            # update calendar with new dates
+            for (loc, cam), date_channel_data in structured_data.items():
+                for day_obs, chan_seq_nums in date_channel_data.items():
+                    for _, seq_nums in chan_seq_nums.items():
+                        seq_num = (
+                            max(seq_nums)
+                            if all(isinstance(seq_num, int) for seq_num in seq_nums)
+                            else 0
+                        )
+                        int_seq_num = seq_num if isinstance(seq_num, int) else 0
+                        self.add_to_calendar(loc, cam, day_obs, int_seq_num)
+
+    async def _delete_calendar_section(
+        self, location: Location, camera: Camera, day_obs: date | None = None
+    ) -> None:
+        """Delete a section of the calendar for a specific location, camera,
+        and date. Only call from lock-protected methods to ensure thread
+        safety.
+
+        Parameters
+        ----------
+
+        location : `Location`
+            The location identifier.
+        camera : `Camera`
+            The camera identifier.
+        day_obs : `date` | `None`, optional
+            The specific date to delete, by default None (delete all dates for
+            this location/camera).
+        """
+        loc_cam = (location, camera)
+        if loc_cam in self._calendar:
+            if day_obs is not None:
+                year, month, day = day_obs.year, day_obs.month, day_obs.day
+                if (
+                    year in self._calendar[loc_cam]
+                    and month in self._calendar[loc_cam][year]
+                    and day in self._calendar[loc_cam][year][month]
+                ):
+                    del self._calendar[loc_cam][year][month][day]
+                    # Clean up empty nested dictionaries
+                    if not self._calendar[loc_cam][year][month]:
+                        del self._calendar[loc_cam][year][month]
+                    if not self._calendar[loc_cam][year]:
+                        del self._calendar[loc_cam][year]
+            else:
+                del self._calendar[loc_cam]
+
+    async def _filter_only_events(
+        self, objects: list[dict[str, str]]
+    ) -> list[dict[str, str]]:
+        """Filter the list of objects to only include event objects."""
+        return (await self._split_objects_by_type(objects))["events"]
+
+    async def _split_objects_by_type(
+        self, objects: list[dict[str, str]]
+    ) -> dict[str, list[dict[str, str]]]:
+        """Split bucket objects by data type."""
+        metadata_objs = [o for o in objects if "metadata.json" in o["key"]]
+        n_report_objs = [o for o in objects if "night_report" in o["key"]]
+        event_objs = [
+            o
+            for o in objects
+            if "metadata.json" not in o["key"] and "night_report" not in o["key"]
+        ]
+        return {
+            "events": event_objs,
+            "metadata": metadata_objs,
+            "night_reports": n_report_objs,
+        }
+
+    async def _merge_night_report_metadata(
+        self, location: Location, night_report_data: list[NightReportData]
+    ) -> None:
+        """Merge incoming night report metadata into cache by unique key."""
+        if not night_report_data:
+            return
+
+        existing = self._nr_metadata.get(location, [])
+        by_key = {item.key: item for item in existing}
+        for item in night_report_data:
+            by_key[item.key] = item
+        self._nr_metadata[location] = list(by_key.values())
+
+    async def _ingest_objects(
+        self,
+        location: Location,
+        objects: list[dict[str, str]],
+        camera: Camera | None = None,
+        day_obs: date | None = None,
+        replace_night_reports: bool = False,
+        notify_structured_updates: bool = False,
+    ) -> None:
+        """Shared ingest pipeline for event, metadata, and night report
+        objects."""
+        object_groups = await self._split_objects_by_type(objects)
+
+        metadata_objs = object_groups["metadata"]
+        n_report_objs = object_groups["night_reports"]
+        event_objs = object_groups["events"]
+
+        night_report_data = await objects_to_ngt_report_data(n_report_objs)
+        if replace_night_reports:
+            self._nr_metadata[location] = night_report_data
+        else:
+            await self._merge_night_report_metadata(location, night_report_data)
+
+        await self.store_metadata_dates(location, metadata_objs)
+
+        if event_objs:
+            await self._convert_and_cache_structured_data(
+                event_objs,
+                location,
+                camera,
+                day_obs,
+                notify_clients=notify_structured_updates,
+            )
 
     async def _convert_and_cache_structured_data(
         self,
         new_objects: list[dict[str, str]],
         location: Location,
+        camera: Camera | None,
         day_obs: date | None = None,
+        notify_clients: bool = True,
     ) -> None:
         """Convert new objects to structured data and cache it."""
         # Filter to only event objects
-        event_objects = [
-            obj
-            for obj in new_objects
-            if "metadata.json" not in obj["key"] and "night_report" not in obj["key"]
-        ]
+        event_objects = await self._filter_only_events(new_objects)
         # Convert and build temporary structured data (no lock needed)
-        temp_structured = await self._convert_objects_to_structured(
-            event_objects, location
+        temp_structured, temp_extension_info = (
+            await self._convert_objects_to_structured(event_objects, location)
         )
-        # Now acquire lock and swap out old data with new
-        async with self._data_lock:
-            # Delete old cached data for all loc_cams in temp_structured
-            for loc_cam in temp_structured.keys():
-                if day_obs is not None:
-                    date_str = day_obs.isoformat()
-                    if (
-                        loc_cam in self._structured_events
-                        and date_str in self._structured_events[loc_cam]
-                    ):
-                        del self._structured_events[loc_cam][date_str]
-                else:
-                    if loc_cam in self._structured_events:
-                        del self._structured_events[loc_cam]
-            # Store the new data
-            if day_obs is not None:
-                date_str = day_obs.isoformat()
-                for loc_cam, dates_data in temp_structured.items():
-                    if loc_cam not in self._structured_events:
-                        self._structured_events[loc_cam] = {}
-                    if date_str in dates_data:
-                        self._structured_events[loc_cam][date_str] = dates_data[
-                            date_str
-                        ]
-            else:
-                for key, value in temp_structured.items():
-                    self._structured_events[key] = value
+
+        await self._cache_structured_data(
+            temp_structured, temp_extension_info, location, camera, day_obs
+        )
+
+        if notify_clients and camera is not None:
+            await self._notify_clients_of_structured_data_update(
+                location, camera, day_obs, temp_structured, temp_extension_info
+            )
+
+    async def _notify_clients_of_structured_data_update(
+        self,
+        location: Location,
+        camera: Camera,
+        day_obs: date | None,
+        structured_data: StructuredData,
+        extension_info: ExtensionInfo,
+    ) -> None:
+        """Notify clients of structured data update for a specific location,
+        camera, and date."""
+        if day_obs is None:
+            effected_days = list(structured_data.get((location, camera), {}).keys())
+        else:
+            effected_days = [day_obs]
+        for day in effected_days:
+            transmissable_structured_data = (
+                await self._make_structured_data_transmissable(
+                    structured_data, extension_info
+                )
+            )
+            await notify_ws_clients(
+                service=Service.HISTORICALDATAUPDATE,
+                message_type=MessageType.HISTORICAL_STRUCTURED_DATA,
+                loc_cam="{}/{}".format(location.name, camera.name),
+                payload={
+                    "date": day.isoformat(),
+                    "structured_data": transmissable_structured_data,
+                },
+            )
 
     async def _convert_objects_to_structured(
         self, event_objects: list[dict[str, str]], location: Location
-    ) -> dict:
+    ) -> tuple[StructuredData, ExtensionInfo]:
         """Convert objects to events and build structured data without lock.
 
         Returns a dictionary with the same structure as _structured_events
         that can be merged in atomically under the lock.
         """
-        temp_structured: dict[str, dict[str, dict[str, set[int | str]]]] = {}
-        temp_extensions: dict[str, str] = {}
-        temp_exceptions: dict[str, dict[int | str, str]] = {}
-
-        # Group events by channel-date for extension analysis
-        channel_date_groups: dict[str, list[Event]] = {}
-
-        # Process objects through the normal conversion pipeline
+        events: list[Event] = []
         async for events_batch in objects_to_events(event_objects):
-            for event in events_batch:
-                loc_cam = f"{location.name}/{event.camera_name}"
-                date_str = event.day_obs
-                channel_name = event.channel_name
-                channel_date_key = f"{loc_cam}/{date_str}/{channel_name}"
+            events.extend(events_batch)
 
-                # Build temporary structure
-                if loc_cam not in temp_structured:
-                    temp_structured[loc_cam] = {}
-                if date_str not in temp_structured[loc_cam]:
-                    temp_structured[loc_cam][date_str] = {}
-                if channel_name not in temp_structured[loc_cam][date_str]:
-                    temp_structured[loc_cam][date_str][channel_name] = set()
+        return await self._convert_events_to_structured(events, location)
 
-                temp_structured[loc_cam][date_str][channel_name].add(event.seq_num)
+    async def _convert_events_to_structured(
+        self, events: list[Event], location: Location
+    ) -> tuple[StructuredData, ExtensionInfo]:
+        """Convert events into structured and extension data containers."""
+        temp_structured: StructuredData = {}
+        temp_extensions: dict[LocCamDateChan, str] = {}
+        temp_exceptions: dict[LocCamDateChan, dict[int | str, str]] = {}
 
-                # Group for extension analysis
-                if channel_date_key not in channel_date_groups:
-                    channel_date_groups[channel_date_key] = []
-                channel_date_groups[channel_date_key].append(event)
+        channel_date_groups: dict[LocCamDateChan, list[Event]] = {}
 
-                # Update calendar
-                self.add_to_calendar(
-                    loc_cam,
-                    date_str,
-                    event.seq_num if isinstance(event.seq_num, int) else 0,
-                )
+        for event in events:
+            camera: Camera | None = find_first(
+                location.cameras, "name", event.camera_name
+            )
+            if camera is None:
+                logger.warning(f"Camera not found for event: {event}")
+                continue
+            channel: Channel | None = find_first(
+                camera.channels, "name", event.channel_name
+            )
+            if channel is None:
+                logger.warning(f"Channel not found for event: {event}")
+                continue
 
-        # Analyze extensions for each channel-date group
-        for channel_date_key, events in channel_date_groups.items():
+            day_obs = event.day_obs_date()
+            channel_date_key: LocCamDateChan = (location, camera, day_obs, channel)
+            loc_cam = (location, camera)
+
+            if loc_cam not in temp_structured:
+                temp_structured[loc_cam] = {}
+            if day_obs not in temp_structured[loc_cam]:
+                temp_structured[loc_cam][day_obs] = {}
+            if channel not in temp_structured[loc_cam][day_obs]:
+                temp_structured[loc_cam][day_obs][channel] = set()
+
+            temp_structured[loc_cam][day_obs][channel].add(event.seq_num)
+
+            if channel_date_key not in channel_date_groups:
+                channel_date_groups[channel_date_key] = []
+            channel_date_groups[channel_date_key].append(event)
+
+        for channel_date_key, grouped_events in channel_date_groups.items():
             extension_counts: dict[str, int] = {}
             event_extensions: dict[int | str, str] = {}
 
-            for event in events:
+            for event in grouped_events:
                 ext = event.ext
                 extension_counts[ext] = extension_counts.get(ext, 0) + 1
                 event_extensions[event.seq_num] = ext
 
-            # Determine default extension
             if extension_counts:
                 default_ext = max(
                     extension_counts, key=lambda ext: extension_counts[ext]
                 )
                 temp_extensions[channel_date_key] = default_ext
 
-                # Store only exceptions
                 exceptions = {
                     seq_num: ext
                     for seq_num, ext in event_extensions.items()
@@ -477,15 +774,51 @@ class HistoricalPoller:
                 if exceptions:
                     temp_exceptions[channel_date_key] = exceptions
 
-        # Update the extension tracking dictionaries atomically
-        # (this will happen under lock in _update_if_changed)
-        for key, ext in temp_extensions.items():
-            self._channel_default_extensions[key] = ext
+        extension_info: ExtensionInfo = {}
+        for key, default_ext in temp_extensions.items():
+            extension_info[key] = {
+                "default": default_ext,
+                "exceptions": temp_exceptions.get(key, {}),
+            }
 
-        for key, excs in temp_exceptions.items():
-            self._extension_exceptions[key] = excs
+        return temp_structured, extension_info
 
-        return temp_structured
+    async def _merge_structured_data_into_cache(
+        self, structured_data: StructuredData, extension_info: ExtensionInfo
+    ) -> None:
+        """Merge structured event and extension data into in-memory cache."""
+        for (location, camera), date_channel_data in structured_data.items():
+            loc_cam = (location, camera)
+            if loc_cam not in self._structured_events:
+                self._structured_events[loc_cam] = {}
+            for day_obs, channel_data in date_channel_data.items():
+                if day_obs not in self._structured_events[loc_cam]:
+                    self._structured_events[loc_cam][day_obs] = {}
+                for channel, seq_nums in channel_data.items():
+                    existing = self._structured_events[loc_cam][day_obs].setdefault(
+                        channel, set()
+                    )
+                    existing.update(seq_nums)
+
+        for channel_date_key, ext_info in extension_info.items():
+            self._channel_default_extensions[channel_date_key] = ext_info["default"]
+            if channel_date_key in self._extension_exceptions:
+                del self._extension_exceptions[channel_date_key]
+            if ext_info["exceptions"]:
+                self._extension_exceptions[channel_date_key] = ext_info["exceptions"]
+
+        for (loc, cam), date_channel_data in structured_data.items():
+            for day_obs, chan_seq_nums in date_channel_data.items():
+                for _, seq_nums in chan_seq_nums.items():
+                    seq_num = (
+                        max(seq_nums)
+                        # squashes non-int seq_nums to 0 for calendar purposes
+                        # as they only exist in per-day channels
+                        if all(isinstance(seq_num, int) for seq_num in seq_nums)
+                        else 0
+                    )
+                    int_seq_num = seq_num if isinstance(seq_num, int) else 0
+                    self.add_to_calendar(loc, cam, day_obs, int_seq_num)
 
     async def clear_metadata_cache(self) -> None:
         """Explicitly clear the metadata cache (for testing or manual
@@ -502,8 +835,6 @@ class HistoricalPoller:
                     if not camera.online:
                         continue
 
-                    loc_cam = f"{location.name}/{camera.name}"
-
                     # Get today's events from CurrentPoller
                     events = await current_poller.get_current_events(
                         location.name, camera
@@ -511,7 +842,7 @@ class HistoricalPoller:
                     if events:
                         # Acquire lock before modifying structured data
                         async with self._data_lock:
-                            await self.store_events_structured(events, location.name)
+                            await self.store_events_structured(events, location)
 
                     # Get today's metadata from CurrentPoller
                     metadata = await current_poller.get_current_metadata(
@@ -521,18 +852,18 @@ class HistoricalPoller:
                         hash = await current_poller.get_latest_metadata_hash(
                             location.name, camera
                         )
-                        today = current_poller._last_day_obs.isoformat()
+                        today = current_poller._last_day_obs
                         self._metadata_collector.register_metadata_ref(
-                            loc_cam, today, hash
+                            f"{location.name}/{camera.name}", today.isoformat(), hash
                         )
-                        self.add_to_calendar(loc_cam, today, 0)
+                        self.add_to_calendar(location, camera, today, 0)
 
                     # Get today's night reports from CurrentPoller
                     night_report = await current_poller.get_current_night_report(
                         location.name, camera.name
                     )
                     if night_report != NightReport():
-                        self._nr_metadata.setdefault(location.name, []).extend(
+                        self._nr_metadata.setdefault(location, []).extend(
                             night_report.plots if night_report.plots else []
                         )
 
@@ -603,7 +934,12 @@ class HistoricalPoller:
     async def _initialise_location_store(self, location: Location) -> None:
         try:
             up_to_date_objects = await self._get_objects_for_location(location)
-            await self.filter_convert_store_objects(up_to_date_objects, location)
+            await self._ingest_objects(
+                location,
+                up_to_date_objects,
+                replace_night_reports=True,
+                notify_structured_updates=False,
+            )
         except Exception as e:
             logger.error(e)
 
@@ -621,16 +957,7 @@ class HistoricalPoller:
         objects = []
         for cam in location.cameras:
             if cam.online:
-                prefixes = []
-                if self.test_date_start and self.test_date_end:
-                    for aDate in daterange(
-                        self.test_date_start,
-                        self.test_date_end,
-                    ):
-                        date_str = aDate.isoformat()
-                        prefixes.append(f"{cam.name}/{date_str}/{self.prefix_extra}")
-                else:
-                    prefixes.append(cam.name + "/" + self.prefix_extra)
+                prefixes = self._build_prefixes_for_camera(cam, self.prefix_extra)
 
                 for prefix in prefixes:
                     try:
@@ -671,106 +998,33 @@ class HistoricalPoller:
     async def filter_convert_store_objects(
         self, objects: list[dict[str, str]], location: Location
     ) -> None:
-        locname = location.name
+        await self._ingest_objects(
+            location,
+            objects,
+            replace_night_reports=True,
+            notify_structured_updates=False,
+        )
 
-        metadata_objs = [o for o in objects if "metadata.json" in o["key"]]
-        n_report_objs = [o for o in objects if "night_report" in o["key"]]
-
-        event_objs = [
-            o
-            for o in objects
-            if "metadata.json" not in o["key"] and "night_report" not in o["key"]
-        ]
-
-        self._nr_metadata[locname] = await objects_to_ngt_report_data(n_report_objs)
-        async for events_batch in objects_to_events(event_objs):
-            await self.store_events_structured(events_batch, locname)
-
-        await self.store_metadata_dates(locname, metadata_objs)
-
-    async def store_events_structured(self, events: list[Event], locname: str) -> None:
-        """Highly optimized event storage with extension deduplication."""
-
-        # Group events by channel-date to analyze extension patterns
-        channel_date_groups: dict[str, list[Event]] = {}
-
-        for event in events:
-            loc_cam = f"{locname}/{event.camera_name}"
-            channel_date_key = f"{loc_cam}/{event.day_obs}/{event.channel_name}"
-
-            if channel_date_key not in channel_date_groups:
-                channel_date_groups[channel_date_key] = []
-            channel_date_groups[channel_date_key].append(event)
-
-        # Process each channel-date group
-        for channel_date_key, group_events in channel_date_groups.items():
-            await self._store_channel_date_group(channel_date_key, group_events)
-
-    async def _store_channel_date_group(
-        self, channel_date_key: str, events: list[Event]
+    async def store_events_structured(
+        self, events: list[Event], location: Location
     ) -> None:
-        """Store events for a specific channel-date, optimizing extension
-        storage."""
-
-        # Parse the channel_date_key
-        parts = channel_date_key.split("/")
-        locname = parts[0]
-        camera_name = parts[1]
-        date_str = parts[2]
-        channel_name = parts[3]
-        loc_cam = f"{locname}/{camera_name}"
-
-        # Initialize nested structure
-        if loc_cam not in self._structured_events:
-            self._structured_events[loc_cam] = {}
-        if date_str not in self._structured_events[loc_cam]:
-            self._structured_events[loc_cam][date_str] = {}
-        if channel_name not in self._structured_events[loc_cam][date_str]:
-            self._structured_events[loc_cam][date_str][channel_name] = set()
-
-        # Analyze extensions to find the most common one
-        extension_counts: dict[str, int] = {}
-        event_extensions: dict[int | str, str] = {}
-
-        for event in events:
-            seq_num = event.seq_num
-            ext = event.ext
-
-            # Track extension frequency
-            extension_counts[ext] = extension_counts.get(ext, 0) + 1
-            event_extensions[seq_num] = ext
-
-            # Store seq_num (we'll determine how to store extension below)
-            self._structured_events[loc_cam][date_str][channel_name].add(seq_num)
-
-            # Update calendar
-            self.add_to_calendar(
-                loc_cam,
-                date_str,
-                event.seq_num if isinstance(event.seq_num, int) else 0,
-            )
-
-        # Determine the default extension (most common)
-        if extension_counts:
-            default_ext = max(extension_counts, key=lambda ext: extension_counts[ext])
-            self._channel_default_extensions[channel_date_key] = default_ext
-
-            # Store only the exceptions
-            exceptions = {
-                seq_num: ext
-                for seq_num, ext in event_extensions.items()
-                if ext != default_ext
-            }
-
-            if exceptions:
-                self._extension_exceptions[channel_date_key] = exceptions
+        """Store events using shared event-to-structured conversion."""
+        structured_data, extension_info = await self._convert_events_to_structured(
+            events, location
+        )
+        await self._merge_structured_data_into_cache(structured_data, extension_info)
 
     def get_extension_for_event(
-        self, loc_cam: str, date_str: str, channel_name: str, seq_num: int | str
+        self,
+        location: Location,
+        camera: Camera,
+        a_date: date,
+        channel: Channel,
+        seq_num: int | str,
     ) -> str:
         """Get the extension for a specific event, using default and
         exceptions pattern."""
-        channel_date_key = f"{loc_cam}/{date_str}/{channel_name}"
+        channel_date_key = (location, camera, a_date, channel)
 
         # Check if there's an exception for this seq_num
         if channel_date_key in self._extension_exceptions:
@@ -797,116 +1051,116 @@ class HistoricalPoller:
         return f"{base_name}.{ext}"
 
     async def get_structured_data_for_date(
-        self, location: Location, camera: Camera, a_date: date
+        self, location: Location, camera: Camera, day_obs: date
     ) -> dict[str, set[int | str]]:
         """Returns the structured data for a given date."""
-        loc_cam = f"{location.name}/{camera.name}"
-        date_str = a_date.isoformat()
-
         async with self._data_lock:
             if (
-                loc_cam not in self._structured_events
-                or date_str not in self._structured_events[loc_cam]
+                (location, camera) not in self._structured_events
+                or day_obs not in self._structured_events[(location, camera)]
             ):
                 return {}
 
-            return self._structured_events[loc_cam][date_str]
+            with_channels = self._structured_events[(location, camera)][day_obs]
+            return {
+                channel.name: seq_nums for channel, seq_nums in with_channels.items()
+            }
 
     async def get_all_extensions_for_date(
-        self, location: Location, camera: Camera, a_date: date
-    ) -> ExtensionInfo:
+        self, location: Location, camera: Camera, day_obs: date
+    ) -> TransmissableExtInfo:
         """Get all extensions (default and exceptions) for all channels on a
         given date.
 
         Structure of returned data:
         {channel_name: {"default": "ext", "exceptions": {seq_num: "ext", ...}}}
         """
-        loc_cam = f"{location.name}/{camera.name}"
-        date_str = a_date.isoformat()
-
         if (
-            loc_cam not in self._structured_events
-            or date_str not in self._structured_events[loc_cam]
-        ):
+            location,
+            camera,
+        ) not in self._structured_events or day_obs not in self._structured_events[
+            (location, camera)
+        ]:
             return {}
 
         extensions_info = {}
-        for channel_name in self._structured_events[loc_cam][date_str]:
+        for channel in self._structured_events[(location, camera)][day_obs]:
             default_ext = self._channel_default_extensions.get(
-                f"{loc_cam}/{date_str}/{channel_name}", "jpg"
+                (location, camera, day_obs, channel), "jpg"
             )
             exceptions = self._extension_exceptions.get(
-                f"{loc_cam}/{date_str}/{channel_name}", {}
+                (location, camera, day_obs, channel), {}
             )
-            extensions_info[channel_name] = {
+            extensions_info[channel.name] = {
                 "default": default_ext,
                 "exceptions": exceptions if exceptions else {},
             }
         return extensions_info
 
     async def get_events_for_date_structured(
-        self, location: Location, camera: Camera, a_date: date
+        self, location: Location, camera: Camera, day_obs: date
     ) -> list[Event]:
         """Efficient event retrieval using optimized structure."""
-        loc_cam = f"{location.name}/{camera.name}"
-        date_str = a_date.isoformat()
 
         async with self._data_lock:
             if (
-                loc_cam not in self._structured_events
-                or date_str not in self._structured_events[loc_cam]
+                (location, camera) not in self._structured_events
+                or day_obs not in self._structured_events[(location, camera)]
             ):
                 return []
 
             events = []
-            for channel_name, seq_data in self._structured_events[loc_cam][
-                date_str
+            for channel, seq_data in self._structured_events[(location, camera)][
+                day_obs
             ].items():
                 for seq_num in seq_data:
                     ext = self.get_extension_for_event(
-                        loc_cam, date_str, channel_name, seq_num
+                        location, camera, day_obs, channel, seq_num
                     )
 
                 # Reconstruct filename and key
                 filename = self.reconstruct_filename(
-                    camera.name, channel_name, date_str, seq_num, ext
+                    camera.name, channel.name, day_obs.isoformat(), seq_num, ext
                 )
                 if isinstance(seq_num, str):
                     # seq_num is 'final' or similar non-integer
-                    key = (
-                        f"{camera.name}/{date_str}/{channel_name}/{seq_num}/{filename}"
-                    )
+                    key = f"{camera.name}/{day_obs.isoformat()}/{channel.name}/{seq_num}/{filename}"
                 else:
-                    key = f"{camera.name}/{date_str}/{channel_name}/{seq_num:06d}/{filename}"
+                    key = f"{camera.name}/{day_obs.isoformat()}/{channel.name}/{seq_num:06d}/{filename}"
                 events.append(Event(key=key))
 
             return events
 
-    def add_to_calendar(self, loc_cam: str, date_str: str, seq_num: int) -> None:
-        year_str, month_str, day_str = date_str.split("-")
-        year, month, day = (int(year_str), int(month_str), int(day_str))
-        if loc_cam not in self._calendar:
-            self._calendar[loc_cam] = {}
-        if year not in self._calendar[loc_cam]:
-            self._calendar[loc_cam][year] = {}
-        if month not in self._calendar[loc_cam][year]:
-            self._calendar[loc_cam][year][month] = {}
-        if self._calendar[loc_cam][year][month].get(day, 0) <= seq_num:
-            self._calendar[loc_cam][year][month][day] = seq_num
+    def add_to_calendar(
+        self, location: Location, camera: Camera, day_obs: date, seq_num: int
+    ) -> None:
+        year, month, day = day_obs.year, day_obs.month, day_obs.day
+        loc_cam = (location, camera)
+
+        day_map = (
+            self._calendar.setdefault(loc_cam, {})
+            .setdefault(year, {})
+            .setdefault(month, {})
+        )
+        day_map[day] = max(day_map.get(day, 0), seq_num)
 
     async def store_metadata_dates(
-        self, locname: str, metadata_objs: list[dict[str, str]]
+        self, location: Location, metadata_objs: list[dict[str, str]]
     ) -> None:
         for md_obj in metadata_objs:
             key = md_obj.get("key")
-            if not key:
+            hash = md_obj.get("hash")
+            if not key or not hash:
                 continue
-            storage_name = locname + "/" + key.split("/metadata")[0]
+            storage_name = location.name + "/" + key.split("/metadata")[0]
             _, cam_name, date_str = storage_name.split("/")
-            loc_cam = f"{locname}/{cam_name}"
-            hash = md_obj.get("hash", "")
-            self._metadata_collector.register_metadata_ref(loc_cam, date_str, hash)
-            self.add_to_calendar(loc_cam, date_str, 0)
+            self._metadata_collector.register_metadata_ref(
+                f"{location.name}/{cam_name}", date_str, hash
+            )
+            camera: Camera | None = find_first(location.cameras, "name", cam_name)
+            if camera is not None:
+                a_date = date_str_to_date(date_str)
+                self.add_to_calendar(location, camera, a_date, 0)
 
     async def get_night_report_payload(
         self, location: Location, camera: Camera, day_obs: date
@@ -945,10 +1199,10 @@ class HistoricalPoller:
     ) -> list[NightReportData]:
         date_str = day_obs.isoformat()
         report = []
-        if location.name in self._nr_metadata:
+        if location in self._nr_metadata:
             report = [
                 nr
-                for nr in self._nr_metadata[location.name]
+                for nr in self._nr_metadata[location]
                 if nr.camera_name == camera.name and nr.day_obs == date_str
             ]
         return report
@@ -1008,8 +1262,7 @@ class HistoricalPoller:
         Returns a dict with keys as date strings and values as the number of
         events for that date.
         """
-        loc_cam = f"{location.name}/{camera.name}"
-        calendar = self._calendar.get(loc_cam, {})
+        calendar = self._calendar.get((location, camera), {})
         flat_calendar = {}
         for year in calendar:
             for month in calendar[year]:
@@ -1021,8 +1274,7 @@ class HistoricalPoller:
     async def get_most_recent_day(
         self, location: Location, camera: Camera
     ) -> date | None:
-        loc_cam = f"{location.name}/{camera.name}"
-        calendar = self._calendar.get(loc_cam)
+        calendar = self._calendar.get((location, camera))
         if not calendar:
             return None
         year = max(calendar.keys())
@@ -1100,8 +1352,7 @@ class HistoricalPoller:
             days and num. of events for that day for the given Camera.
 
         """
-        loc_cam = f"{location.name}/{camera.name}"
-        return self._calendar.get(loc_cam, {})
+        return self._calendar.get((location, camera), {})
 
     async def get_all_channel_names_for_date_and_seq_num(
         self, location: Location, camera: Camera, day_obs: date, seq_num: int
@@ -1122,20 +1373,43 @@ class HistoricalPoller:
         chan_names : `list` [`str`]
             A list of channel names for the given date and seq_num.
         """
-        loc_cam = f"{location.name}/{camera.name}"
-        date_str = day_obs.isoformat()
-
+        loc_cam = (location, camera)
         if (
             loc_cam not in self._structured_events
-            or date_str not in self._structured_events[loc_cam]
+            or day_obs not in self._structured_events[loc_cam]
         ):
             return []
 
-        channel_names = []
-        for channel_name, seq_data in self._structured_events[loc_cam][
-            date_str
-        ].items():
+        channels: list[Channel] = []
+        for channel, seq_data in self._structured_events[loc_cam][day_obs].items():
             if seq_num in seq_data:
-                channel_names.append(channel_name)
+                channels.append(channel)
 
-        return channel_names
+        return [channel.name for channel in channels]
+
+    async def _make_structured_data_transmissable(
+        self, structured_data: StructuredData, extension_info: ExtensionInfo
+    ) -> TransmissableStructuredData:
+        """Convert structured data and extension info into a format that can be
+        transmitted over the websocket."""
+        transmissable: TransmissableStructuredData = {}
+        for (location, camera), date_channel_data in structured_data.items():
+            loc_cam_key = f"{location.name}/{camera.name}"
+            transmissable[loc_cam_key] = {}
+            for day_obs, channel_data in date_channel_data.items():
+                day_key = day_obs.isoformat()
+                transmissable[loc_cam_key][day_key] = {}
+                for channel, seq_nums in channel_data.items():
+                    channel_name = channel.name
+                    default_ext = extension_info.get(
+                        (location, camera, day_obs, channel), {}
+                    ).get("default", "jpg")
+                    exceptions = extension_info.get(
+                        (location, camera, day_obs, channel), {}
+                    ).get("exceptions", {})
+                    transmissable[loc_cam_key][day_key][channel_name] = {
+                        "seq_nums": list(seq_nums),
+                        "default_ext": default_ext,
+                        "exceptions": exceptions,
+                    }
+        return transmissable

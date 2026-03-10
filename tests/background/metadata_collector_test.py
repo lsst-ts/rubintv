@@ -42,7 +42,7 @@ def _build_metadata_collector() -> MetadataCollector:
         )
         for location in m.locations
     }
-    return MetadataCollector(clients)
+    return MetadataCollector(clients, m.locations)
 
 
 class TestMetadataCollectorChangeDetection:
@@ -156,5 +156,61 @@ class TestMetadataCollectorChangeDetection:
             ref.date_str: ref.metadata_hash for ref in collector.metadata_refs[loc_cam]
         }
         assert refs_by_date[date_str] == metadata_hash
+
+        clear_s3_client_cache()
+
+    @pytest.mark.asyncio
+    async def test_changed_metadata_is_refetched_after_cache_invalidation(
+        self, mock_s3_client: Any
+    ) -> None:
+        clear_s3_client_cache()
+        mocker = RubinDataMocker(m.locations, s3_required=True, populate=False)
+        collector = _build_metadata_collector()
+
+        location = m.locations[0]
+        camera = location.cameras[0]
+        loc_cam = f"{location.name}/{camera.name}"
+        date_str = get_current_day_obs().isoformat()
+
+        original_hash = _put_metadata_object(
+            mocker,
+            location.bucket_name,
+            camera.name,
+            date_str,
+            marker="changed-v1",
+        )
+        collector.register_metadata_ref(loc_cam, date_str, original_hash)
+
+        initial_metadata = await collector.get_metadata_for_date(
+            location, camera, date_str
+        )
+        assert initial_metadata is not None
+        assert initial_metadata["0"]["marker"] == "changed-v1"
+        assert date_str in collector._metadata_cache[loc_cam]
+
+        updated_hash = _put_metadata_object(
+            mocker,
+            location.bucket_name,
+            camera.name,
+            date_str,
+            marker="changed-v2",
+        )
+        assert updated_hash != original_hash
+
+        await collector.check_for_changed_metadata()
+
+        assert date_str not in collector._metadata_cache[loc_cam]
+
+        refreshed_metadata = await collector.get_metadata_for_date(
+            location, camera, date_str
+        )
+        assert refreshed_metadata is not None
+        assert refreshed_metadata["0"]["marker"] == "changed-v2"
+        assert date_str in collector._metadata_cache[loc_cam]
+
+        refs_by_date = {
+            ref.date_str: ref.metadata_hash for ref in collector.metadata_refs[loc_cam]
+        }
+        assert refs_by_date[date_str] == updated_hash
 
         clear_s3_client_cache()

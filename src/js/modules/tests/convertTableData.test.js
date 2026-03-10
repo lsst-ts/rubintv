@@ -55,10 +55,10 @@ describe("createTableFromStructuredData", () => {
 
     // Verify file paths are correctly constructed
     expect(result["1"].channel1.key).toBe(
-      "TestCamera/2024-03-10/channel1/000001/TestCamera_channel1_000001.jpg"
+      "TestCamera/2024-03-10/channel1/000001/TestCamera_channel1_2024-03-10_000001.jpg"
     )
     expect(result["3"].channel1.key).toBe(
-      "TestCamera/2024-03-10/channel1/000003/TestCamera_channel1_000003.fits"
+      "TestCamera/2024-03-10/channel1/000003/TestCamera_channel1_2024-03-10_000003.fits"
     )
   })
 
