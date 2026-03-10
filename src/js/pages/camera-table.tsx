@@ -5,6 +5,7 @@ import CameraTable from "js/components/CameraTable"
 import { _getById } from "../modules/utils"
 import { WebsocketClient } from "../modules/ws-service-client"
 import { Camera } from "../components/componentTypes"
+import RubinCalendar from "js/components/RubinCalendar"
 ;(function () {
   if (window.APP_DATA.historicalBusy) {
     return
@@ -36,10 +37,32 @@ import { Camera } from "../components/componentTypes"
   )
 
   const ws = new WebsocketClient()
-  ws.subscribe("calendar", locationName, camera.name)
 
   if (!isHistorical || isStale) {
     ws.subscribe("camera", locationName, camera.name)
+  } else {
+    ws.subscribe("calendar", locationName, camera.name)
+  }
+
+  if (!isHistorical || isStale) {
+    ws.subscribe("camera", locationName, camera.name)
+    const calendarElement = _getById("calendar")
+    if (!calendarElement) {
+      console.error("Calendar element not found")
+      return
+    }
+    const calendarRoot = createRoot(calendarElement)
+    calendarRoot.render(
+      <RubinCalendar
+        selectedDate={date}
+        initialCalendarData={calendar}
+        camera={camera}
+        locationName={locationName}
+      />
+    )
+  }
+  if (isHistorical) {
+    ws.subscribe("historicalDataUpdate", locationName, camera.name, date)
   }
   if (isHistorical) {
     ws.subscribe("historicalDataUpdate", locationName, camera.name, date)

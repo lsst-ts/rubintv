@@ -517,7 +517,9 @@ class TestHistoricalPollerWithMockData:
         assert "2024-02-15" in historical._metadata_collector.metadata_refs[loc_cam]
         metadata_dates = {
             ref.date_str
-            for ref in historical._metadata_collector.metadata_refs[loc_cam]
+            for ref in historical._metadata_collector.metadata_refs[
+                location.name + "/" + camera.name
+            ]
         }
         assert "2024-02-15" in metadata_dates
 

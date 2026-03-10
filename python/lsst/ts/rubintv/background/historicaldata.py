@@ -75,12 +75,9 @@ class HistoricalPoller:
             for location in locations
         }
 
-        # Initialize metadata collector
-        self._metadata_collector = MetadataCollector(self._clients, self._locations)
-
         self._structured_events: StructuredData = {}
-        # Structure: {loc_cam: {date_str: {
-        #  channel_name: {seq_num1, seq_num2, ...}}}}
+        # Structure:
+        # {(Location, Camera): {date: {Channel: {seq_num1, seq_num2, ...}}}}
 
         # Initialize metadata collector
         self._metadata_collector = MetadataCollector(self._clients, self._locations)
@@ -156,8 +153,6 @@ class HistoricalPoller:
         """Re-poll just yesterday's data to catch any late arrivals."""
         logger.info("Starting re-poll of yesterday's data")
         start_time = time()
-
-        # await self._metadata_collector.check_for_changed_metadata()
 
         yesterday = get_current_day_obs() - timedelta(days=1)
         for location in self._locations:
