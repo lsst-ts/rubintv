@@ -201,6 +201,42 @@ export default function TableApp({
     }
   }, [handleCameraEvent])
 
+  useEffect(() => {
+    window.addEventListener(
+      "historicalDataUpdate",
+      handleHistoricalDataUpdate as EL
+    )
+    function handleHistoricalDataUpdate(event: CustomEvent) {
+      const { data, dataType } = event.detail
+      if (data.date !== date) {
+        return
+      }
+      if (dataType === "historicalStructuredData") {
+        console.log(
+          "Received historical structured data update for date:",
+          data.date
+        )
+        const channelData = createTableFromStructuredData(
+          camera.name,
+          data.date,
+          data.structuredData,
+          data.extensionInfo,
+          camera.channels
+        )
+        setChannelData(channelData)
+      } else if (dataType === "historicalMetadata") {
+        console.log("Received historical metadata update for date:", data.date)
+        setMetadata(data.metadata)
+      }
+    }
+    return () => {
+      window.removeEventListener(
+        "historicalDataUpdate",
+        handleHistoricalDataUpdate as EL
+      )
+    }
+  }, [date, camera.name, camera.channels])
+
   if (unfilteredRowsCount == 0 && hasReceivedData) {
     return <h3>There is no data for this day</h3>
   } else if (!hasReceivedData) {

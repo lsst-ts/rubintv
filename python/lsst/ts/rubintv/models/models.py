@@ -47,7 +47,14 @@ class MetadataRefData(BaseModel):
         return hash((self.date_str, self.metadata_hash))
 
 
-class Channel(BaseModel):
+class HashableBaseModel(BaseModel):
+    """A hashable version of Pydantic's BaseModel."""
+
+    def __hash__(self) -> int:
+        return hash(self.model_dump_json())
+
+
+class Channel(HashableBaseModel):
     name: str
     title: str
     label: str = ""
@@ -57,7 +64,7 @@ class Channel(BaseModel):
     text_colour: str = "#000"
 
 
-class HasButton(BaseModel):
+class HasButtonMixin:
     """Base class for classes that are displayed on-screen with buttons.
     Provides a name, title, logo image, text colour and whether the text
     should have a drop-shadow.
@@ -109,7 +116,7 @@ class MosaicViewMeta(BaseModel):
     mediaType: MediaType = MediaType.IMAGE
 
 
-class ExtraButton(HasButton):
+class ExtraButton(HasButtonMixin, BaseModel):
     """Sub-class to provide buttons with the functionality to link to relative
     URLs.
 
@@ -141,7 +148,7 @@ class TimeSinceClock(BaseModel):
     label: str
 
 
-class Camera(HasButton):
+class Camera(HasButtonMixin, HashableBaseModel):
     """Represents a camera entity, capable of handling different channels like
     images or movies.
 
@@ -212,7 +219,7 @@ class Camera(HasButton):
         return [c for c in self.channels if c.per_day]
 
 
-class Location(HasButton):
+class Location(HasButtonMixin, HashableBaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     bucket_name: str
@@ -448,6 +455,7 @@ class ServiceTypes(str, Enum):
     CHANNEL = "channel"
     NIGHTREPORT = "nightreport"
     HISTORICALSTATUS = "historicalStatus"
+    HISTORICALDATAUPDATE = "historicalDataUpdate"
     CALENDAR = "calendar"
     DETECTORS = "detectors"
     ADMIN = "admin"
@@ -468,6 +476,8 @@ class ServiceMessageTypes(Enum):
     ALL_CHANNELS = "allChannels"
     DETECTOR_STATUS = "detectorStatus"
     CONTROL_READBACK_CHANGE = "controlReadback"
+    HISTORICAL_METADATA = "historicalMetadata"
+    HISTORICAL_STRUCTURED_DATA = "historicalStructuredData"
 
 
 class KeyValue(BaseModel):
@@ -487,6 +497,9 @@ class ExtensionDict(TypedDict):
 
 type ExtensionInfo = dict[str, ExtensionDict]
 type ChannelData = dict[int, dict[str, dict]]
+
+type LocCamDateChan = tuple[Location, Camera, date, Channel]
+type LocCamKey = tuple[Location, Camera]
 
 
 @dataclass

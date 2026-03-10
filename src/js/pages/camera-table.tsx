@@ -35,12 +35,11 @@ import { Camera } from "../components/componentTypes"
       camera={camera}
     />
   )
+  const ws = new WebsocketClient()
 
   if (!isHistorical || isStale) {
-    const ws = new WebsocketClient()
     ws.subscribe("camera", locationName, camera.name)
   } else {
-    const ws = new WebsocketClient()
     ws.subscribe("calendar", locationName, camera.name)
 
     const calendarElement = _getById("calendar")
@@ -57,6 +56,9 @@ import { Camera } from "../components/componentTypes"
         locationName={locationName}
       />
     )
+  }
+  if (isHistorical) {
+    ws.subscribe("historicalDataUpdate", locationName, camera.name, date)
   }
 
   const table = _getById("table")
