@@ -63,6 +63,12 @@ class Channel(HashableBaseModel):
     icon: str = ""
     text_colour: str = "#000"
 
+    def __str__(self) -> str:
+        return f"Channel: {self.name}"
+
+    def __repr__(self) -> str:
+        return str(self)
+
 
 class HasButtonMixin:
     """Base class for classes that are displayed on-screen with buttons.
@@ -212,6 +218,12 @@ class Camera(HasButtonMixin, HashableBaseModel):
     extra_buttons: list[ExtraButton] = []
     time_since_clock: TimeSinceClock | None = None
 
+    def __str__(self) -> str:
+        return f"Camera: {self.name}"
+
+    def __repr__(self) -> str:
+        return str(self)
+
     def seq_channels(self) -> list[Channel]:
         return [c for c in self.channels if not c.per_day]
 
@@ -230,6 +242,12 @@ class Location(HasButtonMixin, HashableBaseModel):
     services: list[str] = []
     is_teststand: bool = False
     has_cluster_status: bool = False
+
+    def __str__(self) -> str:
+        return f"Location: {self.name}"
+
+    def __repr__(self) -> str:
+        return str(self)
 
 
 @dataclass
@@ -523,7 +541,7 @@ class CameraPageData:
 class HistoricalPageData(CameraPageData):
     """Data for the historical page."""
 
-    metadata_exists: bool = False
+    metadata: dict[str, Any] = dataclasses.field(default_factory=dict)
     structured_data: dict[str, set[int | str]] = dataclasses.field(default_factory=dict)
     extension_info: ExtensionInfo = dataclasses.field(default_factory=dict)
 
@@ -532,7 +550,7 @@ class HistoricalPageData(CameraPageData):
         base_empty = super().is_empty()
         return base_empty and not any(
             [
-                self.metadata_exists,
+                self.metadata,
                 self.structured_data,
                 self.extension_info,
             ]
