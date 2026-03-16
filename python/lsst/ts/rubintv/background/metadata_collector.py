@@ -88,9 +88,6 @@ class MetadataCollector:
         logger.debug(
             f"Registered metadata ref for {loc_cam} on {date_str} with hash {metadata_hash}"
         )
-        logger.debug(
-            f"Current metadata refs for {loc_cam}: {self._metadata_refs[loc_cam]}"
-        )
 
     async def get_metadata_for_date(
         self, location: "Location", camera: "Camera", date_str: str
