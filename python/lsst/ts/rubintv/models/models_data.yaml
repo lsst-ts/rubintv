@@ -4,7 +4,7 @@ bucket_configurations:
   tucson: [tucson]
   summit: [summit]
   gha: [summit-usdf, usdf, base-usdf, tucson-usdf]
-  local: [summit-usdf, usdf, base-usdf, tucson-usdf]
+  local: [test]
 
 locations:
   - name: test

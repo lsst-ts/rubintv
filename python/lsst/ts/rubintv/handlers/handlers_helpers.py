@@ -97,8 +97,8 @@ async def get_camera_events_for_date(
     extension_info = await historical.get_all_extensions_for_date(
         location, camera, day_obs
     )
-    metadata_exists = await historical.check_for_metadata_for_date(
-        location, camera, day_obs
+    metadata = await historical.get_metadata_for_date(
+        location, camera, day_obs.isoformat()
     )
     per_day = await historical.get_per_day_for_date(location, camera, day_obs)
     nr_exists = await historical.night_report_exists_for(location, camera, day_obs)
@@ -107,7 +107,7 @@ async def get_camera_events_for_date(
         structured_data=structured_data,
         extension_info=extension_info,
         per_day=per_day,
-        metadata_exists=metadata_exists,
+        metadata=metadata if metadata else {},
         nr_exists=nr_exists,
     )
 
