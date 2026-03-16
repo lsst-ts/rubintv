@@ -246,6 +246,34 @@ class HistoricalPoller:
 
         return objects
 
+    async def _process_objects_for_location_camera_streamed(
+        self,
+        location: Location,
+        camera: Camera,
+        prefix_extra: str = "",
+    ) -> None:
+        """Stream and process objects for a specific camera.
+
+        Processes objects page-by-page as they arrive from S3 for a specific
+        camera, enabling efficient handling without buffering.
+
+        Parameters
+        ----------
+        location : `Location`
+            The location identifier.
+        camera : `Camera`
+            The camera identifier.
+        prefix_extra : `str`, optional
+            Extra prefix to append to camera name, by default ""
+        """
+        prefixes = self._build_prefixes_for_camera(camera, prefix_extra)
+
+        for prefix in prefixes:
+            try:
+                await self._process_objects_from_stream(location, prefix)
+            except Exception as e:
+                logger.error(f"Error processing stream for prefix {prefix}: {e}")
+
     def _parse_structured_key(
         self, key: str, camera: Camera, day_obs: date | None = None
     ) -> tuple[Camera, date, Channel, int | str] | None:
@@ -510,8 +538,12 @@ class HistoricalPoller:
                             day_obs
                         ]
             else:
-                for key, value in structured_data.items():
-                    self._structured_events[key] = value
+                # When day_obs is None, merge instead of replace to handle
+                # streaming pages correctly
+                await self._merge_structured_data_into_cache(
+                    structured_data, extension_info
+                )
+                return
 
             # Update extension info
             for channel_date_key, ext_info in extension_info.items():
@@ -931,17 +963,49 @@ class HistoricalPoller:
                         "from historical",
                     )
 
+    async def notify_update_all_calendars(self) -> None:
+        """Notify all clients to update their calendars."""
+        logger.info("Starting calendar update notifications")
+        for loc in self._locations:
+            for cam in loc.cameras:
+                if cam.online:
+                    loc_cam = (loc, cam)
+                    calendar = self._calendar.get(loc_cam, {})
+                    logger.info(
+                        "Notifying calendar update for",
+                        loc_cam=loc_cam,
+                        calendar_size=len(calendar),
+                    )
+                    await notify_ws_clients(
+                        Service.CALENDAR,
+                        MessageType.CALENDAR_UPDATE,
+                        f"{loc.name}/{cam.name}",
+                        calendar,
+                    )
+
     async def _initialise_location_store(self, location: Location) -> None:
         try:
-            up_to_date_objects = await self._get_objects_for_location(location)
-            await self._ingest_objects(
-                location,
-                up_to_date_objects,
-                replace_night_reports=True,
-                notify_structured_updates=False,
-            )
+            await self._initialise_location_store_streamed(location)
         except Exception as e:
             logger.error(e)
+
+    async def _initialise_location_store_streamed(self, location: Location) -> None:
+        """Initialize location store using streamed object processing.
+
+        This method processes objects page-by-page as they arrive from S3,
+        enabling efficient ingestion of large object listings without
+        buffering all results in memory.
+        """
+        for cam in location.cameras:
+            if cam.online:
+                prefixes = self._build_prefixes_for_camera(cam, self.prefix_extra)
+                for prefix in prefixes:
+                    try:
+                        await self._process_objects_from_stream(location, prefix)
+                    except Exception as e:
+                        logger.error(
+                            f"Error processing stream for prefix {prefix}: {e}"
+                        )
 
     async def _get_objects_for_location(
         self, location: Location
@@ -994,6 +1058,58 @@ class HistoricalPoller:
         objects = await client.async_list_objects(prefix=prefix)
         logger.info("Found:", num_objects=len(objects), prefix=prefix)
         return objects
+
+    async def _process_objects_from_stream(
+        self, location: Location, prefix: str
+    ) -> None:
+        """Stream and process S3 objects as they arrive from pagination.
+
+        This method fetches objects page-by-page from S3 and processes each
+        page immediately, enabling efficient handling of large object listings
+        without buffering all results in memory.
+
+        Parameters
+        ----------
+        location : `Location`
+            The location to get objects for.
+        prefix : `str`
+            The prefix to filter objects by.
+        """
+        logger.info(
+            "Streaming objects for prefix:",
+            location=location.name,
+            prefix=prefix,
+        )
+        client: S3Client = self._clients[location.name]
+        page_count = 0
+        total_count = 0
+
+        async for page in client.async_list_objects_paginated(prefix=prefix):
+            page_count += 1
+            total_count += len(page)
+            logger.debug(
+                "Processing page of objects",
+                location=location.name,
+                prefix=prefix,
+                page_number=page_count,
+                page_size=len(page),
+                last_object=page[-1]["key"] if page else "N/A",
+            )
+            # Process each page immediately as it arrives
+            await self._ingest_objects(
+                location,
+                page,
+                replace_night_reports=True,
+                notify_structured_updates=False,
+            )
+
+        logger.info(
+            "Completed streaming objects",
+            location=location.name,
+            prefix=prefix,
+            total_objects=total_count,
+            pages=page_count,
+        )
 
     async def filter_convert_store_objects(
         self, objects: list[dict[str, str]], location: Location
