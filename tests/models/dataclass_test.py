@@ -23,7 +23,7 @@ def test_historical_page_data_initialization() -> None:
 
     # Check base attributes are properly initialized
     assert data.per_day == {}
-    assert data.metadata_exists is False
+    assert data.metadata is False
     assert data.nr_exists is False
 
     # Check subclass attributes
