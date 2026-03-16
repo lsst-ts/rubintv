@@ -132,8 +132,21 @@ class S3Client:
             data = json.loads(obj["Body"].read())
             return data
         except ClientError as e:
-            if e.response["Error"]["Code"] == "NoSuchKey":
-                logger.info("Object for key: {key} not found.", key=key)
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            if error_code == "NoSuchKey":
+                logger.info("Object for key not found.", key=key)
+            else:
+                logger.error(
+                    f"Error retrieving object from S3: "
+                    f"bucket={self._bucket_name}, key={key}, error={error_code}",
+                    error=e,
+                )
+            return {}
+        except Exception as e:
+            logger.error(
+                f"Unexpected error retrieving object from S3: bucket={self._bucket_name}, key={key}",
+                error=e,
+            )
             return {}
 
     async def async_get_object(self, key: str) -> dict[str, Any]:

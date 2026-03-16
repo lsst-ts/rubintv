@@ -443,7 +443,7 @@ class RubinDataMocker:
             try:
                 json_str = json.dumps(full_metadata)
                 self.s3_client.put_object(
-                    Bucket=bucket_name, Body=json_str, Key=metadata_key
+                    Bucket=bucket_name, Body=json_str.encode(), Key=metadata_key
                 )
                 self._s3_metadata_created.add(camera_day_key)
             except ClientError as e:

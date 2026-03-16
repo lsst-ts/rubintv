@@ -547,6 +547,7 @@ type LocCamKey = tuple[Location, Camera]
 class CameraPageData:
     """Data for a camera page."""
 
+    metadata: dict[str, Any] = dataclasses.field(default_factory=dict)
     per_day: dict[str, dict] = dataclasses.field(default_factory=dict)
     nr_exists: bool = False
 
@@ -554,6 +555,7 @@ class CameraPageData:
         """Check if the data is empty."""
         return not any(
             [
+                self.metadata,
                 self.per_day,
                 self.nr_exists,
             ]
@@ -564,7 +566,6 @@ class CameraPageData:
 class HistoricalPageData(CameraPageData):
     """Data for the historical page."""
 
-    metadata: dict[str, Any] = dataclasses.field(default_factory=dict)
     structured_data: dict[str, set[int | str]] = dataclasses.field(default_factory=dict)
     extension_info: ExtensionInfo = dataclasses.field(default_factory=dict)
 
@@ -573,7 +574,6 @@ class HistoricalPageData(CameraPageData):
         base_empty = super().is_empty()
         return base_empty and not any(
             [
-                self.metadata,
                 self.structured_data,
                 self.extension_info,
             ]
@@ -585,9 +585,8 @@ class CurrentPageData(CameraPageData):
     """Data for the current page."""
 
     channel_data: ChannelData = dataclasses.field(default_factory=dict)
-    metadata: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     def is_empty(self) -> bool:
         """Check if the data is empty."""
         base_empty = super().is_empty()
-        return base_empty and not any([self.metadata, self.channel_data])
+        return base_empty and not self.channel_data
