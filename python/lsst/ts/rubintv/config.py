@@ -70,6 +70,7 @@ config = Configuration()
 """Configuration for rubintv."""
 
 REDIS_CONTROL_READBACK_SUFFIX = "_READBACK"
+EARLIEST_HISTORICAL_DATE = "2020-01-01"
 
 
 def rubintv_logger() -> Any:

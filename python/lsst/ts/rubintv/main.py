@@ -165,7 +165,7 @@ async def _makeRedis() -> redis.Redis | None:
     redis.Redis | None
         The Redis client or None if the connection fails.
     """
-    SOCKET_TIMEOUT = 3
+    SOCKET_TIMEOUT = 10
     host: str = config.ra_redis_host
     password = config.ra_redis_password
     port: int = config.ra_redis_port
