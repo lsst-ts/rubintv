@@ -1,12 +1,15 @@
 import asyncio
 import gc
+import gzip
+import pickle
 from datetime import date, timedelta
+from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.background.metadata_collector import MetadataCollector
-from lsst.ts.rubintv.config import rubintv_logger
+from lsst.ts.rubintv.config import config, rubintv_logger
 from lsst.ts.rubintv.handlers.websocket_notifiers import (
     notify_all_status_change,
     notify_ws_clients,
@@ -56,6 +59,19 @@ class HistoricalPoller:
     # re-polling period in seconds
     REPOLL_BUCKET_PERIOD = 60 * 60 * 12  # 12 hours
     REPOLL_YESTERDAY_PERIOD = 60 * 2  # 2 minutes
+
+    @staticmethod
+    def _get_cache_file_path() -> Path:
+        """Get the cache file path based on site location."""
+        if config.site_location == "usdf-k8s":
+            return Path("/scratch") / "historical_cache.pkl.gz"
+        else:  # "local" and all other locations use cwd
+            return Path.cwd() / "historical_cache.pkl.gz"
+
+    @property
+    def CACHE_FILE(self) -> Path:
+        """Cache file path property."""
+        return self._get_cache_file_path()
 
     def __init__(
         self,
@@ -112,26 +128,130 @@ class HistoricalPoller:
         """Trigger a full reload of all historical data."""
         await self.clear_all_data()
 
+    async def _save_cache_to_file(self) -> None:
+        """Save the current structured data cache to a gzipped file.
+
+        Includes structured events, extensions, night reports, calendar,
+        and metadata references from the MetadataCollector.
+        """
+        if config.site_location not in ["local", "usdf-k8s"]:
+            return
+        try:
+            cache_data = {
+                "structured_events": self._structured_events,
+                "channel_default_extensions": self._channel_default_extensions,
+                "extension_exceptions": self._extension_exceptions,
+                "nr_metadata": self._nr_metadata,
+                "calendar": self._calendar,
+                "metadata_refs": self._metadata_collector.metadata_refs,
+            }
+            with gzip.open(self.CACHE_FILE, "wb") as f:
+                pickle.dump(cache_data, f)
+            logger.info(
+                "Saved historical data cache to file",
+                cache_file=str(self.CACHE_FILE),
+                num_structured_keys=len(self._structured_events),
+                num_metadata_refs=sum(
+                    len(v) for v in self._metadata_collector.metadata_refs.values()
+                ),
+                num_night_reports=len(self._nr_metadata),
+            )
+        except Exception as e:
+            logger.error(
+                f"Error saving cache to file: {e}",
+                cache_file=str(self.CACHE_FILE),
+            )
+
+    async def _load_cache_from_file(self) -> bool:
+        """Load structured data cache from a gzipped file if it exists.
+
+        Restores structured events, extensions, night reports, calendar,
+        and metadata references to the MetadataCollector.
+
+        Returns
+        -------
+        `bool`
+            True if cache was successfully loaded, False otherwise.
+        """
+        logger.info(
+            "Attempting to load cache from file",
+            cache_file=str(self.CACHE_FILE),
+            exists=self.CACHE_FILE.exists(),
+        )
+        if not self.CACHE_FILE.exists():
+            logger.info(
+                "No cache file found",
+                cache_file=str(self.CACHE_FILE),
+            )
+            return False
+
+        try:
+            with gzip.open(self.CACHE_FILE, "rb") as f:
+                cache_data = pickle.load(f)
+
+            self._structured_events = cache_data.get("structured_events", {})
+            self._channel_default_extensions = cache_data.get(
+                "channel_default_extensions", {}
+            )
+            self._extension_exceptions = cache_data.get("extension_exceptions", {})
+            self._nr_metadata = cache_data.get("nr_metadata", {})
+            self._calendar = cache_data.get("calendar", {})
+
+            # Restore metadata references to the MetadataCollector
+            metadata_refs = cache_data.get("metadata_refs", {})
+            if metadata_refs:
+                # Restore directly to the internal _metadata_refs dict
+                self._metadata_collector._metadata_refs = metadata_refs
+                logger.info(
+                    "Restored metadata references to MetadataCollector",
+                    num_loc_cams=len(metadata_refs),
+                    total_refs=sum(len(v) for v in metadata_refs.values()),
+                )
+
+            logger.info(
+                "Loaded historical data cache from file",
+                cache_file=str(self.CACHE_FILE),
+                num_structured_keys=len(self._structured_events),
+                num_night_reports=len(self._nr_metadata),
+            )
+            return True
+        except Exception as e:
+            logger.error(
+                f"Error loading cache from file: {e}",
+                cache_file=str(self.CACHE_FILE),
+            )
+            return False
+
     async def run(self) -> None:
         while True:
             if not self._have_downloaded:
-                logger.info("Starting initial historical data download")
-                start_time = time()
-                for location in self._locations:
-                    await self._initialise_location_store(location)
-                self._have_downloaded = True
-                elapsed = time() - start_time
-                logger.info(
-                    "Completed initial historical data download",
-                    elapsed_time_seconds=elapsed,
-                )
-                await notify_all_status_change(historical_busy=False)
-                # Start background metadata prefetching
-                await self._metadata_collector.start_prefetch(self._locations)
-                logger.info(
-                    "HistoricalPoller initial run completed",
-                    total_elapsed_time_seconds=elapsed,
-                )
+                # Try to load cache first
+                cache_loaded = await self._load_cache_from_file()
+                if cache_loaded:
+                    self._have_downloaded = True
+                    logger.info("Using cached historical data")
+                    await notify_all_status_change(historical_busy=False)
+                    await self._metadata_collector.start_prefetch(self._locations)
+                else:
+                    logger.info("Starting initial historical data download")
+                    start_time = time()
+                    for location in self._locations:
+                        await self._initialise_location_store(location)
+                    self._have_downloaded = True
+                    elapsed = time() - start_time
+                    logger.info(
+                        "Completed initial historical data download",
+                        elapsed_time_seconds=elapsed,
+                    )
+                    # Save cache after successful initial download
+                    await self._save_cache_to_file()
+                    await notify_all_status_change(historical_busy=False)
+                    # Start background metadata prefetching
+                    await self._metadata_collector.start_prefetch(self._locations)
+                    logger.info(
+                        "HistoricalPoller initial run completed",
+                        total_elapsed_time_seconds=elapsed,
+                    )
 
             await asyncio.sleep(20)
 
@@ -153,23 +273,17 @@ class HistoricalPoller:
 
         yesterday = get_current_day_obs() - timedelta(days=1)
         for location in self._locations:
-            for camera in location.cameras:
-                if camera.online:
-                    try:
-                        new_objects = await self._get_objects_for_location_camera(
-                            location,
-                            camera,
-                            prefix_extra=yesterday.isoformat(),
-                        )
-                        await self._update_if_changed(
-                            location, camera, new_objects, yesterday
-                        )
-                    except Exception as e:
-                        logger.error(
-                            f"Error re-polling yesterday's data: {e}",
-                            location=location.name,
-                            camera=camera.name,
-                        )
+            # Get online cameras for this location
+            online_cameras = [cam for cam in location.cameras if cam.online]
+            if online_cameras:
+                try:
+                    await self._process_cameras_for_date_parallel(
+                        location, yesterday, online_cameras
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Error re-polling yesterday's data for location {location.name}: {e}"
+                    )
 
         await self._metadata_collector.check_for_changed_metadata(yesterday)
         elapsed = time() - start_time
@@ -200,23 +314,17 @@ class HistoricalPoller:
 
     async def _check_location_for_changes(self, location: Location) -> None:
         """Check a specific location for changes in bucket data."""
-        for camera in location.cameras:
-            if not camera.online:
-                continue
-
+        # Get online cameras for this location
+        online_cameras = [cam for cam in location.cameras if cam.online]
+        if online_cameras:
             try:
-                # Get current objects from bucket
-                new_objects = await self._get_objects_for_location_camera(
-                    location, camera, self.prefix_extra
+                await self._process_cameras_for_prefix_parallel(
+                    location, self.prefix_extra, online_cameras
                 )
-
-                # Compare with cached objects and update if different
-                await self._update_if_changed(location, camera, new_objects)
             except Exception as e:
                 logger.error(
-                    f"Error checking camera for changes: {e}",
+                    f"Error checking location for changes: {e}",
                     location=location.name,
-                    camera=camera.name,
                 )
 
     def _build_prefixes_for_camera(
@@ -1025,31 +1133,6 @@ class HistoricalPoller:
                             f"Error processing stream for prefix {prefix}: {e}"
                         )
 
-    async def _get_objects_for_location(
-        self, location: Location
-    ) -> list[dict[str, str]]:
-        """Downloads objects from the bucket for each online camera for the
-        location.
-
-        Returns
-        -------
-        objects :  `list` [`dict` [`str`, `str`]]
-            A list of dicts representing bucket objects.
-        """
-        objects = []
-        for cam in location.cameras:
-            if cam.online:
-                prefixes = self._build_prefixes_for_camera(cam, self.prefix_extra)
-
-                for prefix in prefixes:
-                    try:
-                        objects.extend(
-                            await self._get_objects_for_prefix(location, prefix)
-                        )
-                    except Exception as e:
-                        logger.error(e)
-        return objects
-
     async def _get_objects_for_prefix(
         self, location: Location, prefix: str
     ) -> list[dict[str, str]]:
@@ -1149,6 +1232,139 @@ class HistoricalPoller:
             "Completed processing objects from stream",
             location=location.name,
             prefix=prefix,
+        )
+
+    async def _process_cameras_for_date_parallel(
+        self,
+        location: Location,
+        day_obs: date,
+        cameras: list[Camera],
+        num_workers: int = 8,
+    ) -> None:
+        """Fetch and process objects for multiple cameras in parallel for a
+        specific date.
+
+        This method uses a producer-consumer pattern with multiple workers to
+        parallelize processing across cameras. Each producer fetches objects
+        for a specific camera on the given date, and each consumer processes
+        and updates the cached data.
+
+        Parameters
+        ----------
+        location : `Location`
+            The location to process cameras for.
+        day_obs : `date`
+            The date to fetch data for.
+        cameras : `list[Camera]`
+            List of cameras to process in parallel.
+        num_workers : `int`, optional
+            Number of concurrent worker tasks to process camera results, by
+            default 8.
+        """
+        await self._process_cameras_for_prefix_parallel(
+            location, day_obs.isoformat(), cameras, num_workers
+        )
+
+    async def _process_cameras_for_prefix_parallel(
+        self,
+        location: Location,
+        prefix_extra: str,
+        cameras: list[Camera],
+        num_workers: int = 8,
+    ) -> None:
+        """Fetch and process objects for multiple cameras in parallel for a
+        specific prefix.
+
+        This method uses a producer-consumer pattern with multiple workers to
+        parallelize processing across cameras. Each producer fetches objects
+        for a specific camera with the given prefix, and each consumer
+        processes and updates the cached data.
+
+        Parameters
+        ----------
+        location : `Location`
+            The location to process cameras for.
+        prefix_extra : `str`
+            The additional prefix to append to camera names
+            (e.g., date string).
+        cameras : `list[Camera]`
+            List of cameras to process in parallel.
+        num_workers : `int`, optional
+            Number of concurrent worker tasks to process camera results, by
+            default 8.
+        """
+        logger.info(
+            "Starting parallel camera processing for prefix",
+            location=location.name,
+            prefix_extra=prefix_extra,
+            num_cameras=len(cameras),
+        )
+
+        # Queue for camera fetch results
+        camera_queue: asyncio.Queue = asyncio.Queue(maxsize=20)
+
+        async def fetch_cameras_task() -> None:
+            """Fetch objects for each camera and put them in the queue."""
+            for camera in cameras:
+                try:
+                    new_objects = await self._get_objects_for_location_camera(
+                        location,
+                        camera,
+                        prefix_extra=prefix_extra,
+                    )
+                    await camera_queue.put((camera, new_objects))
+                except Exception as e:
+                    logger.error(
+                        f"Error fetching objects for camera: {e}",
+                        location=location.name,
+                        camera=camera.name,
+                        prefix_extra=prefix_extra,
+                    )
+            # Signal end of cameras for all workers
+            for _ in range(num_workers):
+                await camera_queue.put(None)
+
+        async def process_cameras_task(worker_id: int) -> None:
+            """Process camera results from the queue."""
+            while True:
+                result = await camera_queue.get()
+                if result is None:
+                    break
+
+                camera, new_objects = result
+
+                try:
+                    # For date-based processing, extract the date for update
+                    # checking
+                    try:
+                        day_obs = date_str_to_date(prefix_extra)
+                        await self._update_if_changed(
+                            location, camera, new_objects, day_obs
+                        )
+                    except ValueError:
+                        # Not a date string, process without date parameter
+                        await self._update_if_changed(location, camera, new_objects)
+                except Exception as e:
+                    logger.error(
+                        f"Error processing camera results: {e}",
+                        location=location.name,
+                        camera=camera.name,
+                        prefix_extra=prefix_extra,
+                    )
+
+        # Create fetch task and worker tasks
+        fetch_task = asyncio.create_task(fetch_cameras_task())
+        worker_tasks = [
+            asyncio.create_task(process_cameras_task(i)) for i in range(num_workers)
+        ]
+
+        # Wait for all tasks to complete
+        await asyncio.gather(fetch_task, *worker_tasks)
+
+        logger.info(
+            "Completed parallel camera processing for prefix",
+            location=location.name,
+            prefix_extra=prefix_extra,
         )
 
     async def store_events_structured(
