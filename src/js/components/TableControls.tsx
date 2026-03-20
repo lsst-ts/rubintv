@@ -23,6 +23,7 @@ import {
   CalendarData,
 } from "./componentTypes"
 import { RubinTVTableContext } from "./contexts/contexts"
+import { alwaysSelectedColumns } from "../config"
 
 export default function AboveTableRow({
   locationName,
@@ -212,6 +213,7 @@ function TableControls({
   const renderCheckbox = (title: string) => {
     const isAvailable = availableColumns.includes(title)
     const isSelected = selected.includes(title)
+    const isAlwaysSelected = alwaysSelectedColumns.includes(title)
 
     return (
       <div
@@ -219,16 +221,28 @@ function TableControls({
         key={title}
       >
         <label htmlFor={title}>
-          <input
-            type="checkbox"
-            id={title}
-            name={title}
-            value={1}
-            checked={isSelected}
-            onChange={() => handleCheckboxChange(title)}
-            onKeyDown={handleKeyDown}
-            disabled={!isAvailable}
-          />
+          {isAlwaysSelected ? (
+            <input
+              type="checkbox"
+              id={title}
+              name={title}
+              value={1}
+              checked={true}
+              disabled={true}
+              readOnly={true}
+            />
+          ) : (
+            <input
+              type="checkbox"
+              id={title}
+              name={title}
+              value={1}
+              checked={isSelected}
+              onChange={() => handleCheckboxChange(title)}
+              onKeyDown={handleKeyDown}
+              disabled={!isAvailable}
+            />
+          )}
           {title}
         </label>
       </div>

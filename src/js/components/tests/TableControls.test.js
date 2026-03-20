@@ -10,6 +10,7 @@ import {
   findPrevNextDate,
   getCameraPageForDateUrl,
 } from "../../modules/utils"
+import * as config from "../../config"
 
 /* global jest, describe, it, expect, beforeEach, beforeAll, afterAll */
 
@@ -661,6 +662,48 @@ describe("TableControls Component", () => {
     const labels = checkboxes.map((checkbox) => checkbox.getAttribute("name"))
 
     expect(labels).toEqual(["alpha", "Beta", "zebra"])
+  })
+
+  it("should always set always selected columns as checked and read-only", () => {
+    const originalValue = config.alwaysSelectedColumns
+    // eslint-disable-next-line no-import-assign
+    Object.defineProperty(config, "alwaysSelectedColumns", {
+      value: ["colA"],
+      configurable: true,
+    })
+
+    const alwaysSelectedProps = {
+      ...defaultProps,
+      availableColumns: ["colA", "colB"],
+      selected: ["colA", "colB"],
+    }
+
+    render(
+      <RubinTVTableContext.Provider value={mockContextValue}>
+        <AboveTableRow
+          {...alwaysSelectedProps}
+          camera={{ name: "testcam", channels: [] }}
+          date="2024-01-01"
+          metadata={{}}
+          isHistorical={false}
+        />
+      </RubinTVTableContext.Provider>
+    )
+
+    const button = screen.getByRole("button", { name: /add\/remove columns/i })
+    fireEvent.click(button)
+
+    const alwaysSelectedCheckbox = screen.getByRole("checkbox", {
+      name: "colA",
+    })
+    expect(alwaysSelectedCheckbox).toBeChecked()
+    expect(alwaysSelectedCheckbox).toBeDisabled()
+    expect(alwaysSelectedCheckbox).toHaveAttribute("readOnly")
+    // eslint-disable-next-line no-import-assign
+    Object.defineProperty(config, "alwaysSelectedColumns", {
+      value: originalValue,
+      configurable: true,
+    })
   })
 })
 
