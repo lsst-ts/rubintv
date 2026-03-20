@@ -101,7 +101,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         )
 
     # start polling buckets for data
-    today_polling = await startup_current_poller(models=models, hp=hp, app=app)
+    today_polling = await startup_current_poller(models, app, hp)
     historical_polling = asyncio.create_task(hp.run())
 
     # Startup phase for the subapp
@@ -145,17 +145,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 
 
 async def startup_current_poller(
-    models: ModelsInitiator, hp: HistoricalPoller, app: FastAPI
+    models: ModelsInitiator, app: FastAPI, hp: HistoricalPoller
 ) -> asyncio.Task:
     """Start the current poller.
     Parameters
     ----------
-    models : `dict`
+    models : ModelsInitiator
         The models dictionary.
     historical_poller : `HistoricalPoller`
         The historical poller instance.
     app : `FastAPI`
         The FastAPI application.
+    hp : HistoricalPoller
+        The HistoricalPoller instance.
     """
     first_pass = asyncio.Event()
     cp = CurrentPoller(models.locations, first_pass_event=first_pass)
