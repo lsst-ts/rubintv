@@ -411,6 +411,47 @@ describe("TableView Components", () => {
         screen.queryByRole("link", { name: /open image viewer/i })
       ).not.toBeInTheDocument()
     })
+
+    it("displays always-selected columns first in metadata section", () => {
+      const metadataWithAlwaysSelected = {
+        100: {
+          "Retrieval fails": "No",
+          exposure_time: 30.5,
+          filter: "r",
+        },
+      }
+
+      const metadataColumnsWithAlwaysSelected = [
+        { name: "Retrieval fails", desc: "Whether retrieval failed" },
+        { name: "exposure_time", desc: "Exposure time in seconds" },
+        { name: "filter", desc: "Filter used" },
+      ]
+
+      const { container } = render(
+        <TestWrapper>
+          <table>
+            <tbody>
+              <TableRow
+                seqNum="100"
+                camera={mockCamera}
+                channels={mockCamera.channels.filter((c) => !c.per_day)}
+                channelRow={mockChannelData["100"]}
+                metadataColumns={metadataColumnsWithAlwaysSelected}
+                metadataRow={metadataWithAlwaysSelected[100]}
+              />
+            </tbody>
+          </table>
+        </TestWrapper>
+      )
+
+      const metadataCells = container.querySelectorAll(".grid-cell.meta")
+      // First metadata cell should be "Retrieval fails"
+      expect(metadataCells[0]).toHaveTextContent("No")
+      // Second should be exposure_time
+      expect(metadataCells[1]).toHaveTextContent("30.5")
+      // Third should be filter
+      expect(metadataCells[2]).toHaveTextContent("r")
+    })
   })
 
   describe("FoldoutCell", () => {

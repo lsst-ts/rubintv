@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext, KeyboardEvent } from "react"
 import Clock, { TimeSinceLastImageClock } from "./Clock"
 import { _getById, getImageAssetUrl } from "../modules/utils"
+import { alwaysSelectedColumns } from "../config"
 import { saveColumnSelection } from "../modules/columnStorage"
 import {
   Metadata,
@@ -125,6 +126,7 @@ function TableControls({
   const renderCheckbox = (title: string) => {
     const isAvailable = availableColumns.includes(title)
     const isSelected = selected.includes(title)
+    const isAlwaysSelected = alwaysSelectedColumns.includes(title)
 
     return (
       <div
@@ -132,16 +134,28 @@ function TableControls({
         key={title}
       >
         <label htmlFor={title}>
-          <input
-            type="checkbox"
-            id={title}
-            name={title}
-            value={1}
-            checked={isSelected}
-            onChange={() => handleCheckboxChange(title)}
-            onKeyDown={handleKeyDown}
-            disabled={!isAvailable}
-          />
+          {isAlwaysSelected ? (
+            <input
+              type="checkbox"
+              id={title}
+              name={title}
+              value={1}
+              checked={true}
+              disabled={true}
+              readOnly={true}
+            />
+          ) : (
+            <input
+              type="checkbox"
+              id={title}
+              name={title}
+              value={1}
+              checked={isSelected}
+              onChange={() => handleCheckboxChange(title)}
+              onKeyDown={handleKeyDown}
+              disabled={!isAvailable}
+            />
+          )}
           {title}
         </label>
       </div>
