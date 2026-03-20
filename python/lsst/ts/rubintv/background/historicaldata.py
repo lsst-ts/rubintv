@@ -174,7 +174,7 @@ class HistoricalPoller:
                             camera=camera.name,
                         )
 
-        await self._metadata_collector.check_for_changed_metadata()
+        await self._metadata_collector.check_for_changed_metadata(yesterday)
         elapsed = time() - start_time
         logger.info(
             "Completed re-poll of yesterday's data",
@@ -192,6 +192,8 @@ class HistoricalPoller:
                 await self._check_location_for_changes(location)
             except Exception as e:
                 logger.error(f"Error checking location for changes: {e}")
+
+        await self._metadata_collector.check_for_changed_metadata()
 
         elapsed = time() - start_time
         logger.info(

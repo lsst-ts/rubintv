@@ -2,6 +2,7 @@
 
 import asyncio
 from collections import OrderedDict
+from datetime import date
 from typing import TYPE_CHECKING
 
 from lsst.ts.rubintv.config import rubintv_logger
@@ -382,9 +383,15 @@ class MetadataCollector:
         just_dates = {ref.date_str for ref in self._metadata_refs[loc_cam]}
         return date_str in just_dates
 
-    async def check_for_changed_metadata(self) -> None:
+    async def check_for_changed_metadata(self, yesterday: date | None = None) -> None:
         """Check S3 for changed metadata files and update refs and cache
         accordingly.
+
+        Parameters
+        ----------
+        yesterday : `date`, optional
+            If provided, only check metadata for the specified date. Default
+            is None (check all dates in refs).
         """
         # cycle through all metadata refs for this loc_cam and check if the
         # hash has changed
@@ -411,6 +418,14 @@ class MetadataCollector:
                 )
                 continue
             client = self._s3_clients[location_name]
+            if yesterday is not None:
+                # Filter refs to only check the specified date
+                refs = {ref for ref in refs if ref.date_str == yesterday.isoformat()}
+                if not refs:
+                    logger.debug(
+                        f"No metadata refs for {loc_cam} on {yesterday.isoformat()} to check"
+                    )
+                    continue
             for ref in list(refs):
                 key = f"{camera_name}/{ref.date_str}/metadata.json"
                 try:
