@@ -415,14 +415,14 @@ describe("TableView Components", () => {
     it("displays always-selected columns first in metadata section", () => {
       const metadataWithAlwaysSelected = {
         100: {
-          "Retrieval fail": "No",
+          "Retrieval fails": "No",
           exposure_time: 30.5,
           filter: "r",
         },
       }
 
       const metadataColumnsWithAlwaysSelected = [
-        { name: "Retrieval fail", desc: "Whether retrieval failed" },
+        { name: "Retrieval fails", desc: "Whether retrieval failed" },
         { name: "exposure_time", desc: "Exposure time in seconds" },
         { name: "filter", desc: "Filter used" },
       ]
@@ -445,7 +445,7 @@ describe("TableView Components", () => {
       )
 
       const metadataCells = container.querySelectorAll(".grid-cell.meta")
-      // First metadata cell should be "Retrieval fail"
+      // First metadata cell should be "Retrieval fails"
       expect(metadataCells[0]).toHaveTextContent("No")
       // Second should be exposure_time
       expect(metadataCells[1]).toHaveTextContent("30.5")

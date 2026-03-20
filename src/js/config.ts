@@ -25,4 +25,4 @@ export const hasFOV = (siteLoc: string) => {
   return ["summit", "usdf-k8s", "local"].includes(siteLoc)
 }
 
-export const alwaysSelectedColumns = ["Retrieval fail"]
+export const alwaysSelectedColumns = ["Retrieval fails"]
