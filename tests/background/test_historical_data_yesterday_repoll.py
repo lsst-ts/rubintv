@@ -31,7 +31,11 @@ def historical_poller_with_yesterday_data(
 ) -> HistoricalPoller:
     """Create a HistoricalPoller instance ready to work with yesterday's mock
     data."""
-    return HistoricalPoller(m.locations)
+    yesterday = get_current_day_obs() - timedelta(days=1)
+    # Restrict date range to yesterday and today to avoid scanning 6+ years of
+    # data
+    today = get_current_day_obs()
+    return HistoricalPoller(m.locations, start_date=yesterday, end_date=today)
 
 
 class TestRepollYesterday:
@@ -44,7 +48,8 @@ class TestRepollYesterday:
         """Test that repoll_yesterday detects new events added to yesterday's
         bucket."""
         yesterday = get_current_day_obs() - timedelta(days=1)
-        historical = HistoricalPoller(m.locations)
+        today = get_current_day_obs()
+        historical = HistoricalPoller(m.locations, start_date=yesterday, end_date=today)
         location = m.locations[0]
         camera = location.cameras[0]
         channel = camera.channels[0]
@@ -84,7 +89,8 @@ class TestRepollYesterday:
         """Test that repoll_yesterday detects events removed from yesterday's
         bucket."""
         yesterday = get_current_day_obs() - timedelta(days=1)
-        historical = HistoricalPoller(m.locations)
+        today = get_current_day_obs()
+        historical = HistoricalPoller(m.locations, start_date=yesterday, end_date=today)
         location = m.locations[0]
         camera = location.cameras[0]
 
@@ -153,7 +159,8 @@ class TestRepollYesterday:
         """Test that repoll_yesterday handles the case where no changes
         occurred."""
         yesterday = get_current_day_obs() - timedelta(days=1)
-        historical = HistoricalPoller(m.locations)
+        today = get_current_day_obs()
+        historical = HistoricalPoller(m.locations, start_date=yesterday, end_date=today)
         location = m.locations[0]
         camera = location.cameras[0]
 
@@ -186,7 +193,8 @@ class TestRepollYesterday:
     ) -> None:
         """Test repoll_yesterday with multiple cameras."""
         yesterday = get_current_day_obs() - timedelta(days=1)
-        historical = HistoricalPoller(m.locations)
+        today = get_current_day_obs()
+        historical = HistoricalPoller(m.locations, start_date=yesterday, end_date=today)
         location = m.locations[0]
 
         # Initial download
@@ -233,7 +241,8 @@ class TestRepollYesterday:
     ) -> None:
         """Integration test for repoll_yesterday method."""
         yesterday = get_current_day_obs() - timedelta(days=1)
-        historical = HistoricalPoller(m.locations)
+        today = get_current_day_obs()
+        historical = HistoricalPoller(m.locations, start_date=yesterday, end_date=today)
         location = m.locations[0]
         camera = location.cameras[0]
         channel = camera.channels[0]
@@ -271,7 +280,8 @@ class TestUpdateIfChanged:
     ) -> None:
         """Test _update_if_changed updates cache when events are added."""
         yesterday = get_current_day_obs() - timedelta(days=1)
-        historical = HistoricalPoller(m.locations)
+        today = get_current_day_obs()
+        historical = HistoricalPoller(m.locations, start_date=yesterday, end_date=today)
         location = m.locations[0]
         camera = location.cameras[0]
         channel = camera.channels[0]
@@ -310,7 +320,8 @@ class TestUpdateIfChanged:
     ) -> None:
         """Test _update_if_changed updates cache when events are removed."""
         yesterday = get_current_day_obs() - timedelta(days=1)
-        historical = HistoricalPoller(m.locations)
+        today = get_current_day_obs()
+        historical = HistoricalPoller(m.locations, start_date=yesterday, end_date=today)
         location = m.locations[0]
         camera = location.cameras[0]
         channel = camera.channels[0]
@@ -348,7 +359,8 @@ class TestUpdateIfChanged:
     ) -> None:
         """Test _update_if_changed skips update when no changes detected."""
         yesterday = get_current_day_obs() - timedelta(days=1)
-        historical = HistoricalPoller(m.locations)
+        today = get_current_day_obs()
+        historical = HistoricalPoller(m.locations, start_date=yesterday, end_date=today)
         location = m.locations[0]
         camera = location.cameras[0]
 
@@ -381,7 +393,8 @@ class TestUpdateIfChanged:
     ) -> None:
         """Test _update_if_changed with multiple channels in the same date."""
         yesterday = get_current_day_obs() - timedelta(days=1)
-        historical = HistoricalPoller(m.locations)
+        today = get_current_day_obs()
+        historical = HistoricalPoller(m.locations, start_date=yesterday, end_date=today)
         location = m.locations[0]
         camera = location.cameras[0]
 
@@ -431,7 +444,8 @@ class TestUpdateIfChanged:
     ) -> None:
         """Test that _update_if_changed properly handles metadata files."""
         yesterday = get_current_day_obs() - timedelta(days=1)
-        historical = HistoricalPoller(m.locations)
+        today = get_current_day_obs()
+        historical = HistoricalPoller(m.locations, start_date=yesterday, end_date=today)
         location = m.locations[0]
         camera = location.cameras[0]
 
@@ -459,7 +473,8 @@ class TestUpdateIfChanged:
         """Test _update_if_changed handles special seq_num values like
         'final'."""
         yesterday = get_current_day_obs() - timedelta(days=1)
-        historical = HistoricalPoller(m.locations)
+        today = get_current_day_obs()
+        historical = HistoricalPoller(m.locations, start_date=yesterday, end_date=today)
         location = m.locations[0]
         camera = location.cameras[0]
 
@@ -509,8 +524,9 @@ class TestUpdateIfChanged:
     ) -> None:
         """Test that _update_if_changed can update specific dates only."""
         yesterday = get_current_day_obs() - timedelta(days=1)
+        today = get_current_day_obs()
         two_days_ago = yesterday - timedelta(days=1)
-        historical = HistoricalPoller(m.locations)
+        historical = HistoricalPoller(m.locations, start_date=yesterday, end_date=today)
         location = m.locations[0]
         camera = location.cameras[0]
         channel = camera.channels[0]
