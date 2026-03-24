@@ -62,6 +62,9 @@ class TestHistoricalPoller:
         historical._structured_events[(location, camera)] = {date(2024, 1, 15): {}}
         historical._nr_metadata[location] = []
         historical._calendar[(location, camera)] = {}
+        historical._metadata_collector.register_metadata_ref(
+            "test", date_str="2024-01-15", metadata_hash="mock_hash"
+        )
 
         await historical.clear_all_data()
 
@@ -156,8 +159,6 @@ class TestHistoricalPoller:
         camera = location.cameras[0]
         loc_cam = (location, camera)
 
-        from lsst.ts.rubintv.models.models import get_current_day_obs
-
         day_obs = get_current_day_obs()
         day, month, year = day_obs.day, day_obs.month, day_obs.year
 
@@ -197,22 +198,6 @@ class TestHistoricalPoller:
 
         events = await historical.get_events_for_date(location, camera, test_date)
         assert events == []
-
-    @pytest.mark.asyncio
-    async def test_get_channel_data_for_date_no_events(
-        self, historical: HistoricalPoller
-    ) -> None:
-        """Test getting channel data for a date with no events."""
-        from datetime import date
-
-        location = m.locations[0]
-        camera = location.cameras[0]
-        test_date = date(2024, 1, 15)
-
-        channel_data = await historical.get_channel_data_for_date(
-            location, camera, test_date
-        )
-        assert channel_data == {}
 
     @pytest.mark.asyncio
     async def test_get_per_day_for_date_no_events(
@@ -259,7 +244,7 @@ class TestHistoricalPoller:
 
         report = await historical.get_night_report_payload(location, camera, test_date)
         assert isinstance(report, NightReport)
-        assert report.text == {}
+        assert report.text == []
         assert report.plots == []
 
     @pytest.mark.asyncio
@@ -286,17 +271,6 @@ class TestHistoricalPoller:
         assert event is None
 
     @pytest.mark.asyncio
-    async def test_get_most_recent_channel_data_no_day(
-        self, historical: HistoricalPoller
-    ) -> None:
-        """Test getting most recent channel data with no recent day."""
-        location = m.locations[0]
-        camera = location.cameras[0]
-
-        channel_data = await historical.get_most_recent_channel_data(location, camera)
-        assert channel_data == {}
-
-    @pytest.mark.asyncio
     async def test_get_camera_calendar_no_data(
         self, historical: HistoricalPoller
     ) -> None:
@@ -321,16 +295,29 @@ class TestHistoricalPoller:
         )
         assert len(events) > 0
 
-        seq_num = events[0].seq_num
-        seq_num_events = [e for e in events if e.seq_num == seq_num]
+        seq_num = events[0].seq_num_force_int()
+        seq_num_events = [e for e in events if e.seq_num_force_int() == seq_num]
         seq_num_channels = [e.channel_name for e in seq_num_events]
         assert len(seq_num_channels) > 0
 
         objects = [{"key": event.key, "hash": "mock_hash"} for event in events]
-        await historical.filter_convert_store_objects(objects, location)
+        await historical._ingest_objects(
+            location,
+            objects,
+            replace_night_reports=True,
+            notify_structured_updates=False,
+        )
+
+        # Extract the date from the first event's key
+        # (format: camera/YYYY-MM-DD/channel/...)
+        from lsst.ts.rubintv.models.models_helpers import date_str_to_date
+
+        first_key = events[0].key
+        date_str = first_key.split("/")[1]  # Extract YYYY-MM-DD
+        event_date = date_str_to_date(date_str)
 
         channel_names = await historical.get_all_channel_names_for_date_and_seq_num(
-            location, camera, get_current_day_obs(), 0
+            location, camera, event_date, seq_num
         )
         assert channel_names == seq_num_channels
 
@@ -348,10 +335,8 @@ class TestHistoricalPoller:
         assert channel_names == []
 
     @pytest.mark.asyncio
-    async def test_filter_convert_store_objects(
-        self, historical: HistoricalPoller
-    ) -> None:
-        """Test filtering, converting, and storing objects."""
+    async def test_ingest_objects(self, historical: HistoricalPoller) -> None:
+        """Test ingesting and storing objects."""
         location = m.locations[0]
 
         # Mock objects with different types
@@ -361,7 +346,12 @@ class TestHistoricalPoller:
             {"key": "camera1/2024-01-15/night_report/group1/plot.png", "hash": "hash3"},
         ]
 
-        await historical.filter_convert_store_objects(objects, location)
+        await historical._ingest_objects(
+            location,
+            objects,
+            replace_night_reports=True,
+            notify_structured_updates=False,
+        )
 
         # Verify night report metadata was processed
         assert location in historical._nr_metadata
@@ -388,7 +378,12 @@ class TestHistoricalPollerWithMockData:
                         objects.append({"key": event.key, "hash": "mock_hash"})
 
         if objects:
-            await historical.filter_convert_store_objects(objects, location)
+            await historical._ingest_objects(
+                location,
+                objects,
+                replace_night_reports=True,
+                notify_structured_updates=False,
+            )
 
             # Verify data was stored
             assert len(historical._structured_events) > 0
@@ -414,7 +409,12 @@ class TestHistoricalPollerWithMockData:
         nr_obj = rubin_data_mocker.mock_night_report_plot(location, camera)
         objects = [nr_obj]
 
-        await historical.filter_convert_store_objects(objects, location)
+        await historical._ingest_objects(
+            location,
+            objects,
+            replace_night_reports=True,
+            notify_structured_updates=False,
+        )
 
         # Verify night report data was stored
         assert location in historical._nr_metadata
@@ -448,13 +448,13 @@ class TestHistoricalPollerWithMockData:
                     "hash": f"hash{seq_num}",
                 }
             )
-        # Add fits files (different extension)
+        # Add png files (different extension)
         for seq_num in range(5, 8):
             mock_events.append(
                 {
                     "key": (
                         f"{camera.name}/2024-02-15/{channel.name}/{seq_num:06d}/"
-                        f"{camera.name}_{channel.name}_{seq_num:06d}.fits"
+                        f"{camera.name}_{channel.name}_{seq_num:06d}.png"
                     ),
                     "hash": f"hash{seq_num}",
                 }
@@ -466,7 +466,12 @@ class TestHistoricalPollerWithMockData:
         )
 
         # Process the mock events
-        await historical.filter_convert_store_objects(mock_events, location)
+        await historical._ingest_objects(
+            location,
+            mock_events,
+            replace_night_reports=True,
+            notify_structured_updates=False,
+        )
 
         # Verify data was stored correctly
         from datetime import date
@@ -485,29 +490,33 @@ class TestHistoricalPollerWithMockData:
         # Verify extension handling
         channel_date_key = (location, camera, test_date, channel)
         assert channel_date_key in historical._channel_default_extensions
-        # JPG should be default (4 jpgs vs 3 fits)
+        # JPG should be default (4 jpgs vs 3 png)
         assert historical._channel_default_extensions[channel_date_key] == "jpg"
 
         # Check extension exceptions
         assert channel_date_key in historical._extension_exceptions
-        assert (
-            len(historical._extension_exceptions[channel_date_key]) == 3
-        )  # fits files
+        assert len(historical._extension_exceptions[channel_date_key]) == 3  # png files
         assert all(
-            historical._extension_exceptions[channel_date_key][i] == "fits"
+            historical._extension_exceptions[channel_date_key][i] == "png"
             for i in range(5, 8)
         )
 
         # Verify metadata was stored
-        assert (
-            location.name + "/" + camera.name
-            in historical._metadata_collector.metadata_refs
+        loc_cam_str = location.name + "/" + camera.name
+        assert loc_cam_str in historical._metadata_collector.metadata_refs
+        metadata_dates = {
+            ref.date_str
+            for ref in historical._metadata_collector.metadata_refs[loc_cam_str]
+        }
+        assert "2024-02-15" in metadata_dates
+        assert loc_cam_str in historical._metadata_collector.metadata_refs
+        assert any(
+            ref.date_str == "2024-02-15"
+            for ref in historical._metadata_collector.metadata_refs[loc_cam_str]
         )
         metadata_dates = {
             ref.date_str
-            for ref in historical._metadata_collector.metadata_refs[
-                location.name + "/" + camera.name
-            ]
+            for ref in historical._metadata_collector.metadata_refs[loc_cam_str]
         }
         assert "2024-02-15" in metadata_dates
 
@@ -530,15 +539,9 @@ class TestHistoricalPollerWithMockData:
 
         # Verify extensions are correctly reconstructed
         jpg_events = [e for e in events if e.key.endswith(".jpg")]
-        fits_events = [e for e in events if e.key.endswith(".fits")]
+        png_events = [e for e in events if e.key.endswith(".png")]
         assert len(jpg_events) == 4  # 4 jpg events
-        assert len(fits_events) == 3  # 3 fits events
-
-        # Test channel data retrieval
-        channel_data = await historical.get_channel_data_for_date(
-            location, camera, test_date
-        )
-        assert len(channel_data) > 0
+        assert len(png_events) == 3  # 3 png events
 
         # Test most recent day
         recent_day = await historical.get_most_recent_day(location, camera)
@@ -548,119 +551,6 @@ class TestHistoricalPollerWithMockData:
         flat_calendar = historical.flatten_calendar(location, camera)
         assert "2024-02-15" in flat_calendar
         assert flat_calendar["2024-02-15"] == 7
-
-    @pytest.mark.asyncio
-    async def test_structured_event_storage_and_retrieval(self) -> None:
-        """Test the optimized storage and retrieval of structured event
-        data."""
-        historical = HistoricalPoller(m.locations)
-        location = m.locations[0]
-        camera = location.cameras[0]
-        channel1 = camera.channels[0]
-        channel2 = camera.channels[1]
-
-        # Create events with varying extensions
-        events = [
-            Event(
-                key=(
-                    f"{camera.name}/2024-03-10/{channel1.name}/000001/"
-                    f"{camera.name}_{channel1.name}_000001.jpg"
-                )
-            ),
-            Event(
-                key=(
-                    f"{camera.name}/2024-03-10/{channel1.name}/000002/"
-                    f"{camera.name}_{channel1.name}_000002.jpg"
-                )
-            ),
-            Event(
-                key=(
-                    f"{camera.name}/2024-03-10/{channel1.name}/000003/"
-                    f"{camera.name}_{channel1.name}_000003.fits"
-                )
-            ),
-            Event(
-                key=(
-                    f"{camera.name}/2024-03-10/{channel1.name}/000004/"
-                    f"{camera.name}_{channel1.name}_000004.jpg"
-                )
-            ),
-            Event(
-                key=(
-                    f"{camera.name}/2024-03-10/{channel2.name}/000001/"
-                    f"{camera.name}_{channel2.name}_000001.png"
-                )
-            ),
-            Event(
-                key=(
-                    f"{camera.name}/2024-03-10/{channel2.name}/000002/"
-                    f"{camera.name}_{channel2.name}_000002.png"
-                )
-            ),
-            Event(
-                key=(
-                    f"{camera.name}/2024-03-10/{channel2.name}/000003/"
-                    f"{camera.name}_{channel2.name}_000003.fits"
-                )
-            ),
-        ]
-
-        # Store the events
-        await historical.store_events_structured(events, location)
-
-        # Test extension storage optimization
-        from datetime import date
-
-        test_date = date(2024, 3, 10)
-        channel1_key = (location, camera, test_date, channel1)
-        channel2_key = (location, camera, test_date, channel2)
-
-        # Channel 1 should have jpg as default (3 jpg vs 1 fits)
-        assert historical._channel_default_extensions[channel1_key] == "jpg"
-        # Channel 2 should have png as default (2 png vs 1 fits)
-        assert historical._channel_default_extensions[channel2_key] == "png"
-
-        # Check exceptions
-        assert len(historical._extension_exceptions[channel1_key]) == 1
-        assert historical._extension_exceptions[channel1_key][3] == "fits"
-
-        assert len(historical._extension_exceptions[channel2_key]) == 1
-        assert historical._extension_exceptions[channel2_key][3] == "fits"
-
-        # Test event retrieval and reconstruction
-        # Get the structured data
-        structured_data = await historical.get_structured_data_for_date(
-            location, camera, test_date
-        )
-        assert channel1.name in structured_data
-        assert channel2.name in structured_data
-        assert len(structured_data[channel1.name]) == 4
-        assert len(structured_data[channel2.name]) == 3
-
-        # Test get_all_extensions_for_date
-        extensions_info = await historical.get_all_extensions_for_date(
-            location, camera, test_date
-        )
-        assert channel1.name in extensions_info
-        assert channel2.name in extensions_info
-        assert extensions_info[channel1.name]["default"] == "jpg"
-        assert extensions_info[channel2.name]["default"] == "png"
-        assert extensions_info[channel1.name]["exceptions"].keys() == {3}
-
-        # Test events reconstruction
-        events = await historical.get_events_for_date_structured(
-            location, camera, test_date
-        )
-        assert len(events) == 7
-
-        # Check extensions are correctly reconstructed
-        jpg_events = [e for e in events if e.key.endswith(".jpg")]
-        fits_events = [e for e in events if e.key.endswith(".fits")]
-        png_events = [e for e in events if e.key.endswith(".png")]
-
-        assert len(jpg_events) == 3
-        assert len(fits_events) == 2
-        assert len(png_events) == 2
 
     @pytest.mark.asyncio
     async def test_metadata_and_night_report_integration(
@@ -688,7 +578,12 @@ class TestHistoricalPollerWithMockData:
 
         # Process objects
         objects = [metadata_obj, nr_plot1, nr_plot2]
-        await historical.filter_convert_store_objects(objects, location)
+        await historical._ingest_objects(
+            location,
+            objects,
+            replace_night_reports=True,
+            notify_structured_updates=False,
+        )
         # Verify metadata was stored
         loc_cam = f"{location.name}/{camera.name}"
         assert loc_cam in historical._metadata_collector.metadata_refs
@@ -845,7 +740,12 @@ class TestHistoricalPollerWithMockData:
             )
 
         # Process initial objects
-        await historical.filter_convert_store_objects(objects_batch_1, location)
+        await historical._ingest_objects(
+            location,
+            objects_batch_1,
+            replace_night_reports=True,
+            notify_structured_updates=False,
+        )
 
         # Verify initial state
         assert (location, camera) in historical._structured_events
@@ -911,7 +811,12 @@ class TestHistoricalPollerWithMockData:
                 }
             )
 
-        await historical.filter_convert_store_objects(objects_batch_1, location)
+        await historical._ingest_objects(
+            location,
+            objects_batch_1,
+            replace_night_reports=True,
+            notify_structured_updates=False,
+        )
 
         # Verify initial state
         assert (
@@ -976,7 +881,12 @@ class TestHistoricalPollerWithMockData:
                 }
             )
 
-        await historical.filter_convert_store_objects(objects, location)
+        await historical._ingest_objects(
+            location,
+            objects,
+            replace_night_reports=True,
+            notify_structured_updates=False,
+        )
 
         # Get initial structured data
         initial_data = historical._structured_events[(location, camera)][
@@ -1032,7 +942,12 @@ class TestHistoricalPollerWithMockData:
         ]
 
         # Process initial objects
-        await historical.filter_convert_store_objects(objects, location)
+        await historical._ingest_objects(
+            location,
+            objects,
+            replace_night_reports=True,
+            notify_structured_updates=False,
+        )
 
         # Verify only event objects are in structured data
         assert (location, camera) in historical._structured_events
