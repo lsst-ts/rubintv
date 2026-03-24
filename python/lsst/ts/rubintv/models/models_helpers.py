@@ -1,4 +1,5 @@
 import asyncio
+import time
 from datetime import date, timedelta
 from typing import Any, AsyncGenerator, Iterable, Iterator
 
@@ -107,7 +108,7 @@ async def all_objects_to_events(objects: list[dict]) -> list[Event]:
 
 
 async def objects_to_events(
-    objects: list[dict], batch_size: int = 1000
+    objects: list[dict], batch_size: int = 5000
 ) -> AsyncGenerator[list[Event], None]:
     """Asynchronously convert a list of dictionaries to a list of Event
     objects in batches.
@@ -117,18 +118,36 @@ async def objects_to_events(
     objects : list[dict]
         A list of dictionaries, each representing the data for an Event object.
     batch_size : int, optional
-        The size of each batch to process asynchronously, by default 1000
+        The size of each batch to process asynchronously, by default 5000
 
     Yields
     ------
     list[Event]
         A batch of Event objects created from the provided dictionaries.
     """
-    # Split objects into batches and process them asynchronously
-    for i in range(0, len(objects), batch_size):
-        batch = objects[i : i + batch_size]
-        events = await asyncio.to_thread(process_batch, batch)
-        yield events
+    logger = rubintv_logger()
+    # Split objects into batches
+    batches = [objects[i : i + batch_size] for i in range(0, len(objects), batch_size)]
+    logger.info(
+        f"objects_to_events: splitting {len(objects)} objects into "
+        f"{len(batches)} batches of size {batch_size}"
+    )
+
+    # Process all batches concurrently and yield as they complete
+    if batches:
+        tasks = [asyncio.to_thread(process_batch, batch) for batch in batches]
+        logger.info(f"objects_to_events: created {len(tasks)} thread tasks")
+        batch_num = 0
+        for completed_task in asyncio.as_completed(tasks):
+            batch_num += 1
+            task_start = time.time()
+            batch_results = await completed_task
+            task_time = time.time() - task_start
+            logger.info(
+                f"objects_to_events: batch {batch_num} completed with "
+                f"{len(batch_results)} events (await_time={task_time:.3f}s)"
+            )
+            yield batch_results
 
 
 async def objects_to_ngt_report_data(objects: list[dict]) -> list[NightReportData]:

@@ -29,7 +29,6 @@ from lsst.ts.rubintv.models.models_helpers import (
     date_str_to_date,
     find_first,
     make_table_from_event_list,
-    objects_to_events,
     objects_to_ngt_report_data,
 )
 from lsst.ts.rubintv.s3_connection_pool import get_shared_s3_client
@@ -43,9 +42,7 @@ logger = rubintv_logger()
 type StructuredData = dict[LocCamKey, dict[date, dict[Channel, set[int | str]]]]
 type ExtensionInfo = dict[LocCamDateChan, ExtensionDict]
 type TransmissableExtInfo = dict[str, ExtensionDict]
-type TransmissableStructuredData = dict[
-    str, dict[str, dict[str, dict[str, list[int | str] | str | dict[int | str, str]]]]
-]
+type TransmissableStructuredData = dict[str, list[int | str]]
 
 
 class HistoricalPoller:
@@ -136,7 +133,7 @@ class HistoricalPoller:
                     total_elapsed_time_seconds=elapsed,
                 )
 
-            await asyncio.sleep(self.REPOLL_YESTERDAY_PERIOD)
+            await asyncio.sleep(20)
 
             # Re-poll yesterday's data until main recheck period elapsed
             loop_start = time()
@@ -247,34 +244,6 @@ class HistoricalPoller:
                 logger.error(f"Error fetching prefix: {e}")
 
         return objects
-
-    async def _process_objects_for_location_camera_streamed(
-        self,
-        location: Location,
-        camera: Camera,
-        prefix_extra: str = "",
-    ) -> None:
-        """Stream and process objects for a specific camera.
-
-        Processes objects page-by-page as they arrive from S3 for a specific
-        camera, enabling efficient handling without buffering.
-
-        Parameters
-        ----------
-        location : `Location`
-            The location identifier.
-        camera : `Camera`
-            The camera identifier.
-        prefix_extra : `str`, optional
-            Extra prefix to append to camera name, by default ""
-        """
-        prefixes = self._build_prefixes_for_camera(camera, prefix_extra)
-
-        for prefix in prefixes:
-            try:
-                await self._process_objects_from_stream(location, prefix)
-            except Exception as e:
-                logger.error(f"Error processing stream for prefix {prefix}: {e}")
 
     def _parse_structured_key(
         self, key: str, camera: Camera, day_obs: date | None = None
@@ -652,6 +621,13 @@ class HistoricalPoller:
     ) -> None:
         """Shared ingest pipeline for event, metadata, and night report
         objects."""
+        logger.info(
+            "Ingesting objects for location",
+            location=location.name,
+            camera=camera.name if camera else None,
+            date=day_obs.isoformat() if day_obs else None,
+            total_objects=len(objects),
+        )
         object_groups = await self._split_objects_by_type(objects)
 
         metadata_objs = object_groups["metadata"]
@@ -716,9 +692,12 @@ class HistoricalPoller:
             effected_days = [day_obs]
         for day in effected_days:
             transmissable_structured_data = (
-                await self._make_structured_data_transmissable(
-                    structured_data, extension_info
-                )
+                await self._make_structured_data_transmissable(structured_data, day)
+            )
+            # Extract extension info for the specific day, keyed by channel
+            # name
+            transmissable_extension_info = self._make_extension_info_transmissable(
+                extension_info, location, camera, day
             )
             await notify_ws_clients(
                 service=Service.HISTORICALDATAUPDATE,
@@ -726,87 +705,130 @@ class HistoricalPoller:
                 loc_cam="{}/{}".format(location.name, camera.name),
                 payload={
                     "date": day.isoformat(),
-                    "structured_data": transmissable_structured_data,
+                    "structuredData": transmissable_structured_data,
+                    "extensionInfo": transmissable_extension_info,
                 },
             )
+
+    def _build_extension_info(
+        self, channel_date_groups: dict[LocCamDateChan, dict[int | str, str]]
+    ) -> tuple[dict[LocCamDateChan, str], dict[LocCamDateChan, dict[int | str, str]]]:
+        """Helper to build extension info from seq_num to extension mapping.
+
+        Parameters
+        ----------
+        channel_date_groups : dict
+            Mapping of (location, camera, day_obs, channel) to dict of
+            seq_num -> extension strings
+
+        Returns
+        -------
+        tuple
+            (temp_extensions, temp_exceptions) dicts
+        """
+        temp_extensions: dict[LocCamDateChan, str] = {}
+        temp_exceptions: dict[LocCamDateChan, dict[int | str, str]] = {}
+
+        for channel_date_key, seq_num_to_ext in channel_date_groups.items():
+            if not seq_num_to_ext:
+                continue
+
+            # Count extension occurrences
+            extension_counts: dict[str, int] = {}
+            for ext in seq_num_to_ext.values():
+                extension_counts[ext] = extension_counts.get(ext, 0) + 1
+
+            if extension_counts:
+                default_ext = max(extension_counts.items(), key=lambda x: x[1])[0]
+                temp_extensions[channel_date_key] = default_ext
+
+                # Track exceptions (extensions different from default)
+                exceptions: dict[int | str, str] = {}
+                for seq_num, ext in seq_num_to_ext.items():
+                    if ext != default_ext:
+                        exceptions[seq_num] = ext
+                if exceptions:
+                    temp_exceptions[channel_date_key] = exceptions
+
+        return temp_extensions, temp_exceptions
 
     async def _convert_objects_to_structured(
         self, event_objects: list[dict[str, str]], location: Location
     ) -> tuple[StructuredData, ExtensionInfo]:
-        """Convert objects to events and build structured data without lock.
+        """Convert objects to structured data using existing key parser.
+
+        Uses _parse_structured_key to parse S3 keys directly without
+        creating Event objects, which is much faster.
 
         Returns a dictionary with the same structure as _structured_events
         that can be merged in atomically under the lock.
         """
-        events: list[Event] = []
-        async for events_batch in objects_to_events(event_objects):
-            events.extend(events_batch)
-
-        return await self._convert_events_to_structured(events, location)
-
-    async def _convert_events_to_structured(
-        self, events: list[Event], location: Location
-    ) -> tuple[StructuredData, ExtensionInfo]:
-        """Convert events into structured and extension data containers."""
+        # Initialize accumulators
         temp_structured: StructuredData = {}
-        temp_extensions: dict[LocCamDateChan, str] = {}
-        temp_exceptions: dict[LocCamDateChan, dict[int | str, str]] = {}
+        channel_date_groups: dict[LocCamDateChan, dict[int | str, str]] = (
+            {}
+        )  # Map seq_num to ext
 
-        channel_date_groups: dict[LocCamDateChan, list[Event]] = {}
+        # Process directly without Event object creation
+        # Batch the processing for efficiency
+        batch_size = 5000
+        batches = [
+            event_objects[i : i + batch_size]
+            for i in range(0, len(event_objects), batch_size)
+        ]
 
-        for event in events:
-            camera: Camera | None = find_first(
-                location.cameras, "name", event.camera_name
-            )
-            if camera is None:
-                logger.warning(f"Camera not found for event: {event}")
-                continue
-            channel: Channel | None = find_first(
-                camera.channels, "name", event.channel_name
-            )
-            if channel is None:
-                logger.warning(f"Channel not found for event: {event}")
-                continue
+        for batch in batches:
+            for obj in batch:
+                key = obj.get("key", "")
 
-            day_obs = event.day_obs_date()
-            channel_date_key: LocCamDateChan = (location, camera, day_obs, channel)
-            loc_cam = (location, camera)
+                # Extract ext from key
+                # (format: camera/date/channel/seq_num/filename.ext)
+                parts = key.rsplit(".", 1)
+                if len(parts) != 2:
+                    continue
+                ext = parts[1]
 
-            if loc_cam not in temp_structured:
-                temp_structured[loc_cam] = {}
-            if day_obs not in temp_structured[loc_cam]:
-                temp_structured[loc_cam][day_obs] = {}
-            if channel not in temp_structured[loc_cam][day_obs]:
-                temp_structured[loc_cam][day_obs][channel] = set()
+                # Use existing parser to get camera, date, channel, seq_num
+                camera_name = key.split("/")[0] if "/" in key else None
+                if not camera_name:
+                    continue
 
-            temp_structured[loc_cam][day_obs][channel].add(event.seq_num)
+                camera = find_first(location.cameras, "name", camera_name)
+                if not camera:
+                    continue
 
-            if channel_date_key not in channel_date_groups:
-                channel_date_groups[channel_date_key] = []
-            channel_date_groups[channel_date_key].append(event)
+                # Parse using existing method
+                parse_result = self._parse_structured_key(key, camera)
+                if not parse_result:
+                    continue
 
-        for channel_date_key, grouped_events in channel_date_groups.items():
-            extension_counts: dict[str, int] = {}
-            event_extensions: dict[int | str, str] = {}
+                camera_obj, day_obs, channel, seq_num = parse_result
 
-            for event in grouped_events:
-                ext = event.ext
-                extension_counts[ext] = extension_counts.get(ext, 0) + 1
-                event_extensions[event.seq_num] = ext
-
-            if extension_counts:
-                default_ext = max(
-                    extension_counts, key=lambda ext: extension_counts[ext]
+                channel_date_key: LocCamDateChan = (
+                    location,
+                    camera_obj,
+                    day_obs,
+                    channel,
                 )
-                temp_extensions[channel_date_key] = default_ext
+                loc_cam = (location, camera_obj)
 
-                exceptions = {
-                    seq_num: ext
-                    for seq_num, ext in event_extensions.items()
-                    if ext != default_ext
-                }
-                if exceptions:
-                    temp_exceptions[channel_date_key] = exceptions
+                if loc_cam not in temp_structured:
+                    temp_structured[loc_cam] = {}
+                if day_obs not in temp_structured[loc_cam]:
+                    temp_structured[loc_cam][day_obs] = {}
+                if channel not in temp_structured[loc_cam][day_obs]:
+                    temp_structured[loc_cam][day_obs][channel] = set()
+
+                temp_structured[loc_cam][day_obs][channel].add(seq_num)
+
+                if channel_date_key not in channel_date_groups:
+                    channel_date_groups[channel_date_key] = {}
+                channel_date_groups[channel_date_key][seq_num] = ext
+
+        # Build extension info using helper
+        temp_extensions, temp_exceptions = self._build_extension_info(
+            channel_date_groups
+        )
 
         extension_info: ExtensionInfo = {}
         for key, default_ext in temp_extensions.items():
@@ -986,12 +1008,6 @@ class HistoricalPoller:
                     )
 
     async def _initialise_location_store(self, location: Location) -> None:
-        try:
-            await self._initialise_location_store_streamed(location)
-        except Exception as e:
-            logger.error(e)
-
-    async def _initialise_location_store_streamed(self, location: Location) -> None:
         """Initialize location store using streamed object processing.
 
         This method processes objects page-by-page as they arrive from S3,
@@ -1062,13 +1078,16 @@ class HistoricalPoller:
         return objects
 
     async def _process_objects_from_stream(
-        self, location: Location, prefix: str
+        self,
+        location: Location,
+        prefix: str,
+        num_workers: int = 8,
     ) -> None:
         """Stream and process S3 objects as they arrive from pagination.
 
-        This method fetches objects page-by-page from S3 and processes each
-        page immediately, enabling efficient handling of large object listings
-        without buffering all results in memory.
+        This method uses a producer-consumer pattern with multiple workers to
+        parallelize processing. Objects are fetched using date-based prefix
+        parallelization to maximize S3 throughput.
 
         Parameters
         ----------
@@ -1076,59 +1095,70 @@ class HistoricalPoller:
             The location to get objects for.
         prefix : `str`
             The prefix to filter objects by.
+        num_workers : `int`, optional
+            Number of concurrent worker tasks to process pages, by default 8.
         """
         logger.info(
-            "Streaming objects for prefix:",
+            "Starting to process objects from stream",
             location=location.name,
             prefix=prefix,
         )
-        client: S3Client = self._clients[location.name]
-        page_count = 0
-        total_count = 0
 
-        async for page in client.async_list_objects_paginated(prefix=prefix):
-            page_count += 1
-            total_count += len(page)
-            logger.debug(
-                "Processing page of objects",
-                location=location.name,
-                prefix=prefix,
-                page_number=page_count,
-                page_size=len(page),
-                last_object=page[-1]["key"] if page else "N/A",
-            )
-            # Process each page immediately as it arrives
-            await self._ingest_objects(
-                location,
-                page,
-                replace_night_reports=True,
-                notify_structured_updates=False,
-            )
+        # Queue for pages, with a reasonable buffer to allow prefetching
+        page_queue: asyncio.Queue = asyncio.Queue(maxsize=20)
+
+        async def fetch_pages_task() -> None:
+            """Fetch pages from S3 and put them in the queue."""
+            client: S3Client = self._clients[location.name]
+            try:
+                async for page_tuple in client.async_list_objects_by_date_parallel(
+                    prefix=prefix, num_workers=8
+                ):
+                    await page_queue.put(page_tuple)
+            finally:
+                # Signal end of pages for all workers
+                for _ in range(num_workers):
+                    await page_queue.put(None)
+
+        async def process_pages_task(worker_id: int) -> None:
+            """Process pages from the queue."""
+            while True:
+                page_tuple = await page_queue.get()
+                if page_tuple is None:
+                    break
+
+                _, page = page_tuple
+
+                await self._ingest_objects(
+                    location,
+                    page,
+                    replace_night_reports=True,
+                    notify_structured_updates=False,
+                )
+
+        # Create fetch task and worker tasks
+        fetch_task = asyncio.create_task(fetch_pages_task())
+        worker_tasks = [
+            asyncio.create_task(process_pages_task(i)) for i in range(num_workers)
+        ]
+
+        # Wait for all tasks to complete
+        await asyncio.gather(fetch_task, *worker_tasks)
 
         logger.info(
-            "Completed streaming objects",
+            "Completed processing objects from stream",
             location=location.name,
             prefix=prefix,
-            total_objects=total_count,
-            pages=page_count,
-        )
-
-    async def filter_convert_store_objects(
-        self, objects: list[dict[str, str]], location: Location
-    ) -> None:
-        await self._ingest_objects(
-            location,
-            objects,
-            replace_night_reports=True,
-            notify_structured_updates=False,
         )
 
     async def store_events_structured(
         self, events: list[Event], location: Location
     ) -> None:
-        """Store events using shared event-to-structured conversion."""
-        structured_data, extension_info = await self._convert_events_to_structured(
-            events, location
+        """Store events by converting to dicts and using shared conversion."""
+        # Convert Event objects to the expected dict format
+        event_objects = [{"key": event.key} for event in events]
+        structured_data, extension_info = await self._convert_objects_to_structured(
+            event_objects, location
         )
         await self._merge_structured_data_into_cache(structured_data, extension_info)
 
@@ -1510,28 +1540,69 @@ class HistoricalPoller:
         return [channel.name for channel in channels]
 
     async def _make_structured_data_transmissable(
-        self, structured_data: StructuredData, extension_info: ExtensionInfo
+        self, structured_data: StructuredData, day: date
     ) -> TransmissableStructuredData:
-        """Convert structured data and extension info into a format that can be
-        transmitted over the websocket."""
+        """Convert structured data for a given day into a format that can be
+        transmitted over the websocket.
+
+        Returns a dict where keys are channel names and values are lists of
+        sequence numbers, compatible with frontend's
+        createTableFromStructuredData.
+
+        Parameters
+        ----------
+        structured_data : StructuredData
+            The structured event data indexed by
+            (location, camera, date, channel)
+        day : date
+            The specific date to extract data for
+
+        Returns
+        -------
+        TransmissableStructuredData
+            Dict with channel names as keys and seq_nums lists as values
+        """
         transmissable: TransmissableStructuredData = {}
-        for (location, camera), date_channel_data in structured_data.items():
-            loc_cam_key = f"{location.name}/{camera.name}"
-            transmissable[loc_cam_key] = {}
-            for day_obs, channel_data in date_channel_data.items():
-                day_key = day_obs.isoformat()
-                transmissable[loc_cam_key][day_key] = {}
-                for channel, seq_nums in channel_data.items():
-                    channel_name = channel.name
-                    default_ext = extension_info.get(
-                        (location, camera, day_obs, channel), {}
-                    ).get("default", "jpg")
-                    exceptions = extension_info.get(
-                        (location, camera, day_obs, channel), {}
-                    ).get("exceptions", {})
-                    transmissable[loc_cam_key][day_key][channel_name] = {
-                        "seq_nums": list(seq_nums),
-                        "default_ext": default_ext,
-                        "exceptions": exceptions,
-                    }
+        for _, date_channel_data in structured_data.items():
+            if day in date_channel_data:
+                channels = date_channel_data[day]
+                for channel, seq_nums in channels.items():
+                    # Return seq_nums as a list (array), keyed by channel name
+                    transmissable[channel.name] = list(seq_nums)
+        return transmissable
+
+    def _make_extension_info_transmissable(
+        self,
+        extension_info: ExtensionInfo,
+        location: Location,
+        camera: Camera,
+        day: date,
+    ) -> TransmissableExtInfo:
+        """Convert extension info for a specific location, camera, and date
+        into a format that can be transmitted over the websocket.
+
+        Returns a dict where keys are channel names and values are dicts with
+        'default' and 'exceptions' keys, compatible with frontend's
+        createTableFromStructuredData.
+
+        Parameters
+        ----------
+        extension_info : ExtensionInfo
+            Extension info indexed by (location, camera, date, channel) tuples
+        location : Location
+            The location to extract extension info for
+        camera : Camera
+            The camera to extract extension info for
+        day : date
+            The date to extract extension info for
+
+        Returns
+        -------
+        TransmissableExtInfo
+            Dict with channel names as keys and ExtensionDict values
+        """
+        transmissable: TransmissableExtInfo = {}
+        for (loc, cam, dt, channel), ext_dict in extension_info.items():
+            if loc == location and cam == camera and dt == day:
+                transmissable[channel.name] = ext_dict
         return transmissable

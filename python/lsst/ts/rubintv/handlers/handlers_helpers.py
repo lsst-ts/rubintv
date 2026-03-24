@@ -112,6 +112,22 @@ async def get_camera_events_for_date(
     )
 
 
+async def camera_events_exists_for_date(
+    location: Location, camera: Camera, day_obs: date, connection: HTTPConnection
+) -> bool:
+    """Check if camera events exist for a particular date."""
+    historical: HistoricalPoller = connection.app.state.historical
+    if await historical.is_busy():
+        raise HTTPException(423, "Historical data is being processed")
+    structured_data = await historical.get_structured_data_for_date(
+        location, camera, day_obs
+    )
+    metadata = await historical._metadata_exists_for_date(location, camera, day_obs)
+    per_day = await historical.get_per_day_for_date(location, camera, day_obs)
+    nr_exists = await historical.night_report_exists_for(location, camera, day_obs)
+    return bool(structured_data or metadata or per_day or nr_exists)
+
+
 async def get_camera_calendar(
     location: Location, camera: Camera, request: Request
 ) -> dict[int, dict[int, dict[int, int]]]:

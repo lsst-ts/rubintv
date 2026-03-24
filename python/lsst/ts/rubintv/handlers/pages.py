@@ -13,11 +13,11 @@ from lsst.ts.rubintv.handlers.api import (
     get_specific_channel_event,
 )
 from lsst.ts.rubintv.handlers.handlers_helpers import (
+    camera_events_exists_for_date,
     date_validation,
     get_all_channel_names_for_date_seq_num,
     get_camera_calendar,
     get_camera_current_data,
-    get_camera_events_for_date,
     get_current_night_report_payload,
     get_latest_metadata,
     get_most_recent_historical_day,
@@ -243,8 +243,9 @@ async def get_camera_for_date_page(
         if (day_obs == current_day_obs and data.is_empty()) or date_str == "historical":
             day_obs = await get_most_recent_historical_day(location, camera, request)
         if day_obs is not None and data.is_empty():
-            data = await get_camera_events_for_date(location, camera, day_obs, request)
-            is_historical = True
+            is_historical = await camera_events_exists_for_date(
+                location, camera, day_obs, request
+            )
         if day_obs is None:
             no_data_at_all = True
 
