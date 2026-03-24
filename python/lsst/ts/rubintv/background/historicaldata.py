@@ -1482,16 +1482,20 @@ class HistoricalPoller:
                         location, camera, day_obs, channel, seq_num
                     )
 
-                # Reconstruct filename and key
-                filename = self.reconstruct_filename(
-                    camera.name, channel.name, day_obs.isoformat(), seq_num, ext
-                )
-                if isinstance(seq_num, str):
-                    # seq_num is 'final' or similar non-integer
-                    key = f"{camera.name}/{day_obs.isoformat()}/{channel.name}/{seq_num}/{filename}"
-                else:
-                    key = f"{camera.name}/{day_obs.isoformat()}/{channel.name}/{seq_num:06d}/{filename}"
-                events.append(Event(key=key))
+                    # Reconstruct filename and key
+                    filename = self.reconstruct_filename(
+                        camera.name, channel.name, day_obs.isoformat(), seq_num, ext
+                    )
+                    if isinstance(seq_num, str):
+                        # seq_num is 'final' or similar non-integer
+                        key = f"{camera.name}/{day_obs.isoformat()}/{channel.name}/{seq_num}/{filename}"
+                    else:
+                        key = f"{camera.name}/{day_obs.isoformat()}/{channel.name}/{seq_num:06d}/{filename}"
+                    logger.debug(
+                        "Reconstructed key for event",
+                        key=key,
+                    )
+                    events.append(Event(key=key))
 
             return events
 

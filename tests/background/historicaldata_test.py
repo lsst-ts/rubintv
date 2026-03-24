@@ -296,13 +296,11 @@ class TestHistoricalPoller:
         assert len(events) > 0
 
         seq_num = events[0].seq_num_force_int()
-        print(f"Testing with seq_num: {seq_num}")
         seq_num_events = [e for e in events if e.seq_num_force_int() == seq_num]
         seq_num_channels = [e.channel_name for e in seq_num_events]
         assert len(seq_num_channels) > 0
 
         objects = [{"key": event.key, "hash": "mock_hash"} for event in events]
-        print(f"Objects to ingest: {[obj['key'] for obj in objects]}")
         await historical._ingest_objects(
             location,
             objects,
@@ -321,7 +319,6 @@ class TestHistoricalPoller:
         channel_names = await historical.get_all_channel_names_for_date_and_seq_num(
             location, camera, event_date, seq_num
         )
-        print(f"Retrieved channel names: {channel_names}")
         assert channel_names == seq_num_channels
 
     @pytest.mark.asyncio
@@ -498,10 +495,6 @@ class TestHistoricalPollerWithMockData:
 
         # Check extension exceptions
         assert channel_date_key in historical._extension_exceptions
-        print(
-            f"Extension exceptions for {channel_date_key}: "
-            f"{historical._extension_exceptions[channel_date_key]}"
-        )
         assert len(historical._extension_exceptions[channel_date_key]) == 3  # png files
         assert all(
             historical._extension_exceptions[channel_date_key][i] == "png"
@@ -509,24 +502,21 @@ class TestHistoricalPollerWithMockData:
         )
 
         # Verify metadata was stored
-        assert (
-            location.name + "/" + camera.name
-            in historical._metadata_collector.metadata_refs
+        loc_cam_str = location.name + "/" + camera.name
+        assert loc_cam_str in historical._metadata_collector.metadata_refs
+        metadata_dates = {
+            ref.date_str
+            for ref in historical._metadata_collector.metadata_refs[loc_cam_str]
+        }
+        assert "2024-02-15" in metadata_dates
+        assert loc_cam_str in historical._metadata_collector.metadata_refs
+        assert any(
+            ref.date_str == "2024-02-15"
+            for ref in historical._metadata_collector.metadata_refs[loc_cam_str]
         )
         metadata_dates = {
             ref.date_str
-            for ref in historical._metadata_collector.metadata_refs[
-                location.name + "/" + camera.name
-            ]
-        }
-        assert "2024-02-15" in metadata_dates
-        assert loc_cam in historical._metadata_collector.metadata_refs
-        assert "2024-02-15" in historical._metadata_collector.metadata_refs[loc_cam]
-        metadata_dates = {
-            ref.date_str
-            for ref in historical._metadata_collector.metadata_refs[
-                location.name + "/" + camera.name
-            ]
+            for ref in historical._metadata_collector.metadata_refs[loc_cam_str]
         }
         assert "2024-02-15" in metadata_dates
 
