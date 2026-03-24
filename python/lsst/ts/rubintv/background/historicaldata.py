@@ -62,6 +62,8 @@ class HistoricalPoller:
         locations: list[Location],
         test_mode: bool = False,
         prefix_extra: str = "",
+        start_date: date | None = None,
+        end_date: date | None = None,
     ) -> None:
         self._clients: dict[str, S3Client] = {}
         self._locations = locations
@@ -92,6 +94,8 @@ class HistoricalPoller:
 
         self.test_mode = test_mode
         self.prefix_extra = prefix_extra
+        self._start_date = start_date
+        self._end_date = end_date
 
         # Add lock for thread-safe access during updates
         self._data_lock = asyncio.Lock()
@@ -1112,7 +1116,10 @@ class HistoricalPoller:
             client: S3Client = self._clients[location.name]
             try:
                 async for page_tuple in client.async_list_objects_by_date_parallel(
-                    prefix=prefix, num_workers=8
+                    prefix=prefix,
+                    start_date=self._start_date,
+                    end_date=self._end_date,
+                    num_workers=8,
                 ):
                     await page_queue.put(page_tuple)
             finally:
