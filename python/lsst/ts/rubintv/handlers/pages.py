@@ -15,9 +15,9 @@ from lsst.ts.rubintv.handlers.api import (
 from lsst.ts.rubintv.handlers.handlers_helpers import (
     camera_events_exists_for_date,
     date_validation,
-    get_all_channel_names_for_date_seq_num,
     get_camera_calendar,
     get_camera_current_data,
+    get_channel_names_and_extensions_for_date_seq_num,
     get_current_night_report_payload,
     get_latest_metadata,
     get_most_recent_historical_day,
@@ -478,12 +478,14 @@ async def get_specific_channel_event_page(
             )
             if historical_busy:
                 next_prev = {}
-            all_channel_names = await get_all_channel_names_for_date_seq_num(
-                location=location,
-                camera=camera,
-                day_obs=event.day_obs_date(),
-                seq_num=event.seq_num,
-                connection=request,
+            event_channels_exts = (
+                await get_channel_names_and_extensions_for_date_seq_num(
+                    location=location,
+                    camera=camera,
+                    day_obs=event.day_obs_date(),
+                    seq_num=event.seq_num,
+                    connection=request,
+                )
             )
 
     title = build_title(location.title, camera.title, channel_title, event_detail)
@@ -498,7 +500,7 @@ async def get_specific_channel_event_page(
             "channel": to_dict(channel),
             "event": to_dict(event),
             "prevNext": next_prev,
-            "allChannelNames": all_channel_names,
+            "channelNamesWithExtensions": event_channels_exts,
             "historicalBusy": historical_busy,
             "title": title,
         },
@@ -524,9 +526,9 @@ async def get_current_channel_event_page(
 
     metadata = await get_latest_metadata(location, camera, request)
 
-    all_channel_names = []
+    event_channels_exts = []
     if event is not None:
-        all_channel_names = await get_all_channel_names_for_date_seq_num(
+        event_channels_exts = await get_channel_names_and_extensions_for_date_seq_num(
             location=location,
             camera=camera,
             day_obs=event.day_obs_date(),
@@ -554,7 +556,7 @@ async def get_current_channel_event_page(
             "camera": camera.model_dump(),
             "channel": to_dict(channel),
             "prevNext": prev_next,
-            "allChannelNames": all_channel_names,
+            "channelNamesWithExtensions": event_channels_exts,
             "title": title,
             "event": to_dict(event),
             "metadata": metadata,

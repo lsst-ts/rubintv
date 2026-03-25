@@ -192,23 +192,23 @@ def date_validation(date_str: str) -> date:
     return day_obs
 
 
-async def get_all_channel_names_for_date_seq_num(
+async def get_channel_names_and_extensions_for_date_seq_num(
     location: Location,
     camera: Camera,
     day_obs: date,
     seq_num: int | str,
     connection: HTTPConnection,
-) -> list[str]:
+) -> list[tuple[str, str]]:
     """Get all channels for a given date and sequence number."""
     if day_obs == get_current_day_obs():
         cp: CurrentPoller = connection.app.state.current_poller
-        channel_data = await cp.get_all_channel_names_for_seq_num(
+        channel_info = await cp.get_channels_and_extensions_for_seq_num(
             location.name, camera.name, seq_num
         )
-        return channel_data
+        return channel_info
     historical: HistoricalPoller = connection.app.state.historical
     channel_data, _ = await try_historical_call(
-        historical.get_all_channel_names_for_date_and_seq_num,
+        historical.get_channel_name_and_extension_for_date_and_seq_num,
         [],
         location,
         camera,

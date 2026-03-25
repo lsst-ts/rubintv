@@ -723,13 +723,15 @@ export interface PerDayProps {
   isHistorical: boolean
 }
 
+export type ChannelWithExtension = [channelName: string, fileExtension: string]
+
 /**
  * @description Props for the media display component that shows a selected exposure.
  * @param {string} locationName - Location identifier.
  * @param {Camera} camera - Camera configuration.
  * @param {ExposureEvent | null} initEvent - Initial event to display (nullable).
  * @param {PrevNextType} prevNext - Prev/next navigation events.
- * @param {string[]} allChannelNames - All channel names for the camera.
+ * @param {ChannelWithExtension[]} channelNamesWithExtensions - All channel names for a given seq num and their file extensions.
  * @param {boolean} isCurrent - Whether the shown media is the current/latest.
  */
 export interface MediaDisplayProps {
@@ -737,7 +739,7 @@ export interface MediaDisplayProps {
   camera: Camera
   initEvent: ExposureEvent | null
   prevNext: PrevNextType
-  allChannelNames: string[]
+  channelNamesWithExtensions: ChannelWithExtension[]
   isCurrent: boolean
 }
 
@@ -753,12 +755,12 @@ export interface BundledMediaEvent extends ExposureEvent {
 
 /**
  * @description Props for components that render links to other channels for the same event.
- * @param {string[]} allChannelNames - All channel names for the camera.
+ * @param {ChannelWithExtension[]} channelNamesWithExtensions - All channel names for the same sequence number and their file extensions.
  * @param {string} thisChannel - Channel currently being viewed.
  * @param {Camera} camera - Camera configuration.
  */
 export interface OtherChannelLinksProps {
-  allChannelNames: string[]
+  channelNamesWithExtensions: ChannelWithExtension[]
   thisChannel: string
   camera: Camera
 }
@@ -1163,6 +1165,7 @@ export interface ModalContextType {
   modalHeader: string | null
   modalContent: React.ReactNode | null
   setModalContent: (content: React.ReactNode | null) => void
+  setModalHeader: (header: string | null) => void
 }
 
 export interface CameraTableProps {

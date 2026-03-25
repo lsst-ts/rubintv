@@ -297,8 +297,9 @@ class TestHistoricalPoller:
 
         seq_num = events[0].seq_num_force_int()
         seq_num_events = [e for e in events if e.seq_num_force_int() == seq_num]
-        seq_num_channels = [e.channel_name for e in seq_num_events]
-        assert len(seq_num_channels) > 0
+        print("seq_num_events:", seq_num_events)
+        seq_num_channels_and_exts = [(e.channel_name, e.ext) for e in seq_num_events]
+        assert len(seq_num_channels_and_exts) > 0
 
         objects = [{"key": event.key, "hash": "mock_hash"} for event in events]
         await historical._ingest_objects(
@@ -316,23 +317,27 @@ class TestHistoricalPoller:
         date_str = first_key.split("/")[1]  # Extract YYYY-MM-DD
         event_date = date_str_to_date(date_str)
 
-        channel_names = await historical.get_all_channel_names_for_date_and_seq_num(
-            location, camera, event_date, seq_num
+        channel_names_and_exts = (
+            await historical.get_channel_name_and_extension_for_date_and_seq_num(
+                location, camera, event_date, seq_num
+            )
         )
-        assert channel_names == seq_num_channels
+        assert channel_names_and_exts == seq_num_channels_and_exts
 
     @pytest.mark.asyncio
-    async def test_get_all_channel_names_for_date_and_seq_num_no_data(
+    async def test_get_channel_name_and_extension_for_date_and_seq_num_no_data(
         self, historical: HistoricalPoller
     ) -> None:
         """Test getting channel names for date and seq_num with no data."""
         location = m.locations[0]
         camera = location.cameras[0]
 
-        channel_names = await historical.get_all_channel_names_for_date_and_seq_num(
-            location, camera, date_str_to_date("2024-01-15"), 42
+        channel_names_and_exts = (
+            await historical.get_channel_name_and_extension_for_date_and_seq_num(
+                location, camera, date_str_to_date("2024-01-15"), 42
+            )
         )
-        assert channel_names == []
+        assert channel_names_and_exts == []
 
     @pytest.mark.asyncio
     async def test_ingest_objects(self, historical: HistoricalPoller) -> None:

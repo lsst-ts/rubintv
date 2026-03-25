@@ -37,7 +37,7 @@
     window.APP_DATA.event = {{ event|tojson if event else "null" }};
     window.APP_DATA.isCurrent = {{"true" if isCurrent else "false"}};
     window.APP_DATA.prevNext = {{ prevNext|tojson if prevNext else "null"}};
-    window.APP_DATA.allChannelNames = {{ allChannelNames|tojson}};
+    window.APP_DATA.channelNamesWithExtensions = {{ channelNamesWithExtensions|tojson}};
     window.APP_DATA.channel = {{ channel|tojson }};
   </script>
 {% endblock further %}

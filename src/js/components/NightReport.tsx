@@ -170,7 +170,7 @@ function NightReportPlotsTab({
       {groupedPlots.map((plot: NightReportPlot) => {
         const imgUrl = `${homeUrl}plot_image/${locationName}/${camera.name}/${tab.label}/${plot.filename}`
         return (
-          <figure key={plot.hash} className="plot">
+          <figure key={plot.filename} className="plot">
             <a href={imgUrl}>
               <img src={imgUrl} alt={plot.filename} />
             </a>
