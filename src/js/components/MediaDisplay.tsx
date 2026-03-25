@@ -26,7 +26,7 @@ export default function MediaDisplay({
   camera,
   initEvent,
   prevNext,
-  allChannelNames,
+  channelNamesWithExtensions,
   isCurrent = false,
 }: MediaDisplayProps) {
   const [mediaEvent, setMediaEvent] = useState<BundledMediaEvent | null>(() => {
@@ -93,7 +93,7 @@ export default function MediaDisplay({
       </div>
       <div className="event-nav">
         <OtherChannelLinks
-          allChannelNames={allChannelNames}
+          channelNamesWithExtensions={channelNamesWithExtensions}
           thisChannel={mediaEvent.channel_name}
           camera={camera}
         />
@@ -152,11 +152,19 @@ function bundleMediaEventData(
 }
 
 const OtherChannelLinks = ({
-  allChannelNames,
+  channelNamesWithExtensions,
   thisChannel,
   camera,
 }: OtherChannelLinksProps) => {
-  const [channelNames, setChannelNames] = useState(allChannelNames)
+  const [channelNamesAndExts, setChannelNames] = useState(
+    convertToChannelInfo(channelNamesWithExtensions)
+  )
+
+  function convertToChannelInfo(
+    channelNamesWithExtensions: [string, string][]
+  ): { name: string; ext: string }[] {
+    return channelNamesWithExtensions.map(([name, ext]) => ({ name, ext }))
+  }
 
   useEffect(() => {
     function handleChannelNamesChange(event: CustomEvent) {
@@ -165,30 +173,43 @@ const OtherChannelLinks = ({
         return
       }
       if (newChannelNames.length > 0) {
-        setChannelNames(newChannelNames)
+        setChannelNames(convertToChannelInfo(newChannelNames))
       }
     }
     window.addEventListener("channel", handleChannelNamesChange as EL)
     return () => {
       window.removeEventListener("channel", handleChannelNamesChange as EL)
     }
-  }, [channelNames])
+  }, [channelNamesAndExts])
 
   const currentUrl = getDocumentLocation()
-  const buildUrl = (channelName: string) => {
-    if (currentUrl.endsWith(`${thisChannel}/current`)) {
-      return currentUrl.replace(thisChannel, channelName)
-    } else {
-      return currentUrl.replace(
-        `channel_name=${thisChannel}`,
-        `channel_name=${channelName}`
+  const buildUrl = (channelName: string, fileExtension?: string) => {
+    let newUrlStr: string
+    if (currentUrl.endsWith(`current/${thisChannel}`)) {
+      newUrlStr = currentUrl.replace(
+        `current/${thisChannel}`,
+        `current/${channelName}`
       )
+    } else {
+      const newUrl = new URL(
+        currentUrl.replace(
+          `channel_name=${thisChannel}`,
+          `channel_name=${channelName}`
+        )
+      )
+      newUrl.searchParams.set("ext", fileExtension || "")
+      newUrlStr = newUrl.toString()
     }
+    return newUrlStr
   }
+
   return (
     <div className="other-channels">
       {camera.channels.map((channel) => {
-        if (!channelNames.includes(channel.name)) {
+        const matchingChannel = channelNamesAndExts.find(
+          (item) => item.name === channel.name
+        )
+        if (!matchingChannel) {
           return null
         }
         const chanStyle = {
@@ -196,7 +217,7 @@ const OtherChannelLinks = ({
           color: channel.text_colour,
         }
         // Construct the URL for each channel
-        const channelUrl = buildUrl(channel.name)
+        const channelUrl = buildUrl(channel.name, matchingChannel.ext)
         return (
           <a
             key={channel.name}

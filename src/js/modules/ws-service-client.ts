@@ -130,6 +130,7 @@ export class WebsocketClient implements WebsocketClientInterface {
       data: decodeUnpackWSPayload(data.payload),
       datestamp: data.datestamp,
     }
+    console.debug(`Received message for ${data.service}:`, detail)
     window.dispatchEvent(new CustomEvent(data.service, { detail }))
   }
 

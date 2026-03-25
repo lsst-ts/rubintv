@@ -7,6 +7,7 @@
 @use "modal"
 @use "admin"
 @use "detector"
+@use "night_report"
 
 .flr
   display: flex
@@ -26,6 +27,9 @@
 
 .center-text
   text-align: center
+
+.monospaced
+  font-family: "Red Hat Mono", monospace
 
 a
   text-decoration: none
@@ -59,6 +63,10 @@ header
 a
   text-decoration: underline
   display: inline-block
+  color: #000
+
+.italics
+  font-style: italic
 
 .header-wrap
   gap: 1em
@@ -172,7 +180,7 @@ h3
   margin-bottom: 0.5em
 
 section
-  padding-bottom: 2em
+  margin-bottom: 2em
 
 .columns
   display: flex
@@ -284,6 +292,34 @@ section
   font-size: 2.2em
   margin-bottom: 0
 
+  &.clickable-date
+    display: flex
+    align-items: center
+    background: rgba(0,0,0,0.2)
+    cursor: pointer
+    border-radius: 12px
+    padding: 0.1em 0
+
+  .date
+    margin: 0 0.2em
+
+  .jump-to-date
+    width: 32px
+    height: 32px
+    border: none
+    background-color: transparent
+    background-image: url(../images/sorting-indicator.svg)
+    background-repeat: no-repeat
+    background-position: center
+    background-size: contain
+    cursor: pointer
+    padding: 4px
+    box-shadow: none
+    &.prev-date
+      transform: rotate(90deg)
+    &.next-date
+      transform: rotate(270deg)
+
 .above-table-sticky
   min-width: 100%
   padding-top: 1em
@@ -308,6 +344,7 @@ section
       margin-bottom: 0
 
 .table-container
+  margin-top: -1em
   width: 100%
 
 .camera-table
@@ -315,6 +352,11 @@ section
   border-spacing: 2px
   margin-top: -2px
   border-collapse: separate
+
+  // Highlight entire row, except for color cells
+  .highlight-row .grid-cell:not([class$="color"])
+    background-color: #848484
+    color: #fff
 
 .grid-title
   position: absolute
@@ -504,76 +546,6 @@ section
     &:disabled
       cursor: not-allowed
       opacity: 0.5
-
-#night-report
-  .disabled
-    display: none !important
-
-.dashboard
-  display: flex
-  font-family: "Red Hat Mono", monospace
-  gap: 0.5em
-
-  ul
-    width: 100%
-    list-style: none
-    margin-bottom: 1em
-
-    li
-      box-sizing: border-box
-      border: 1px #555 solid
-      border-radius: 6px
-      padding: 11px 18px
-      margin-bottom: 6px
-      background-color: #fff
-
-    .dashboard-text
-      width: 100%
-      color: #000
-
-.tab-titles
-  display: flex
-  flex-direction: row
-  flex-wrap: wrap
-  border-bottom: 1px solid #ddd
-  width: fit-content
-
-.tab-title
-  padding: 1em 1em 0.7em 1em
-  cursor: pointer
-  padding: 0.5em 1em 0.7em 1em
-  cursor: pointer
-  background: #b0b0b0
-  border-radius: 0px 11px 0 0
-  border: 1px solid transparent
-  border-bottom: none
-  margin-right: 2px
-
-  &:last-of-type
-    margin-right: 0
-
-  &.selected
-    background: #fff
-    border-color: #666
-
-.tab-content:not(.selected)
-  display: none
-
-.plots-grid
-  display: grid
-  grid-template-columns: repeat(2, 1fr)
-  gap: 1em
-
-.plot
-  display: flex
-  flex-direction: column
-
-  img
-    width: 100%
-    height: auto
-
-  figcaption
-    margin-top: 0.5em
 
 .in-memoriam
   display: flex

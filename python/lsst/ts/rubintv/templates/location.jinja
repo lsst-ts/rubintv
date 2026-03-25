@@ -23,7 +23,9 @@
             {% include "logo-button.jinja" %}
           </li>
         {% endfor %}
-        {% if ("Environment" in group_name or "Validation" in group_name) and location.has_cluster_status %}
+        {% if ("Environment" in group_name 
+              or "Validation" in group_name 
+              or "Telescope Mounted" in group_name) and location.has_cluster_status %}
           <li>
             {% set button = {
                   "title": "Cluster Status",

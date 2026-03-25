@@ -106,7 +106,10 @@ describe("MediaDisplay Component", () => {
           camera={mockCamera}
           initEvent={null}
           prevNext={mockPrevNext}
-          allChannelNames={["channel1", "channel2"]}
+          channelNamesWithExtensions={[
+            ["channel1", "jpg"],
+            ["channel2", "jpg"],
+          ]}
           isCurrent={false}
         />
       )
@@ -121,7 +124,10 @@ describe("MediaDisplay Component", () => {
           camera={mockCamera}
           initEvent={mockImageEvent}
           prevNext={mockPrevNext}
-          allChannelNames={["channel1", "channel2"]}
+          channelNamesWithExtensions={[
+            ["channel1", "jpg"],
+            ["channel2", "jpg"],
+          ]}
           isCurrent={false}
         />
       )
@@ -153,7 +159,10 @@ describe("MediaDisplay Component", () => {
           camera={mockCamera}
           initEvent={mockVideoEvent}
           prevNext={mockPrevNext}
-          allChannelNames={["channel1", "channel2"]}
+          channelNamesWithExtensions={[
+            ["channel1", "mp4"],
+            ["channel2", "mp4"],
+          ]}
           isCurrent={false}
         />
       )
@@ -175,7 +184,10 @@ describe("MediaDisplay Component", () => {
           camera={mockCamera}
           initEvent={mockImageEvent}
           prevNext={mockPrevNext}
-          allChannelNames={["channel1", "channel2"]}
+          channelNamesWithExtensions={[
+            ["channel1", "jpg"],
+            ["channel2", "jpg"],
+          ]}
           isCurrent={true}
         />
       )
@@ -190,7 +202,10 @@ describe("MediaDisplay Component", () => {
           camera={mockCamera}
           initEvent={mockImageEvent}
           prevNext={mockPrevNext}
-          allChannelNames={["channel1", "channel2"]}
+          channelNamesWithExtensions={[
+            ["channel1", "jpg"],
+            ["channel2", "jpg"],
+          ]}
           isCurrent={false}
         />
       )
@@ -210,7 +225,10 @@ describe("MediaDisplay Component", () => {
           camera={cameraWithoutClock}
           initEvent={mockImageEvent}
           prevNext={mockPrevNext}
-          allChannelNames={["channel1", "channel2"]}
+          channelNamesWithExtensions={[
+            ["channel1", "jpg"],
+            ["channel2", "jpg"],
+          ]}
           isCurrent={true}
         />
       )
@@ -227,7 +245,10 @@ describe("MediaDisplay Component", () => {
           camera={mockCamera}
           initEvent={mockImageEvent}
           prevNext={mockPrevNext}
-          allChannelNames={["channel1", "channel2"]}
+          channelNamesWithExtensions={[
+            ["channel1", "jpg"],
+            ["channel2", "jpg"],
+          ]}
           isCurrent={false}
         />
       )
@@ -265,7 +286,10 @@ describe("MediaDisplay Component", () => {
           camera={mockCamera}
           initEvent={mockImageEvent}
           prevNext={mockPrevNext}
-          allChannelNames={["channel1", "channel2"]}
+          channelNamesWithExtensions={[
+            ["channel1", "jpg"],
+            ["channel2", "jpg"],
+          ]}
           isCurrent={false}
         />
       )
@@ -295,7 +319,10 @@ describe("MediaDisplay Component", () => {
           camera={mockCamera}
           initEvent={mockImageEvent}
           prevNext={mockPrevNext}
-          allChannelNames={["channel1", "channel2"]}
+          channelNamesWithExtensions={[
+            ["channel1", "jpg"],
+            ["channel2", "jpg"],
+          ]}
           isCurrent={false}
         />
       )
@@ -327,7 +354,10 @@ describe("MediaDisplay Component", () => {
           camera={mockCamera}
           initEvent={mockImageEvent}
           prevNext={mockPrevNext}
-          allChannelNames={["channel1", "channel2"]}
+          channelNamesWithExtensions={[
+            ["channel1", "jpg"],
+            ["channel2", "jpg"],
+          ]}
           isCurrent={false}
         />
       )
@@ -346,7 +376,10 @@ describe("MediaDisplay Component", () => {
           camera={mockCamera}
           initEvent={mockImageEvent}
           prevNext={mockPrevNext}
-          allChannelNames={["channel1", "channel2"]}
+          channelNamesWithExtensions={[
+            ["channel1", "jpg"],
+            ["channel2", "jpg"],
+          ]}
           isCurrent={false}
         />
       )
@@ -367,7 +400,10 @@ describe("MediaDisplay Component", () => {
           camera={mockCamera}
           initEvent={mockImageEvent}
           prevNext={mockPrevNext}
-          allChannelNames={["channel1", "channel2"]}
+          channelNamesWithExtensions={[
+            ["channel1", "jpg"],
+            ["channel2", "jpg"],
+          ]}
           isCurrent={false}
         />
       )
@@ -426,7 +462,10 @@ describe("OtherChannelLinks Component", () => {
           ext: "jpg",
         }}
         prevNext={{ prev: null, next: null }}
-        allChannelNames={["channel1", "channel2"]}
+        channelNamesWithExtensions={[
+          ["channel1", "jpg"],
+          ["channel2", "jpg"],
+        ]}
         isCurrent={false}
       />
     )
@@ -449,7 +488,7 @@ describe("OtherChannelLinks Component", () => {
 
   it("builds correct URLs for current channel links", () => {
     getDocumentLocation.mockReturnValue(
-      "http://test.com/test-location/testcam/channel1/current"
+      "http://test.com/test-location/testcam/current/channel1"
     )
     render(
       <MediaDisplay
@@ -466,7 +505,10 @@ describe("OtherChannelLinks Component", () => {
           ext: "jpg",
         }}
         prevNext={{ prev: null, next: null }}
-        allChannelNames={["channel1", "channel2"]}
+        channelNamesWithExtensions={[
+          ["channel1", "jpg"],
+          ["channel2", "jpg"],
+        ]}
         isCurrent={false}
       />
     )
@@ -474,7 +516,7 @@ describe("OtherChannelLinks Component", () => {
     const channel2Link = screen.getByText("Channel 2")
     expect(channel2Link).toHaveAttribute(
       "href",
-      "http://test.com/test-location/testcam/channel2/current"
+      "http://test.com/test-location/testcam/current/channel2"
     )
   })
 
@@ -497,7 +539,10 @@ describe("OtherChannelLinks Component", () => {
           ext: "jpg",
         }}
         prevNext={{ prev: null, next: null }}
-        allChannelNames={["channel1", "channel2"]}
+        channelNamesWithExtensions={[
+          ["channel1", "jpg"],
+          ["channel2", "jpg"],
+        ]}
         isCurrent={false}
       />
     )
@@ -505,7 +550,7 @@ describe("OtherChannelLinks Component", () => {
     const channel2Link = screen.getByText("Channel 2")
     expect(channel2Link).toHaveAttribute(
       "href",
-      "http://test.com/page?channel_name=channel2&other=param"
+      "http://test.com/page?channel_name=channel2&other=param&ext=jpg"
     )
   })
 
@@ -525,7 +570,10 @@ describe("OtherChannelLinks Component", () => {
           ext: "jpg",
         }}
         prevNext={{ prev: null, next: null }}
-        allChannelNames={["channel1", "channel2"]}
+        channelNamesWithExtensions={[
+          ["channel1", "jpg"],
+          ["channel2", "jpg"],
+        ]}
         isCurrent={false}
       />
     )
@@ -539,7 +587,11 @@ describe("OtherChannelLinks Component", () => {
     act(() => {
       const channelEvent = new CustomEvent("channel", {
         detail: {
-          data: ["channel1", "channel2", "channel3"],
+          data: [
+            ["channel1", "jpg"],
+            ["channel2", "jpg"],
+            ["channel3", "jpg"],
+          ],
         },
       })
       window.dispatchEvent(channelEvent)
@@ -565,7 +617,10 @@ describe("OtherChannelLinks Component", () => {
           ext: "jpg",
         }}
         prevNext={{ prev: null, next: null }}
-        allChannelNames={["channel1", "channel2"]}
+        channelNamesWithExtensions={[
+          ["channel1", "jpg"],
+          ["channel2", "jpg"],
+        ]}
         isCurrent={false}
       />
     )
@@ -615,7 +670,10 @@ describe("OtherChannelLinks Component", () => {
           ext: "jpg",
         }}
         prevNext={{ prev: null, next: null }}
-        allChannelNames={["channel1", "channel2"]}
+        channelNamesWithExtensions={[
+          ["channel1", "jpg"],
+          ["channel2", "jpg"],
+        ]}
         isCurrent={false}
       />
     )
@@ -660,7 +718,7 @@ describe("Media Event Bundling", () => {
         }}
         initEvent={imageEvent}
         prevNext={{ prev: null, next: null }}
-        allChannelNames={[]}
+        channelNamesWithExtensions={[]}
         isCurrent={false}
       />
     )
@@ -698,7 +756,7 @@ describe("Media Event Bundling", () => {
         }}
         initEvent={videoEvent}
         prevNext={{ prev: null, next: null }}
-        allChannelNames={[]}
+        channelNamesWithExtensions={[]}
         isCurrent={false}
       />
     )
@@ -739,7 +797,7 @@ describe("Component Cleanup", () => {
           ext: "jpg",
         }}
         prevNext={{ prev: null, next: null }}
-        allChannelNames={[]}
+        channelNamesWithExtensions={[]}
         isCurrent={false}
       />
     )

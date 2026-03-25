@@ -5,6 +5,7 @@ bucket_configurations:
   summit: [summit]
   gha: [summit-usdf, usdf, base-usdf, tucson-usdf]
   local: [summit-usdf, usdf, base-usdf, tucson-usdf]
+  # local: [test]
 
 locations:
   - name: test
@@ -13,7 +14,7 @@ locations:
     bucket_name: rubin-rubintv-data-summit
     endpoint_url: https://sdfembs3.sdf.slac.stanford.edu
     camera_groups:
-      Test: [lsstcam, allsky]
+      Test: [lsstcam]
 
   - name: usdf
     title: USDF
@@ -824,9 +825,36 @@ admin_for:
     - kbechtol
     - bechtol
     - ktl
-    - tribeiro
     - jfcrenshaw
     - bpolen
+    - bstalder
+    - bquint
+    - dsanmartim
+    - eurbach
+    - edennihy
+    - hyeyun
+    - kfanning
+    - mpavlovic
+    - mreuter
+    - pfragrelius
+    - tribeiro
+    - ashugart
+    - cmorales
+    - garavena
+    - jseron
+    - kpena
+    - kmortensen
+    - minhee51
+    - sliang
+    - ykang
+    - echristensen
+    - knapier
+    - dzilkova
+    - plago
+    - leisert
+    - nkhadka
+    - kkelkar
+    - pvenegas
 
   base: ["*"]
   tucson: ["*"]
@@ -869,6 +897,7 @@ admin_redis_menus:
       - AI_DONUT
       - UNPAIRED_DANISH
       - TARTS_UNPAIRED
+      - WCS_DANISH
 
   - title: "AOS FAM Pipeline"
     key: RUBINTV_CONTROL_AOS_FAM_PIPELINE

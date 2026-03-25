@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, call, patch
 import pytest
 from botocore.exceptions import ClientError
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
-from lsst.ts.rubintv.models.models import Camera, Location, NightReport
+from lsst.ts.rubintv.models.models import Camera, Location, NightReport, NightReportData
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
 from lsst.ts.rubintv.models.models import ServiceTypes as Service
 from lsst.ts.rubintv.models.models import get_current_day_obs
@@ -264,7 +264,7 @@ async def test_pick_up_yesterdays_movie(
 
     await current_poller.poll_buckets_for_todays_data()
 
-    events = mocked.get_mocked_events(location, camera, channel)
+    events = mocked.get_mocked_events_for_channel(location, camera, channel)
     assert events is not []
     last_event = max(events)
     assert last_event
@@ -297,7 +297,7 @@ async def test_notify_new_night_report_plot(
     mocked = empty_mocker
 
     # Define mock plots with the same name but different hashes
-    first_plot = mocked.mock_night_report_plot(location, camera)
+    first_plot = NightReportData(**mocked.mock_night_report_plot(location, camera))
 
     # First poll
     day_obs = get_current_day_obs()
@@ -315,10 +315,10 @@ async def test_notify_new_night_report_plot(
         Service.NIGHTREPORT,
         MessageType.NIGHT_REPORT,
         loc_cam,
-        NightReport(text={}, plots=[first_plot]).model_dump(),
+        NightReport(text=[], plots=[first_plot]).model_dump(),
     )
 
-    second_plot = mocked.mock_night_report_plot(location, camera)
+    second_plot = NightReportData(**mocked.mock_night_report_plot(location, camera))
 
     # Reset mock_notify_ws_clients for the second poll
     mock_notify_ws_clients.reset_mock()
@@ -333,12 +333,14 @@ async def test_notify_new_night_report_plot(
         Service.NIGHTREPORT,
         MessageType.NIGHT_REPORT,
         loc_cam,
-        NightReport(text={}, plots=[second_plot]).model_dump(),
+        NightReport(text=[], plots=[second_plot]).model_dump(),
     )
 
 
 def get_test_camera_and_location() -> tuple[Camera, Location]:
-    location: Location = find_first(m.locations, "name", "summit-usdf")
+    location: Location | None = find_first(m.locations, "name", "summit-usdf")
+    assert location is not None
     # fake_auxtel has both 'streaming' and per-day channels
-    camera: Camera = find_first(location.cameras, "name", "auxtel")
+    camera: Camera | None = find_first(location.cameras, "name", "auxtel")
+    assert camera is not None
     return (camera, location)

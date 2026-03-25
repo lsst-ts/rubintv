@@ -1,6 +1,7 @@
 import { gunzipSync } from "fflate"
 import { homeUrl, imagesUrl } from "../config"
 import {
+  CalendarData,
   ExposureEvent,
   MediaType,
   MetadataRow,
@@ -372,9 +373,9 @@ export const setCameraBaseUrl = (locationName: string, cameraName: string) => {
   const cameraBaseUrl = new URL(`${locationName}/${cameraName}/`, homeUrl)
   return {
     getEventUrl: (event: ExposureEvent) => {
-      const { channel_name, day_obs, seq_num } = event
+      const { channel_name, day_obs, seq_num, ext } = event
       return new URL(
-        `event?channel_name=${channel_name}&date_str=${day_obs}&seq_num=${seq_num}`,
+        `event?channel_name=${channel_name}&date_str=${day_obs}&seq_num=${seq_num}&ext=${ext}`,
         cameraBaseUrl
       ).toString()
     },
@@ -407,3 +408,57 @@ export const sanitiseRedisValue = (value: string): string => {
 export const isDevInstance =
   window.location.href.includes("-dev") ||
   window.location.href.includes("localhost")
+
+// Function to generate a range of numbers from an array of [min, max]
+export function rangeSetFromLimits(arr?: [number, number]) {
+  if (!arr) return new Set<number>()
+  const [start, end] = arr
+  const result = new Set<number>()
+  for (let i = start; i <= end; i++) {
+    result.add(i)
+  }
+  return result
+}
+
+// Unpack calendar data into a list of dates
+export function unpackCalendarAsDateList(calendar: CalendarData): string[] {
+  const dateList: string[] = []
+  for (const [year, months] of Object.entries(calendar)) {
+    for (const [month, days] of Object.entries(months)) {
+      const padMonth = month.toString().padStart(2, "0")
+      for (const day of Object.keys(days as Record<number, number>)) {
+        dateList.push(`${year}-${padMonth}-${day.toString().padStart(2, "0")}`)
+      }
+    }
+  }
+  return dateList.sort()
+}
+
+export function findPrevNextDate(
+  dateList: string[],
+  currentDate: string
+): { prevDate: string | null; nextDate: string | null } {
+  const currentIndex = dateList.indexOf(currentDate)
+
+  let prevDate: string | null = null
+  let nextDate: string | null = null
+
+  if (currentIndex > 0) {
+    prevDate = dateList[currentIndex - 1]
+  }
+  if (currentIndex >= 0 && currentIndex < dateList.length - 1) {
+    nextDate = dateList[currentIndex + 1]
+  }
+
+  return { prevDate, nextDate }
+}
+
+export function isElementInViewport(element: HTMLElement): boolean {
+  const rect = element.getBoundingClientRect()
+  return (
+    rect.top < window.innerHeight &&
+    rect.bottom > 0 &&
+    rect.left < window.innerWidth &&
+    rect.right > 0
+  )
+}

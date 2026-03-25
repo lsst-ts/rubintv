@@ -1,9 +1,16 @@
 import asyncio
+import time
 from datetime import date, timedelta
 from typing import Any, AsyncGenerator, Iterable, Iterator
 
 from lsst.ts.rubintv.config import rubintv_logger
-from lsst.ts.rubintv.models.models import Camera, Channel, Event, NightReportData
+from lsst.ts.rubintv.models.models import (
+    Camera,
+    Channel,
+    ChannelData,
+    Event,
+    NightReportData,
+)
 
 __all__ = [
     "find_first",
@@ -101,7 +108,7 @@ async def all_objects_to_events(objects: list[dict]) -> list[Event]:
 
 
 async def objects_to_events(
-    objects: list[dict], batch_size: int = 1000
+    objects: list[dict], batch_size: int = 5000
 ) -> AsyncGenerator[list[Event], None]:
     """Asynchronously convert a list of dictionaries to a list of Event
     objects in batches.
@@ -111,18 +118,36 @@ async def objects_to_events(
     objects : list[dict]
         A list of dictionaries, each representing the data for an Event object.
     batch_size : int, optional
-        The size of each batch to process asynchronously, by default 1000
+        The size of each batch to process asynchronously, by default 5000
 
     Yields
     ------
     list[Event]
         A batch of Event objects created from the provided dictionaries.
     """
-    # Split objects into batches and process them asynchronously
-    for i in range(0, len(objects), batch_size):
-        batch = objects[i : i + batch_size]
-        events = await asyncio.to_thread(process_batch, batch)
-        yield events
+    logger = rubintv_logger()
+    # Split objects into batches
+    batches = [objects[i : i + batch_size] for i in range(0, len(objects), batch_size)]
+    logger.info(
+        f"objects_to_events: splitting {len(objects)} objects into "
+        f"{len(batches)} batches of size {batch_size}"
+    )
+
+    # Process all batches concurrently and yield as they complete
+    if batches:
+        tasks = [asyncio.to_thread(process_batch, batch) for batch in batches]
+        logger.info(f"objects_to_events: created {len(tasks)} thread tasks")
+        batch_num = 0
+        for completed_task in asyncio.as_completed(tasks):
+            batch_num += 1
+            task_start = time.time()
+            batch_results = await completed_task
+            task_time = time.time() - task_start
+            logger.info(
+                f"objects_to_events: batch {batch_num} completed with "
+                f"{len(batch_results)} events (await_time={task_time:.3f}s)"
+            )
+            yield batch_results
 
 
 async def objects_to_ngt_report_data(objects: list[dict]) -> list[NightReportData]:
@@ -135,17 +160,6 @@ async def objects_to_ngt_report_data(objects: list[dict]) -> list[NightReportDat
         except ValueError as e:
             logger.info(e)
     return night_reports
-
-
-async def event_list_to_channel_keyed_dict(
-    event_list: list[Event], channels: list[Channel]
-) -> dict[str, list[Event]]:
-    days_events_dict = {}
-    for channel in channels:
-        days_events_dict[channel.name] = [
-            event for event in event_list if event.channel_name == channel.name
-        ]
-    return days_events_dict
 
 
 def get_image_viewer_link(camera: Camera, day_obs: date, seq_num: int) -> str:
@@ -175,7 +189,7 @@ def get_image_viewer_link(camera: Camera, day_obs: date, seq_num: int) -> str:
 
 async def make_table_from_event_list(
     events: list[Event], channels: list[Channel]
-) -> dict[int, dict[str, dict]]:
+) -> ChannelData:
     d: dict[int, dict[str, dict]] = {}
     for chan in channels:
         chan_events = [e for e in events if e.channel_name == chan.name]

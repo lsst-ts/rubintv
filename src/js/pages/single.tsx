@@ -12,7 +12,7 @@ import { Camera, ExposureEvent } from "../components/componentTypes"
     event = {} as ExposureEvent,
     isCurrent = false,
     prevNext,
-    allChannelNames,
+    channelNamesWithExtensions,
   } = window.APP_DATA
 
   if (isCurrent) {
@@ -33,7 +33,7 @@ import { Camera, ExposureEvent } from "../components/componentTypes"
       camera={camera}
       initEvent={event}
       prevNext={prevNext}
-      allChannelNames={allChannelNames}
+      channelNamesWithExtensions={channelNamesWithExtensions}
       isCurrent={isCurrent}
     />
   )

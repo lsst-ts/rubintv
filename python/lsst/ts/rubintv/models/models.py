@@ -5,7 +5,7 @@ import dataclasses
 import re
 from datetime import date, datetime, timedelta, timezone
 from enum import Enum
-from typing import Any
+from typing import Any, TypedDict
 
 from lsst.ts.rubintv import __version__
 from lsst.ts.rubintv.config import config, rubintv_logger
@@ -34,7 +34,27 @@ class Metadata(BaseModel):
     """The URL of the application's documentation."""
 
 
-class Channel(BaseModel):
+class MetadataRefData(BaseModel):
+    """A reference to a metadata file for a given location, camera and
+    day_obs."""
+
+    date_str: str
+    """ISO format date string."""
+    metadata_hash: str
+    """Metadata hash from bucket."""
+
+    def __hash__(self) -> int:
+        return hash((self.date_str, self.metadata_hash))
+
+
+class HashableBaseModel(BaseModel):
+    """A hashable version of Pydantic's BaseModel."""
+
+    def __hash__(self) -> int:
+        return hash(self.model_dump_json())
+
+
+class Channel(HashableBaseModel):
     name: str
     title: str
     label: str = ""
@@ -43,8 +63,14 @@ class Channel(BaseModel):
     icon: str = ""
     text_colour: str = "#000"
 
+    def __str__(self) -> str:
+        return f"Channel: {self.name}"
 
-class HasButton(BaseModel):
+    def __repr__(self) -> str:
+        return str(self)
+
+
+class HasButtonMixin:
     """Base class for classes that are displayed on-screen with buttons.
     Provides a name, title, logo image, text colour and whether the text
     should have a drop-shadow.
@@ -96,7 +122,7 @@ class MosaicViewMeta(BaseModel):
     mediaType: MediaType = MediaType.IMAGE
 
 
-class ExtraButton(HasButton):
+class ExtraButton(HasButtonMixin, BaseModel):
     """Sub-class to provide buttons with the functionality to link to relative
     URLs.
 
@@ -128,7 +154,7 @@ class TimeSinceClock(BaseModel):
     label: str
 
 
-class Camera(HasButton):
+class Camera(HasButtonMixin, HashableBaseModel):
     """Represents a camera entity, capable of handling different channels like
     images or movies.
 
@@ -192,6 +218,12 @@ class Camera(HasButton):
     extra_buttons: list[ExtraButton] = []
     time_since_clock: TimeSinceClock | None = None
 
+    def __str__(self) -> str:
+        return f"Camera: {self.name}"
+
+    def __repr__(self) -> str:
+        return str(self)
+
     def seq_channels(self) -> list[Channel]:
         return [c for c in self.channels if not c.per_day]
 
@@ -199,7 +231,7 @@ class Camera(HasButton):
         return [c for c in self.channels if c.per_day]
 
 
-class Location(HasButton):
+class Location(HasButtonMixin, HashableBaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     bucket_name: str
@@ -211,11 +243,16 @@ class Location(HasButton):
     is_teststand: bool = False
     has_cluster_status: bool = False
 
+    def __str__(self) -> str:
+        return f"Location: {self.name}"
+
+    def __repr__(self) -> str:
+        return str(self)
+
 
 @dataclass
 class Event:
     key: str
-    hash: str = ""
     # derived fields:
     camera_name: str = ""
     day_obs: str = ""
@@ -361,11 +398,35 @@ class NightReportData:
         ) = self.parse_key()
 
     def __hash__(self) -> int:
+        if not re.match(r"^[0-9a-fA-F]+$", self.hash):
+            raise ValueError(f"Hash is not a valid hex value: {self.hash}")
         return int(f"0x{self.hash}", 0)
 
 
+class NightReportTextItem(BaseModel):
+    """A text item in a night report.
+
+    Properties
+    ----------
+    type : `str`
+        The type of text item, i.e. "multiline" or "keyvalues" or "links".
+    key : `str`
+        The unique key for the text item.
+    title : `str`
+        The title of the text item.
+    content : `str` | `list`[`dict`[`str`, `str`]]
+        The content of the text item, either as a string or a list of
+        dictionaries for tables.
+    """
+
+    key: str = ""
+    type: str
+    title: str
+    content: str | list[dict[str, str]]
+
+
 class NightReport(BaseModel):
-    text: dict[str, Any] | None = {}
+    text: list[NightReportTextItem] | None = []
     plots: list[NightReportData] | None = []
 
 
@@ -423,7 +484,7 @@ class Heartbeat:
         return {
             "serviceName": self.service_name,
             "isActive": bool(self.state.value),
-            "nextExpected": self.next_expected.isoformat(),  # Convert datetime to string
+            "nextExpected": self.next_expected.isoformat(),
         }
 
 
@@ -434,6 +495,7 @@ class ServiceTypes(str, Enum):
     CHANNEL = "channel"
     NIGHTREPORT = "nightreport"
     HISTORICALSTATUS = "historicalStatus"
+    HISTORICALDATAUPDATE = "historicalDataUpdate"
     CALENDAR = "calendar"
     DETECTORS = "detectors"
     ADMIN = "admin"
@@ -450,10 +512,13 @@ class ServiceMessageTypes(Enum):
     NIGHT_REPORT = "nightReport"
     HISTORICAL_STATUS = "historicalStatus"
     DAY_CHANGE = "dayChange"
+    CALENDAR_UPDATE = "calendarUpdate"
     PREV_NEXT = "prevNext"
     ALL_CHANNELS = "allChannels"
     DETECTOR_STATUS = "detectorStatus"
     CONTROL_READBACK_CHANGE = "controlReadback"
+    HISTORICAL_METADATA = "historicalMetadata"
+    HISTORICAL_STRUCTURED_DATA = "historicalStructuredData"
 
 
 class KeyValue(BaseModel):
@@ -463,15 +528,65 @@ class KeyValue(BaseModel):
     value: str | int | float | bool | None = None
 
 
+type StructuredData = dict[str, dict[str, dict[str, set[int | str]]]]
+
+
+class ExtensionDict(TypedDict):
+    default: str
+    exceptions: dict[int | str, str]
+
+
+type ExtensionInfo = dict[str, ExtensionDict]
+type ChannelData = dict[int, dict[str, dict]]
+
+type LocCamDateChan = tuple[Location, Camera, date, Channel]
+type LocCamKey = tuple[Location, Camera]
+
+
 @dataclass
 class CameraPageData:
     """Data for a camera page."""
 
-    channel_data: dict[int, dict[str, dict]] = dataclasses.field(default_factory=dict)
     metadata: dict[str, Any] = dataclasses.field(default_factory=dict)
     per_day: dict[str, dict] = dataclasses.field(default_factory=dict)
     nr_exists: bool = False
 
     def is_empty(self) -> bool:
         """Check if the data is empty."""
-        return not any([self.channel_data, self.metadata, self.per_day, self.nr_exists])
+        return not any(
+            [
+                self.metadata,
+                self.per_day,
+                self.nr_exists,
+            ]
+        )
+
+
+@dataclass
+class HistoricalPageData(CameraPageData):
+    """Data for the historical page."""
+
+    structured_data: dict[str, set[int | str]] = dataclasses.field(default_factory=dict)
+    extension_info: ExtensionInfo = dataclasses.field(default_factory=dict)
+
+    def is_empty(self) -> bool:
+        """Check if the data is empty."""
+        base_empty = super().is_empty()
+        return base_empty and not any(
+            [
+                self.structured_data,
+                self.extension_info,
+            ]
+        )
+
+
+@dataclass
+class CurrentPageData(CameraPageData):
+    """Data for the current page."""
+
+    channel_data: ChannelData = dataclasses.field(default_factory=dict)
+
+    def is_empty(self) -> bool:
+        """Check if the data is empty."""
+        base_empty = super().is_empty()
+        return base_empty and not self.channel_data

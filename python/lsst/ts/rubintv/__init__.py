@@ -21,14 +21,22 @@
 
 import typing
 
+from .config import rubintv_logger
+
+logger = rubintv_logger()
+
 # For an explanation why these next lines are so complicated, see
 # https://confluence.lsstcorp.org/pages/viewpage.action?spaceKey=LTS&title=Enabling+Mypy+in+Pytest
 if typing.TYPE_CHECKING:
     __version__ = "?"
 else:
     try:
+        logger.debug("Getting rubintv version")
         import pkg_resources
 
+        logger.debug("pkg_resources imported successfully")
         __version__ = pkg_resources.get_distribution("rubintv").version
-    except:
+        logger.debug(f"rubintv version: {__version__}")
+    except Exception as e:
+        logger.error(f"Error getting rubintv version: {e}")
         __version__ = "?"

@@ -69,7 +69,6 @@ export interface MetadataColumn {
  */
 export interface MediaData {
   key: string
-  hash: string
   camera_name: string
   day_obs: string
   channel_name: string
@@ -202,25 +201,6 @@ export interface ChannelData {
   [seqNum: string]: {
     [channelName: string]: ExposureEvent
   }
-}
-
-/**
- * @description Represents the structure of a night report containing plots and text data.
- * @param {NightReportPlot[]} [plots] - Optional array of plots for the night report.
- * @param {Record<string, string>} [text] - Optional key-value pairs of text content.
- */
-export interface NightReportType {
-  plots?: NightReportPlot[]
-  text?: Record<string, string>
-}
-
-/**
- * @extends {MediaData}
- * @description Represents a plot in a night report with grouping information.
- * @param {string} group - The group category this plot belongs to.
- */
-export interface NightReportPlot extends MediaData {
-  group: string
 }
 
 /**
@@ -411,6 +391,8 @@ export interface RedisEndpoint {
  * @param {boolean} isHistorical - Whether the view is historical.
  * @param {string} siteLocation - Short site identifier (e.g. 'summit').
  * @param {boolean} isStale - Whether the data is stale.
+ * @param {number} [seqNum] - Optional sequence number(s) to highlight on load.
+ * @param {CalendarData} [calendar] - Optional calendar data for the camera.
  */
 export interface TableAppProps {
   camera: Camera
@@ -419,6 +401,9 @@ export interface TableAppProps {
   isHistorical: boolean
   siteLocation: string
   isStale: boolean
+  seqNums?: number[]
+  calendar?: CalendarData
+  toggleCalendar?: () => void
 }
 
 /**
@@ -432,6 +417,7 @@ export interface TableAppProps {
  * @param {boolean} isHistorical - Whether the view is historical.
  */
 export interface AboveTableRowProps {
+  locationName: string
   camera: Camera
   availableColumns: string[]
   selected: string[]
@@ -439,6 +425,9 @@ export interface AboveTableRowProps {
   date: string
   metadata: Metadata
   isHistorical: boolean
+  calendar?: CalendarData
+  toggleCalendar?: () => void
+  lastKnownMetadataRow?: MetadataRow
 }
 
 /**
@@ -528,6 +517,7 @@ export interface TableRowProps {
   channelRow: Record<string, ExposureEvent>
   metadataColumns: MetadataColumn[]
   metadataRow: MetadataRow
+  highlightRow?: boolean
 }
 
 /**
@@ -538,6 +528,7 @@ export interface TableRowProps {
  * @param {MetadataColumn[]} metadataColumns - Metadata columns to include.
  * @param {Metadata} metadata - Metadata mapping for rows.
  * @param {SortingOptions} sortOn - Current sorting options.
+ * @param {number[]} [seqNumRange] - Optional range of sequence numbers to highlight.
  */
 export interface TableBodyProps {
   camera: Camera
@@ -546,6 +537,7 @@ export interface TableBodyProps {
   metadataColumns: MetadataColumn[]
   metadata: Metadata
   sortOn: SortingOptions
+  seqNumRange?: [number, number]
 }
 
 /**
@@ -630,6 +622,7 @@ export interface TableViewProps {
   filteredRowsCount: number
   sortOn: SortingOptions
   siteLocation: string
+  seqNumsToShow?: number[]
 }
 
 /**
@@ -730,13 +723,15 @@ export interface PerDayProps {
   isHistorical: boolean
 }
 
+export type ChannelWithExtension = [channelName: string, fileExtension: string]
+
 /**
  * @description Props for the media display component that shows a selected exposure.
  * @param {string} locationName - Location identifier.
  * @param {Camera} camera - Camera configuration.
  * @param {ExposureEvent | null} initEvent - Initial event to display (nullable).
  * @param {PrevNextType} prevNext - Prev/next navigation events.
- * @param {string[]} allChannelNames - All channel names for the camera.
+ * @param {ChannelWithExtension[]} channelNamesWithExtensions - All channel names for a given seq num and their file extensions.
  * @param {boolean} isCurrent - Whether the shown media is the current/latest.
  */
 export interface MediaDisplayProps {
@@ -744,7 +739,7 @@ export interface MediaDisplayProps {
   camera: Camera
   initEvent: ExposureEvent | null
   prevNext: PrevNextType
-  allChannelNames: string[]
+  channelNamesWithExtensions: ChannelWithExtension[]
   isCurrent: boolean
 }
 
@@ -760,12 +755,12 @@ export interface BundledMediaEvent extends ExposureEvent {
 
 /**
  * @description Props for components that render links to other channels for the same event.
- * @param {string[]} allChannelNames - All channel names for the camera.
+ * @param {ChannelWithExtension[]} channelNamesWithExtensions - All channel names for the same sequence number and their file extensions.
  * @param {string} thisChannel - Channel currently being viewed.
  * @param {Camera} camera - Camera configuration.
  */
 export interface OtherChannelLinksProps {
-  allChannelNames: string[]
+  channelNamesWithExtensions: ChannelWithExtension[]
   thisChannel: string
   camera: Camera
 }
@@ -809,6 +804,7 @@ export interface CameraWithTimeSinceClock extends Camera {
  */
 export interface TimeSinceLastImageClockProps {
   metadata: Metadata
+  lastKnownMetadataRow?: MetadataRow
   camera: CameraWithTimeSinceClock
 }
 
@@ -947,9 +943,86 @@ export interface ChannelListViewItemProps {
 }
 
 /**
+ * @description Represents a text item in a night report.
+ *
+ * Depending on the `type`, the `content` field can be:
+ * - "multiline": a single string with multiple lines of text.
+ * - "keyvalues": a mapping of keys to string values.
+ * - "links": an array of objects each containing a label and URL.
+ *
+ * @param {string} type - The content type ("multiline", "keyvalues", or "links").
+ * @param {string} title - The title of the text section.
+ * @param {string} key - A unique identifier for the text item.
+ * @param {string | Record<string, string> | Array<{label: string, url: string}>} content - The actual content, whose shape depends on `type`.
+ */
+export type NightReportText = {
+  type: "multiline" | "keyvalues" | "links"
+  title: string
+  key: string
+  content:
+    | string
+    | Record<string, string>
+    | Array<{ label: string; url: string }>
+}
+
+/**
+ * @extends {MediaData}
+ * @description Represents a plot in a night report with grouping information.
+ * @param {string} group - The group category this plot belongs to.
+ */
+export interface NightReportPlot extends MediaData {
+  group: string
+}
+
+/**
+ * @description Represents the structure of a night report containing plots and text data.
+ * @param {NightReportText[]} [text] - Optional array of text items for the night report.
+ * @param {NightReportPlot[]} [plots] - Optional array of plots for the night report.
+ */
+export interface NightReportType {
+  text?: NightReportText[]
+  plots?: NightReportPlot[]
+}
+
+/**
+ * @description A tab containing a single text item from the night report.
+ *
+ * @param {string} id - Sanitized text item identifier (used for selection).
+ * @param {string} label - Display title shown in the UI.
+ * @param {string} type - The literal "text".
+ * @param {NightReportText} data - The text item containing type, title, and content.
+ */
+export type TextTabType = {
+  id: string
+  label: string
+  type: "text"
+  data: NightReportText
+}
+
+/**
+ * @description A tab that contains a collection of plots grouped by category.
+ *
+ * @param {string} id - Sanitized group identifier (used for selection).
+ * @param {string} label - Display group name shown in the UI.
+ * @param {string} type - The literal "plot".
+ * @param {NightReportPlot[]} data - Array of NightReportPlot entries to render as images/figures.
+ */
+export type PlotTabType = {
+  id: string
+  label: string
+  type: "plot"
+  data: NightReportPlot[]
+}
+
+/**
+ * @description Union type representing either a text or plot tab in the night report.
+ */
+export type TabType = TextTabType | PlotTabType
+
+/**
  * @description Props for the night report top-level component.
  * @param {NightReportType} initialNightReport - Initial night report data.
- * @param {string} initialDate - Date of the night report.
+ * @param {string} initialDate - Date of the night report (yyyy-mm-dd).
  * @param {Camera} camera - Camera configuration.
  * @param {string} locationName - Location identifier.
  * @param {string} homeUrl - Base URL for links.
@@ -963,8 +1036,8 @@ export interface NightReportProps {
 }
 
 /**
- * @description Props for the night report tabs control.
- * @param {TabType[]} tabs - Available tabs.
+ * @description Props for the night report tabs control component.
+ * @param {TabType[]} tabs - Available tabs to display.
  * @param {string} selected - Currently selected tab id.
  * @param {React.Dispatch<React.SetStateAction<string>>} setSelected - Setter for selected tab.
  */
@@ -979,7 +1052,7 @@ export interface NightReportTabProps {
  * @param {TextTabType | undefined} tab - Tab data (text) to render.
  * @param {string} selected - Currently selected tab id.
  */
-export interface NightReportTextProps {
+export interface NightReportTextTabProps {
   tab: TextTabType | undefined
   selected: string
 }
@@ -992,72 +1065,13 @@ export interface NightReportTextProps {
  * @param {string} locationName - Location identifier.
  * @param {string} homeUrl - Base URL for plot links.
  */
-export interface NightReportPlotProps {
+export interface NightReportPlotsTabProps {
   tab: PlotTabType | undefined
   selected: string
   camera: Camera
   locationName: string
   homeUrl: string
 }
-
-/**
- * Generic base structure for a night report tab.
- *
- * This generic type captures the common shape of tabs used by the NightReport
- * UI: an identifier, a human-visible label, a literal `type` discriminator,
- * and a `data` payload whose shape depends on the tab type.
- *
- * @template T - A literal string union that discriminates the tab kind (e.g. "text" | "plot").
- * @template D - The payload type carried by the tab (e.g. Record<string,string> for text tabs,
- *                or an array of plots for plot tabs).
- *
- * Fields:
- * - id: Unique string identifier for the tab (used for DOM ids and state).
- * - label: Human-readable title shown in the UI.
- * - type: Literal discriminator for runtime/type narrowing.
- * - data: Typed payload associated with the tab.
- */
-type BaseTab<T extends string, D> = {
-  id: string
-  label: string
-  type: T
-  data: D
-}
-
-/**
- * A tab that contains textual content or links.
- *
- * Typical usage:
- * - Efficiency or QA text sections where `data` is a mapping of keys to strings.
- * - Keys prefixed with "text_" indicate multi-line textual blocks.
- *
- * - id: tab identifier (e.g. "efficiency")
- * - label: visible label (e.g. "Efficiency")
- * - type: the literal "text"
- * - data: mapping of titles/keys to string content or URLs
- */
-export type TextTabType = BaseTab<"text", Record<string, string>>
-
-/**
- * A tab that contains a collection of plots.
- *
- * Typical usage:
- * - Each plot entry extends MediaData (filename, hash, etc.) and belongs to a group.
- *
- * - id: sanitized group identifier (used for selection)
- * - label: display group name shown in the UI
- * - type: the literal "plot"
- * - data: array of NightReportPlot entries to render as images/figures
- */
-export type PlotTabType = BaseTab<"plot", NightReportPlot[]>
-
-/**
- * Discriminated union of all supported tab types for the NightReport UI.
- *
- * This union allows code to narrow on `.type` to safely access the concrete
- * `.data` payload (e.g. when rendering text vs. plots).
- */
-export type TabType = TextTabType | PlotTabType
 
 /**
  * @description Props for the calendar component used across RubinTV.
@@ -1071,6 +1085,7 @@ export interface RubinCalendarProps {
   initialCalendarData: CalendarData
   camera: Camera
   locationName: string
+  isClosed?: boolean
 }
 
 /**
@@ -1151,4 +1166,21 @@ export interface ModalContextType {
   modalContent: React.ReactNode | null
   setModalContent: (content: React.ReactNode | null) => void
   setModalHeader: (header: string | null) => void
+}
+
+export interface CameraTableProps {
+  siteLocation: string
+  locationName: string
+  camera: Camera
+  nightReportLink: string
+  date: string
+  isHistorical: boolean
+  calendar: CalendarData
+  isStale: boolean
+  seqNums?: number[]
+}
+
+export interface CurrentChannelsProps {
+  locationName: string
+  camera: Camera
 }
