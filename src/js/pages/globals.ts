@@ -8,6 +8,7 @@ import {
   NightReportType,
   PrevNextType,
   ExposureEvent,
+  ChannelWithExtension,
 } from "js/components/componentTypes"
 
 export {}
@@ -33,7 +34,7 @@ declare global {
       prevNext: PrevNextType
       channel: Channel
       event: ExposureEvent | null
-      allChannelNames: string[]
+      channelNamesWithExtensions: ChannelWithExtension[]
       isStale: boolean
       seqNums: number[] | undefined
     }

@@ -1498,10 +1498,7 @@ class HistoricalPoller:
                         key = f"{camera.name}/{day_obs.isoformat()}/{channel.name}/{seq_num}/{filename}"
                     else:
                         key = f"{camera.name}/{day_obs.isoformat()}/{channel.name}/{seq_num:06d}/{filename}"
-                    logger.debug(
-                        "Reconstructed key for event",
-                        key=key,
-                    )
+
                     events.append(Event(key=key))
 
             return events
@@ -1729,10 +1726,11 @@ class HistoricalPoller:
         """
         return self._calendar.get((location, camera), {})
 
-    async def get_all_channel_names_for_date_and_seq_num(
+    async def get_channel_name_and_extension_for_date_and_seq_num(
         self, location: Location, camera: Camera, day_obs: date, seq_num: int
-    ) -> list[str]:
-        """Returns a list of Events for the given date and seq_num.
+    ) -> list[tuple[str, str]]:
+        """Get the channel name and extension for a given date and sequence
+        number.
 
         Parameters
         ----------
@@ -1745,8 +1743,9 @@ class HistoricalPoller:
 
         Returns
         -------
-        chan_names : `list` [`str`]
-            A list of channel names for the given date and seq_num.
+        channel_data: list[tuple[str, str]]
+            A list of tuples containing the channel name and extension for the
+            given date and seq_num.
         """
         loc_cam = (location, camera)
         if (
@@ -1755,12 +1754,14 @@ class HistoricalPoller:
         ):
             return []
 
-        channels: list[Channel] = []
+        channel_data: list[tuple[str, str]] = []
         for channel, seq_data in self._structured_events[loc_cam][day_obs].items():
             if seq_num in seq_data:
-                channels.append(channel)
-
-        return [channel.name for channel in channels]
+                ext = self.get_extension_for_event(
+                    location, camera, day_obs, channel, seq_num
+                )
+                channel_data.append((channel.name, ext))
+        return channel_data
 
     async def _make_structured_data_transmissable(
         self, structured_data: StructuredData, day: date

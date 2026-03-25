@@ -296,14 +296,14 @@ class CurrentPoller:
                     chan_lookup,
                     {"next": None, "prev": prev},
                 )
-                channel_names = await self.get_all_channel_names_for_seq_num(
+                channel_info = await self.get_channels_and_extensions_for_seq_num(
                     location.name, camera.name, current_event.seq_num_force_int()
                 )
                 await notify_ws_clients(
                     Service.CHANNEL,
                     MessageType.ALL_CHANNELS,
                     chan_lookup,
-                    channel_names,
+                    channel_info,
                 )
 
     async def sieve_out_metadata(
@@ -603,10 +603,10 @@ class CurrentPoller:
                 if event is not None:
                     _, prev = await self.get_next_prev_event(location.name, event)
                     yield MessageType.PREV_NEXT, {"next": None, "prev": prev}
-                    channel_names = await self.get_all_channel_names_for_seq_num(
+                    channel_info = await self.get_channels_and_extensions_for_seq_num(
                         location.name, camera.name, event.seq_num_force_int()
                     )
-                    yield MessageType.ALL_CHANNELS, channel_names
+                    yield MessageType.ALL_CHANNELS, channel_info
 
                 if latest_metadata := await self.get_latest_metadata(
                     location.name, camera
@@ -634,10 +634,10 @@ class CurrentPoller:
                 ):
                     yield MessageType.CAMERA_PER_DAY, latest_per_day
 
-    async def get_all_channel_names_for_seq_num(
+    async def get_channels_and_extensions_for_seq_num(
         self, location_name: str, camera_name: str, seq_num: int | str
-    ) -> list[str]:
-        """Get all channel names for a given sequence number.
+    ) -> list[tuple[str, str]]:
+        """Get all channel names and extensions for a given sequence number.
         Parameters
         ----------
         location_name : `str`
@@ -648,14 +648,20 @@ class CurrentPoller:
             The sequence number.
         Returns
         -------
-        `list` [`str`]
-            A list of channel names for the given sequence number.
+        `list` [`tuple` [`str`, `str`]]
+            A list of tuples of channel names and extensions for the given
+            sequence number.
         """
         loc_cam = f"{location_name}/{camera_name}"
-        events = self._events.get(loc_cam, [])
-        relevant_events = [e for e in events if e.seq_num == seq_num]
-        chan_names = [event.channel_name for event in relevant_events]
-        return chan_names
+        table = self._table.get(loc_cam, {})
+        row = table.get(int(seq_num), None)
+        if not row:
+            return []
+        channel_data = [
+            (channel_name, event_dict["ext"])
+            for channel_name, event_dict in row.items()
+        ]
+        return channel_data
 
     async def get_latest_metadata_hash(self, location_name: str, camera: Camera) -> str:
         loc_cam = self._get_loc_cam(location_name, camera)
