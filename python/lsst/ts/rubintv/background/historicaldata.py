@@ -225,6 +225,37 @@ class HistoricalPoller:
             )
             return False
 
+    def _get_last_cached_date(self) -> date | None:
+        """Return the most recent date present across all structured events."""
+        latest: date | None = None
+        for date_map in self._structured_events.values():
+            for d in date_map:
+                if latest is None or d > latest:
+                    latest = d
+        return latest
+
+    async def _backfill_missing_days(self) -> None:
+        """Fetch and cache any days missing between the last cached date and
+        today."""
+        last_cached = self._get_last_cached_date()
+        today = get_current_day_obs()
+        if last_cached is None or last_cached >= today:
+            return
+        missing_days = [
+            last_cached + timedelta(days=i)
+            for i in range(1, (today - last_cached).days + 1)
+        ]
+        logger.info(
+            "Backfilling missing days since last cache",
+            last_cached=str(last_cached),
+            today=str(today),
+            num_days=len(missing_days),
+        )
+        for d in missing_days:
+            await self.repoll_date(d)
+        await self._save_cache_to_file()
+        logger.info("Backfill complete and cache saved")
+
     async def run(self) -> None:
         while True:
             if not self._have_downloaded:
@@ -233,6 +264,7 @@ class HistoricalPoller:
                 if cache_loaded:
                     self._have_downloaded = True
                     logger.info("Using cached historical data")
+                    await self._backfill_missing_days()
                     await notify_all_status_change(historical_busy=False)
                     await self._metadata_collector.start_prefetch(self._locations)
                 else:
@@ -263,37 +295,43 @@ class HistoricalPoller:
             while time() - loop_start < self.REPOLL_BUCKET_PERIOD:
                 repoll_start = time()
                 await self.repoll_yesterday()
+                await self._save_cache_to_file()
                 elapsed = time() - repoll_start
                 if elapsed < self.REPOLL_YESTERDAY_PERIOD:
                     await asyncio.sleep(self.REPOLL_YESTERDAY_PERIOD - elapsed)
 
             await self.repoll_buckets_and_update()
+            await self._save_cache_to_file()
 
-    async def repoll_yesterday(self) -> None:
-        """Re-poll just yesterday's data to catch any late arrivals."""
-        logger.info("Starting re-poll of yesterday's data")
+    async def repoll_date(self, date: date) -> None:
+        """Re-poll data for a given date to catch any late arrivals."""
+        logger.info("Starting re-poll of data", date=str(date))
         start_time = time()
 
-        yesterday = get_current_day_obs() - timedelta(days=1)
         for location in self._locations:
-            # Get online cameras for this location
             online_cameras = [cam for cam in location.cameras if cam.online]
             if online_cameras:
                 try:
                     await self._process_cameras_for_date_parallel(
-                        location, yesterday, online_cameras
+                        location, date, online_cameras
                     )
                 except Exception as e:
                     logger.error(
-                        f"Error re-polling yesterday's data for location {location.name}: {e}"
+                        f"Error re-polling data for location {location.name}: {e}"
                     )
 
-        await self._metadata_collector.check_for_changed_metadata(yesterday)
+        await self._metadata_collector.check_for_changed_metadata(date)
         elapsed = time() - start_time
         logger.info(
-            "Completed re-poll of yesterday's data",
+            "Completed re-poll of data",
+            date=str(date),
             elapsed_time_seconds=elapsed,
         )
+
+    async def repoll_yesterday(self) -> None:
+        """Re-poll just yesterday's data to catch any late arrivals."""
+        yesterday = get_current_day_obs() - timedelta(days=1)
+        await self.repoll_date(yesterday)
 
     async def repoll_buckets_and_update(self) -> None:
         """Recheck buckets for changes and update structured data if
