@@ -509,24 +509,11 @@ class TestHistoricalPollerWithMockData:
         )
 
         # Verify metadata was stored
-        assert (
-            location.name + "/" + camera.name
-            in historical._metadata_collector.metadata_refs
-        )
+        loc_cam_str = f"{location.name}/{camera.name}"
+        assert loc_cam_str in historical._metadata_collector.metadata_refs
         metadata_dates = {
             ref.date_str
-            for ref in historical._metadata_collector.metadata_refs[
-                location.name + "/" + camera.name
-            ]
-        }
-        assert "2024-02-15" in metadata_dates
-        assert loc_cam in historical._metadata_collector.metadata_refs
-        assert "2024-02-15" in historical._metadata_collector.metadata_refs[loc_cam]
-        metadata_dates = {
-            ref.date_str
-            for ref in historical._metadata_collector.metadata_refs[
-                location.name + "/" + camera.name
-            ]
+            for ref in historical._metadata_collector.metadata_refs[loc_cam_str]
         }
         assert "2024-02-15" in metadata_dates
 
