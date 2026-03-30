@@ -163,6 +163,9 @@ towncrier.toml
 
 # local scripts
 local_scripts/
+DEVNOTES.md
+memory/
+.claude/
 
 # jest
 coverage/
