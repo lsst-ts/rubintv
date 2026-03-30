@@ -197,7 +197,7 @@ class RubinDataMocker:
         events = [Event(**cd) for cd in channel_dicts]
         return events
 
-    def get_mocked_events(
+    def get_mocked_events_for_channel(
         self, location: Location, camera: Camera, channel: Channel
     ) -> list[Event]:
         """
@@ -222,8 +222,33 @@ class RubinDataMocker:
             e for e in self.events.get(loc_cam, []) if e.channel_name == channel.name
         ]
 
-    def mock_night_report_plot(
+    def get_mocked_events_for_camera(
         self, location: Location, camera: Camera
+    ) -> list[Event]:
+        """
+        Retrieve events for a given location.
+
+        Parameters
+        ----------
+        location : `Location`
+            The location for which to retrieve the sequence events.
+        camera : `Camera`
+            The camera for which to retrieve the sequence events.
+
+        Returns
+        -------
+        `list` [`Event`]
+            A list of Event objects representing sequence events.
+        """
+        loc_cam = f"{location.name}/{camera.name}"
+        return self.events.get(loc_cam, [])
+
+    def mock_night_report_plot(
+        self,
+        location: Location,
+        camera: Camera,
+        date_str: str = today.isoformat(),
+        group: str = "Test",
     ) -> dict[str, str]:
         """Generate a mock night report for a camera.
 
@@ -239,7 +264,7 @@ class RubinDataMocker:
         night_report_object: `dict`[`str`, `str`]
             A simple dict that a `NightReport` instance can be made using.
         """
-        key = f"{camera.name}/{today}/night_report/Test/filename.test"
+        key = f"{camera.name}/{date_str}/night_report/{group}/filename.test"
         content = "".join([chr(random.randint(32, 126)) for _ in range(20)])
         hash: None | str = None
         if self.s3_required:
@@ -418,7 +443,7 @@ class RubinDataMocker:
             try:
                 json_str = json.dumps(full_metadata)
                 self.s3_client.put_object(
-                    Bucket=bucket_name, Body=json_str, Key=metadata_key
+                    Bucket=bucket_name, Body=json_str.encode(), Key=metadata_key
                 )
                 self._s3_metadata_created.add(camera_day_key)
             except ClientError as e:

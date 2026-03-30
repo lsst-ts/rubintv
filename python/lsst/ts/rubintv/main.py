@@ -41,7 +41,7 @@ logger = rubintv_logger()
 
 exp_checker_installed = False
 try:
-    from lsst.ts.exp_checker import app as exp_checker_app
+    from lsst.ts.exp_checker import app as exp_checker_app  # type: ignore[import]
 
     logger.info("exp_checker is mounted")
     exp_checker_installed = True
@@ -101,8 +101,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         )
 
     # start polling buckets for data
-    today_polling = await startup_current_poller(models, app)
-    historical_polling = asyncio.create_task(hp.check_for_new_day())
+    today_polling = await startup_current_poller(models, app, hp)
+    historical_polling = asyncio.create_task(hp.run())
 
     # Startup phase for the subapp
     if exp_checker_installed and exp_checker_app.router.lifespan:
@@ -112,6 +112,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     # If no lifespan is needed for the subapp, still yield to the main app
     else:
         yield
+
+    # Stop background tasks
+    await hp.stop_background_tasks()
 
     historical_polling.cancel()
     today_polling.cancel()
@@ -141,17 +144,24 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         await c.close()
 
 
-async def startup_current_poller(models: ModelsInitiator, app: FastAPI) -> asyncio.Task:
+async def startup_current_poller(
+    models: ModelsInitiator, app: FastAPI, hp: HistoricalPoller
+) -> asyncio.Task:
     """Start the current poller.
     Parameters
     ----------
-    models : dict
+    models : ModelsInitiator
         The models dictionary.
-    app : FastAPI
+    historical_poller : `HistoricalPoller`
+        The historical poller instance.
+    app : `FastAPI`
         The FastAPI application.
+    hp : HistoricalPoller
+        The HistoricalPoller instance.
     """
     first_pass = asyncio.Event()
     cp = CurrentPoller(models.locations, first_pass_event=first_pass)
+    cp.set_historical_poller(hp)
     app.state.current_poller = cp
     # Create an event to signal the first pass is complete
     app.state.first_pass_event = first_pass
@@ -162,7 +172,7 @@ async def _makeRedis() -> redis.Redis | None:
     """Create a Redis client.
     Returns
     -------
-    redis.Redis | None
+    redis_client: `redis.Redis` | `None`
         The Redis client or None if the connection fails.
     """
     SOCKET_TIMEOUT = 3

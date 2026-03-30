@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, StrictMode } from "react"
 import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
 import { _getById, union, getHistoricalData } from "../modules/utils"
+import { createTableFromStructuredData } from "../modules/convertTableData"
 import {
   loadColumnSelection,
   saveColumnSelection,
@@ -104,7 +105,16 @@ export default function TableApp({
       .then((json) => {
         const data = JSON.parse(json)
         if (data.metadata) setMetadata(data.metadata)
-        if (data.channelData) setChannelData(data.channelData)
+        if (data.structuredData && data.extensionInfo) {
+          const channelData = createTableFromStructuredData(
+            camera.name,
+            date,
+            data.structuredData,
+            data.extensionInfo,
+            camera.channels
+          )
+          setChannelData(channelData)
+        }
         setDateAndUpdateHeader(data.date, isStale)
         setHasReceivedData(true)
       })
@@ -190,6 +200,42 @@ export default function TableApp({
       window.removeEventListener("camera", handleCameraEvent as EL)
     }
   }, [handleCameraEvent])
+
+  useEffect(() => {
+    window.addEventListener(
+      "historicalDataUpdate",
+      handleHistoricalDataUpdate as EL
+    )
+    function handleHistoricalDataUpdate(event: CustomEvent) {
+      const { data, dataType } = event.detail
+      if (data.date !== date) {
+        return
+      }
+      if (dataType === "historicalStructuredData") {
+        console.log(
+          "Received historical structured data update for date:",
+          data.date
+        )
+        const channelData = createTableFromStructuredData(
+          camera.name,
+          data.date,
+          data.structuredData,
+          data.extensionInfo,
+          camera.channels
+        )
+        setChannelData(channelData)
+      } else if (dataType === "historicalMetadata") {
+        console.log("Received historical metadata update for date:", data.date)
+        setMetadata(data.metadata)
+      }
+    }
+    return () => {
+      window.removeEventListener(
+        "historicalDataUpdate",
+        handleHistoricalDataUpdate as EL
+      )
+    }
+  }, [date, camera.name, camera.channels])
 
   if (unfilteredRowsCount == 0 && hasReceivedData) {
     return <h3>There is no data for this day</h3>
