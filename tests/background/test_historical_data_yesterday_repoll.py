@@ -324,7 +324,19 @@ class TestUpdateIfChanged:
         historical = HistoricalPoller(m.locations, start_date=yesterday, end_date=today)
         location = m.locations[0]
         camera = location.cameras[0]
-        channel = camera.channels[0]
+
+        empty_channel_name = rubin_data_mocker_yesterday.empty_channel.get(
+            f"{location.name}/{camera.name}"
+        )
+        if empty_channel_name:
+            # Find a channel that is not empty for deletion test
+            channel = None
+            for chan in camera.channels:
+                if chan.name != empty_channel_name:
+                    channel = chan
+                    break
+            if channel is None:
+                pytest.skip("No non-empty channel found for deletion test")
 
         # Initial download
         await historical._initialise_location_store(location)
