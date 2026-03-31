@@ -63,6 +63,14 @@ class Channel(HashableBaseModel):
     icon: str = ""
     text_colour: str = "#000"
 
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Channel):
+            return False
+        return self.name == other.name
+
     def __str__(self) -> str:
         return f"Channel: {self.name}"
 
@@ -218,6 +226,14 @@ class Camera(HasButtonMixin, HashableBaseModel):
     extra_buttons: list[ExtraButton] = []
     time_since_clock: TimeSinceClock | None = None
 
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Camera):
+            return False
+        return self.name == other.name
+
     def __str__(self) -> str:
         return f"Camera: {self.name}"
 
@@ -242,6 +258,14 @@ class Location(HasButtonMixin, HashableBaseModel):
     services: list[str] = []
     is_teststand: bool = False
     has_cluster_status: bool = False
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Location):
+            return False
+        return self.name == other.name
 
     def __str__(self) -> str:
         return f"Location: {self.name}"
