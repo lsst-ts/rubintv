@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, useMemo } from "react"
 import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
 import { _getById, union, getHistoricalData } from "../modules/utils"
@@ -56,9 +56,15 @@ export default function TableApp({
 
   const [error, setError] = useState(null)
 
-  const defaultColumns = getDefaultColumns(camera)
-  const defaultColNames = defaultColumns.map((col) => col.name)
-  const availableColumns = getAllColumnNames(metadata, defaultColNames)
+  const defaultColumns = useMemo(() => getDefaultColumns(camera), [camera])
+  const defaultColNames = useMemo(
+    () => defaultColumns.map((col) => col.name),
+    [defaultColumns]
+  )
+  const availableColumns = useMemo(
+    () => getAllColumnNames(metadata, defaultColNames),
+    [metadata, defaultColNames]
+  )
 
   // Load selected columns from storage
   const [selected, setSelected] = useState(() => {
@@ -74,15 +80,18 @@ export default function TableApp({
     [locationName, camera.name]
   )
 
-  const selectedObjs = selected.map((columnName) => ({ name: columnName }))
-  const metaColumnsToDisplay = defaultColumns
-    .filter((col) => selected.includes(col.name))
-    .concat(
-      selectedObjs.filter(
-        (o: MetadataColumn) =>
-          !defaultColNames.includes(o.name) && availableColumns.includes(o.name)
+  const metaColumnsToDisplay = useMemo(() => {
+    const selectedObjs = selected.map((columnName) => ({ name: columnName }))
+    return defaultColumns
+      .filter((col) => selected.includes(col.name))
+      .concat(
+        selectedObjs.filter(
+          (o: MetadataColumn) =>
+            !defaultColNames.includes(o.name) &&
+            availableColumns.includes(o.name)
+        )
       )
-    )
+  }, [defaultColumns, selected, defaultColNames, availableColumns])
 
   function setDateAndUpdateHeader(newDate: string, stale = false) {
     setDate(newDate)
@@ -131,35 +140,38 @@ export default function TableApp({
 
   // filter from metadata the rows that have the filterRowsOn value
   // in the filterRowsOn column.
-  let filteredMetadata = metadata
-  let filteredChannelData = channelData
-  if (filterColumnSet) {
-    filteredMetadata = Object.entries(metadata).reduce((acc, [key, val]) => {
-      if (String(val[filterOn.column] as string) === filterOn.value) {
-        acc[key] = val
-      }
-      return acc
-    }, {} as Metadata)
-    // reduce the channelData to only the rows that are in the filteredMetadata
-    filteredChannelData = Object.entries(channelData).reduce(
-      (acc, [key, val]) => {
-        if (filteredMetadata[key]) {
+  const { filteredMetadata, filteredChannelData } = useMemo(() => {
+    let filtered = metadata
+    let filteredData = channelData
+    if (filterColumnSet) {
+      filtered = Object.entries(metadata).reduce((acc, [key, val]) => {
+        if (String(val[filterOn.column] as string) === filterOn.value) {
           acc[key] = val
         }
         return acc
-      },
-      {} as ChannelData
-    )
-  }
+      }, {} as Metadata)
+      // reduce the channelData to only the rows that are in the filteredMetadata
+      filteredData = Object.entries(channelData).reduce((acc, [key, val]) => {
+        if (filtered[key]) {
+          acc[key] = val
+        }
+        return acc
+      }, {} as ChannelData)
+    }
+    return { filteredMetadata: filtered, filteredChannelData: filteredData }
+  }, [filterColumnSet, filterOn.column, filterOn.value, metadata, channelData])
 
-  const unfilteredRowsCount = union(
-    Object.keys(metadata),
-    Object.keys(channelData)
-  ).length
-  const filteredRowsCount = union(
-    Object.keys(filteredMetadata),
-    Object.keys(filteredChannelData)
-  ).length
+  const { unfilteredRowsCount, filteredRowsCount } = useMemo(() => {
+    const unfiltered = union(
+      Object.keys(metadata),
+      Object.keys(channelData)
+    ).length
+    const filtered = union(
+      Object.keys(filteredMetadata),
+      Object.keys(filteredChannelData)
+    ).length
+    return { unfilteredRowsCount: unfiltered, filteredRowsCount: filtered }
+  }, [metadata, channelData, filteredMetadata, filteredChannelData])
 
   useEffect(() => {
     const redrawn = redrawHeaderWidths()

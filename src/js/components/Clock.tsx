@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { toTimeString } from "../modules/utils"
 import { TimeSinceLastImageClockProps } from "./componentTypes"
 
@@ -89,12 +89,16 @@ export function TimeSinceLastImageClock({
     }
   }, [])
 
-  const lastSeq = metadata
-    ? Object.keys(metadata)
-        .map(Number)
-        .sort((a, b) => a - b)
-        .pop()
-    : undefined
+  const lastSeq = useMemo(
+    () =>
+      metadata
+        ? Object.keys(metadata)
+            .map(Number)
+            .sort((a, b) => a - b)
+            .pop()
+        : undefined,
+    [metadata]
+  )
 
   let row = lastSeq !== undefined ? metadata[lastSeq] : undefined
 

@@ -125,28 +125,33 @@ function TableRow({
 
   // Entries in metadata keyed `"@{channel_name}"` will have their
   // values show up in the table instead of a blank space.
-  const replacements = channels.reduce(
-    (obj, chan) => {
-      const chanReplace = metadataRow["@" + chan.name] as string | undefined
-      if (chanReplace != null) {
-        obj[chan.name] = chanReplace
-      }
-      return obj
-    },
-    {} as Record<string, string>
-  )
-  const noEventReplacements =
-    Object.keys(replacements).length > 0 ? replacements : undefined
+  const noEventReplacements = useMemo(() => {
+    const replacements = channels.reduce(
+      (obj, chan) => {
+        const chanReplace = metadataRow["@" + chan.name] as string | undefined
+        if (chanReplace != null) {
+          obj[chan.name] = chanReplace
+        }
+        return obj
+      },
+      {} as Record<string, string>
+    )
+    return Object.keys(replacements).length > 0 ? replacements : undefined
+  }, [channels, metadataRow])
 
-  const metadataCells = metadataColumns.map((md) => {
-    const indicator = indicatorForAttr(metadataRow, md.name)
-    return {
-      data: metadataRow[md.name],
-      columnName: md.name,
-      seqNum,
-      indicator,
-    }
-  })
+  const metadataCells = useMemo(
+    () =>
+      metadataColumns.map((md) => {
+        const indicator = indicatorForAttr(metadataRow, md.name)
+        return {
+          data: metadataRow[md.name],
+          columnName: md.name,
+          seqNum,
+          indicator,
+        }
+      }),
+    [metadataColumns, metadataRow, seqNum]
+  )
 
   // If this row of metadata contains a value for the
   // channel name "controller", then extract that value
@@ -229,10 +234,12 @@ function TableBody({
   sortOn,
   seqNumRange,
 }: TableBodyProps) {
-  const allSeqs = Array.from(
-    new Set(Object.keys(channelData).concat(Object.keys(metadata)))
-  )
-  const seqs = applySorting(allSeqs, sortOn, metadata)
+  const seqs = useMemo(() => {
+    const allSeqs = Array.from(
+      new Set(Object.keys(channelData).concat(Object.keys(metadata)))
+    )
+    return applySorting(allSeqs, sortOn, metadata)
+  }, [channelData, metadata, sortOn])
   const filledSeqRange =
     seqNumRange !== undefined ? rangeSetFromLimits(seqNumRange) : undefined
 
@@ -369,8 +376,10 @@ export function TableHeader({
   const { siteLocation } = useContext(RubinTVTableContext) as RubinTVContextType
   const siteLocHasCCS = hasCCS(siteLocation)
   const siteLocHasFOV = hasFOV(siteLocation)
-  const channelColumns = seqChannels(camera) as (Channel | MetadataColumn)[]
-  const columns = channelColumns.concat(metadataColumns)
+  const columns = useMemo(() => {
+    const channelColumns = seqChannels(camera) as (Channel | MetadataColumn)[]
+    return channelColumns.concat(metadataColumns)
+  }, [camera, metadataColumns])
   const sorting = sortOn.column == "seq"
   const sortingClass = `sorting-indicator ${sortOn.order}`
   return (
@@ -442,6 +451,8 @@ export default function TableView({
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const channels = useMemo(() => seqChannels(camera), [camera])
+
   const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
   if (filterColumnSet && filteredRowsCount == 0) {
     return (
@@ -454,7 +465,7 @@ export default function TableView({
     <table className="camera-table">
       <TableBody
         camera={camera}
-        channels={seqChannels(camera)}
+        channels={channels}
         channelData={channelData}
         metadataColumns={metadataColumns}
         metadata={metadata}

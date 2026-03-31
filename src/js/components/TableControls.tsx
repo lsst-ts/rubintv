@@ -147,10 +147,15 @@ function TableControls({
   const [controlsOpen, setControlsOpen] = useState(false)
   const { locationName } = useContext(RubinTVTableContext) as RubinTVContextType
 
-  const selected = Array.isArray(originalSelected) ? originalSelected : []
-  const availableColumns = Array.isArray(originalAvailableColumns)
-    ? originalAvailableColumns
-    : []
+  const selected = useMemo(
+    () => (Array.isArray(originalSelected) ? originalSelected : []),
+    [originalSelected]
+  )
+  const availableColumns = useMemo(
+    () =>
+      Array.isArray(originalAvailableColumns) ? originalAvailableColumns : [],
+    [originalAvailableColumns]
+  )
 
   // Handle clicks outside to close the panel
   useEffect(() => {
@@ -205,6 +210,14 @@ function TableControls({
   const gridStyle = {
     columnCount: numControlColumns,
   }
+
+  const sortedColumns = useMemo(
+    () =>
+      Array.from(new Set([...selected, ...availableColumns])).sort((a, b) =>
+        a.localeCompare(b)
+      ),
+    [selected, availableColumns]
+  )
 
   const panelContainerClass = !controlsOpen
     ? "table-controls-container"
@@ -267,9 +280,7 @@ function TableControls({
         {controlsOpen && (
           <div className="table-options" style={gridStyle}>
             {/* Show both available and unavailable selected columns */}
-            {Array.from(new Set([...selected, ...availableColumns]))
-              .sort((a, b) => a.localeCompare(b))
-              .map(renderCheckbox)}
+            {sortedColumns.map(renderCheckbox)}
           </div>
         )}
       </div>
