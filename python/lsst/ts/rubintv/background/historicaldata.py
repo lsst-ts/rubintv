@@ -359,15 +359,30 @@ class HistoricalPoller:
         # Get online cameras for this location
         online_cameras = [cam for cam in location.cameras if cam.online]
         if online_cameras:
-            try:
-                await self._process_cameras_for_prefix_parallel(
-                    location, self.prefix_extra, online_cameras
-                )
-            except Exception as e:
-                logger.error(
-                    f"Error checking location for changes: {e}",
-                    location=location.name,
-                )
+            if self.prefix_extra:
+                # Date-specific recheck: small per-camera payload, existing
+                # path is fine.
+                try:
+                    await self._process_cameras_for_prefix_parallel(
+                        location, self.prefix_extra, online_cameras
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Error checking location for changes: {e}",
+                        location=location.name,
+                    )
+            else:
+                # Full-bucket recheck: stream each camera day-by-day to avoid
+                # loading the entire object listing into memory at once.
+                for camera in online_cameras:
+                    try:
+                        await self._check_camera_for_changes_streaming(location, camera)
+                    except Exception as e:
+                        logger.error(
+                            f"Error checking camera for changes: {e}",
+                            location=location.name,
+                            camera=camera.name,
+                        )
 
     def _build_prefixes_for_camera(
         self,
@@ -394,6 +409,46 @@ class HistoricalPoller:
                 logger.error(f"Error fetching prefix: {e}")
 
         return objects
+
+    async def _check_camera_for_changes_streaming(
+        self,
+        location: Location,
+        camera: Camera,
+    ) -> None:
+        """Check a camera for changes by streaming objects one day at a time.
+
+        Uses date-based parallel S3 listing so that only one day's worth of
+        objects is held in memory at a time, rather than the entire camera
+        prefix. Each day's page is compared against cached data and ingested
+        only if differences are found.
+
+        Parameters
+        ----------
+        location : `Location`
+            The location to check.
+        camera : `Camera`
+            The camera to check.
+        """
+        client: S3Client = self._clients[location.name]
+        prefix = camera.name + "/"
+
+        async for date_prefix, page in client.async_list_objects_by_date_parallel(
+            prefix=prefix,
+            start_date=self._start_date,
+            end_date=self._end_date,
+        ):
+            if not page:
+                continue
+            date_str = date_prefix[len(prefix) :]
+            try:
+                day_obs = date_str_to_date(date_str)
+            except ValueError:
+                logger.debug(
+                    "Skipping unrecognised date prefix during streaming recheck",
+                    date_prefix=date_prefix,
+                )
+                continue
+            await self._update_if_changed(location, camera, page, day_obs)
 
     def _parse_structured_key(
         self, key: str, camera: Camera, day_obs: date | None = None
