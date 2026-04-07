@@ -3,6 +3,7 @@
 import asyncio
 from collections import OrderedDict
 from datetime import date
+from time import monotonic
 from typing import TYPE_CHECKING
 
 from lsst.ts.rubintv.config import rubintv_logger
@@ -63,6 +64,10 @@ class MetadataCollector:
         # Per-key locks to prevent duplicate fetches
         self._fetch_locks: dict[str, asyncio.Lock] = {}
 
+        # Semaphore to serialise S3 fetches so that background prefetching
+        # does not compete for bandwidth with foreground requests.
+        self._s3_fetch_semaphore = asyncio.Semaphore(1)
+
     @property
     def metadata_refs(self) -> dict[str, set[MetadataRefData]]:
         """Get the metadata refs dictionary."""
@@ -113,6 +118,7 @@ class MetadataCollector:
         metadata : `dict` | `None`
             The metadata dictionary, or None if not found or error occurred.
         """
+        t_request = monotonic()
         logger.debug(
             f"Requesting metadata for {location.name}/{camera.name} on {date_str}"
         )
@@ -145,6 +151,12 @@ class MetadataCollector:
                 cache.move_to_end(date_str)
                 return cache[date_str]
 
+            t_lock_acquired = monotonic()
+            logger.debug(
+                f"Metadata lock acquired for {loc_cam}/{date_str} "
+                f"(lock_wait={t_lock_acquired - t_request:.2f}s)"
+            )
+
             # Track active request and pause prefetch if needed
             async with self._request_lock:
                 self._active_requests += 1
@@ -156,6 +168,13 @@ class MetadataCollector:
             try:
                 metadata = await self._fetch_metadata_from_s3(
                     location, camera, date_str
+                )
+                t_fetched = monotonic()
+                logger.debug(
+                    f"Metadata S3 fetch complete for {loc_cam}/{date_str} "
+                    f"(fetch_time={t_fetched - t_lock_acquired:.2f}s, "
+                    f"total_time={t_fetched - t_request:.2f}s, "
+                    f"found={bool(metadata)})"
                 )
                 if metadata:
                     # Add to cache
@@ -209,7 +228,14 @@ class MetadataCollector:
         key = f"{camera.name}/{date_str}/metadata.json"
 
         try:
-            metadata = await client.async_get_object(key)
+            async with self._s3_fetch_semaphore:
+                t0 = monotonic()
+                metadata = await client.async_get_object(key)
+            elapsed = monotonic() - t0
+            size_kb = len(str(metadata)) / 1024 if metadata else 0
+            logger.debug(
+                f"S3 get_object: key={key} " f"time={elapsed:.2f}s size={size_kb:.1f}KB"
+            )
             return metadata
         except Exception:
             return None
@@ -311,6 +337,7 @@ class MetadataCollector:
                         continue
 
                     try:
+                        t_prefetch = monotonic()
                         metadata = await self._fetch_metadata_from_s3(
                             location, camera, date_str
                         )
@@ -322,7 +349,8 @@ class MetadataCollector:
                             cache.move_to_end(date_str)
 
                             logger.debug(
-                                f"Prefetched metadata for {loc_cam}/{date_str}"
+                                f"Prefetched metadata for {loc_cam}/{date_str} "
+                                f"(fetch_time={monotonic() - t_prefetch:.2f}s)"
                             )
                             prefetch_count += 1
 
@@ -494,3 +522,7 @@ class MetadataCollector:
                     logger.error(
                         f"Error checking metadata for {loc_cam} on {ref.date_str}: {e}"
                     )
+                finally:
+                    # Yield to the event loop between each S3 check to avoid
+                    # saturating the endpoint and blocking foreground requests.
+                    await asyncio.sleep(0.1)
