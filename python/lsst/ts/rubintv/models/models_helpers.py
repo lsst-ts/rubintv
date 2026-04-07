@@ -1,8 +1,11 @@
 import asyncio
+import base64
+import gzip
 import time
 from datetime import date, timedelta
 from typing import Any, AsyncGenerator, Iterable, Iterator
 
+import orjson
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.models.models import (
     Camera,
@@ -21,6 +24,8 @@ __all__ = [
     "all_objects_to_events",
     "objects_to_ngt_report_data",
 ]
+
+logger = rubintv_logger(__name__)
 
 
 def find_first(a_list: list[Any], key: str, to_match: str) -> Any | None:
@@ -108,7 +113,7 @@ async def all_objects_to_events(objects: list[dict]) -> list[Event]:
 
 
 async def objects_to_events(
-    objects: list[dict], batch_size: int = 5000
+    objects: list[dict], batch_size: int = 1000
 ) -> AsyncGenerator[list[Event], None]:
     """Asynchronously convert a list of dictionaries to a list of Event
     objects in batches.
@@ -118,7 +123,7 @@ async def objects_to_events(
     objects : list[dict]
         A list of dictionaries, each representing the data for an Event object.
     batch_size : int, optional
-        The size of each batch to process asynchronously, by default 5000
+        The size of each batch to process asynchronously, by default 1000
 
     Yields
     ------
@@ -222,10 +227,29 @@ def daterange(start_date: date, end_date: date) -> Iterator[date]:
     `date`
         Each date in the range from start_date to end_date (exclusive).
     """
-    if start_date >= end_date:
+    if start_date > end_date:
         raise ValueError("start_date must be before end_date")
     if not isinstance(start_date, date) or not isinstance(end_date, date):
         raise TypeError("start_date and end_date must be of type date")
     days = int((end_date - start_date).days)
     for n in range(days):
         yield start_date + timedelta(n)
+
+
+async def compress_serialize_data(data: Any) -> str:
+    """Compress and serialize data for WebSocket transmission."""
+    try:
+        json_bytes = orjson.dumps(data, default=default_serializer)
+        zipped = gzip.compress(bytes(json_bytes))
+        encoded = base64.b64encode(zipped).decode("utf-8")
+        return encoded
+    except Exception as e:
+        logger.error(f"Error compressing and serializing data: {e}")
+        raise e
+
+
+def default_serializer(obj: Any) -> list:
+    """Default serializer for objects not serializable by orjson."""
+    if isinstance(obj, set):
+        return list(obj)
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")

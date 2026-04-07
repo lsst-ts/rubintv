@@ -1,7 +1,4 @@
 import asyncio
-import base64
-import gzip
-import json
 import time
 from typing import Any, Mapping
 from uuid import UUID
@@ -18,6 +15,7 @@ from lsst.ts.rubintv.handlers.websockets_clients import (
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
 from lsst.ts.rubintv.models.models import ServiceTypes as Service
 from lsst.ts.rubintv.models.models import get_current_day_obs
+from lsst.ts.rubintv.models.models_helpers import compress_serialize_data
 
 logger = rubintv_logger(__name__)
 
@@ -67,15 +65,13 @@ async def send_notification(
         "Sending websocket notification",
         service=service.value,
         messageType=messageType.value,
-        payload_length=len(str(payload)) if payload else 0,
+        payload=payload,
     )
     start_time = time.time()
     datestamp = get_current_day_obs().isoformat()
 
     try:
-        payload_string = json.dumps(payload)
-        zipped = gzip.compress(bytes(payload_string, "utf-8"))
-        encoded = base64.b64encode(zipped).decode("utf-8")
+        encoded = await compress_serialize_data(payload)
 
         message = {
             "service": service.value,
@@ -91,7 +87,7 @@ async def send_notification(
             logger.warning(
                 "Slow websocket notification",
                 process_time=process_time,
-                payload_size=len(payload_string),
+                payload_size=len(payload) if payload else 0,
                 service=service.value,
             )
 
@@ -167,7 +163,6 @@ async def get_websockets_for_service(service_key: str) -> list[WebSocket]:
             return []
         client_ids = services_clients[service_key]
 
-    # Gather websockets for the clients
     async with clients_lock:
         websockets = [
             clients[client_id] for client_id in client_ids if client_id in clients
@@ -249,4 +244,5 @@ async def notify_controls_readback_change(data: dict) -> None:
     service = Service.ADMIN
     message_type = MessageType.CONTROL_READBACK_CHANGE
     service_key = service.value
+
     await notify_service_clients(service_key, service, message_type, data)
