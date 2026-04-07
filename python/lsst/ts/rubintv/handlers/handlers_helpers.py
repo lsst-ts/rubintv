@@ -10,14 +10,16 @@ from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.models.models import (
     Camera,
-    CurrentPageData,
+    CameraPageData,
     Event,
-    HistoricalPageData,
     Location,
     NightReport,
     get_current_day_obs,
 )
-from lsst.ts.rubintv.models.models_helpers import date_str_to_date
+from lsst.ts.rubintv.models.models_helpers import (
+    compress_serialize_data,
+    date_str_to_date,
+)
 from starlette.requests import HTTPConnection
 
 logger = rubintv_logger(__name__)
@@ -27,24 +29,27 @@ async def get_camera_current_data(
     location: Location,
     camera: Camera,
     connection: HTTPConnection,
-) -> CurrentPageData:
+) -> CameraPageData:
     """Get the current data for a camera."""
     if not camera.online:
-        return CurrentPageData()
+        return CameraPageData()
     current_poller: CurrentPoller = connection.app.state.current_poller
     first_pass: asyncio.Event = connection.app.state.first_pass_event
     # wait for the first poll to complete
     await first_pass.wait()
 
-    channel_data = await current_poller.get_current_channel_table(location.name, camera)
+    structured_data = await current_poller.get_current_structured_data(
+        location.name, camera
+    )
     metadata = await current_poller.get_current_metadata(location.name, camera)
+    compressed_metadata = await compress_serialize_data(metadata)
     per_day = await current_poller.get_current_per_day_data(location.name, camera)
     nr_exists = current_poller.night_report_exists(location.name, camera.name)
 
-    return CurrentPageData(
-        channel_data=channel_data,
+    return CameraPageData(
+        structured_data=structured_data,
         per_day=per_day,
-        metadata=metadata,
+        metadata=compressed_metadata,
         nr_exists=nr_exists,
     )
 
@@ -86,7 +91,7 @@ async def get_most_recent_historical_day(
 
 async def get_camera_events_for_date(
     location: Location, camera: Camera, day_obs: date, connection: HTTPConnection
-) -> HistoricalPageData:
+) -> CameraPageData:
     """Get the camera events for a particular date."""
     historical: HistoricalPoller = connection.app.state.historical
     if await historical.is_busy():
@@ -97,35 +102,45 @@ async def get_camera_events_for_date(
     extension_info = await historical.get_all_extensions_for_date(
         location, camera, day_obs
     )
-    metadata = await historical.get_metadata_for_date(
-        location, camera, day_obs.isoformat()
-    )
+    metadata = await historical.get_metadata_for_date(location, camera, day_obs)
+    compressed_metadata = await compress_serialize_data(metadata)
     per_day = await historical.get_per_day_for_date(location, camera, day_obs)
     nr_exists = await historical.night_report_exists_for(location, camera, day_obs)
 
-    return HistoricalPageData(
+    return CameraPageData(
         structured_data=structured_data,
         extension_info=extension_info,
         per_day=per_day,
-        metadata=metadata if metadata else {},
+        metadata=compressed_metadata,
         nr_exists=nr_exists,
     )
 
 
-async def camera_events_exists_for_date(
+async def get_camera_events_for_date_data_api(
     location: Location, camera: Camera, day_obs: date, connection: HTTPConnection
-) -> bool:
-    """Check if camera events exist for a particular date."""
+) -> CameraPageData:
+    """Get the camera events for a particular date."""
     historical: HistoricalPoller = connection.app.state.historical
     if await historical.is_busy():
         raise HTTPException(423, "Historical data is being processed")
     structured_data = await historical.get_structured_data_for_date(
         location, camera, day_obs
     )
-    metadata = await historical._metadata_exists_for_date(location, camera, day_obs)
+    extension_info = await historical.get_all_extensions_for_date(
+        location, camera, day_obs
+    )
+    metadata = await historical.get_metadata_for_date(location, camera, day_obs)
+    compressed_metadata = await compress_serialize_data(metadata)
     per_day = await historical.get_per_day_for_date(location, camera, day_obs)
     nr_exists = await historical.night_report_exists_for(location, camera, day_obs)
-    return bool(structured_data or metadata or per_day or nr_exists)
+
+    return CameraPageData(
+        structured_data=structured_data,
+        extension_info=extension_info,
+        per_day=per_day,
+        metadata=compressed_metadata,
+        nr_exists=nr_exists,
+    )
 
 
 async def get_camera_calendar(
@@ -184,7 +199,23 @@ async def get_prev_next_event(
 
 
 def date_validation(date_str: str) -> date:
-    """Validate the date string and return a date object."""
+    """Validate the date string and return a date object.
+
+    Parameters
+    ----------
+    date_str : `str`
+        The date string to validate.
+
+    Returns
+    -------
+    day_obs : `date`
+        The validated date object.
+
+    Raises
+    -------
+    `HTTPException`
+        If the date string is invalid.
+    """
     try:
         day_obs = date_str_to_date(date_str)
     except ValueError:
@@ -200,7 +231,7 @@ async def get_channel_names_and_extensions_for_date_seq_num(
     connection: HTTPConnection,
 ) -> list[tuple[str, str]]:
     """Get all channels for a given date and sequence number."""
-    if day_obs == get_current_day_obs():
+    if day_obs == get_current_day_obs().isoformat():
         cp: CurrentPoller = connection.app.state.current_poller
         channel_info = await cp.get_channels_and_extensions_for_seq_num(
             location.name, camera.name, seq_num

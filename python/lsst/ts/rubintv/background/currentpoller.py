@@ -4,19 +4,24 @@ from asyncio import sleep
 from time import time
 from typing import TYPE_CHECKING, AsyncGenerator
 
-from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
+from lsst.ts.rubintv.background.background_helpers import (
+    get_next_previous_from_table,
+    make_extension_info,
+    make_structured_data,
+)
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.websocket_notifiers import notify_ws_clients
 from lsst.ts.rubintv.models.models import (
     Camera,
     Event,
+    ExtensionInfo,
     Location,
     NightReport,
     NightReportData,
 )
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
 from lsst.ts.rubintv.models.models import ServiceTypes as Service
-from lsst.ts.rubintv.models.models import get_current_day_obs
+from lsst.ts.rubintv.models.models import StructuredData, get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import (
     all_objects_to_events,
     make_table_from_event_list,
@@ -51,8 +56,9 @@ class CurrentPoller:
         self._objects: dict[str, list] = {}
         self._events: dict[str, list[Event]] = {}
         self._metadata: dict[str, dict] = {}
-        self._metadata_hashes: dict[str, str] = {}
         self._table: dict[str, dict[int, dict[str, dict]]] = {}
+        self._structured_events: dict[str, StructuredData] = {}
+        self._extension_info: dict[str, ExtensionInfo] = {}
         self._per_day: dict[str, dict[str, dict]] = {}
         self._yesterday_prefixes: dict[str, list[str]] = {}
         self._most_recent_events: dict[str, Event] = {}
@@ -80,8 +86,9 @@ class CurrentPoller:
         self._objects = {}
         self._events = {}
         self._metadata = {}
-        self._metadata_hashes = {}
         self._table = {}
+        self._structured_events = {}
+        self._extension_info = {}
         self._per_day = {}
         self._most_recent_events = {}
         self._nr_metadata = {}
@@ -251,8 +258,18 @@ class CurrentPoller:
 
             table = await self.make_channel_table(camera, events)
             self._table[loc_cam] = table
+
+            structured = await make_structured_data(events)
+            self._structured_events[loc_cam] = structured
+
+            ext_info = await make_extension_info(events)
+            self._extension_info[loc_cam] = ext_info
+            ws_payload = {
+                "structuredData": structured,
+                "extensionInfo": ext_info,
+            }
             await notify_ws_clients(
-                Service.CAMERA, MessageType.CAMERA_TABLE, loc_cam, table
+                Service.CAMERA, MessageType.CAMERA_TABLE, loc_cam, ws_payload
             )
 
         # clear all relevant prefixes from the store looking for
@@ -360,7 +377,6 @@ class CurrentPoller:
     ) -> None:
         loc_cam = self._get_loc_cam(location.name, camera)
         md_key = md_obj["key"]
-        self._metadata_hashes[loc_cam] = md_obj["hash"]
         client = self._s3clients[location.name]
         data = await client.async_get_object(md_key)
         if data and (loc_cam not in self._metadata or data != self._metadata[loc_cam]):
@@ -488,6 +504,18 @@ class CurrentPoller:
         table = self._table.get(loc_cam, {})
         return table
 
+    async def get_current_structured_data(
+        self, location_name: str, camera: Camera
+    ) -> dict[str, set[int | str]]:
+        """Get compressed structured data for current day.
+
+        Returns:
+            {channel_name: [seq_num1, seq_num2, ...]}
+        """
+        loc_cam = self._get_loc_cam(location_name, camera)
+        structured = self._structured_events.get(loc_cam, {})
+        return structured
+
     async def get_current_per_day_data(
         self, location_name: str, camera: Camera
     ) -> dict[str, dict[str, dict]]:
@@ -578,10 +606,17 @@ class CurrentPoller:
     ) -> AsyncGenerator:
         match service:
             case Service.CAMERA:
-                channel_data = await self.get_current_channel_table(
+                structured = await self.get_current_structured_data(
                     location.name, camera
                 )
-                yield MessageType.CAMERA_TABLE, channel_data
+                ext_info = self._extension_info.get(
+                    f"{location.name}/{camera.name}", {}
+                )
+                ws_payload = {
+                    "structuredData": structured,
+                    "extensionInfo": ext_info,
+                }
+                yield MessageType.CAMERA_TABLE, ws_payload
 
                 metadata = await self.get_current_metadata(location.name, camera)
                 yield MessageType.CAMERA_METADATA, metadata
@@ -662,7 +697,3 @@ class CurrentPoller:
             for channel_name, event_dict in row.items()
         ]
         return channel_data
-
-    async def get_latest_metadata_hash(self, location_name: str, camera: Camera) -> str:
-        loc_cam = self._get_loc_cam(location_name, camera)
-        return self._metadata_hashes.get(loc_cam, "")

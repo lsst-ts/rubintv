@@ -34,27 +34,7 @@ class Metadata(BaseModel):
     """The URL of the application's documentation."""
 
 
-class MetadataRefData(BaseModel):
-    """A reference to a metadata file for a given location, camera and
-    day_obs."""
-
-    date_str: str
-    """ISO format date string."""
-    metadata_hash: str
-    """Metadata hash from bucket."""
-
-    def __hash__(self) -> int:
-        return hash((self.date_str, self.metadata_hash))
-
-
-class HashableBaseModel(BaseModel):
-    """A hashable version of Pydantic's BaseModel."""
-
-    def __hash__(self) -> int:
-        return hash(self.model_dump_json())
-
-
-class Channel(HashableBaseModel):
+class Channel(BaseModel):
     name: str
     title: str
     label: str = ""
@@ -74,11 +54,8 @@ class Channel(HashableBaseModel):
     def __str__(self) -> str:
         return f"Channel: {self.name}"
 
-    def __repr__(self) -> str:
-        return str(self)
 
-
-class HasButtonMixin:
+class HasButton(BaseModel):
     """Base class for classes that are displayed on-screen with buttons.
     Provides a name, title, logo image, text colour and whether the text
     should have a drop-shadow.
@@ -130,7 +107,7 @@ class MosaicViewMeta(BaseModel):
     mediaType: MediaType = MediaType.IMAGE
 
 
-class ExtraButton(HasButtonMixin, BaseModel):
+class ExtraButton(HasButton):
     """Sub-class to provide buttons with the functionality to link to relative
     URLs.
 
@@ -162,7 +139,7 @@ class TimeSinceClock(BaseModel):
     label: str
 
 
-class Camera(HasButtonMixin, HashableBaseModel):
+class Camera(HasButton):
     """Represents a camera entity, capable of handling different channels like
     images or movies.
 
@@ -188,8 +165,6 @@ class Camera(HasButtonMixin, HashableBaseModel):
         None.
     image_viewer_link : str, optional
         A link to the image viewer. Defaults to an empty string.
-    quicklook_viewer_link : str, optional
-        A link to the quicklook viewer. Defaults to an empty string.
     copy_row_template : str, optional
         Template string for copying a row. Defaults to an empty string.
     mosaic_view_meta : list[MosaicViewMeta], optional
@@ -220,7 +195,6 @@ class Camera(HasButtonMixin, HashableBaseModel):
     night_report_label: str = "Night's Evolution"
     metadata_columns: dict[str, str] | None = None
     image_viewer_link: str = ""
-    quicklook_viewer_link: str = ""
     copy_row_template: str = ""
     mosaic_view_meta: list[MosaicViewMeta] = []
     extra_buttons: list[ExtraButton] = []
@@ -247,7 +221,7 @@ class Camera(HasButtonMixin, HashableBaseModel):
         return [c for c in self.channels if c.per_day]
 
 
-class Location(HasButtonMixin, HashableBaseModel):
+class Location(HasButton):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     bucket_name: str
@@ -552,7 +526,7 @@ class KeyValue(BaseModel):
     value: str | int | float | bool | None = None
 
 
-type StructuredData = dict[str, dict[str, dict[str, set[int | str]]]]
+type StructuredData = dict[str, set[int | str]]
 
 
 class ExtensionDict(TypedDict):
@@ -569,48 +543,20 @@ type LocCamKey = tuple[Location, Camera]
 
 @dataclass
 class CameraPageData:
-    """Data for a camera page."""
-
-    metadata: dict[str, Any] = dataclasses.field(default_factory=dict)
-    per_day: dict[str, dict] = dataclasses.field(default_factory=dict)
     nr_exists: bool = False
-
-    def is_empty(self) -> bool:
-        """Check if the data is empty."""
-        return not any(
-            [
-                self.metadata,
-                self.per_day,
-                self.nr_exists,
-            ]
-        )
-
-
-@dataclass
-class HistoricalPageData(CameraPageData):
-    """Data for the historical page."""
-
+    per_day: dict[str, dict] = dataclasses.field(default_factory=dict)
     structured_data: dict[str, set[int | str]] = dataclasses.field(default_factory=dict)
     extension_info: ExtensionInfo = dataclasses.field(default_factory=dict)
+    metadata: str = ""
 
     def is_empty(self) -> bool:
-        """Check if the data is empty."""
-        base_empty = super().is_empty()
-        return base_empty and not any(
-            [
-                self.structured_data,
-                self.extension_info,
-            ]
+        """Check if the data object is empty.
+
+        Returns
+        -------
+        is_empty: `bool`
+            True if the data object has no data, false otherwise.
+        """
+        return not any(
+            [self.per_day, self.structured_data, self.extension_info, self.metadata]
         )
-
-
-@dataclass
-class CurrentPageData(CameraPageData):
-    """Data for the current page."""
-
-    channel_data: ChannelData = dataclasses.field(default_factory=dict)
-
-    def is_empty(self) -> bool:
-        """Check if the data is empty."""
-        base_empty = super().is_empty()
-        return base_empty and not self.channel_data

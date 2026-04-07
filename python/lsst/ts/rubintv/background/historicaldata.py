@@ -345,8 +345,6 @@ class HistoricalPoller:
             except Exception as e:
                 logger.error(f"Error checking location for changes: {e}")
 
-        await self._metadata_collector.check_for_changed_metadata()
-
         elapsed = time() - start_time
         logger.info(
             "Completed bucket recheck",
@@ -1109,14 +1107,12 @@ class HistoricalPoller:
                         location.name, camera
                     )
                     if metadata:
-                        hash = await current_poller.get_latest_metadata_hash(
-                            location.name, camera
+                        loc_cam = f"{location.name}/{camera.name}"
+                        today = current_poller._last_day_obs.isoformat()
+                        self._metadata_collector.register_metadata_ref(loc_cam, today)
+                        self.add_to_calendar(
+                            location, camera, current_poller._last_day_obs, 0
                         )
-                        today = current_poller._last_day_obs
-                        self._metadata_collector.register_metadata_ref(
-                            f"{location.name}/{camera.name}", today.isoformat(), hash
-                        )
-                        self.add_to_calendar(location, camera, today, 0)
 
                     # Get today's night reports from CurrentPoller
                     night_report = await current_poller.get_current_night_report(
@@ -1144,7 +1140,7 @@ class HistoricalPoller:
         await self._metadata_collector.shift_cache_for_new_day()
 
     async def get_metadata_for_date(
-        self, location: Location, camera: Camera, date_str: str
+        self, location: Location, camera: Camera, a_date: date
     ) -> dict | None:
         """Get metadata for a specific date with caching.
 
@@ -1154,14 +1150,15 @@ class HistoricalPoller:
             The location object.
         camera : `Camera`
             The camera object.
-        date_str : `str`
-            ISO format date string.
+        a_date : `date`
+            The date to retrieve metadata for.
 
         Returns
         -------
         metadata : `dict` | `None`
             The metadata dictionary, or None if not found.
         """
+        date_str = a_date.isoformat()
         return await self._metadata_collector.get_metadata_for_date(
             location, camera, date_str
         )
@@ -1613,13 +1610,12 @@ class HistoricalPoller:
     ) -> None:
         for md_obj in metadata_objs:
             key = md_obj.get("key")
-            hash = md_obj.get("hash")
-            if not key or not hash:
+            if not key:
                 continue
             storage_name = location.name + "/" + key.split("/metadata")[0]
             _, cam_name, date_str = storage_name.split("/")
             self._metadata_collector.register_metadata_ref(
-                f"{location.name}/{cam_name}", date_str, hash
+                f"{location.name}/{cam_name}", date_str
             )
             camera: Camera | None = find_first(location.cameras, "name", cam_name)
             if camera is not None:
