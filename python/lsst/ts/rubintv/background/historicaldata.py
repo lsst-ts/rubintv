@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     from lsst.ts.rubintv.background.currentpoller import CurrentPoller
     from lsst.ts.rubintv.s3client import S3Client
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 type StructuredData = dict[LocCamKey, dict[date, dict[Channel, set[int | str]]]]
 type ExtensionInfo = dict[LocCamDateChan, ExtensionDict]

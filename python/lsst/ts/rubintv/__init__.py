@@ -23,7 +23,7 @@ import typing
 
 from .config import rubintv_logger
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 # For an explanation why these next lines are so complicated, see
 # https://confluence.lsstcorp.org/pages/viewpage.action?spaceKey=LTS&title=Enabling+Mypy+in+Pytest

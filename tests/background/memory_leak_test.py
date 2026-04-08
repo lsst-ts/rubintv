@@ -120,7 +120,7 @@ class FastCurrentPoller(CurrentPoller):
         """Override to add iteration and time limits for CI testing."""
         from lsst.ts.rubintv.config import rubintv_logger
 
-        logger = rubintv_logger()
+        logger = rubintv_logger(__name__)
 
         self.start_time = time.time()
         logger.info(

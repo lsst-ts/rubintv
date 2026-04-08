@@ -12,7 +12,7 @@ heartbeats_sock_lock = asyncio.Lock()
 broadcast_task = None  # Reference to the broadcast task
 
 heartbeat_ws_router = APIRouter()
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 
 async def remove_websocket(websocket: WebSocket) -> None:

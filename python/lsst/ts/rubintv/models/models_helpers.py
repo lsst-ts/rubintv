@@ -89,7 +89,7 @@ def process_batch(batch: list[dict]) -> list[Event]:
     list[Event]
         A batch list of `Event` objects.
     """
-    logger = rubintv_logger()
+    logger = rubintv_logger(__name__)
     events = []
     for obj in batch:
         try:
@@ -125,7 +125,7 @@ async def objects_to_events(
     list[Event]
         A batch of Event objects created from the provided dictionaries.
     """
-    logger = rubintv_logger()
+    logger = rubintv_logger(__name__)
     # Split objects into batches
     batches = [objects[i : i + batch_size] for i in range(0, len(objects), batch_size)]
     logger.info(
@@ -151,7 +151,7 @@ async def objects_to_events(
 
 
 async def objects_to_ngt_report_data(objects: list[dict]) -> list[NightReportData]:
-    logger = rubintv_logger()
+    logger = rubintv_logger(__name__)
     night_reports: list[NightReportData] = []
     for object in objects:
         try:

@@ -358,7 +358,7 @@ class RubinDataMocker:
         """
         from lsst.ts.rubintv.config import rubintv_logger
 
-        logger = rubintv_logger()
+        logger = rubintv_logger(__name__)
 
         logger.info("Creating metadata files for testing")
 

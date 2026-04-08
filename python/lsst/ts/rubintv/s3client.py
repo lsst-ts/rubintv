@@ -16,7 +16,7 @@ from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.models.models import get_current_day_obs
 
 config = BotoConfig(retries={"max_attempts": 10, "mode": "standard"})
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 __all__ = ["S3Client"]
 

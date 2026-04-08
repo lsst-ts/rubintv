@@ -12,7 +12,7 @@ from lsst.ts.rubintv.config import config, rubintv_logger
 from pydantic import BaseModel, ConfigDict
 from pydantic.dataclasses import dataclass
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 
 class Metadata(BaseModel):

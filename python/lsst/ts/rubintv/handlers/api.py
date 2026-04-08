@@ -29,7 +29,7 @@ from redis.asyncio import Redis  # type: ignore
 api_router = APIRouter()
 """FastAPI router for all external handlers."""
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 
 @api_router.get("/", response_model=list[Location])

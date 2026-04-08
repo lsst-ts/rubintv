@@ -37,7 +37,9 @@ from .middleware.x_forwarded import XForwardedMiddleware
 from .models.models_init import ModelsInitiator
 from .s3_connection_pool import get_shared_s3_client
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
+logger.info("Starting rubintv", version=__version__)
+logger.info("__name__:", name=__name__)
 
 exp_checker_installed = False
 try:

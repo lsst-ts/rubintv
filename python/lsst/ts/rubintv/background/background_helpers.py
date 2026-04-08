@@ -1,7 +1,7 @@
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.models.models import Event
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 
 def get_next_prev_seq_nums(

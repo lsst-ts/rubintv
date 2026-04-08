@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from lsst.ts.rubintv.models.models import Camera, Location
     from lsst.ts.rubintv.s3client import S3Client
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 
 class MetadataCollector:

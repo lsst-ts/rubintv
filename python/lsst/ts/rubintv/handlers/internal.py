@@ -18,7 +18,7 @@ from ..models.models import Heartbeat, Metadata
 
 __all__ = ["get_index", "internal_router"]
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 internal_router = APIRouter()
 """FastAPI router for all internal handlers."""
 

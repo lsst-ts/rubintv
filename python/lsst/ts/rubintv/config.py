@@ -1,11 +1,11 @@
 """Configuration definition."""
 
 import os
-from typing import Any
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from structlog import get_logger
+from structlog.stdlib import BoundLogger
 
 __all__ = ["Configuration", "config", "rubintv_logger"]
 
@@ -73,6 +73,9 @@ REDIS_CONTROL_READBACK_SUFFIX = "_READBACK"
 EARLIEST_HISTORICAL_DATE = "2020-01-01"
 
 
-def rubintv_logger() -> Any:
-    logger = get_logger()
+def rubintv_logger(name: str) -> BoundLogger:
+    split_name = name.split(".")
+    if len(split_name) > 3 and split_name[0] == "lsst":
+        name = ".".join(split_name[3:])
+    logger: BoundLogger = get_logger().bind(logger_name=name)
     return logger

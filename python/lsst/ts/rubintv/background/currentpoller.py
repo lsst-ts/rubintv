@@ -28,7 +28,7 @@ from lsst.ts.rubintv.s3client import S3Client
 if TYPE_CHECKING:
     from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 
 class CurrentPoller:
