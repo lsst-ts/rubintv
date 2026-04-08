@@ -25,7 +25,7 @@ from lsst.ts.rubintv.models.models_helpers import (
 from lsst.ts.rubintv.s3_connection_pool import get_shared_s3_client
 from lsst.ts.rubintv.s3client import S3Client
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 
 class CurrentPoller:

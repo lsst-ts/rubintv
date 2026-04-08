@@ -4,7 +4,7 @@ import redis.asyncio as redis  # type: ignore[import]
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.websocket_notifiers import notify_controls_readback_change
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 
 class RedisSubscriber:

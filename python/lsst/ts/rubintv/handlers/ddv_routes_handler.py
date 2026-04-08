@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 from lsst.ts.rubintv.config import rubintv_logger
 
 ddv_router = APIRouter()
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 
 @ddv_router.get("{full_path:path}")

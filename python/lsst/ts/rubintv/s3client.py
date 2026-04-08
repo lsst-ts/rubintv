@@ -12,7 +12,7 @@ from lsst.ts.rubintv.config import config as app_config
 from lsst.ts.rubintv.config import rubintv_logger
 
 config = BotoConfig(retries={"max_attempts": 10, "mode": "standard"})
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 __all__ = ["S3Client"]
 

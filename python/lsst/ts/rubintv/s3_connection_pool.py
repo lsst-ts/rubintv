@@ -10,7 +10,7 @@ import threading
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.s3client import S3Client
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 __all__ = ["S3ConnectionPool", "get_shared_s3_client", "force_garbage_collection"]
 

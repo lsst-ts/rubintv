@@ -4,7 +4,7 @@ from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.s3client import S3Client
 
 proxies_router = APIRouter()
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 
 @proxies_router.get(

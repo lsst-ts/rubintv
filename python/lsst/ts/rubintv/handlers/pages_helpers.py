@@ -4,7 +4,7 @@ from fastapi import Request
 
 from ..config import rubintv_logger
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 __all__ = ["build_title", "to_dict", "get_admin"]
 

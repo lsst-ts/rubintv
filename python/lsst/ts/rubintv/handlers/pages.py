@@ -48,7 +48,7 @@ pages_router = APIRouter()
 templates = get_templates()
 """Jinja2 for templating."""
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 
 @pages_router.get("/", response_class=HTMLResponse, name="home")

@@ -6,7 +6,6 @@ import time
 from typing import Any, Mapping
 from uuid import UUID
 
-import structlog
 from fastapi import WebSocket
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.websockets_clients import (
@@ -20,7 +19,7 @@ from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
 from lsst.ts.rubintv.models.models import ServiceTypes as Service
 from lsst.ts.rubintv.models.models import get_current_day_obs
 
-logger: structlog.stdlib.BoundLogger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 
 async def notify_ws_clients(

@@ -19,7 +19,7 @@ from lsst.ts.rubintv.models.models import (
 from lsst.ts.rubintv.models.models_helpers import date_str_to_date
 from starlette.requests import HTTPConnection
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 
 async def get_camera_current_data(

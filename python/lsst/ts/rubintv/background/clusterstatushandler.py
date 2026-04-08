@@ -8,7 +8,7 @@ from ..config import rubintv_logger
 from ..handlers.websocket_notifiers import notify_redis_detector_status
 from .redisstreamreader import StreamReader
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 # ----------------------------------------------------------------------
 # Typed helpers

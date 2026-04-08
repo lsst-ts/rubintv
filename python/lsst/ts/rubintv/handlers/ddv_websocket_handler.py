@@ -8,7 +8,7 @@ from lsst.ts.rubintv.config import rubintv_logger
 internal_ws_router = APIRouter()
 ddv_client_ws_router = APIRouter()
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 
 class WorkerPodStatus(Enum):

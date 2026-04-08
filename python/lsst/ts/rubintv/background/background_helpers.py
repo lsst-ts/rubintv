@@ -1,7 +1,7 @@
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.models.models import Event
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 
 async def get_next_previous_from_table(

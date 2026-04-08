@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 __all__ = ["ModelsInitiator"]
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 
 class ModelsInitiator:

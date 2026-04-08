@@ -20,7 +20,7 @@ from lsst.ts.rubintv.models.models import ServiceTypes as Service
 from lsst.ts.rubintv.models.models_helpers import find_first
 
 data_ws_router = APIRouter()
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 valid_services = [Service.value for Service in Service]
 

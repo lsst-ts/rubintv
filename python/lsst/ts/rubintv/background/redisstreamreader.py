@@ -8,7 +8,7 @@ import redis.asyncio as redis  # type: ignore[import]
 
 from ..config import rubintv_logger
 
-logger = rubintv_logger()
+logger = rubintv_logger(__name__)
 
 # T should be a Mapping type since we're dealing with dictionary states
 T = TypeVar("T", bound=Mapping)
