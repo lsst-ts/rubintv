@@ -63,10 +63,11 @@ class HistoricalPoller:
     @staticmethod
     def _get_cache_file_path() -> Path:
         """Get the cache file path based on site location."""
-        if config.site_location == "usdf-k8s":
-            return Path("/scratch") / "historical_cache.pkl.gz"
-        else:  # "local" and all other locations use cwd
-            return Path.cwd() / "historical_cache.pkl.gz"
+        CACHE_FILENAME = "historical_cache.pkl.gz"
+        if config.site_location in ["local", "gha"]:
+            return Path.cwd() / CACHE_FILENAME
+        else:
+            return Path("/scratch") / CACHE_FILENAME
 
     @property
     def CACHE_FILE(self) -> Path:
@@ -138,8 +139,6 @@ class HistoricalPoller:
         Includes structured events, extensions, night reports, calendar,
         and metadata references from the MetadataCollector.
         """
-        if config.site_location not in ["local", "usdf-k8s"]:
-            return
         try:
             cache_data = {
                 "structured_events": self._structured_events,
