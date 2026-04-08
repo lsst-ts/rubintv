@@ -167,14 +167,18 @@ class S3Client:
                     executor, list_prefix_blocking, date_prefix
                 )
 
-        # Fetch all prefixes in parallel with concurrency limit
-        tasks = [fetch_prefix_with_semaphore(dp) for dp in date_prefixes]
-
-        # Yield results as they complete, not after all complete
-        for completed_task in asyncio.as_completed(tasks):
-            date_prefix, result = await completed_task
-            if result:
-                yield (date_prefix, result)
+        # Process prefixes in batches matching the semaphore size so that only
+        # a small number of coroutine tasks are alive at once.  Creating all
+        # tasks up-front (e.g. 2290 at startup) floods the event loop's
+        # scheduler and starves other background tasks such as CurrentPoller.
+        batch_size = 12  # matches semaphore / executor capacity
+        for i in range(0, len(date_prefixes), batch_size):
+            batch = date_prefixes[i : i + batch_size]
+            tasks = [fetch_prefix_with_semaphore(dp) for dp in batch]
+            for completed_task in asyncio.as_completed(tasks):
+                date_prefix, result = await completed_task
+                if result:
+                    yield (date_prefix, result)
 
     def _get_object(self, key: str) -> dict[str, Any]:
         try:
