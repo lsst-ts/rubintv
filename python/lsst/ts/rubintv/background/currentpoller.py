@@ -32,6 +32,7 @@ from lsst.ts.rubintv.s3client import S3Client
 
 if TYPE_CHECKING:
     from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
+    from lsst.ts.rubintv.background.metadata_watcher import MetadataWatcher
 
 logger = rubintv_logger(__name__)
 
@@ -53,6 +54,7 @@ class CurrentPoller:
     ) -> None:
         self._s3clients: dict[str, S3Client] = {}
         self._historical_poller: HistoricalPoller | None = None
+        self._metadata_watcher: MetadataWatcher | None = None
         self._objects: dict[str, list] = {}
         self._events: dict[str, list[Event]] = {}
         self._metadata: dict[str, dict] = {}
@@ -82,10 +84,17 @@ class CurrentPoller:
         """Set reference to HistoricalPoller for day rollover integration."""
         self._historical_poller = hp
 
+    def set_metadata_watcher(self, watcher: "MetadataWatcher") -> None:
+        """Set reference to MetadataWatcher for decoupled metadata
+        streaming."""
+        self._metadata_watcher = watcher
+
     async def clear_todays_data(self) -> None:
         self._objects = {}
         self._events = {}
         self._metadata = {}
+        if self._metadata_watcher is not None:
+            self._metadata_watcher.clear()
         self._table = {}
         self._structured_events = {}
         self._extension_info = {}
@@ -145,6 +154,8 @@ class CurrentPoller:
                         prefix = f"{camera.name}/{day_obs}"
                         if test_day:
                             prefix = f"{camera.name}/{test_day}"
+
+                        logger.debug(f"Polling with prefix: {prefix}")
 
                         objects = await client.async_list_objects(prefix)
                         if objects:
@@ -334,8 +345,9 @@ class CurrentPoller:
             md_obj, objects = await self.filter_camera_metadata_object(objects)
         except ValueError:
             logger.error(f"More than one metadata file found for {prefix}")
-        if md_obj:
-            await self.process_metadata_file(md_obj, location, camera)
+        if md_obj and self._metadata_watcher is not None:
+            loc_cam = self._get_loc_cam(location.name, camera)
+            self._metadata_watcher.notify_pending(loc_cam, md_obj)
         return objects
 
     async def filter_camera_metadata_object(
@@ -372,35 +384,6 @@ class CurrentPoller:
             to_return = [o for o in objects if o != md_obj]
         return (md_obj, to_return)
 
-    async def process_metadata_file(
-        self, md_obj: dict[str, str], location: Location, camera: Camera
-    ) -> None:
-        loc_cam = self._get_loc_cam(location.name, camera)
-        md_key = md_obj["key"]
-        client = self._s3clients[location.name]
-        data = await client.async_get_object(md_key)
-        if data and (loc_cam not in self._metadata or data != self._metadata[loc_cam]):
-            self._metadata[loc_cam] = data
-            logger.info("Current - metadata file processed for:", loc_cam=loc_cam)
-            # some channels e.g. Star Trackers share the same metadata file.
-            # If it changes, the websocket clients listening to those cameras
-            # need to be notified too.
-            to_notify = [camera]
-            to_notify.extend(
-                c for c in location.cameras if c.metadata_from == camera.name
-            )
-            for cam in to_notify:
-                loc_cam = self._get_loc_cam(location.name, cam)
-                await notify_ws_clients(
-                    Service.CAMERA, MessageType.CAMERA_METADATA, loc_cam, data
-                )
-                await notify_ws_clients(
-                    Service.CHANNEL,
-                    MessageType.LATEST_METADATA,
-                    loc_cam,
-                    self.get_last_entry_in_metadata(data),
-                )
-
     async def sieve_out_night_reports(
         self, objects: list[dict[str, str]], location: Location, camera: Camera
     ) -> list[dict[str, str]]:
@@ -422,11 +405,20 @@ class CurrentPoller:
     ) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
         report_objs = [o for o in objects if "night_report" in o["key"]]
         filtered = [o for o in objects if o not in report_objs]
+        logger.debug(
+            f"Found {len(report_objs)} night report objects and {len(filtered)} non-night report objects"
+        )
         return (report_objs, filtered)
 
     async def process_night_report_objects(
         self, report_objs: list[dict[str, str]], location: Location, camera: Camera
     ) -> None:
+        logger.info(
+            "Processing night report objects for",
+            location=location.name,
+            camera=camera.name,
+        )
+        logger.debug(f"Night report objects: {report_objs}")
         loc_cam = self._get_loc_cam(location.name, camera)
         prev_nr = await self.get_current_night_report(location.name, camera.name)
         night_report = NightReport()
@@ -434,7 +426,7 @@ class CurrentPoller:
         reports_data = await objects_to_ngt_report_data(report_objs)
         metadata_files = [r for r in reports_data if r.group == "metadata"]
         if len(metadata_files) > 1:
-            logger.error("More than one night report metadata file for {loc_cam}")
+            logger.error(f"More than one night report metadata file for {loc_cam}")
         if metadata_files:
             metadata_file = metadata_files[0]
             if (

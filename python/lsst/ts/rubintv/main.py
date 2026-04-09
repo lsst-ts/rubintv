@@ -22,6 +22,7 @@ from . import __version__
 from .background.clusterstatushandler import DetectorStatusHandler
 from .background.currentpoller import CurrentPoller
 from .background.historicaldata import HistoricalPoller
+from .background.metadata_watcher import MetadataWatcher
 from .background.redissubscriber import RedisSubscriber
 from .config import REDIS_CONTROL_READBACK_SUFFIX, config, rubintv_logger
 from .handlers.api import api_router
@@ -120,6 +121,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 
     historical_polling.cancel()
     today_polling.cancel()
+    app.state.metadata_watcher.stop()
 
     if redis_client is not None:
         if detector_stream_task and detector_stream_reader is not None:
@@ -164,7 +166,17 @@ async def startup_current_poller(
     first_pass = asyncio.Event()
     cp = CurrentPoller(models.locations, first_pass_event=first_pass)
     cp.set_historical_poller(hp)
+
+    watcher = MetadataWatcher(
+        locations=models.locations,
+        s3_clients=cp._s3clients,
+        metadata_store=cp._metadata,
+    )
+    cp.set_metadata_watcher(watcher)
+    watcher.start()
+
     app.state.current_poller = cp
+    app.state.metadata_watcher = watcher
     # Create an event to signal the first pass is complete
     app.state.first_pass_event = first_pass
     return asyncio.create_task(cp.poll_buckets_for_todays_data())

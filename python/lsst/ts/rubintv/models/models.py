@@ -518,6 +518,7 @@ class ServiceMessageTypes(Enum):
     CAMERA_TABLE = "channelData"
     CAMERA_METADATA = "metadata"
     LATEST_METADATA = "latestMetadata"
+    METADATA_CHUNK = "metadataChunk"
     CAMERA_PER_DAY = "perDay"
     CAMERA_PD_BACKDATED = "perDayBackdated"
     NIGHT_REPORT = "nightReport"
