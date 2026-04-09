@@ -1,7 +1,12 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
-import { _getById, union, getHistoricalData } from "../modules/utils"
+import {
+  _getById,
+  union,
+  getHistoricalData,
+  deserializeCompressedData,
+} from "../modules/utils"
 import { createTableFromStructuredData } from "../modules/convertTableData"
 import {
   loadColumnSelection,
@@ -18,11 +23,6 @@ import {
   SortingOptions,
 } from "./componentTypes"
 import { RubinTVTableContext } from "./contexts/contexts"
-import {
-  getAllColumnNames,
-  redrawHeaderWidths,
-  getDefaultColumns,
-} from "../modules/tableUtils"
 
 type EL = EventListener
 
@@ -37,7 +37,6 @@ export default function TableApp({
   calendar,
   toggleCalendar,
 }: TableAppProps) {
-  const [isReadyToDisplay, setIsReadyToDisplay] = useState(false)
   const [hasReceivedData, setHasReceivedData] = useState(false)
   const [date, setDate] = useState(initialDate)
   const [channelData, setChannelData] = useState({} as ChannelData)
@@ -56,15 +55,18 @@ export default function TableApp({
 
   const [error, setError] = useState(null)
 
-  const defaultColumns = useMemo(() => getDefaultColumns(camera), [camera])
-  const defaultColNames = useMemo(
-    () => defaultColumns.map((col) => col.name),
-    [defaultColumns]
-  )
-  const availableColumns = useMemo(
-    () => getAllColumnNames(metadata, defaultColNames),
-    [metadata, defaultColNames]
-  )
+  // Column configuration derived from camera metadata
+  const defaultColumns = camera.metadata_columns
+    ? Object.entries(camera.metadata_columns).map(
+        ([name, desc]) =>
+          ({
+            name,
+            desc,
+          }) as MetadataColumn
+      )
+    : []
+  const defaultColNames = defaultColumns.map((col) => col.name)
+  const availableColumns = getAllColumnNames(metadata, defaultColNames)
 
   // Load selected columns from storage
   const [selected, setSelected] = useState(() => {
@@ -80,18 +82,15 @@ export default function TableApp({
     [locationName, camera.name]
   )
 
-  const metaColumnsToDisplay = useMemo(() => {
-    const selectedObjs = selected.map((columnName) => ({ name: columnName }))
-    return defaultColumns
-      .filter((col) => selected.includes(col.name))
-      .concat(
-        selectedObjs.filter(
-          (o: MetadataColumn) =>
-            !defaultColNames.includes(o.name) &&
-            availableColumns.includes(o.name)
-        )
+  const selectedObjs = selected.map((columnName) => ({ name: columnName }))
+  const metaColumnsToDisplay = defaultColumns
+    .filter((col) => selected.includes(col.name))
+    .concat(
+      selectedObjs.filter(
+        (o: MetadataColumn) =>
+          !defaultColNames.includes(o.name) && availableColumns.includes(o.name)
       )
-  }, [defaultColumns, selected, defaultColNames, availableColumns])
+    )
 
   function setDateAndUpdateHeader(newDate: string, stale = false) {
     setDate(newDate)
@@ -115,7 +114,10 @@ export default function TableApp({
     getHistoricalData(locationName, camera.name, date)
       .then((json) => {
         const data = JSON.parse(json)
-        if (data.metadata) setMetadata(data.metadata)
+        if (data.metadata) {
+          const metadata = deserializeCompressedData(data.metadata)
+          setMetadata(metadata)
+        }
         if (data.structuredData && data.extensionInfo) {
           const channelData = createTableFromStructuredData(
             camera.name,
@@ -140,44 +142,38 @@ export default function TableApp({
 
   // filter from metadata the rows that have the filterRowsOn value
   // in the filterRowsOn column.
-  const { filteredMetadata, filteredChannelData } = useMemo(() => {
-    let filtered = metadata
-    let filteredData = channelData
-    if (filterColumnSet) {
-      filtered = Object.entries(metadata).reduce((acc, [key, val]) => {
-        if (String(val[filterOn.column] as string) === filterOn.value) {
+  let filteredMetadata = metadata
+  let filteredChannelData = channelData
+  if (filterColumnSet) {
+    filteredMetadata = Object.entries(metadata).reduce((acc, [key, val]) => {
+      if (String(val[filterOn.column] as string) === filterOn.value) {
+        acc[key] = val
+      }
+      return acc
+    }, {} as Metadata)
+    // reduce the channelData to only the rows that are in the filteredMetadata
+    filteredChannelData = Object.entries(channelData).reduce(
+      (acc, [key, val]) => {
+        if (filteredMetadata[key]) {
           acc[key] = val
         }
         return acc
-      }, {} as Metadata)
-      // reduce the channelData to only the rows that are in the filteredMetadata
-      filteredData = Object.entries(channelData).reduce((acc, [key, val]) => {
-        if (filtered[key]) {
-          acc[key] = val
-        }
-        return acc
-      }, {} as ChannelData)
-    }
-    return { filteredMetadata: filtered, filteredChannelData: filteredData }
-  }, [filterColumnSet, filterOn.column, filterOn.value, metadata, channelData])
+      },
+      {} as ChannelData
+    )
+  }
 
-  const { unfilteredRowsCount, filteredRowsCount } = useMemo(() => {
-    const unfiltered = union(
-      Object.keys(metadata),
-      Object.keys(channelData)
-    ).length
-    const filtered = union(
-      Object.keys(filteredMetadata),
-      Object.keys(filteredChannelData)
-    ).length
-    return { unfilteredRowsCount: unfiltered, filteredRowsCount: filtered }
-  }, [metadata, channelData, filteredMetadata, filteredChannelData])
+  const unfilteredRowsCount = union(
+    Object.keys(metadata),
+    Object.keys(channelData)
+  ).length
+  const filteredRowsCount = union(
+    Object.keys(filteredMetadata),
+    Object.keys(filteredChannelData)
+  ).length
 
   useEffect(() => {
-    const redrawn = redrawHeaderWidths()
-    if (redrawn) {
-      setIsReadyToDisplay(true)
-    }
+    redrawHeaderWidths()
   }, [filteredMetadata, filteredChannelData, selected])
 
   const handleCameraEvent = useCallback(
@@ -218,10 +214,24 @@ export default function TableApp({
         setMetadata(data)
         setLastKnownMetadataRow(undefined)
       } else if (dataType === "channelData") {
-        setChannelData(data)
+        // Handle both old expanded format and new structured format
+        // If data has structuredData and extensionInfo, convert it
+        if (data.structuredData && data.extensionInfo) {
+          const expandedChannelData = createTableFromStructuredData(
+            camera.name,
+            date,
+            data.structuredData,
+            data.extensionInfo,
+            camera.channels
+          )
+          setChannelData(expandedChannelData)
+        } else {
+          // Legacy: direct channel data (old expanded table format)
+          setChannelData(data)
+        }
       }
     },
-    [date, metadata]
+    [date, metadata, camera]
   )
 
   useEffect(() => {
@@ -230,42 +240,6 @@ export default function TableApp({
       window.removeEventListener("camera", handleCameraEvent as EL)
     }
   }, [handleCameraEvent])
-
-  useEffect(() => {
-    window.addEventListener(
-      "historicalDataUpdate",
-      handleHistoricalDataUpdate as EL
-    )
-    function handleHistoricalDataUpdate(event: CustomEvent) {
-      const { data, dataType } = event.detail
-      if (data.date !== date) {
-        return
-      }
-      if (dataType === "historicalStructuredData") {
-        console.log(
-          "Received historical structured data update for date:",
-          data.date
-        )
-        const channelData = createTableFromStructuredData(
-          camera.name,
-          data.date,
-          data.structuredData,
-          data.extensionInfo,
-          camera.channels
-        )
-        setChannelData(channelData)
-      } else if (dataType === "historicalMetadata") {
-        console.log("Received historical metadata update for date:", data.date)
-        setMetadata(data.metadata)
-      }
-    }
-    return () => {
-      window.removeEventListener(
-        "historicalDataUpdate",
-        handleHistoricalDataUpdate as EL
-      )
-    }
-  }, [date, camera.name, camera.channels])
 
   if (unfilteredRowsCount == 0 && hasReceivedData) {
     return <h3>There is no data for this day</h3>
@@ -287,9 +261,6 @@ export default function TableApp({
     )
   }
 
-  const displayReadyClass = isReadyToDisplay ? "opaque" : "transparent"
-  const tableHeaderClass = `table-header row ${displayReadyClass} transition-opacity`
-
   return (
     <RubinTVTableContext.Provider
       value={{ siteLocation, locationName, camera, dayObs: date }}
@@ -310,7 +281,7 @@ export default function TableApp({
               lastKnownMetadataRow={lastKnownMetadataRow}
               isHistorical={isHistorical}
             />
-            <div className={tableHeaderClass}>
+            <div className="table-header row">
               <TableHeader
                 camera={camera}
                 metadataColumns={metaColumnsToDisplay}
@@ -363,4 +334,66 @@ function LoadingBar({
       ></div>
     </div>
   )
+}
+
+function getAllColumnNames(metadata: Metadata, defaultColNames: string[]) {
+  // get the set of all data for list of all available attrs
+  const availableColumns = Object.values(metadata)
+    .map((obj) => Object.keys(obj))
+    .flat()
+    .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+  // get the set of all data for list of all available attrs
+  const uniqueColNames = Array.from(
+    new Set(defaultColNames.concat(availableColumns))
+  )
+  // filter out the indicators (first char is '_')
+  // and the replacement strings for empty channels
+  // (first char is '@')
+  const filtered = uniqueColNames.filter(
+    (el) => !(el[0] === "_" || el[0] === "@")
+  )
+  return filtered
+}
+
+function getTableColumnWidths() {
+  const tRow = document.querySelector("tr")
+  if (!tRow) {
+    return []
+  }
+  const cellsArr = Array.from(tRow.querySelectorAll("td"))
+  const cellWidths = cellsArr.map((cell) => {
+    return cell.offsetWidth
+  })
+  return cellWidths
+}
+
+/**
+ * Redraws the header widths based on the current table column widths.
+ */
+function redrawHeaderWidths() {
+  const columns = getTableColumnWidths()
+  const headers = Array.from(document.querySelectorAll(".grid-title"))
+  if (columns.length !== headers.length) {
+    return
+  }
+  let sum = 0
+  for (let ix = 0; ix < headers.length; ix++) {
+    const title = headers[ix] as HTMLElement
+    const width = columns[ix] + 2
+    title.style.left = `${sum}px`
+    sum += width
+  }
+  if (sum > 0) {
+    const sumWidth = `${Math.ceil(sum) + 2}px`
+    const aboveTable = document.querySelector(
+      ".above-table-sticky"
+    ) as HTMLElement
+    const tableHeader = document.querySelector(".table-header") as HTMLElement
+    if (aboveTable) {
+      aboveTable.style.width = sumWidth
+    }
+    if (tableHeader) {
+      tableHeader.style.width = sumWidth
+    }
+  }
 }

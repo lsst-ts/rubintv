@@ -1109,7 +1109,9 @@ class HistoricalPoller:
                     if metadata:
                         loc_cam = f"{location.name}/{camera.name}"
                         today = current_poller._last_day_obs.isoformat()
-                        self._metadata_collector.register_metadata_ref(loc_cam, today)
+                        self._metadata_collector.register_metadata_ref(
+                            loc_cam, today, ""
+                        )
                         self.add_to_calendar(
                             location, camera, current_poller._last_day_obs, 0
                         )
@@ -1615,7 +1617,7 @@ class HistoricalPoller:
             storage_name = location.name + "/" + key.split("/metadata")[0]
             _, cam_name, date_str = storage_name.split("/")
             self._metadata_collector.register_metadata_ref(
-                f"{location.name}/{cam_name}", date_str
+                f"{location.name}/{cam_name}", date_str, md_obj.get("hash", "")
             )
             camera: Camera | None = find_first(location.cameras, "name", cam_name)
             if camera is not None:

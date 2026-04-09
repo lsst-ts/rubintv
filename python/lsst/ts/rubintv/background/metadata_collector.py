@@ -2,11 +2,21 @@
 
 import asyncio
 from collections import OrderedDict
+from datetime import date
+from typing import TYPE_CHECKING
 
 from lsst.ts.rubintv.config import rubintv_logger
-from lsst.ts.rubintv.models.models import Camera, Location
-from lsst.ts.rubintv.models.models_helpers import date_str_to_date
-from lsst.ts.rubintv.s3client import S3Client
+from lsst.ts.rubintv.handlers.websocket_notifiers import notify_ws_clients
+from lsst.ts.rubintv.models.models import (
+    MetadataRefData,
+    ServiceMessageTypes,
+    ServiceTypes,
+)
+from lsst.ts.rubintv.models.models_helpers import date_str_to_date, find_first
+
+if TYPE_CHECKING:
+    from lsst.ts.rubintv.models.models import Camera, Location
+    from lsst.ts.rubintv.s3client import S3Client
 
 logger = rubintv_logger(__name__)
 
@@ -21,19 +31,24 @@ class MetadataCollector:
     # Maximum days to cache metadata
     METADATA_CACHE_DAYS = 60
 
-    def __init__(self, s3_clients: dict[str, S3Client]) -> None:
+    def __init__(
+        self, s3_clients: dict[str, "S3Client"], locations: list["Location"]
+    ) -> None:
         """Initialize the metadata collector.
 
         Parameters
         ----------
         s3_clients : `dict`[`str`, `S3Client`]
             Dictionary mapping location names to S3 client instances.
+        locations : `list`[`Location`]
+            List of location objects.
         """
         self._s3_clients = s3_clients
+        self._locations = locations
 
         # Metadata refs tracking available dates for each loc_cam
-        self._metadata_refs: dict[str, set[str]] = {}
-        # Structure: {loc_cam: {date_str}}
+        self._metadata_refs: dict[str, set[MetadataRefData]] = {}
+        # Structure: {loc_cam: {MetadataRefData(date_str, hash), ...}}
 
         # Metadata cache using OrderedDict for LRU behavior
         self._metadata_cache: dict[str, OrderedDict[str, dict]] = {}
@@ -49,11 +64,13 @@ class MetadataCollector:
         self._fetch_locks: dict[str, asyncio.Lock] = {}
 
     @property
-    def metadata_refs(self) -> dict[str, set[str]]:
+    def metadata_refs(self) -> dict[str, set[MetadataRefData]]:
         """Get the metadata refs dictionary."""
         return self._metadata_refs
 
-    def register_metadata_ref(self, loc_cam: str, date_str: str) -> None:
+    def register_metadata_ref(
+        self, loc_cam: str, date_str: str, metadata_hash: str
+    ) -> None:
         """Register that metadata exists for a location/camera/date
         combination.
 
@@ -63,11 +80,18 @@ class MetadataCollector:
             Location and camera identifier (format: "location/camera").
         date_str : `str`
             ISO format date string.
+        hash : `str`
+            Metadata hash from bucket.
         """
-        self._metadata_refs.setdefault(loc_cam, set()).add(date_str)
+        self._metadata_refs.setdefault(loc_cam, set()).add(
+            MetadataRefData(date_str=date_str, metadata_hash=metadata_hash)
+        )
+        logger.debug(
+            f"Registered metadata ref for {loc_cam} on {date_str} with hash {metadata_hash}"
+        )
 
     async def get_metadata_for_date(
-        self, location: Location, camera: Camera, date_str: str
+        self, location: "Location", camera: "Camera", date_str: str
     ) -> dict | None:
         """Get metadata for a specific date with caching.
 
@@ -161,8 +185,8 @@ class MetadataCollector:
 
     async def _fetch_metadata_from_s3(
         self,
-        location: Location,
-        camera: Camera,
+        location: "Location",
+        camera: "Camera",
         date_str: str,
     ) -> dict | None:
         """Fetch metadata from S3 for a specific date.
@@ -190,7 +214,7 @@ class MetadataCollector:
         except Exception:
             return None
 
-    async def start_prefetch(self, locations: list[Location]) -> None:
+    async def start_prefetch(self, locations: list["Location"]) -> None:
         """Start background metadata prefetching.
 
         Parameters
@@ -210,7 +234,7 @@ class MetadataCollector:
             self._background_metadata_prefetch(locations)
         )
 
-    async def _background_metadata_prefetch(self, locations: list[Location]) -> None:
+    async def _background_metadata_prefetch(self, locations: list["Location"]) -> None:
         """Background task to prefetch metadata for the last 60 days.
 
         Parameters
@@ -231,7 +255,7 @@ class MetadataCollector:
         except Exception as e:
             logger.error(f"Error in background metadata prefetch: {e}")
 
-    async def _prefetch_location_metadata(self, location: Location) -> None:
+    async def _prefetch_location_metadata(self, location: "Location") -> None:
         """Prefetch metadata for all cameras in a location.
 
         Parameters
@@ -255,8 +279,9 @@ class MetadataCollector:
             # first
             available_dates: list[str] = []
             if loc_cam in self._metadata_refs:
+                just_dates = [ref.date_str for ref in self._metadata_refs[loc_cam]]
                 available_dates = sorted(
-                    self._metadata_refs[loc_cam],
+                    just_dates,
                     key=lambda d: date_str_to_date(d),
                     reverse=True,
                 )
@@ -338,7 +363,7 @@ class MetadataCollector:
                 pass
 
     async def metadata_exists_for_date(
-        self, location: Location, camera: Camera, date_str: str
+        self, location: "Location", camera: "Camera", date_str: str
     ) -> bool:
         """Check if metadata exists for a specific date.
 
@@ -357,7 +382,115 @@ class MetadataCollector:
             True if metadata exists, False otherwise.
         """
         loc_cam = f"{location.name}/{camera.name}"
+        if loc_cam not in self._metadata_refs:
+            return False
+        just_dates = {ref.date_str for ref in self._metadata_refs[loc_cam]}
+        return date_str in just_dates
 
-        return (
-            loc_cam in self._metadata_refs and date_str in self._metadata_refs[loc_cam]
-        )
+    async def check_for_changed_metadata(self, yesterday: date | None = None) -> None:
+        """Check S3 for changed metadata files and update refs and cache
+        accordingly.
+
+        Parameters
+        ----------
+        yesterday : `date`, optional
+            If provided, only check metadata for the specified date. Default
+            is None (check all dates in refs).
+        """
+        # cycle through all metadata refs for this loc_cam and check if the
+        # hash has changed
+        logger.info("Checking for changed metadata files")
+        for loc_cam, refs in self._metadata_refs.items():
+            # Get client by location
+            location_name, camera_name = loc_cam.split("/", 1)
+            location = find_first(
+                self._locations,
+                "name",
+                location_name,
+            )
+            if not location:
+                logger.error(f"Location {location_name} not found for metadata check")
+                continue
+            camera = find_first(
+                location.cameras,
+                "name",
+                camera_name,
+            )
+            if not camera:
+                logger.error(
+                    f"Camera {camera_name} not found in location {location_name} for metadata check"
+                )
+                continue
+            client = self._s3_clients[location_name]
+            if yesterday is not None:
+                # Filter refs to only check the specified date
+                refs = {ref for ref in refs if ref.date_str == yesterday.isoformat()}
+                if not refs:
+                    logger.debug(
+                        f"No metadata refs for {loc_cam} on {yesterday.isoformat()} to check"
+                    )
+                    continue
+            for ref in list(refs):
+                key = f"{camera_name}/{ref.date_str}/metadata.json"
+                try:
+                    logger.debug(f"Checking metadata for {loc_cam} on {ref.date_str}")
+                    objs = await client.async_list_objects(key)
+                    if not objs:
+                        # removed metadata file - remove ref and cache entry
+                        logger.info(
+                            f"Metadata file removed for {loc_cam} on {ref.date_str}, "
+                            "removing ref and cache entry"
+                        )
+                        refs.remove(ref)
+                        if (
+                            loc_cam in self._metadata_cache
+                            and ref.date_str in self._metadata_cache[loc_cam]
+                        ):
+                            del self._metadata_cache[loc_cam][ref.date_str]
+                        continue
+
+                    obj = objs[0]
+                    new_hash = obj.get("hash")
+                    if not new_hash or new_hash == ref.metadata_hash:
+                        continue
+
+                    logger.info(
+                        f"Metadata changed for {loc_cam} on {ref.date_str}, "
+                        f"updating hash from {ref.metadata_hash} to {new_hash}"
+                    )
+
+                    # Update the hash in refs only when changed.
+                    logger.debug(
+                        f"Updating metadata ref for {loc_cam} on {ref.date_str} with new hash {new_hash}"
+                    )
+                    self._metadata_refs[loc_cam].remove(ref)
+                    self._metadata_refs[loc_cam].add(
+                        MetadataRefData(date_str=ref.date_str, metadata_hash=new_hash)
+                    )
+
+                    # Invalidate cached metadata for this date so next read
+                    # fetches the updated object.
+                    if (
+                        loc_cam in self._metadata_cache
+                        and ref.date_str in self._metadata_cache[loc_cam]
+                    ):
+                        del self._metadata_cache[loc_cam][ref.date_str]
+
+                    # fetch the new metadata
+                    metadata = await self._fetch_metadata_from_s3(
+                        location, camera, ref.date_str
+                    )
+                    # Notify clients about the updated metadata
+                    await notify_ws_clients(
+                        loc_cam=loc_cam,
+                        service=ServiceTypes.HISTORICALDATAUPDATE,
+                        message_type=ServiceMessageTypes.HISTORICAL_METADATA,
+                        payload={
+                            "date": ref.date_str,
+                            "metadata": metadata,
+                        },
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Error checking metadata for {loc_cam} on {ref.date_str}: {e}"
+                    )

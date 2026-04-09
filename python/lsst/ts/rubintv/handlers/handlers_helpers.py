@@ -143,6 +143,16 @@ async def get_camera_events_for_date_data_api(
     )
 
 
+async def camera_events_exists_for_date(
+    location: Location, camera: Camera, day_obs: date, connection: HTTPConnection
+) -> bool:
+    """Check if camera events exist for a particular date."""
+    data = await get_camera_events_for_date_data_api(
+        location, camera, day_obs, connection
+    )
+    return not data.is_empty()
+
+
 async def get_camera_calendar(
     location: Location, camera: Camera, request: Request
 ) -> dict[int, dict[int, dict[int, int]]]:

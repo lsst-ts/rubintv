@@ -246,7 +246,7 @@ export function getStrHashCode(str: string): number {
   return hash
 }
 
-export const decodeUnpackWSPayload = (compressed: string): string => {
+export const deserializeCompressedData = (compressed: string): any => {
   let data
   try {
     // Decode Base64 string to Uint8Array
