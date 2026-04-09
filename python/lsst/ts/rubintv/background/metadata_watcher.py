@@ -9,6 +9,7 @@ from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.models.models import ServiceTypes as Service
 
 if TYPE_CHECKING:
+    from lsst.ts.rubintv.background.metadata_collector import MetadataCollector
     from lsst.ts.rubintv.models.models import Camera, Location
     from lsst.ts.rubintv.s3client import S3Client
 
@@ -39,6 +40,11 @@ class MetadataWatcher:
         Shared reference to ``CurrentPoller._metadata``.  The watcher writes
         parsed metadata into it after each successful fetch so that
         ``get_current_metadata`` and ``get_latest_data`` see it.
+    metadata_collector : `MetadataCollector`, optional
+        When provided, the watcher acquires
+        ``metadata_collector.background_fetch_semaphore`` before each S3
+        fetch so that current-day metadata downloads do not compete with
+        foreground (page-request) S3 fetches.
     """
 
     def __init__(
@@ -46,10 +52,16 @@ class MetadataWatcher:
         locations: list["Location"],
         s3_clients: dict[str, "S3Client"],
         metadata_store: dict[str, dict],
+        metadata_collector: "MetadataCollector | None" = None,
     ) -> None:
         self._locations = locations
         self._s3_clients = s3_clients
         self._metadata_store = metadata_store
+        self._background_semaphore: asyncio.Semaphore | None = (
+            metadata_collector.background_fetch_semaphore
+            if metadata_collector is not None
+            else None
+        )
 
         # Pending metadata objects keyed by loc_cam.  The poll loop writes
         # here via notify_pending(); the watcher drains it.
@@ -137,7 +149,7 @@ class MetadataWatcher:
             return
 
         s3_client = self._s3_clients[location.name]
-        streamer = MetadataStreamer(s3_client)
+        streamer = MetadataStreamer(s3_client, semaphore=self._background_semaphore)
 
         data = await streamer.stream_to_service(
             key=md_obj["key"],

@@ -1,3 +1,4 @@
+import asyncio
 import gc
 from asyncio import Event as AsyncioEvent
 from asyncio import sleep
@@ -44,7 +45,7 @@ class CurrentPoller:
 
     # min time between polls
     MIN_INTERVAL = 1
-    RUNNING_LOG_PERIOD = 10  # loops
+    RUNNING_LOG_PERIOD = 4  # loops
 
     def __init__(
         self,
@@ -131,6 +132,17 @@ class CurrentPoller:
                     prefix = f"{camera.name}/{self._last_day_obs}/{chan.name}"
                     loc_prefixes.append(prefix)
 
+    async def _poll_one_camera(
+        self, location: Location, camera: Camera, prefix: str
+    ) -> None:
+        """List objects for a single camera prefix and process them."""
+        client = self._s3clients[location.name]
+        objects = await client.async_list_objects(prefix)
+        if objects:
+            objects = await self.sieve_out_metadata(objects, prefix, location, camera)
+            objects = await self.sieve_out_night_reports(objects, location, camera)
+            await self.process_channel_objects(objects, location, camera)
+
     async def poll_buckets_for_todays_data(self, test_day: str = "") -> None:
         time_total = 0.0
         while True:
@@ -145,30 +157,29 @@ class CurrentPoller:
                     await self.clear_todays_data()
                 day_obs = self._last_day_obs = get_current_day_obs()
 
+                # Build one coroutine per online camera, then fan-out all
+                # S3 listings in parallel across every location/camera.
+                camera_tasks = []
                 for location in self.locations:
-                    client = self._s3clients[location.name]
                     for camera in location.cameras:
                         if not camera.online:
                             continue
+                        prefix = (
+                            f"{camera.name}/{test_day}"
+                            if test_day
+                            else f"{camera.name}/{day_obs}"
+                        )
+                        camera_tasks.append(
+                            self._poll_one_camera(location, camera, prefix)
+                        )
 
-                        prefix = f"{camera.name}/{day_obs}"
-                        if test_day:
-                            prefix = f"{camera.name}/{test_day}"
+                results = await asyncio.gather(*camera_tasks, return_exceptions=True)
+                for result in results:
+                    if isinstance(result, Exception):
+                        logger.error("Error polling camera prefix", exc_info=result)
 
-                        logger.debug(f"Polling with prefix: {prefix}")
-
-                        objects = await client.async_list_objects(prefix)
-                        if objects:
-                            objects = await self.sieve_out_metadata(
-                                objects, prefix, location, camera
-                            )
-                            objects = await self.sieve_out_night_reports(
-                                objects, location, camera
-                            )
-                            await self.process_channel_objects(
-                                objects, location, camera
-                            )
-
+                # Yesterday's per-day checks are quick; keep them sequential.
+                for location in self.locations:
                     await self.poll_for_yesterdays_per_day(location)
 
                 self.completed_first_poll = True
@@ -196,7 +207,6 @@ class CurrentPoller:
                     # Trigger garbage collection periodically to prevent
                     # memory accumulation
                     gc.collect()
-                    logger.debug("Triggered garbage collection in CurrentPoller")
                 if elapsed < self.MIN_INTERVAL:
                     await sleep(self.MIN_INTERVAL - elapsed)
 
@@ -405,20 +415,11 @@ class CurrentPoller:
     ) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
         report_objs = [o for o in objects if "night_report" in o["key"]]
         filtered = [o for o in objects if o not in report_objs]
-        logger.debug(
-            f"Found {len(report_objs)} night report objects and {len(filtered)} non-night report objects"
-        )
         return (report_objs, filtered)
 
     async def process_night_report_objects(
         self, report_objs: list[dict[str, str]], location: Location, camera: Camera
     ) -> None:
-        logger.info(
-            "Processing night report objects for",
-            location=location.name,
-            camera=camera.name,
-        )
-        logger.debug(f"Night report objects: {report_objs}")
         loc_cam = self._get_loc_cam(location.name, camera)
         prev_nr = await self.get_current_night_report(location.name, camera.name)
         night_report = NightReport()

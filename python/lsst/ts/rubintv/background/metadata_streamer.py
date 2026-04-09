@@ -48,8 +48,13 @@ class MetadataStreamer:
     caller can update its own in-memory cache without a second S3 round-trip.
     """
 
-    def __init__(self, s3_client: "S3Client") -> None:
+    def __init__(
+        self,
+        s3_client: "S3Client",
+        semaphore: asyncio.Semaphore | None = None,
+    ) -> None:
         self._s3_client = s3_client
+        self._semaphore = semaphore
         self.result: dict[str, Any] = {}
 
     async def stream_to_service(
@@ -154,7 +159,15 @@ class MetadataStreamer:
         """Async generator that yields raw bytes chunks from the S3 object."""
         loop = asyncio.get_event_loop()
         executor = ThreadPoolExecutor(max_workers=1)
-        body = await loop.run_in_executor(executor, self._s3_client.get_raw_object, key)
+        if self._semaphore is not None:
+            async with self._semaphore:
+                body = await loop.run_in_executor(
+                    executor, self._s3_client.get_raw_object, key
+                )
+        else:
+            body = await loop.run_in_executor(
+                executor, self._s3_client.get_raw_object, key
+            )
         while True:
             chunk: bytes = await loop.run_in_executor(
                 executor, body.read, STREAM_CHUNK_SIZE

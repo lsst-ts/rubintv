@@ -64,9 +64,10 @@ class MetadataCollector:
         # Per-key locks to prevent duplicate fetches
         self._fetch_locks: dict[str, asyncio.Lock] = {}
 
-        # Semaphore to serialise S3 fetches so that background prefetching
-        # does not compete for bandwidth with foreground requests.
-        self._s3_fetch_semaphore = asyncio.Semaphore(1)
+        # Semaphore to throttle background S3 fetches (prefetch and watcher).
+        # Foreground requests bypass this semaphore entirely so they are never
+        # blocked behind an in-flight background fetch.
+        self.background_fetch_semaphore = asyncio.Semaphore(1)
 
     @property
     def metadata_refs(self) -> dict[str, set[MetadataRefData]]:
@@ -207,6 +208,7 @@ class MetadataCollector:
         location: "Location",
         camera: "Camera",
         date_str: str,
+        use_semaphore: bool = False,
     ) -> dict | None:
         """Fetch metadata from S3 for a specific date.
 
@@ -218,6 +220,11 @@ class MetadataCollector:
             The camera object.
         date_str : `str`
             ISO format date string.
+        use_semaphore : `bool`, optional
+            If True, acquire ``_prefetch_semaphore`` before fetching.  Set by
+            background prefetch to throttle concurrent S3 requests.  Foreground
+            requests pass ``False`` (the default) so they are never blocked
+            behind an in-flight prefetch.
 
         Returns
         -------
@@ -227,16 +234,22 @@ class MetadataCollector:
         client = self._s3_clients[location.name]
         key = f"{camera.name}/{date_str}/metadata.json"
 
-        try:
-            async with self._s3_fetch_semaphore:
-                t0 = monotonic()
-                metadata = await client.async_get_object(key)
+        async def _do_fetch() -> dict | None:
+            t0 = monotonic()
+            metadata = await client.async_get_object(key)
             elapsed = monotonic() - t0
             size_kb = len(str(metadata)) / 1024 if metadata else 0
             logger.debug(
-                f"S3 get_object: key={key} " f"time={elapsed:.2f}s size={size_kb:.1f}KB"
+                f"S3 get_object: key={key} time={elapsed:.2f}s size={size_kb:.1f}KB"
             )
             return metadata
+
+        try:
+            if use_semaphore:
+                async with self.background_fetch_semaphore:
+                    return await _do_fetch()
+            else:
+                return await _do_fetch()
         except Exception:
             return None
 
@@ -339,7 +352,7 @@ class MetadataCollector:
                     try:
                         t_prefetch = monotonic()
                         metadata = await self._fetch_metadata_from_s3(
-                            location, camera, date_str
+                            location, camera, date_str, use_semaphore=True
                         )
                         if metadata:
                             # Add to cache (will be inserted at end due to

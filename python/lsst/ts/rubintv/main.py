@@ -171,6 +171,7 @@ async def startup_current_poller(
         locations=models.locations,
         s3_clients=cp._s3clients,
         metadata_store=cp._metadata,
+        metadata_collector=hp._metadata_collector,
     )
     cp.set_metadata_watcher(watcher)
     watcher.start()
