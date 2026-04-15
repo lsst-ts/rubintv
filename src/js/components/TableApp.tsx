@@ -108,7 +108,7 @@ export default function TableApp({
   // This effect runs only once when the component mounts.
   // It fetches data if the page is historical or stale.
   useEffect(() => {
-    if (!isHistorical && !isStale) {
+    if (!isHistorical) {
       return
     }
     getHistoricalData(locationName, camera.name, date)
@@ -179,40 +179,36 @@ export default function TableApp({
   const handleCameraEvent = useCallback(
     (event: CustomEvent) => {
       const { datestamp, data, dataType } = event.detail
-      // if there's no data, don't update
-      if (Object.entries(data).length === 0) {
-        return
-      }
-      setHasReceivedData(true)
-
       if (data.error) {
         setError(data.error)
       }
 
       // Before clearing metadata on day rollover, preserve the last metadata row
       if (datestamp && datestamp !== date) {
-        if (Object.keys(metadata).length > 0) {
-          const lastSeq = Object.keys(metadata)
+        if (dataType === "metadata" && Object.keys(data).length > 0) {
+          const lastSeq = Object.keys(data)
             .map(Number)
             .sort((a, b) => a - b)
             .pop()
 
           if (lastSeq !== undefined) {
-            const lastRow = metadata[lastSeq]
+            const lastRow = data[lastSeq]
             if (lastRow && "Date begin" in lastRow) {
               setLastKnownMetadataRow(lastRow)
             }
           }
         }
-
         setDateAndUpdateHeader(datestamp)
         setMetadata({})
         setChannelData({})
       }
 
       if (dataType === "metadata") {
-        setMetadata(data)
-        setLastKnownMetadataRow(undefined)
+        if (Object.keys(data).length !== 0) {
+          setMetadata(data)
+          setLastKnownMetadataRow(undefined)
+          setHasReceivedData(true)
+        }
       } else if (dataType === "channelData") {
         // Handle both old expanded format and new structured format
         // If data has structuredData and extensionInfo, convert it
@@ -224,14 +220,24 @@ export default function TableApp({
             data.extensionInfo,
             camera.channels
           )
-          setChannelData(expandedChannelData)
+          if (Object.keys(expandedChannelData).length !== 0) {
+            setChannelData(expandedChannelData)
+            setHasReceivedData(true)
+          }
         } else {
           // Legacy: direct channel data (old expanded table format)
-          setChannelData(data)
+          if (Object.keys(data).length !== 0) {
+            console.log(
+              "Received legacy channel data update with datestamp:",
+              datestamp
+            )
+            setChannelData(data)
+            setHasReceivedData(true)
+          }
         }
       }
     },
-    [date, metadata, camera]
+    [date, camera]
   )
 
   useEffect(() => {

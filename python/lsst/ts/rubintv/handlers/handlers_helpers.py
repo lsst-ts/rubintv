@@ -25,14 +25,14 @@ from starlette.requests import HTTPConnection
 logger = rubintv_logger(__name__)
 
 
-async def get_camera_current_data(
+async def has_camera_current_data(
     location: Location,
     camera: Camera,
     connection: HTTPConnection,
-) -> CameraPageData:
-    """Get the current data for a camera."""
+) -> tuple[bool, bool]:
+    """Check if the camera has current data."""
     if not camera.online:
-        return CameraPageData()
+        return False, False
     current_poller: CurrentPoller = connection.app.state.current_poller
     first_pass: asyncio.Event = connection.app.state.first_pass_event
     # wait for the first poll to complete
@@ -42,16 +42,10 @@ async def get_camera_current_data(
         location.name, camera
     )
     metadata = await current_poller.get_current_metadata(location.name, camera)
-    compressed_metadata = await compress_serialize_data(metadata)
     per_day = await current_poller.get_current_per_day_data(location.name, camera)
     nr_exists = current_poller.night_report_exists(location.name, camera.name)
 
-    return CameraPageData(
-        structured_data=structured_data,
-        per_day=per_day,
-        metadata=compressed_metadata,
-        nr_exists=nr_exists,
-    )
+    return bool(structured_data or per_day or metadata), nr_exists
 
 
 async def get_latest_metadata(
@@ -145,12 +139,12 @@ async def get_camera_events_for_date_data_api(
 
 async def camera_events_exists_for_date(
     location: Location, camera: Camera, day_obs: date, connection: HTTPConnection
-) -> bool:
+) -> tuple[bool, bool]:
     """Check if camera events exist for a particular date."""
     data = await get_camera_events_for_date_data_api(
         location, camera, day_obs, connection
     )
-    return not data.is_empty()
+    return not data.is_empty(), data.nr_exists
 
 
 async def get_camera_calendar(

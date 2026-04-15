@@ -609,17 +609,19 @@ class CurrentPoller:
                 structured = await self.get_current_structured_data(
                     location.name, camera
                 )
-                ext_info = self._extension_info.get(
-                    f"{location.name}/{camera.name}", {}
-                )
-                ws_payload = {
-                    "structuredData": structured,
-                    "extensionInfo": ext_info,
-                }
-                yield MessageType.CAMERA_TABLE, ws_payload
+                if structured:
+                    ext_info = self._extension_info.get(
+                        f"{location.name}/{camera.name}", {}
+                    )
+                    ws_payload = {
+                        "structuredData": structured,
+                        "extensionInfo": ext_info,
+                    }
+                    yield MessageType.CAMERA_TABLE, ws_payload
 
                 metadata = await self.get_current_metadata(location.name, camera)
-                yield MessageType.CAMERA_METADATA, metadata
+                if metadata:
+                    yield MessageType.CAMERA_METADATA, metadata
 
                 if per_day := await self.get_current_per_day_data(
                     location.name, camera

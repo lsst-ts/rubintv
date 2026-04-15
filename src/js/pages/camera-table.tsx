@@ -45,9 +45,6 @@ import { Camera } from "../components/componentTypes"
   if (isHistorical) {
     ws.subscribe("historicalDataUpdate", locationName, camera.name, date)
   }
-  if (isHistorical) {
-    ws.subscribe("historicalDataUpdate", locationName, camera.name, date)
-  }
 
   const getCameraTableMain = _getById("camera-table-main")
   if (!getCameraTableMain) {
