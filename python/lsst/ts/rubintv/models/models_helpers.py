@@ -89,7 +89,7 @@ def process_batch(batch: list[dict]) -> list[Event]:
             event = Event(**obj)
             events.append(event)
         except ValueError as e:
-            logger.error(e)
+            logger.error(f"Error converting object to Event: {e}")
     return events
 
 
@@ -133,7 +133,7 @@ async def objects_to_ngt_report_data(objects: list[dict]) -> list[NightReportDat
             event = NightReportData(**object)
             night_reports.append(event)
         except ValueError as e:
-            logger.info(e)
+            logger.info(f"Error converting object to NightReportData: {e}")
     return night_reports
 
 
