@@ -80,11 +80,14 @@ class ModelsInitiator:
         obj_list: `list`[ `Any` ]
             A list of pydantic-backed model objects.
         """
-        obj_list = []
+        obj_list: list[Any] = []
         constructor = globals()[cls.__name__]
         for obj in data_dict:
-            instance = constructor(**obj)
-            obj_list.append(instance)
+            if isinstance(obj, dict) and all(isinstance(k, str) for k in obj.keys()):
+                instance = constructor(**obj)
+                obj_list.append(instance)
+            else:
+                logger.error(f"Invalid object for model population: {obj}")
         return obj_list
 
     def _attach_metadata_cols(self, cameras: list[Camera], data: Any) -> list[Camera]:

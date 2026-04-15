@@ -1,7 +1,7 @@
 import json
-import re
 import traceback
 import uuid
+from datetime import date
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
@@ -37,11 +37,11 @@ async def data_websocket(
         async with clients_lock:
             clients[client_id] = websocket
             websocket_to_client[websocket] = client_id
-            logger.info("Num clients:", num_clients=len(clients))
+            logger.debug("Num clients:", num_clients=len(clients))
 
         while True:
             raw: str = await websocket.receive_text()
-            logger.info("Ws recvd:", raw=raw)
+            logger.debug("Ws recvd:", raw=raw)
             validated = await validate_raw_message(raw)
             if validated is None:
                 continue
@@ -49,7 +49,7 @@ async def data_websocket(
 
             if "message" in data:
                 service_loc_cam = data["message"]
-                logger.info("Attaching:", id=r_client_id, service=service_loc_cam)
+                logger.debug("Attaching:", id=r_client_id, service=service_loc_cam)
                 await attach_service(r_client_id, service_loc_cam, websocket)
             else:
                 logger.warn("No message:", client_id=r_client_id, data=data)
@@ -58,10 +58,10 @@ async def data_websocket(
         async with clients_lock:
             if websocket in websocket_to_client:
                 client_id = websocket_to_client[websocket]
-                logger.info("Unattaching:", client_id=client_id)
+                logger.debug("Unattaching:", client_id=client_id)
                 del clients[client_id]
                 del websocket_to_client[websocket]
-                logger.info("Num clients:", num_clients=len(clients))
+                logger.debug("Num clients:", num_clients=len(clients))
                 await remove_client_from_services(client_id)
     except Exception as e:
         # Catch all exceptions to prevent the websocket from crashing
@@ -86,7 +86,7 @@ async def validate_raw_message(raw: str) -> tuple[uuid.UUID, dict] | None:
 
 
 async def remove_client_from_services(client_id: uuid.UUID) -> None:
-    logger.info("Removing client from services list...", client_id=client_id)
+    logger.debug("Removing client from services list...", client_id=client_id)
     async with services_lock:
         # First remove the client_id from all services
         for _, client_ids in services_clients.items():
@@ -103,7 +103,7 @@ async def remove_client_from_services(client_id: uuid.UUID) -> None:
         # Finally, delete those services
         for service in services_to_remove:
             del services_clients[service]
-    logger.info("Removed client.")
+    logger.debug("Removed client.")
 
 
 async def attach_simple_service(
@@ -111,6 +111,7 @@ async def attach_simple_service(
     websocket: WebSocket,
     service: Service,
     message_type: MessageType,
+    service_key: str,
 ) -> None:
     """Attach a client to a simple service that just needs initial state
     notification.
@@ -129,12 +130,7 @@ async def attach_simple_service(
         The key to use for storing in services_clients
     """
     # Register client for this service
-    service_key = service.value
-    async with services_lock:
-        if service_key not in services_clients:
-            services_clients[service_key] = [client_id]
-        else:
-            services_clients[service_key].append(client_id)
+    await register_client_service(client_id, service_key)
 
     payload = None
     if service == Service.HISTORICALSTATUS:
@@ -177,6 +173,7 @@ async def attach_service(
                 websocket,
                 Service.HISTORICALSTATUS,
                 MessageType.HISTORICAL_STATUS,
+                "historicalStatus",
             )
             return
         case "detectors":
@@ -185,6 +182,7 @@ async def attach_service(
                 websocket,
                 Service.DETECTORS,
                 MessageType.DETECTOR_STATUS,
+                "detectors",
             )
             return
         case "admin":
@@ -193,6 +191,7 @@ async def attach_service(
                 websocket,
                 Service.ADMIN,
                 MessageType.CONTROL_READBACK_CHANGE,
+                "admin",
             )
             return
 
@@ -203,7 +202,7 @@ async def attach_service(
         logger.error("Bad request", service=service_str, client_id=client_id)
         return
 
-    channel_name = ""
+    extra_component = ""
     location_name, camera_name, *extra = full_location.split("/")
     locations = websocket.app.state.models.locations
     if not (
@@ -218,7 +217,7 @@ async def attach_service(
         return
 
     location = find_first(locations, "name", location_name)
-    if not location:
+    if location is None:
         logger.error(
             "No such location:",
             service=service,
@@ -227,32 +226,43 @@ async def attach_service(
         )
         return
 
+    extra_component = ""
     if extra:
-        channel_name = extra[0]
-        if not await is_valid_channel(camera, channel_name):
-            logger.error("No such channel", service=service, client_id=client_id)
+        extra_component = extra[0]
+        if not await is_valid_channel(
+            camera, extra_component
+        ) and not await is_valid_date(extra_component):
+            logger.error(
+                "No such channel or date:",
+                service=service,
+                client_id=client_id,
+                extra_component=extra_component,
+            )
             return
 
-    await notify_new_client(websocket, location, camera, channel_name, service)
-
-    async with services_lock:
-        if full_service_name in services_clients:
-            services_clients[full_service_name].append(client_id)
-        else:
-            services_clients[full_service_name] = [client_id]
+    if service == Service.CAMERA or service == Service.CALENDAR:
+        await notify_new_client(websocket, location, camera, extra_component, service)
+    await register_client_service(client_id, full_service_name)
 
     # If registering a service with location and camera and channel,
-    # also register a service with just location and camera.
-    if not channel_name:
+    # also register a service with just location and camera. This
+    # allows to send notifications to all clients interested in
+    # that camera, regardless of channel.
+    if not extra_component:
         return
 
     loc_cam_service = f"{service_str} {location_name}/{camera_name}"
+    await register_client_service(client_id, loc_cam_service)
 
+
+async def register_client_service(
+    client_id: uuid.UUID, client_service_identifier: str
+) -> None:
     async with services_lock:
-        if loc_cam_service in services_clients:
-            services_clients[loc_cam_service].append(client_id)
+        if client_service_identifier in services_clients:
+            services_clients[client_service_identifier].append(client_id)
         else:
-            services_clients[loc_cam_service] = [client_id]
+            services_clients[client_service_identifier] = [client_id]
 
 
 async def is_valid_client_request(data: dict) -> bool:
@@ -262,12 +272,6 @@ async def is_valid_client_request(data: dict) -> bool:
         logger.warn("Received json without client_id")
         return False
     return client_id in clients.keys()
-
-
-async def is_valid_service(service: str) -> bool:
-    services_str = "|".join(valid_services)
-    valid_req = re.compile(rf"^({services_str}) [\w-]+(\/\w+)+$")
-    return valid_req.fullmatch(service) is not None
 
 
 async def is_valid_location_camera(
@@ -288,6 +292,15 @@ async def is_valid_channel(camera: Camera, channel_name: str) -> bool:
     return camera.channels is not None and channel_name in [
         chan.name for chan in camera.channels
     ]
+
+
+async def is_valid_date(date_str: str) -> bool:
+    try:
+        year, month, day = map(int, date_str.split("-"))
+        _ = date(year, month, day)
+        return True
+    except Exception:
+        return False
 
 
 async def notify_new_client(

@@ -5,6 +5,7 @@ bucket_configurations:
   summit: [summit]
   gha: [summit-usdf, usdf, base-usdf, tucson-usdf]
   local: [summit-usdf, usdf, base-usdf, tucson-usdf]
+  # local: [test]
 
 locations:
   - name: test
@@ -13,7 +14,7 @@ locations:
     bucket_name: rubin-rubintv-data-summit
     endpoint_url: https://sdfembs3.sdf.slac.stanford.edu
     camera_groups:
-      Test: [lsstcam, allsky]
+      Test: [lsstcam]
 
   - name: usdf
     title: USDF

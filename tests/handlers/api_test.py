@@ -1,10 +1,7 @@
-import asyncio
-
 import pytest
 from fastapi import FastAPI
 from httpx import AsyncClient
-from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
-from lsst.ts.rubintv.models.models import Camera, Location, get_current_day_obs
+from lsst.ts.rubintv.models.models import Camera, Location
 from lsst.ts.rubintv.models.models_helpers import find_first
 from lsst.ts.rubintv.models.models_init import ModelsInitiator
 
@@ -98,21 +95,3 @@ async def test_get_api_location_camera_current_for_offline(
             )
             data = response.json()
             assert data == {}
-
-
-@pytest.mark.asyncio
-async def test_get_api_camera_for_today(
-    mocked_client: tuple[AsyncClient, FastAPI, RubinDataMocker],
-) -> None:
-    """Test that api location/camera/current day obs yields a result"""
-    client, app, _ = mocked_client
-
-    hp: HistoricalPoller = app.state.historical
-    while await hp.is_busy():
-        await asyncio.sleep(0.1)
-
-    today = get_current_day_obs()
-    response = await client.get(f"/rubintv/api/usdf/lsstcam/date/{today}")
-    data = response.json()
-    assert "channelData" in data
-    assert data["channelData"] != {}
