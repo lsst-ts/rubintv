@@ -1165,7 +1165,7 @@ class HistoricalPoller:
             location, camera, date_str
         )
 
-    async def _metadata_exists_for_date(
+    async def metadata_exists_for_date(
         self, location: Location, camera: Camera, day_obs: date
     ) -> bool:
         """Check if metadata exists for a specific date."""

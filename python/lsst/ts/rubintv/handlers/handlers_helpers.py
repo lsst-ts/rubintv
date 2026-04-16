@@ -110,41 +110,20 @@ async def get_camera_events_for_date(
     )
 
 
-async def get_camera_events_for_date_data_api(
-    location: Location, camera: Camera, day_obs: date, connection: HTTPConnection
-) -> CameraPageData:
-    """Get the camera events for a particular date."""
-    historical: HistoricalPoller = connection.app.state.historical
-    if await historical.is_busy():
-        raise HTTPException(423, "Historical data is being processed")
-    structured_data = await historical.get_structured_data_for_date(
-        location, camera, day_obs
-    )
-    extension_info = await historical.get_all_extensions_for_date(
-        location, camera, day_obs
-    )
-    metadata = await historical.get_metadata_for_date(location, camera, day_obs)
-    compressed_metadata = await compress_serialize_data(metadata)
-    per_day = await historical.get_per_day_for_date(location, camera, day_obs)
-    nr_exists = await historical.night_report_exists_for(location, camera, day_obs)
-
-    return CameraPageData(
-        structured_data=structured_data,
-        extension_info=extension_info,
-        per_day=per_day,
-        metadata=compressed_metadata,
-        nr_exists=nr_exists,
-    )
-
-
 async def camera_events_exists_for_date(
     location: Location, camera: Camera, day_obs: date, connection: HTTPConnection
 ) -> tuple[bool, bool]:
     """Check if camera events exist for a particular date."""
-    data = await get_camera_events_for_date_data_api(
-        location, camera, day_obs, connection
+    historical: HistoricalPoller = connection.app.state.historical
+    structured_data = await historical.get_structured_data_for_date(
+        location, camera, day_obs
     )
-    return not data.is_empty(), data.nr_exists
+    per_day = await historical.get_per_day_for_date(location, camera, day_obs)
+    nr_exists = await historical.night_report_exists_for(location, camera, day_obs)
+    metadata_exists = await historical.metadata_exists_for_date(
+        location, camera, day_obs
+    )
+    return bool(structured_data or per_day or metadata_exists), nr_exists
 
 
 async def get_camera_calendar(

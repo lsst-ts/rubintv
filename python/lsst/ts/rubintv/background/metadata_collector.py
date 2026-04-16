@@ -125,7 +125,7 @@ class MetadataCollector:
         )
         loc_cam = f"{location.name}/{camera.name}"
 
-        if not self.metadata_exists_for_date(location, camera, date_str):
+        if not await self.metadata_exists_for_date(location, camera, date_str):
             logger.debug(f"Metadata does not exist for {loc_cam} on {date_str}")
             return None
 
