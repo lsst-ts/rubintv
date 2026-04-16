@@ -41,7 +41,7 @@ def _build_metadata_collector() -> MetadataCollector:
         )
         for location in m.locations
     }
-    return MetadataCollector(clients)
+    return MetadataCollector(clients, locations=m.locations)
 
 
 class TestMetadataCollector:
@@ -65,8 +65,8 @@ class TestMetadataCollector:
             marker="v1",
         )
 
-        collector.register_metadata_ref(loc_cam, date_str)
-        assert date_str in collector.metadata_refs[loc_cam]
+        collector.register_metadata_ref(loc_cam, date_str, "hash")
+        assert date_str in {ref.date_str for ref in collector.metadata_refs[loc_cam]}
 
         metadata = await collector.get_metadata_for_date(location, camera, date_str)
         assert metadata is not None
@@ -93,7 +93,7 @@ class TestMetadataCollector:
             date_str,
             marker="stable-v1",
         )
-        collector.register_metadata_ref(loc_cam, date_str)
+        collector.register_metadata_ref(loc_cam, date_str, "hash")
 
         cached = await collector.get_metadata_for_date(location, camera, date_str)
         assert cached is not None
@@ -119,7 +119,7 @@ class TestMetadataCollector:
         exists = await collector.metadata_exists_for_date(location, camera, date_str)
         assert exists is False
 
-        collector.register_metadata_ref(loc_cam, date_str)
+        collector.register_metadata_ref(loc_cam, date_str, "hash")
 
         exists = await collector.metadata_exists_for_date(location, camera, date_str)
         assert exists is True

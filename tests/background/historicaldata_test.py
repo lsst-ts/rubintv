@@ -56,13 +56,14 @@ class TestHistoricalPoller:
         historical._have_downloaded = True
         historical._metadata_collector.register_metadata_ref(
             f"{location.name}/{camera.name}",
-            date_str="2024-01-15",
+            "2024-01-15",
+            "hash",
         )
         historical._structured_events[(location, camera)] = {date(2024, 1, 15): {}}
         historical._nr_metadata[location] = []
         historical._calendar[(location, camera)] = {}
         historical._metadata_collector.register_metadata_ref(
-            "test", date_str="2024-01-15"
+            "test", "2024-01-15", "hash"
         )
 
         await historical.clear_all_data()
