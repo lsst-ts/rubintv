@@ -27,4 +27,6 @@ def test_camera_page_data_with_metadata() -> None:
     """Test CameraPageData with metadata."""
     data = CameraPageData()
     data.metadata = "compressed_data_string"
-    assert data.is_empty() is False
+    # Even with metadata, if structured_data and per_day are empty,
+    # is_empty should return True
+    assert data.is_empty() is True

@@ -5,6 +5,8 @@ from datetime import date
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from lsst.ts.rubintv.background.currentpoller import CurrentPoller
+from lsst.ts.rubintv.background.historicaldata import HistoricalPoller
+from lsst.ts.rubintv.background.metadata_streamer import send_metadata_chunks
 from lsst.ts.rubintv.config import rubintv_logger
 from lsst.ts.rubintv.handlers.websocket_notifiers import send_notification
 from lsst.ts.rubintv.handlers.websockets_clients import (
@@ -17,6 +19,7 @@ from lsst.ts.rubintv.handlers.websockets_clients import (
 from lsst.ts.rubintv.models.models import Camera, Location
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
 from lsst.ts.rubintv.models.models import ServiceTypes as Service
+from lsst.ts.rubintv.models.models import get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import find_first
 
 data_ws_router = APIRouter()
@@ -54,7 +57,7 @@ async def data_websocket(
             else:
                 logger.warn("No message:", client_id=r_client_id, data=data)
 
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, RuntimeError):
         async with clients_lock:
             if websocket in websocket_to_client:
                 client_id = websocket_to_client[websocket]
@@ -257,6 +260,12 @@ async def attach_service(
     loc_cam_service = f"{service_str} {location_name}/{camera_name}"
     await register_client_service(client_id, loc_cam_service)
 
+    # When a client subscribes to historicalDataUpdate with a date,
+    # send them cached metadata for that date immediately so the page
+    # doesn't have to wait for a future S3 change event.
+    if service == Service.HISTORICALDATAUPDATE and await is_valid_date(extra_component):
+        await notify_historical_metadata(websocket, location, camera, extra_component)
+
 
 async def register_client_service(
     client_id: uuid.UUID, client_service_identifier: str
@@ -318,3 +327,60 @@ async def notify_new_client(
         location, camera, channel_name, service
     ):
         await send_notification(websocket, service, message_type, data)
+
+    # Stream cached metadata in chunks so the frontend shows a progress bar.
+    if service == Service.CAMERA:
+        metadata = await current_poller.get_current_metadata(location.name, camera)
+        if not metadata:
+            # On fresh start the MetadataWatcher may not have finished its
+            # S3 fetch yet.  Fall back to the historical metadata cache
+            # which the background prefetcher may have populated already.
+            historical = websocket.app.state.historical
+            day_obs = get_current_day_obs()
+            metadata = historical.get_cached_metadata(location, camera, day_obs)
+        if metadata:
+            await send_metadata_chunks(websocket, metadata, service)
+
+
+async def notify_historical_metadata(
+    websocket: WebSocket,
+    location: Location,
+    camera: Camera,
+    date_str: str,
+) -> None:
+    """Send metadata for *date_str* to a newly-subscribed client.
+
+    Called when a client subscribes to ``historicalDataUpdate`` with a
+    date component.  If the metadata is already cached the HTTP API
+    response will include it, so we skip the WS send to avoid a
+    redundant (and racy) chunk stream.  Only streams from S3 when the
+    data is *not* cached.
+    """
+    historical: HistoricalPoller = websocket.app.state.historical
+    day_obs = date(*(int(p) for p in date_str.split("-")))
+    loc_cam = f"{location.name}/{camera.name}"
+
+    # When metadata is cached the API response already carries it —
+    # sending it again over WS causes a race where the first chunk
+    # arrives before the HTTP response and the progress bar gets stuck.
+    if historical.get_cached_metadata(location, camera, day_obs) is not None:
+        logger.info(
+            "Skipping WS metadata send — cached, will be in HTTP response",
+            loc_cam=loc_cam,
+            date=date_str,
+        )
+        return
+
+    logger.info(
+        "Metadata not cached — starting WS stream from S3",
+        loc_cam=loc_cam,
+        date=date_str,
+    )
+    await historical.stream_metadata_for_date(
+        location, camera, day_obs, Service.HISTORICALDATAUPDATE
+    )
+    logger.info(
+        "WS metadata stream completed",
+        loc_cam=loc_cam,
+        date=date_str,
+    )

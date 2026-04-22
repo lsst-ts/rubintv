@@ -125,12 +125,24 @@ export class WebsocketClient implements WebsocketClientInterface {
       return
     }
 
-    const detail = {
-      dataType: data.dataType,
-      data: deserializeCompressedData(data.payload),
-      datestamp: data.datestamp,
+    let detail
+    if (data.dataType === "metadataChunk") {
+      detail = {
+        dataType: data.dataType,
+        payload: data.payload,
+        final: data.final,
+        totalSize: data.totalSize ?? 0,
+        bytesSent: data.bytesSent ?? 0,
+        datestamp: data.datestamp,
+      }
+    } else {
+      detail = {
+        dataType: data.dataType,
+        data: deserializeCompressedData(data.payload),
+        datestamp: data.datestamp,
+      }
+      console.debug(`Received message for service ${data.service}:`, detail)
     }
-    console.debug(`Received message for service ${data.service}:`, detail)
     window.dispatchEvent(new CustomEvent(data.service, { detail }))
   }
 

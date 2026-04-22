@@ -6,13 +6,9 @@ from datetime import date
 from time import monotonic
 from typing import TYPE_CHECKING
 
+from lsst.ts.rubintv.background.metadata_streamer import MetadataStreamer
 from lsst.ts.rubintv.config import rubintv_logger
-from lsst.ts.rubintv.handlers.websocket_notifiers import notify_ws_clients
-from lsst.ts.rubintv.models.models import (
-    MetadataRefData,
-    ServiceMessageTypes,
-    ServiceTypes,
-)
+from lsst.ts.rubintv.models.models import MetadataRefData, ServiceTypes
 from lsst.ts.rubintv.models.models_helpers import date_str_to_date, find_first
 
 if TYPE_CHECKING:
@@ -403,6 +399,31 @@ class MetadataCollector:
             except asyncio.CancelledError:
                 pass
 
+    def cache_metadata(self, loc_cam: str, date_str: str, metadata: dict) -> None:
+        """Store *metadata* in the LRU cache for *loc_cam*/*date_str*."""
+        if loc_cam not in self._metadata_cache:
+            self._metadata_cache[loc_cam] = OrderedDict()
+        cache = self._metadata_cache[loc_cam]
+        cache[date_str] = metadata
+        cache.move_to_end(date_str)
+        while len(cache) > self.METADATA_CACHE_DAYS:
+            cache.popitem(last=False)
+
+    def get_cached_metadata(
+        self, location: "Location", camera: "Camera", date_str: str
+    ) -> dict | None:
+        """Return metadata for a date only if already in cache.
+
+        Unlike :meth:`get_metadata_for_date`, this never triggers an S3
+        fetch.  Returns ``None`` when the data is not cached.
+        """
+        loc_cam = f"{location.name}/{camera.name}"
+        cache = self._metadata_cache.get(loc_cam)
+        if cache is None or date_str not in cache:
+            return None
+        cache.move_to_end(date_str)
+        return cache[date_str]
+
     async def metadata_exists_for_date(
         self, location: "Location", camera: "Camera", date_str: str
     ) -> bool:
@@ -517,20 +538,21 @@ class MetadataCollector:
                     ):
                         del self._metadata_cache[loc_cam][ref.date_str]
 
-                    # fetch the new metadata
-                    metadata = await self._fetch_metadata_from_s3(
-                        location, camera, ref.date_str
-                    )
-                    # Notify clients about the updated metadata
-                    await notify_ws_clients(
+                    # Stream the new metadata in chunks to subscribed clients
+                    # and update the local cache with the result.
+                    key = f"{camera_name}/{ref.date_str}/metadata.json"
+                    streamer = MetadataStreamer(client)
+                    metadata = await streamer.stream_to_service(
+                        key=key,
                         loc_cam=loc_cam,
                         service=ServiceTypes.HISTORICALDATAUPDATE,
-                        message_type=ServiceMessageTypes.HISTORICAL_METADATA,
-                        payload={
-                            "date": ref.date_str,
-                            "metadata": metadata,
-                        },
                     )
+                    if not metadata:
+                        # No subscribers or fetch failed; fall back to plain
+                        # fetch so the cache stays warm.
+                        metadata = await self._fetch_metadata_from_s3(
+                            location, camera, ref.date_str
+                        )
                 except Exception as e:
                     logger.error(
                         f"Error checking metadata for {loc_cam} on {ref.date_str}: {e}"

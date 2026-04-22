@@ -1,13 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react"
 import TableView, { TableHeader } from "./TableView"
 import AboveTableRow, { JumpButtons } from "./TableControls"
-import {
-  _getById,
-  union,
-  getHistoricalData,
-  deserializeCompressedData,
-} from "../modules/utils"
-import { createTableFromStructuredData } from "../modules/convertTableData"
+import { union } from "../modules/utils"
 import {
   loadColumnSelection,
   saveColumnSelection,
@@ -15,16 +9,13 @@ import {
 import { ModalProvider } from "./Modal"
 import {
   TableAppProps,
-  ChannelData,
   Metadata,
-  MetadataRow,
   MetadataColumn,
   FilterOptions,
   SortingOptions,
 } from "./componentTypes"
 import { RubinTVTableContext } from "./contexts/contexts"
-
-type EL = EventListener
+import useTableData from "../hooks/useTableData"
 
 export default function TableApp({
   camera,
@@ -38,10 +29,24 @@ export default function TableApp({
   noDataForDay,
   toggleCalendar,
 }: TableAppProps) {
-  const [hasReceivedData, setHasReceivedData] = useState(false)
-  const [date, setDate] = useState(initialDate)
-  const [channelData, setChannelData] = useState({} as ChannelData)
-  const [metadata, setMetadata] = useState({} as Metadata)
+  const {
+    date,
+    channelData,
+    metadata,
+    hasReceivedData,
+    isLoadingMetadata,
+    metadataBytesReceived,
+    metadataTotalSize,
+    lastKnownMetadataRow,
+    error,
+  } = useTableData({
+    camera,
+    locationName,
+    initialDate,
+    isHistorical,
+    isStale,
+  })
+
   const [filterOn, setFilterOn] = useState({
     column: "",
     value: "",
@@ -50,11 +55,6 @@ export default function TableApp({
     column: "seq",
     order: "desc",
   } as SortingOptions)
-  const [lastKnownMetadataRow, setLastKnownMetadataRow] = useState<
-    MetadataRow | undefined
-  >(undefined)
-
-  const [error, setError] = useState(null)
 
   // Column configuration derived from camera metadata
   const defaultColumns = camera.metadata_columns
@@ -93,51 +93,6 @@ export default function TableApp({
       )
     )
 
-  function setDateAndUpdateHeader(newDate: string, stale = false) {
-    setDate(newDate)
-    // Update header directly
-    const headerDate = _getById("header-date") as HTMLSpanElement
-    headerDate.textContent = newDate
-    if (stale) {
-      headerDate.classList.add("stale")
-    } else {
-      headerDate.classList.remove("stale")
-    }
-  }
-
-  // Fetch historical data if required.
-  // This effect runs only once when the component mounts.
-  // It fetches data if the page is historical or stale.
-  useEffect(() => {
-    if (!isHistorical) {
-      return
-    }
-    getHistoricalData(locationName, camera.name, date)
-      .then((json) => {
-        const data = JSON.parse(json)
-        if (data.metadata) {
-          const metadata = deserializeCompressedData(data.metadata)
-          setMetadata(metadata)
-        }
-        if (data.structuredData && data.extensionInfo) {
-          const channelData = createTableFromStructuredData(
-            camera.name,
-            date,
-            data.structuredData,
-            data.extensionInfo,
-            camera.channels
-          )
-          setChannelData(channelData)
-        }
-        setDateAndUpdateHeader(data.date, isStale)
-        setHasReceivedData(true)
-      })
-      .catch((error) => {
-        console.error("Error fetching historical data:", error.message)
-        setError(error.message || "Failed to fetch historical data")
-      })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
   // convenience var for showing filterColumn has been set
   const filterColumnSet = filterOn.column !== "" && filterOn.value !== ""
 
@@ -160,7 +115,7 @@ export default function TableApp({
         }
         return acc
       },
-      {} as ChannelData
+      {} as typeof channelData
     )
   }
 
@@ -177,85 +132,24 @@ export default function TableApp({
     redrawHeaderWidths()
   }, [filteredMetadata, filteredChannelData, selected])
 
-  const handleCameraEvent = useCallback(
-    (event: CustomEvent) => {
-      const { datestamp, data, dataType } = event.detail
-      if (data.error) {
-        setError(data.error)
-      }
-
-      // Before clearing metadata on day rollover, preserve the last metadata row
-      if (datestamp && datestamp !== date) {
-        if (dataType === "metadata" && Object.keys(data).length > 0) {
-          const lastSeq = Object.keys(data)
-            .map(Number)
-            .sort((a, b) => a - b)
-            .pop()
-
-          if (lastSeq !== undefined) {
-            const lastRow = data[lastSeq]
-            if (lastRow && "Date begin" in lastRow) {
-              setLastKnownMetadataRow(lastRow)
-            }
-          }
-        }
-        setDateAndUpdateHeader(datestamp)
-        setMetadata({})
-        setChannelData({})
-      }
-
-      if (dataType === "metadata") {
-        if (Object.keys(data).length !== 0) {
-          setMetadata(data)
-          setLastKnownMetadataRow(undefined)
-          setHasReceivedData(true)
-        }
-      } else if (dataType === "channelData") {
-        // Handle both old expanded format and new structured format
-        // If data has structuredData and extensionInfo, convert it
-        if (data.structuredData && data.extensionInfo) {
-          const expandedChannelData = createTableFromStructuredData(
-            camera.name,
-            date,
-            data.structuredData,
-            data.extensionInfo,
-            camera.channels
-          )
-          if (Object.keys(expandedChannelData).length !== 0) {
-            setChannelData(expandedChannelData)
-            setHasReceivedData(true)
-          }
-        } else {
-          // Legacy: direct channel data (old expanded table format)
-          if (Object.keys(data).length !== 0) {
-            console.log(
-              "Received legacy channel data update with datestamp:",
-              datestamp
-            )
-            setChannelData(data)
-            setHasReceivedData(true)
-          }
-        }
-      }
-    },
-    [date, camera]
-  )
-
-  useEffect(() => {
-    window.addEventListener("camera", handleCameraEvent as EL)
-    return () => {
-      window.removeEventListener("camera", handleCameraEvent as EL)
-    }
-  }, [handleCameraEvent])
-
   if ((unfilteredRowsCount == 0 && hasReceivedData) || noDataForDay) {
     return <h3>There is no data for this day</h3>
   } else if (!hasReceivedData) {
     const colours = camera.channels.map((c) => c.colour)
     return (
       <div className="loading-container">
-        <LoadingBar colours={colours} />
-        <h3>Loading data for {date}...</h3>
+        {isLoadingMetadata ? (
+          <MetadataProgressBar
+            bytesReceived={metadataBytesReceived}
+            totalSize={metadataTotalSize}
+            colours={colours}
+          />
+        ) : (
+          <>
+            <LoadingBar colours={colours} />
+            <h3>Loading data for {date}...</h3>
+          </>
+        )}
       </div>
     )
   }
@@ -273,6 +167,13 @@ export default function TableApp({
       value={{ siteLocation, locationName, camera, dayObs: date }}
     >
       <div className="table-container">
+        {isLoadingMetadata && (
+          <MetadataProgressBar
+            bytesReceived={metadataBytesReceived}
+            totalSize={metadataTotalSize}
+            colours={camera.channels.map((c) => c.colour)}
+          />
+        )}
         <ModalProvider>
           <div className="above-table-sticky">
             <AboveTableRow
@@ -340,6 +241,46 @@ function LoadingBar({
         className="loading-bar-animated"
       ></div>
     </div>
+  )
+}
+
+function MetadataProgressBar({
+  bytesReceived,
+  totalSize,
+  colours,
+}: {
+  bytesReceived: number
+  totalSize: number
+  colours: string[]
+}) {
+  const progress =
+    totalSize > 0
+      ? Math.min(99, Math.round((bytesReceived / totalSize) * 100))
+      : 0
+
+  const gradientStops: string[] = []
+  colours.forEach((colour, index) => {
+    gradientStops.push(
+      `${colour} ${Math.round(index * (100 / colours.length))}%`
+    )
+  })
+  gradientStops.push(`${colours[0]} 100%`)
+  const gradient = `linear-gradient(90deg, ${gradientStops.join(", ")})`
+
+  return (
+    <>
+      <div className="loading-bar-container">
+        <div
+          className="metadata-progress-bar"
+          style={{
+            background: gradient,
+            backgroundSize: "25% 100%",
+            clipPath: `inset(0 ${100 - progress}% 0 0)`,
+          }}
+        ></div>
+      </div>
+      <h3>Retrieving metadata...</h3>
+    </>
   )
 }
 

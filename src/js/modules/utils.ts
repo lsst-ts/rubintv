@@ -132,7 +132,6 @@ export function replaceInString(
     summit: string
     base: string
   }
-
   // Remove hyphens from dayObs
   dayObs = dayObs.replace(/-/g, "")
   const siteLocToDomain = (siteLocation: keyof SiteLocMap | string): string => {
@@ -461,4 +460,30 @@ export function isElementInViewport(element: HTMLElement): boolean {
     rect.left < window.innerWidth &&
     rect.right > 0
   )
+}
+
+/**
+ * Decode a base64+gzip-compressed chunk payload into raw bytes.
+ */
+export function decodeChunk(payload: string): Uint8Array {
+  const binaryString = atob(payload)
+  const bytes = new Uint8Array(binaryString.length)
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i)
+  }
+  return gunzipSync(bytes)
+}
+
+/**
+ * Concatenate an array of Uint8Array chunks into a single Uint8Array.
+ */
+export function assembleChunks(chunks: Uint8Array[]): Uint8Array {
+  const totalLen = chunks.reduce((sum, c) => sum + c.length, 0)
+  const assembled = new Uint8Array(totalLen)
+  let offset = 0
+  for (const c of chunks) {
+    assembled.set(c, offset)
+    offset += c.length
+  }
+  return assembled
 }
