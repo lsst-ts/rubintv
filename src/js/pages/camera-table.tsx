@@ -19,6 +19,7 @@ import { Camera } from "../components/componentTypes"
     isHistorical,
     calendar,
     isStale = false,
+    noDataForDay = false,
     seqNums,
   } = window.APP_DATA
 
@@ -63,6 +64,7 @@ import { Camera } from "../components/componentTypes"
       seqNums={seqNums}
       calendar={calendar}
       isStale={isStale}
+      noDataForDay={noDataForDay}
     />
   )
 })()

@@ -35,6 +35,7 @@ export default function TableApp({
   isStale,
   seqNums,
   calendar,
+  noDataForDay,
   toggleCalendar,
 }: TableAppProps) {
   const [hasReceivedData, setHasReceivedData] = useState(false)
@@ -247,7 +248,7 @@ export default function TableApp({
     }
   }, [handleCameraEvent])
 
-  if (unfilteredRowsCount == 0 && hasReceivedData) {
+  if ((unfilteredRowsCount == 0 && hasReceivedData) || noDataForDay) {
     return <h3>There is no data for this day</h3>
   } else if (!hasReceivedData) {
     const colours = camera.channels.map((c) => c.colour)

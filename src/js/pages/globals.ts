@@ -36,6 +36,7 @@ declare global {
       event: ExposureEvent | null
       channelNamesWithExtensions: ChannelWithExtension[]
       isStale: boolean
+      noDataForDay: boolean
       seqNums: number[] | undefined
     }
   }

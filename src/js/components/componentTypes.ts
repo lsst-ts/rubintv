@@ -404,6 +404,7 @@ export interface TableAppProps {
   seqNums?: number[]
   calendar?: CalendarData
   toggleCalendar?: () => void
+  noDataForDay: boolean
 }
 
 /**
@@ -1178,6 +1179,7 @@ export interface CameraTableProps {
   calendar: CalendarData
   isStale: boolean
   seqNums?: number[]
+  noDataForDay: boolean
 }
 
 export interface CurrentChannelsProps {

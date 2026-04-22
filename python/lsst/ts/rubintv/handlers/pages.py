@@ -279,8 +279,6 @@ async def get_camera_for_date_page(
     template = "camera"
     if camera.name == "allsky":
         template = "allsky"
-    if not has_current_data and not is_historical:
-        template = "not-on-this-day"
     if no_data_at_all and not historical_busy:
         template = "camera-empty"
 
@@ -302,6 +300,7 @@ async def get_camera_for_date_page(
             "calendar": calendar,
             "title": title,
             "isStale": is_stale,
+            "noDataForDay": not has_current_data and not is_historical,
             "seqNums": seq_num_list if seq_num_list else None,
         },
     )

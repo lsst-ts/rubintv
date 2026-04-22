@@ -33,5 +33,6 @@
     window.APP_DATA.date = "{{ date }}"
     window.APP_DATA.historicalBusy = {{ historicalBusy|tojson if historicalBusy else "null" }}
     window.APP_DATA.isStale = {{ "true" if isStale else "false" }}
+    window.APP_DATA.noDataForDay = {{ "true" if noDataForDay else "false" }}
   </script>
 {% endblock further %}

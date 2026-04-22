@@ -16,6 +16,7 @@ export default function CameraTable({
   calendar,
   isStale,
   seqNums,
+  noDataForDay,
 }: CameraTableProps) {
   const calendarRef = React.useRef<HTMLElement>(null)
   const isClosed = useRef(true)
@@ -29,6 +30,11 @@ export default function CameraTable({
       }
     }
   }
+  React.useEffect(() => {
+    if (noDataForDay) {
+      toggleCalendar()
+    }
+  }, [noDataForDay])
   return (
     <StrictMode>
       <section ref={calendarRef} id="calendar" className="calendar closed">
@@ -62,6 +68,7 @@ export default function CameraTable({
           seqNums={seqNums}
           calendar={calendar}
           toggleCalendar={toggleCalendar}
+          noDataForDay={noDataForDay}
         />
       </section>
     </StrictMode>
