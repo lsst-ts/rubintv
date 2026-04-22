@@ -565,12 +565,11 @@ class CameraPageData:
 
     def is_empty(self) -> bool:
         """Check if the data object is empty.
-
+        Metadata is not considered in this check since it can be an empty
+        string if the metadata is not in the cache yet.
         Returns
         -------
         is_empty: `bool`
             True if the data object has no data, false otherwise.
         """
-        return not any(
-            [self.per_day, self.structured_data, self.extension_info, self.metadata]
-        )
+        return not any([self.per_day, self.structured_data, self.extension_info])

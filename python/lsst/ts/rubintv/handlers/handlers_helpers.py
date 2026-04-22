@@ -96,17 +96,34 @@ async def get_camera_events_for_date(
     extension_info = await historical.get_all_extensions_for_date(
         location, camera, day_obs
     )
-    metadata = await historical.get_metadata_for_date(location, camera, day_obs)
-    compressed_metadata = await compress_serialize_data(metadata)
     per_day = await historical.get_per_day_for_date(location, camera, day_obs)
     nr_exists = await historical.night_report_exists_for(location, camera, day_obs)
+
+    # Include metadata if already cached (no S3 fetch).
+    compressed_metadata = ""
+    cached = historical.get_cached_metadata(location, camera, day_obs)
+    loc_cam = f"{location.name}/{camera.name}"
+    if cached:
+        compressed_metadata = await compress_serialize_data(cached)
+        logger.info(
+            "HTTP API: metadata found in cache, including in response",
+            loc_cam=loc_cam,
+            date=day_obs.isoformat(),
+            num_entries=len(cached),
+        )
+    else:
+        logger.info(
+            "HTTP API: metadata not cached, omitting from response",
+            loc_cam=loc_cam,
+            date=day_obs.isoformat(),
+        )
 
     return CameraPageData(
         structured_data=structured_data,
         extension_info=extension_info,
         per_day=per_day,
-        metadata=compressed_metadata,
         nr_exists=nr_exists,
+        metadata=compressed_metadata,
     )
 
 

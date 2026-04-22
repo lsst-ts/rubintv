@@ -224,3 +224,31 @@ class S3Client:
             return data
         except ClientError:
             raise HTTPException(status_code=404, detail=f"No such file for: {key}")
+
+    async def get_object_info(self, key: str) -> dict[str, Any] | None:
+        loop = asyncio.get_event_loop()
+        executor = ThreadPoolExecutor(max_workers=3)
+        return await loop.run_in_executor(executor, self._get_object_info, key)
+
+    def _get_object_info(self, key: str) -> dict[str, Any] | None:
+        try:
+            obj = self._client.head_object(Bucket=self._bucket_name, Key=key)
+            return obj
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            if error_code == "404":
+                logger.info("Object for key not found.", key=key)
+                return None
+            else:
+                logger.error(
+                    "Error retrieving object info from S3: "
+                    f"bucket={self._bucket_name}, key={key}, error={error_code}",
+                    error=e,
+                )
+                return None
+        except Exception as e:
+            logger.error(
+                f"Unexpected error retrieving object info from S3: bucket={self._bucket_name}, key={key}",
+                error=e,
+            )
+            return None

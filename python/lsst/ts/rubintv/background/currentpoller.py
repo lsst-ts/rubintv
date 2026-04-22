@@ -612,9 +612,8 @@ class CurrentPoller:
                     }
                     yield MessageType.CAMERA_TABLE, ws_payload
 
-                metadata = await self.get_current_metadata(location.name, camera)
-                if metadata:
-                    yield MessageType.CAMERA_METADATA, metadata
+                # Metadata is streamed in chunks by notify_new_client
+                # so the frontend can show a progress bar.
 
                 if per_day := await self.get_current_per_day_data(
                     location.name, camera

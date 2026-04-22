@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from lsst.ts.rubintv.background.background_helpers import get_next_previous_from_table
 from lsst.ts.rubintv.background.metadata_collector import MetadataCollector
+from lsst.ts.rubintv.background.metadata_streamer import MetadataStreamer
 from lsst.ts.rubintv.config import config, rubintv_logger
 from lsst.ts.rubintv.handlers.websocket_notifiers import (
     notify_all_status_change,
@@ -1163,6 +1164,104 @@ class HistoricalPoller:
         date_str = a_date.isoformat()
         return await self._metadata_collector.get_metadata_for_date(
             location, camera, date_str
+        )
+
+    async def send_metadata_for_date(
+        self,
+        location: Location,
+        camera: Camera,
+        a_date: date,
+        service: Service,
+    ) -> None:
+        """Send metadata for a date to WebSocket subscribers.
+
+        Uses cached metadata when available (instant ``notify_parsed``),
+        otherwise falls back to streaming from S3 via
+        :meth:`stream_metadata_for_date`.
+        """
+        cached = self.get_cached_metadata(location, camera, a_date)
+        if cached:
+            loc_cam = f"{location.name}/{camera.name}"
+            s3_client = self._clients[location.name]
+            streamer = MetadataStreamer(s3_client)
+            await streamer.notify_parsed(cached, loc_cam, service)
+            return
+        await self.stream_metadata_for_date(location, camera, a_date, service)
+
+    async def stream_metadata_for_date(
+        self,
+        location: Location,
+        camera: Camera,
+        a_date: date,
+        service: Service,
+    ) -> None:
+        """Stream metadata for a date to WebSocket subscribers.
+
+        Uses ``MetadataStreamer`` to send the metadata file from S3 in
+        gzip-compressed chunks followed by the full parsed payload.
+
+        If another stream for the same service key just completed and
+        populated the cache while we waited for the lock, the cached
+        data is sent via ``notify_parsed`` instead of re-fetching from
+        S3.
+
+        Parameters
+        ----------
+        location : `Location`
+            The location object.
+        camera : `Camera`
+            The camera object.
+        a_date : `date`
+            The date to retrieve metadata for.
+        service : `Service`
+            Service enum used to resolve subscribers and populate the
+            WebSocket message envelope.
+        """
+        date_str = a_date.isoformat()
+        loc_cam = f"{location.name}/{camera.name}"
+        key = f"{camera.name}/{date_str}/metadata.json"
+        s3_client = self._clients[location.name]
+        streamer = MetadataStreamer(s3_client)
+        logger.info(
+            "stream_metadata_for_date: starting S3 stream",
+            loc_cam=loc_cam,
+            date=date_str,
+            key=key,
+        )
+
+        # Use a cache-aware callback so that if another stream just
+        # populated the cache while we waited for the lock, we send
+        # the cached data instead of re-fetching from S3.
+        def _check_cache() -> dict | None:
+            return self.get_cached_metadata(location, camera, a_date)
+
+        metadata = await streamer.stream_to_service(
+            key=key,
+            loc_cam=loc_cam,
+            service=service,
+            cache_check=_check_cache,
+        )
+        if metadata:
+            logger.info(
+                "stream_metadata_for_date: stream complete, caching result",
+                loc_cam=loc_cam,
+                date=date_str,
+                num_entries=len(metadata),
+            )
+            self._metadata_collector.cache_metadata(loc_cam, date_str, metadata)
+        else:
+            logger.info(
+                "stream_metadata_for_date: stream returned empty (no subscribers or fetch failed)",
+                loc_cam=loc_cam,
+                date=date_str,
+            )
+
+    def get_cached_metadata(
+        self, location: Location, camera: Camera, day_obs: date
+    ) -> dict | None:
+        """Return metadata only if already cached (no S3 fetch)."""
+        return self._metadata_collector.get_cached_metadata(
+            location, camera, day_obs.isoformat()
         )
 
     async def metadata_exists_for_date(
