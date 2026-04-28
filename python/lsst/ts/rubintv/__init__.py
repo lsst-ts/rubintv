@@ -31,11 +31,9 @@ if typing.TYPE_CHECKING:
     __version__ = "?"
 else:
     try:
-        logger.debug("Getting rubintv version")
-        import pkg_resources
+        from importlib.metadata import version
 
-        logger.debug("pkg_resources imported successfully")
-        __version__ = pkg_resources.get_distribution("rubintv").version
+        __version__ = version("rubintv")
         logger.debug(f"rubintv version: {__version__}")
     except Exception as e:
         logger.error(f"Error getting rubintv version: {e}")
