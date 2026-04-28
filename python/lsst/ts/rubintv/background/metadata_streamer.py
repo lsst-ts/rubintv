@@ -46,6 +46,12 @@ async def send_metadata_chunks(
     """
     raw = json.dumps(metadata).encode("utf-8")
     total_size = len(raw)
+    logger.info(
+        "send_metadata_chunks: starting",
+        service=service.value,
+        total_size=total_size,
+        num_entries=len(metadata),
+    )
     datestamp = get_current_day_obs().isoformat()
     cumulative_bytes = 0
     for offset in range(0, total_size, STREAM_CHUNK_SIZE):

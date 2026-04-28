@@ -93,7 +93,8 @@ class CurrentPoller:
     async def clear_todays_data(self) -> None:
         self._objects = {}
         self._events = {}
-        self._metadata = {}
+        # Clear in place — MetadataWatcher holds a reference to this dict.
+        self._metadata.clear()
         if self._metadata_watcher is not None:
             self._metadata_watcher.clear()
         self._table = {}
