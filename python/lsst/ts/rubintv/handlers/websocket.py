@@ -19,7 +19,6 @@ from lsst.ts.rubintv.handlers.websockets_clients import (
 from lsst.ts.rubintv.models.models import Camera, Location
 from lsst.ts.rubintv.models.models import ServiceMessageTypes as MessageType
 from lsst.ts.rubintv.models.models import ServiceTypes as Service
-from lsst.ts.rubintv.models.models import get_current_day_obs
 from lsst.ts.rubintv.models.models_helpers import find_first
 
 data_ws_router = APIRouter()
@@ -330,16 +329,20 @@ async def notify_new_client(
 
     # Stream cached metadata in chunks so the frontend shows a progress bar.
     if service == Service.CAMERA:
+        loc_cam = f"{location.name}/{camera.name}"
         metadata = await current_poller.get_current_metadata(location.name, camera)
-        if not metadata:
-            # On fresh start the MetadataWatcher may not have finished its
-            # S3 fetch yet.  Fall back to the historical metadata cache
-            # which the background prefetcher may have populated already.
-            historical = websocket.app.state.historical
-            day_obs = get_current_day_obs()
-            metadata = historical.get_cached_metadata(location, camera, day_obs)
         if metadata:
+            logger.info(
+                "notify_new_client: sending cached current metadata",
+                loc_cam=loc_cam,
+                num_entries=len(metadata),
+            )
             await send_metadata_chunks(websocket, metadata, service)
+        else:
+            logger.info(
+                "notify_new_client: no metadata cached yet",
+                loc_cam=loc_cam,
+            )
 
 
 async def notify_historical_metadata(

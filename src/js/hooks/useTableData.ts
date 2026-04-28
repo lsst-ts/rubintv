@@ -310,24 +310,45 @@ export default function useTableData({
         const { payload, final: isFinal, totalSize, bytesSent } = event.detail
         if (!isFinal) {
           if (!isLoadingMetadataRef.current) {
+            console.log(
+              `[metadata] camera first chunk — ` +
+                `totalSize=${totalSize}, bytesSent=${bytesSent}`
+            )
+            sawStreamStartRef.current = true
             chunkBufferRef.current = []
             if (totalSize !== undefined) setMetadataTotalSize(totalSize)
             setMetadataBytesReceived(0)
-            // Set the ref directly (not the React state) so the guard
-            // above only fires on the first chunk of a stream.  We
-            // deliberately skip _setIsLoadingMetadata so the progress
-            // bar does not render for current-day updates.
-            isLoadingMetadataRef.current = true
+            if (!hasMetadataRef.current) {
+              // First load — show progress bar.
+              setIsLoadingMetadata(true)
+            } else {
+              // Subsequent update — ref only, no progress bar.
+              isLoadingMetadataRef.current = true
+            }
           }
           const decompressed = decodeChunk(payload)
           chunkBufferRef.current.push(decompressed)
           setMetadataBytesReceived(bytesSent)
         } else {
+          const joinedMidStream = !sawStreamStartRef.current
+          console.log(
+            `[metadata] camera final chunk — ` +
+              `${chunkBufferRef.current.length} chunks buffered` +
+              (joinedMidStream ? " (joined mid-stream, discarding)" : "")
+          )
           const chunks = chunkBufferRef.current
+          sawStreamStartRef.current = false
           chunkBufferRef.current = []
           setMetadataBytesReceived(0)
           setMetadataTotalSize(0)
-          isLoadingMetadataRef.current = false
+          setIsLoadingMetadata(false)
+
+          // Joined mid-stream — buffer is incomplete, discard it.
+          // The metadata is already cached on the server, so the
+          // next notify_new_client or watcher stream will deliver
+          // the full data.
+          if (joinedMidStream) return
+
           if (chunks.length === 0) return
           try {
             const parsed = JSON.parse(
@@ -340,6 +361,11 @@ export default function useTableData({
               setChannelData({})
             }
             if (parsed && Object.keys(parsed).length !== 0) {
+              console.log(
+                `[metadata] camera metadata parsed OK ` +
+                  `(${Object.keys(parsed).length} entries)`
+              )
+              hasMetadataRef.current = true
               setMetadata(parsed)
               setLastKnownMetadataRow(undefined)
               setHasReceivedData(true)
