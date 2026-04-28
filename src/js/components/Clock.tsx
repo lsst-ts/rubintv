@@ -48,6 +48,14 @@ export function TimeSinceLastImageClock({
   const [time, setTime] = useState(Date.now())
   const [metadata, setMetadata] = useState(propsMeta)
 
+  // Keep internal state in sync when the parent re-renders with
+  // new metadata (e.g. after chunk reassembly).
+  useEffect(() => {
+    if (propsMeta && Object.keys(propsMeta).length > 0) {
+      setMetadata(propsMeta)
+    }
+  }, [propsMeta])
+
   // TAI and UTF are out by ~37s
   const TAIDIFF = 37 * 1000
 
