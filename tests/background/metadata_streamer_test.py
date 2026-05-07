@@ -615,3 +615,93 @@ class TestMetadataStreamer:
         # Both should have received the same number of messages
         assert ws1.send_json.call_count == ws2.send_json.call_count
         assert ws1.send_json.call_count >= 2
+
+    @pytest.mark.asyncio
+    async def test_cache_check_runs_after_lock_acquisition(self) -> None:
+        """``cache_check`` must fire AFTER the per-key lock is acquired,
+        not before — that's what lets a second waiter short-circuit using
+        cache populated by the first caller while it was holding the
+        lock.
+
+        We hold the lock externally before calling stream_to_service; if
+        cache_check ran before lock acquisition it would fire immediately
+        and we'd see it called while the lock is still held by us.
+        """
+        metadata = _make_metadata(3)
+        s3 = _make_s3_client_mock(metadata)
+        streamer = MetadataStreamer(s3)
+
+        service_key = f"{Service.CAMERA.value} loc/cam"
+        await _register_mock_subscriber(service_key)
+
+        # Pre-create and grab the lock so any "before lock" cache_check
+        # would observe the locked state and run anyway.
+        _stream_locks[service_key] = asyncio.Lock()
+        await _stream_locks[service_key].acquire()
+
+        cache_check_calls: list[bool] = []
+
+        def cache_check() -> dict | None:
+            # Record whether the lock is held by *anyone* at call time.
+            # If cache_check runs after we release the lock (correct
+            # behavior), it observes lock.locked() == True only because
+            # stream_to_service has just re-acquired it itself.
+            cache_check_calls.append(_stream_locks[service_key].locked())
+            return None
+
+        async def release_after_delay() -> None:
+            await asyncio.sleep(0.05)
+            _stream_locks[service_key].release()
+
+        asyncio.create_task(release_after_delay())
+
+        await streamer.stream_to_service(
+            key="cam/metadata.json",
+            loc_cam="loc/cam",
+            service=Service.CAMERA,
+            cache_check=cache_check,
+        )
+
+        # cache_check must have been called exactly once, and only after
+        # stream_to_service won the lock — i.e. our external acquisition
+        # had been released by the time cache_check ran.
+        assert len(cache_check_calls) == 1
+
+    @pytest.mark.asyncio
+    async def test_cache_check_short_circuits_after_waiting_for_lock(self) -> None:
+        """When two streams race for the same key, the second must use
+        the cache populated by the first via ``cache_check`` — not
+        re-fetch from S3."""
+        metadata = _make_metadata(3)
+        s3_first = _make_s3_client_mock(metadata)
+        s3_second = _make_s3_client_mock(metadata)
+
+        service_key = f"{Service.CAMERA.value} loc/cam"
+        await _register_mock_subscriber(service_key)
+
+        # Shared cache that the first caller populates, the second reads.
+        cache: dict[str, dict] = {}
+
+        async def first() -> None:
+            streamer = MetadataStreamer(s3_first)
+            result = await streamer.stream_to_service(
+                key="cam/metadata.json",
+                loc_cam="loc/cam",
+                service=Service.CAMERA,
+            )
+            cache["data"] = result
+
+        async def second() -> None:
+            streamer = MetadataStreamer(s3_second)
+            await streamer.stream_to_service(
+                key="cam/metadata.json",
+                loc_cam="loc/cam",
+                service=Service.CAMERA,
+                cache_check=lambda: cache.get("data"),
+            )
+
+        await asyncio.gather(first(), second())
+
+        # Second caller must NOT have hit S3 — the cache_check returned
+        # data from the first caller and short-circuited the fetch.
+        s3_second.get_object_info.assert_not_awaited()

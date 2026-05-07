@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
+from lsst.ts.rubintv.background.currentpoller import CurrentPoller
 from lsst.ts.rubintv.background.metadata_streamer import _stream_locks
 from lsst.ts.rubintv.background.metadata_watcher import MetadataWatcher
 from lsst.ts.rubintv.handlers.websockets_clients import (
@@ -354,3 +355,147 @@ class TestMetadataWatcher:
         except asyncio.CancelledError:
             pass
         watcher.stop()  # Second stop should not raise
+
+    # -- shared-dict-identity invariant -----------------------------------
+
+    @pytest.mark.asyncio
+    async def test_writes_visible_to_currentpoller_after_day_rollover(
+        self, mock_s3_client: Any
+    ) -> None:
+        """Writes from MetadataWatcher must be visible via
+        CurrentPoller.get_current_metadata even after a day rollover.
+
+        The watcher is wired in main.py with
+        ``metadata_store=cp._metadata`` — so it caches a reference to the
+        dict that the poller had at construction time.  If
+        ``clear_todays_data`` reassigns ``self._metadata = {}`` (rather
+        than clearing in place), the watcher then writes to an orphaned
+        dict and ``get_current_metadata`` returns ``{}`` forever.
+
+        This test reproduces that scenario: wire watcher → poller as in
+        production, run ``clear_todays_data``, write through the watcher,
+        and assert the poller can read it back.
+        """
+        location, camera = _get_test_location_and_camera()
+        loc_cam = f"{location.name}/{camera.name}"
+        metadata = _make_metadata(3)
+
+        # Construct CurrentPoller with the shared mock s3 service in place
+        # so its boto sessions don't try to hit the real network.
+        cp = CurrentPoller(m.locations, test_mode=True)
+
+        # Wire watcher exactly as main.py does: metadata_store points at
+        # cp._metadata.
+        s3_mock = _make_s3_client_mock(metadata)
+        watcher = MetadataWatcher(
+            locations=m.locations,
+            s3_clients={loc.name: s3_mock for loc in m.locations},
+            metadata_store=cp._metadata,
+        )
+        cp.set_metadata_watcher(watcher)
+
+        # Simulate a day rollover.  After this, cp._metadata MUST still be
+        # the same dict object the watcher holds a reference to, otherwise
+        # subsequent writes are orphaned.
+        await cp.clear_todays_data()
+
+        # Now have the watcher fetch + cache.
+        key = f"{camera.name}/2026-01-01/metadata.json"
+        await watcher._fetch_and_stream(loc_cam, {"key": key, "hash": "h1"})
+
+        # The poller's public reader must see what the watcher wrote.
+        observed = await cp.get_current_metadata(location.name, camera)
+        assert observed == metadata, (
+            "MetadataWatcher write was not visible to CurrentPoller — the "
+            "shared dict identity was broken (likely by "
+            "clear_todays_data reassigning self._metadata = {})."
+        )
+
+    # -- atomic snapshot/clear of pending ---------------------------------
+
+    @pytest.mark.asyncio
+    async def test_drain_pending_allows_concurrent_notify_pending(self) -> None:
+        """While in-flight fetches are running, the poll loop must be
+        able to keep adding to _pending without those entries being lost
+        by the drain.
+
+        ``_drain_pending`` snapshots and clears ``_pending`` atomically
+        before spawning fetch tasks; new ``notify_pending`` calls during
+        the drain target the freshly-emptied dict and must survive.
+        """
+        location, camera = _get_test_location_and_camera()
+        loc_cam = f"{location.name}/{camera.name}"
+        watcher, _ = self._make_watcher()
+
+        # Block _fetch_and_stream so the spawned tasks stay in flight.
+        gate = asyncio.Event()
+
+        async def slow_fetch(*args: Any, **kwargs: Any) -> None:
+            await gate.wait()
+
+        with patch.object(watcher, "_fetch_and_stream", new=slow_fetch):
+            watcher._pending[loc_cam] = {"key": "k1", "hash": "h1"}
+            await watcher._drain_pending()
+
+            # Drain has emptied _pending and spawned a task.
+            assert len(watcher._pending) == 0
+
+            # Poll loop registers a new metadata change while the fetch
+            # is still running.  This must land in _pending, not be lost.
+            watcher.notify_pending("loc/other", {"key": "k2", "hash": "h2"})
+            assert "loc/other" in watcher._pending
+
+            gate.set()
+            # Let any spawned tasks complete.
+            await asyncio.sleep(0)
+
+    # -- fan-out makes no extra S3 fetches --------------------------------
+
+    @pytest.mark.asyncio
+    async def test_fan_out_uses_notify_parsed_not_stream_to_service(self) -> None:
+        """Sibling cameras (metadata_from) must be notified without an
+        additional S3 fetch — fan-out goes through ``notify_parsed``,
+        which takes a pre-parsed dict, not ``stream_to_service``."""
+        # Find a (location, camera) that actually has dependents.
+        found = None
+        for loc in m.locations:
+            for cam in loc.cameras:
+                if any(c.metadata_from == cam.name for c in loc.cameras):
+                    found = (loc, cam)
+                    break
+            if found is not None:
+                break
+        assert (
+            found is not None
+        ), "Test config must have at least one camera with dependents"
+
+        location, camera = found
+        loc_cam = f"{location.name}/{camera.name}"
+        metadata = _make_metadata(3)
+        store: dict[str, dict] = {}
+        s3_mock = _make_s3_client_mock(metadata)
+        watcher = MetadataWatcher(
+            locations=m.locations,
+            s3_clients={location.name: s3_mock},
+            metadata_store=store,
+        )
+
+        dependent = [c for c in location.cameras if c.metadata_from == camera.name]
+
+        with patch(
+            "lsst.ts.rubintv.background.metadata_watcher.MetadataStreamer"
+        ) as MockStreamer:
+            mock_instance = MagicMock()
+            mock_instance.stream_to_service = AsyncMock(return_value=metadata)
+            mock_instance.notify_parsed = AsyncMock()
+            MockStreamer.return_value = mock_instance
+
+            await watcher._fetch_and_stream(loc_cam, {"key": "k", "hash": "h1"})
+
+            # Exactly one S3-driven stream (the camera itself).  Siblings
+            # must not trigger additional stream_to_service calls.
+            assert mock_instance.stream_to_service.await_count == 1
+            # The camera itself + each dependent gets a notify_parsed
+            # (under Service.CHANNEL), all sourced from the parsed dict
+            # without further S3 fetches.
+            assert mock_instance.notify_parsed.await_count == 1 + len(dependent)
