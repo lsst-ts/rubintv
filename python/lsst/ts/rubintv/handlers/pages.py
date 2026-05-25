@@ -22,6 +22,7 @@ from lsst.ts.rubintv.handlers.handlers_helpers import (
     get_latest_metadata,
     get_most_recent_historical_day,
     get_prev_next_event,
+    parse_seq_nums,
     try_historical_call,
 )
 from lsst.ts.rubintv.handlers.pages_helpers import (
@@ -156,6 +157,7 @@ async def get_camera_page(
     location_name: str,
     camera_name: str,
     request: Request,
+    seq_num: str | None = None,
 ) -> Response:
     """GET ``/rubintv/{location_name}/{camera_name}``
     (the camera page for the current day)."""
@@ -165,6 +167,7 @@ async def get_camera_page(
         camera_name=camera_name,
         date_str=day_obs.isoformat(),
         request=request,
+        seq_num=seq_num,
     )
 
 
@@ -216,6 +219,7 @@ async def get_camera_for_date_page(
     camera_name: str,
     date_str: str,
     request: Request,
+    seq_num: str | None = None,
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
 
@@ -256,8 +260,7 @@ async def get_camera_for_date_page(
             raise http_error
 
     calendar: dict[int, dict[int, dict[int, int]]] = {}
-    if is_historical:
-        calendar = await get_camera_calendar(location, camera, request)
+    calendar = await get_camera_calendar(location, camera, request)
 
     nr_link = ""
     if not data.is_empty() and data.nr_exists:
@@ -270,6 +273,8 @@ async def get_camera_for_date_page(
         template = "not-on-this-day"
     if no_data_at_all and not historical_busy:
         template = "camera-empty"
+
+    seq_num_list = parse_seq_nums(seq_num)
 
     title = build_title(location.title, camera.title, date_str)
 
@@ -287,6 +292,7 @@ async def get_camera_for_date_page(
             "calendar": calendar,
             "title": title,
             "isStale": is_stale,
+            "seqNums": seq_num_list if seq_num_list else None,
         },
     )
 
@@ -439,11 +445,12 @@ async def get_specific_channel_event_page(
             type = channel_name
             day_obs = date_str.replace("-", "")
             visit = f"{day_obs}{seq_num:05d}"
-        key = await get_key_from_type_and_visit(
-            camera_name=camera_name,
-            type=type,
-            visit=visit,
-        )
+        if type is not None and visit is not None:
+            key = await get_key_from_type_and_visit(
+                camera_name=camera_name,
+                type=type,
+                visit=visit,
+            )
         if not key:
             raise HTTPException(status_code=404, detail="Key not found.")
 
@@ -452,27 +459,27 @@ async def get_specific_channel_event_page(
     channel_title = ""
     event_detail = ""
     next_prev: dict[str, str] = {}
-    if event:
+    if event is not None:
         event_detail = f"{event.day_obs}/${event.seq_num}"
         channel = find_first(camera.channels, "name", event.channel_name)
-    if channel:
-        channel_title = channel.title
-        next_prev, historical_busy = await try_historical_call(
-            get_prev_next_event,
-            location=location,
-            camera=camera,
-            event=event,
-            request=request,
-        )
-        if historical_busy:
-            next_prev = {}
-        all_channel_names = await get_all_channel_names_for_date_seq_num(
-            location=location,
-            camera=camera,
-            day_obs=event.day_obs,
-            seq_num=event.seq_num,
-            connection=request,
-        )
+        if channel:
+            channel_title = channel.title
+            next_prev, historical_busy = await try_historical_call(
+                get_prev_next_event,
+                location=location,
+                camera=camera,
+                event=event,
+                request=request,
+            )
+            if historical_busy:
+                next_prev = {}
+            all_channel_names = await get_all_channel_names_for_date_seq_num(
+                location=location,
+                camera=camera,
+                day_obs=event.day_obs_date(),
+                seq_num=event.seq_num_force_int(),
+                connection=request,
+            )
 
     title = build_title(location.title, camera.title, channel_title, event_detail)
 
@@ -502,7 +509,7 @@ async def get_current_channel_event_page(
     location_name: str, camera_name: str, channel_name: str, request: Request
 ) -> Response:
     location, camera = await get_location_camera(location_name, camera_name, request)
-    channel: Channel = find_first(camera.channels, "name", channel_name)
+    channel: Channel | None = find_first(camera.channels, "name", channel_name)
     if channel is None or channel not in camera.channels:
         raise HTTPException(status_code=404, detail="Channel not found.")
 
@@ -517,8 +524,8 @@ async def get_current_channel_event_page(
         all_channel_names = await get_all_channel_names_for_date_seq_num(
             location=location,
             camera=camera,
-            day_obs=event.day_obs,
-            seq_num=event.seq_num,
+            day_obs=event.day_obs_date(),
+            seq_num=event.seq_num_force_int(),
             connection=request,
         )
 
