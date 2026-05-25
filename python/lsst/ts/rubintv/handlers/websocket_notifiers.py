@@ -60,7 +60,7 @@ async def send_notification(
         "Sending websocket notification",
         service=service.value,
         messageType=messageType.value,
-        payload=payload,
+        payload_size=len(str(payload)) if payload else 0,
     )
     start_time = time.time()
     datestamp = get_current_day_obs().isoformat()
