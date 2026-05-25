@@ -14,6 +14,7 @@ jest.mock("../../hooks/useModal", () => ({
 
 // Mock the TableFilter component
 jest.mock("../TableFilter", () => ({
+  // eslint-disable-next-line react/prop-types
   FilterDialog: ({ column }) => (
     <div data-testid="filter-dialog">Filter for {column}</div>
   ),
@@ -54,8 +55,9 @@ const mockCamera = {
       per_day: true,
     },
   ],
-  copy_row_template: "template-{dayObs}-{seqNum}",
-  image_viewer_link: "viewer-{dayObs}-{seqNum}",
+  copy_row_template: "template-{dayObs}-{seqNum:06}",
+  image_viewer_link: "viewer-{dayObs}-{seqNum:06}",
+  quicklook_viewer_link: "quicklook-{dayObs}-{seqNum:05}",
 }
 
 const mockChannelData = {
@@ -115,6 +117,7 @@ const mockContextValue = {
 const defaultFilterOn = { column: "", value: "" }
 const defaultSortOn = { column: "seq", order: "asc" }
 
+// eslint-disable-next-line react/prop-types
 const TestWrapper = ({ children, contextValue = {} }) => (
   <RubinTVTableContext.Provider
     value={{ ...mockContextValue, ...contextValue }}

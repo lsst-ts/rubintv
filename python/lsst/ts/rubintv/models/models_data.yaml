@@ -62,13 +62,18 @@ locations:
     text_colour: "#fff"
     text_shadow: True
     camera_groups:
-      Telescope Mounted:
-        [auxtel, lsstcam, lsstcam_aos, lsstcam_guider, ra_performance]
-      Other Cameras:
-        [allsky, dream, startracker_narrow, startracker_wide, startracker_fast]
-      Telescopes: [tma]
-      Simulated Cameras: [comcam_sim, comcam_sim_aos]
-      Deprecated Cameras: [comcam, comcam_aos]
+      Simonyi Telescope: [lsstcam, lsstcam_aos, lsstcam_guider, tma]
+      Environment and Performance: [auxtel, allsky, dream, ra_performance]
+      Previously Used Channels:
+        [
+          comcam,
+          comcam_aos,
+          comcam_sim,
+          comcam_sim_aos,
+          startracker_narrow,
+          startracker_wide,
+          startracker_fast,
+        ]
 
   - name: base
     title: Base
@@ -101,13 +106,18 @@ locations:
     profile_name: summit-data-summit
     bucket_name: rubintv
     camera_groups:
-      Telescope Mounted:
-        [auxtel, lsstcam, lsstcam_aos, lsstcam_guider, ra_performance]
-      Other Cameras:
-        [allsky, dream, startracker_narrow, startracker_wide, startracker_fast]
-      Telescopes: [tma]
-      Simulated Cameras: [comcam_sim, comcam_sim_aos]
-      Deprecated Cameras: [comcam, comcam_aos]
+      Simonyi Telescope: [lsstcam, lsstcam_aos, lsstcam_guider, tma]
+      Environment and Performance: [auxtel, allsky, dream, ra_performance]
+      Previously Used Channels:
+        [
+          comcam,
+          comcam_aos,
+          comcam_sim,
+          comcam_sim_aos,
+          startracker_narrow,
+          startracker_wide,
+          startracker_fast,
+        ]
     has_cluster_status: True
 
 cameras:
@@ -168,8 +178,12 @@ cameras:
 
     image_viewer_link:
       "http://lsstcam-mcm.{siteLoc}.lsst.org/FITSInfo/view.html\
-      ?image=MC_{controller:default=O}_{dayObs}_{seqNum}&raft=all&color=grey\
+      ?image=MC_{controller:default=O}_{dayObs}_{seqNum:06}&raft=all&color=grey\
       &bias=Simple+Overscan+Correction&scale=Per-Segment&source=raw"
+
+    quicklook_viewer_link:
+      "https://usdf-rsp{dev}.slac.stanford.edu/fov-quicklook/\
+      visits/embargo:raw:{dayObs}{seqNum:05}"
 
   - name: lsstcam_aos
     title: LSSTCamAOS
@@ -253,7 +267,7 @@ cameras:
         colour: "#e7a9df"
 
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
-      {seqNum}}, \"detector\": 0}"
+      {seqNum:06}}, \"detector\": 0}"
 
   - name: dream
     title: DREAM
@@ -280,7 +294,7 @@ cameras:
         title: M1M3 HP and Slew Profile
         colour: "#97d2f0"
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
-      {seqNum}}"
+      {seqNum:06}}"
 
   - name: auxtel
     title: AuxTel
@@ -288,9 +302,9 @@ cameras:
     logo: AuxTel.jpg
     night_report_prefix: auxtel_night_reports
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
-      {seqNum}, \"detector\": 0}"
+      {seqNum:06}, \"detector\": 0}"
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/view.html?\
-      image=AT_O_{dayObs}_{seqNum}\
+      image=AT_O_{dayObs}_{seqNum:06}\
       &raft=R00&color=grey&bias=Simple+Overscan+Correction\
       &scale=Per-Segment&source=RubinTV"
     channels:
@@ -445,9 +459,9 @@ cameras:
         metaColumns: []
 
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
-      {seqNum}}"
+      {seqNum:06}}"
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/\
-      view.html?image=CC_O_{dayObs}_{seqNum}"
+      view.html?image=CC_O_{dayObs}_{seqNum:06}"
 
   - name: comcam_sim
     title: ComCamSim
@@ -464,7 +478,7 @@ cameras:
         title: PSF shape AzEl
         colour: "#BC8CE7"
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
-      {seqNum}}"
+      {seqNum:06}}"
 
   - name: comcam_sim_aos
     title: ComCamSimAOS
@@ -522,7 +536,7 @@ cameras:
         title: Noise Map
         colour: "#e771a8"
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
-      {seqNum}}"
+      {seqNum:06}}"
 
   - name: slac_lsstcam
     title: LSSTCam
@@ -542,7 +556,7 @@ cameras:
         colour: "#e7ae71"
     night_report_label: Trending Plots
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
-      FITSInfo/view.html?image=MC_C_{dayObs}_{seqNum}"
+      FITSInfo/view.html?image=MC_C_{dayObs}_{seqNum:06}"
 
   - name: slac_ts8
     title: TS8
@@ -556,7 +570,7 @@ cameras:
         title: Noise Map
         colour: "#e771a8"
     image_viewer_link: "https://lsst-camera-dev.slac.stanford.edu/\
-      FITSInfo/view.html?image=TS_C_{dayObs}_{seqNum}"
+      FITSInfo/view.html?image=TS_C_{dayObs}_{seqNum:06}"
     night_report_label: Trending Plots
 
   - name: fake_auxtel
@@ -587,9 +601,9 @@ cameras:
         colour: "#83daee"
 
     copy_row_template: "dataId = {\"day_obs\": {dayObs}, \"seq_num\": \
-      {seqNum}}"
+      {seqNum:06}}"
     image_viewer_link: "http://ccs.lsst.org/FITSInfo/view.html?\
-      image=AT_O_{dayObs}_{seqNum}\
+      image=AT_O_{dayObs}_{seqNum:06}\
       &raft=R00&color=grey&bias=Simple+Overscan+Correction\
       &scale=Per-Segment&source=RubinTV"
 

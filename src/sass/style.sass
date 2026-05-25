@@ -37,6 +37,14 @@ a
 .inline-block
   display: inline-block
 
+.transparent
+  opacity: 0
+.opaque
+  opacity: 1
+
+.transition-opacity
+  transition: opacity 0.2s ease-in-out
+
 html
   font-family: "Rubik", sans-serif
   font-size: 16px
@@ -455,11 +463,6 @@ section
 
     &.to-bottom
       transform: rotate(180deg)
-
-.cell-dict-modal
-  max-height: 80vh
-  padding: 0 2em
-  overflow-y: scroll
 
   .key
     text-align: left

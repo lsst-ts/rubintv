@@ -39,10 +39,11 @@ jest.mock("../DropDownMenu", () => ({
 }))
 
 jest.mock("../Modal", () => ({
+  // eslint-disable-next-line react/prop-types
   ModalProvider: ({ children }) => (
     <div data-testid="modal-provider">{children}</div>
   ),
-
+  // eslint-disable-next-line react/prop-types
   ConfirmationModal: ({ title, message, onConfirm, onCancel }) => (
     <div data-testid="confirmation-modal">
       <h2>{title}</h2>
@@ -560,8 +561,8 @@ describe("AdminSendRedisValue Component", () => {
     render(
       <AdminSendRedisValue
         {...defaultProps}
-        requiresConfirmation={true}
         title="Dangerous Action"
+        requiresConfirmation={true}
         valueToSend="danger_value"
       />
     )
@@ -572,10 +573,10 @@ describe("AdminSendRedisValue Component", () => {
     expect(mockShowModal).toHaveBeenCalledWith(
       expect.objectContaining({
         props: expect.objectContaining({
-          title: "Dangerous Action",
           message: expect.stringContaining('value "danger_value"'),
         }),
-      })
+      }),
+      "Dangerous Action"
     )
   })
 })
@@ -686,10 +687,10 @@ describe("AdminDangerPanel Component", () => {
     expect(mockShowModal).toHaveBeenCalledWith(
       expect.objectContaining({
         props: expect.objectContaining({
-          title: "Clear Redis",
           message: "Are you sure you want to clear Redis?",
         }),
-      })
+      }),
+      "Clear Redis"
     )
   })
 
@@ -749,7 +750,7 @@ describe("AdminDangerPanel Component", () => {
     const cancelButton = render(modalCall).getByTestId("cancel-button")
     fireEvent.click(cancelButton)
 
-    expect(mockShowModal).toHaveBeenCalledWith(null)
+    expect(mockShowModal).toHaveBeenCalledWith(null, null)
     expect(simplePost).not.toHaveBeenCalled()
   })
 })

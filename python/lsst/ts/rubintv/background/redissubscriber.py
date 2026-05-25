@@ -78,5 +78,5 @@ class RedisSubscriber:
     async def stop(self, pubsub: Any) -> None:
         """Unsubscribe from all channels and close the PubSub connection."""
         await pubsub.unsubscribe()
-        await pubsub.close()
+        await pubsub.aclose()
         logger.info("Unsubscribed from all channels and closed PubSub connection.")

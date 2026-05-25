@@ -38,7 +38,6 @@ export function FilterDialog({
 
   return (
     <>
-      <h2>filter on {column}</h2>
       {!!filterOn.value && (
         <div className="filter-info">
           <p>Currently filtering by: {filterOn.value}</p>

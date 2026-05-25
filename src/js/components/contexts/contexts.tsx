@@ -25,5 +25,7 @@ export const useRedisEndpoint = () => {
 /* istanbul ignore next */
 export const ModalContext = createContext<ModalContextType>({
   modalContent: null,
+  modalHeader: null,
+  setModalHeader: () => {},
   setModalContent: () => {},
 })

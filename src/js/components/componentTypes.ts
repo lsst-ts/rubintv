@@ -121,6 +121,7 @@ export interface Camera {
   copy_row_template?: string
   metadata_columns?: Record<string, string>
   image_viewer_link?: string
+  quicklook_viewer_link?: string
   time_since_clock?: { label: string }
   mosaic_view_meta?: Array<MosaicSingleView>
   night_report_label?: string
@@ -1140,10 +1141,14 @@ export interface CalendarYearProps {
 
 /**
  * @description Context type for managing modal content in the application.
+ * @param {string | null} modalHeader - Current modal header or null if none.
  * @param {React.ReactNode | null} modalContent - Current modal content or null if none.
  * @param {(content: React.ReactNode | null) => void} setModalContent - Function to update modal content.
+ * @param {(header: string | null) => void} setModalHeader - Function to update modal header.
  */
 export interface ModalContextType {
+  modalHeader: string | null
   modalContent: React.ReactNode | null
   setModalContent: (content: React.ReactNode | null) => void
+  setModalHeader: (header: string | null) => void
 }

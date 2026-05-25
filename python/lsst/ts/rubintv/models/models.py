@@ -154,6 +154,8 @@ class Camera(HasButton):
         None.
     image_viewer_link : str, optional
         A link to the image viewer. Defaults to an empty string.
+    quicklook_viewer_link : str, optional
+        A link to the quicklook viewer. Defaults to an empty string.
     copy_row_template : str, optional
         Template string for copying a row. Defaults to an empty string.
     mosaic_view_meta : list[MosaicViewMeta], optional
@@ -184,6 +186,7 @@ class Camera(HasButton):
     night_report_label: str = "Night's Evolution"
     metadata_columns: dict[str, str] | None = None
     image_viewer_link: str = ""
+    quicklook_viewer_link: str = ""
     copy_row_template: str = ""
     mosaic_view_meta: list[MosaicViewMeta] = []
     extra_buttons: list[ExtraButton] = []
