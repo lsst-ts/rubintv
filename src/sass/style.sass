@@ -7,6 +7,7 @@
 @use "modal"
 @use "admin"
 @use "detector"
+@use "night_report"
 
 .flr
   display: flex
@@ -26,6 +27,9 @@
 
 .center-text
   text-align: center
+
+.monospaced
+  font-family: "Red Hat Mono", monospace
 
 a
   text-decoration: none
@@ -59,6 +63,7 @@ header
 a
   text-decoration: underline
   display: inline-block
+  color: #000
 
 .header-wrap
   gap: 1em
@@ -504,76 +509,6 @@ section
     &:disabled
       cursor: not-allowed
       opacity: 0.5
-
-#night-report
-  .disabled
-    display: none !important
-
-.dashboard
-  display: flex
-  font-family: "Red Hat Mono", monospace
-  gap: 0.5em
-
-  ul
-    width: 100%
-    list-style: none
-    margin-bottom: 1em
-
-    li
-      box-sizing: border-box
-      border: 1px #555 solid
-      border-radius: 6px
-      padding: 11px 18px
-      margin-bottom: 6px
-      background-color: #fff
-
-    .dashboard-text
-      width: 100%
-      color: #000
-
-.tab-titles
-  display: flex
-  flex-direction: row
-  flex-wrap: wrap
-  border-bottom: 1px solid #ddd
-  width: fit-content
-
-.tab-title
-  padding: 1em 1em 0.7em 1em
-  cursor: pointer
-  padding: 0.5em 1em 0.7em 1em
-  cursor: pointer
-  background: #b0b0b0
-  border-radius: 0px 11px 0 0
-  border: 1px solid transparent
-  border-bottom: none
-  margin-right: 2px
-
-  &:last-of-type
-    margin-right: 0
-
-  &.selected
-    background: #fff
-    border-color: #666
-
-.tab-content:not(.selected)
-  display: none
-
-.plots-grid
-  display: grid
-  grid-template-columns: repeat(2, 1fr)
-  gap: 1em
-
-.plot
-  display: flex
-  flex-direction: column
-
-  img
-    width: 100%
-    height: auto
-
-  figcaption
-    margin-top: 0.5em
 
 .in-memoriam
   display: flex
