@@ -824,9 +824,36 @@ admin_for:
     - kbechtol
     - bechtol
     - ktl
-    - tribeiro
     - jfcrenshaw
     - bpolen
+    - bstalder
+    - bquint
+    - dsanmartim
+    - eurbach
+    - edennihy
+    - hyeyun
+    - kfanning
+    - mpavlovic
+    - mreuter
+    - pfragrelius
+    - tribeiro
+    - ashugart
+    - cmorales
+    - garavena
+    - jseron
+    - kpena
+    - kmortensen
+    - minhee51
+    - sliang
+    - ykang
+    - echristensen
+    - knapier
+    - dzilkova
+    - plago
+    - leisert
+    - nkhadka
+    - kkelkar
+    - pvenegas
 
   base: ["*"]
   tucson: ["*"]
