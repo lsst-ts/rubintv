@@ -41,7 +41,7 @@ logger = rubintv_logger()
 
 exp_checker_installed = False
 try:
-    from lsst.ts.exp_checker import app as exp_checker_app
+    from lsst.ts.exp_checker import app as exp_checker_app  # type: ignore[import]
 
     logger.info("exp_checker is mounted")
     exp_checker_installed = True
@@ -112,6 +112,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     # If no lifespan is needed for the subapp, still yield to the main app
     else:
         yield
+
+    # Stop background tasks
+    await hp.stop_background_tasks()
 
     historical_polling.cancel()
     today_polling.cancel()
