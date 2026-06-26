@@ -65,6 +65,13 @@ class DetectorStatusHandler:
         )
         self._running = False
         self.reader: StreamReader[DecodedRedisValue] | None = None
+        # Cumulative in-memory snapshot of the latest decoded state for every
+        # stream, keyed by friendly name. This lets both the initial payload
+        # and every live update carry a *whole* snapshot rather than a single
+        # changed set, removing the shape asymmetry the client merge would
+        # otherwise depend on. Without it, any set that never changes during a
+        # viewing session would stay at its client-side default (grey) forever.
+        self._state: dict[str, DecodedRedisValue] = {}
 
     async def verify_streams(self) -> None:
         """Verify that our stream keys exist."""
@@ -99,7 +106,7 @@ class DetectorStatusHandler:
                 }
 
                 decoded = _decode_stream_message(data)
-                await notify_redis_detector_status({name: decoded})
+                self._state[name] = decoded
 
             except Exception as e:
                 logger.error(
@@ -107,6 +114,11 @@ class DetectorStatusHandler:
                     exc_info=True,
                     raw_data=str(raw_data) if "raw_data" in locals() else None,
                 )
+
+        # Emit the whole assembled snapshot once, rather than per-stream
+        # deltas, so subscribers receive a complete initial state.
+        if self._state:
+            await notify_redis_detector_status(dict(self._state))
 
     async def get_current_state(self) -> dict[str, DecodedRedisValue] | None:
         """Get the current state from all streams for initial WebSocket
@@ -118,14 +130,15 @@ class DetectorStatusHandler:
             Dictionary mapping stream names to their current decoded state,
             or None if no state is available.
         """
-        current_state = {}
-
         for stream_key, name in self.stream_keys.items():
             try:
                 # Get just the latest entry since we have maxlen=2
                 entries = await self.redis_client.xrevrange(stream_key, count=1)
                 if not entries:
                     logger.warning(f"No current state found for stream {stream_key}")
+                    # Fall back to any previously seen state for this stream so
+                    # a momentarily-empty stream doesn't drop the set from the
+                    # initial snapshot.
                     continue
 
                 # Get the latest state
@@ -139,7 +152,7 @@ class DetectorStatusHandler:
                 }
 
                 decoded = _decode_stream_message(data)
-                current_state[name] = decoded
+                self._state[name] = decoded
 
             except Exception as e:
                 logger.error(
@@ -147,16 +160,27 @@ class DetectorStatusHandler:
                     exc_info=True,
                 )
 
-        return current_state if current_state else None
+        # Return the cumulative snapshot (including any sets seen on previous
+        # reads but momentarily absent now) so the initial WebSocket payload is
+        # as complete as possible.
+        return dict(self._state) if self._state else None
 
     async def run_async(self) -> None:
         """Start reading from streams."""
         await self.verify_streams()
 
         async def adapted_callback(name: str, data: DecodedRedisValue) -> None:
-            """Adapt the decoded data to the format expected by
-            notify_redis_detector_status."""
-            await notify_redis_detector_status({name: data})
+            """Merge the changed set into the cumulative snapshot and notify
+            clients with the *whole* current state.
+
+            Sending the full snapshot (rather than just the single changed set)
+            keeps the live payload shape identical to the initial payload, so
+            the client never has to rely on having received a complete initial
+            snapshot for every set. Any set that has been seen at least once
+            stays present in every subsequent update.
+            """
+            self._state[name] = data
+            await notify_redis_detector_status(dict(self._state))
 
         self.reader = StreamReader[DecodedRedisValue](
             redis_client=self.redis_client,
