@@ -125,3 +125,55 @@ class TestMetadataCollector:
         assert exists is True
 
         clear_s3_client_cache()
+
+    @pytest.mark.asyncio
+    async def test_cache_cap_read_from_config(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # The effective cap is sourced from config so it is tunable via
+        # RUBINTV_METADATA_CACHE_DAYS without a code change.
+        from lsst.ts.rubintv.background import metadata_collector as mc_mod
+
+        monkeypatch.setattr(mc_mod.config, "metadata_cache_days", 5, raising=True)
+        collector = _build_metadata_collector()
+        assert collector.METADATA_CACHE_DAYS == 5
+
+        # A non-positive value is clamped to 1 so we never evict everything.
+        monkeypatch.setattr(mc_mod.config, "metadata_cache_days", 0, raising=True)
+        collector = _build_metadata_collector()
+        assert collector.METADATA_CACHE_DAYS == 1
+
+    @pytest.mark.asyncio
+    async def test_cache_evicts_beyond_lowered_cap(self, mock_s3_client: Any) -> None:
+        clear_s3_client_cache()
+        mocker = RubinDataMocker(m.locations, s3_required=True, populate=False)
+        collector = _build_metadata_collector()
+        # Lower the cap on the instance to exercise eviction cheaply.
+        collector.METADATA_CACHE_DAYS = 3
+
+        location = m.locations[0]
+        camera = location.cameras[0]
+        loc_cam = f"{location.name}/{camera.name}"
+
+        # Populate more days than the cap; oldest should be evicted (FIFO).
+        date_strs = [f"2026-06-{day:02d}" for day in range(10, 16)]
+        for date_str in date_strs:
+            _put_metadata_object(
+                mocker,
+                location.bucket_name,
+                camera.name,
+                date_str,
+                marker=date_str,
+            )
+            collector.register_metadata_ref(loc_cam, date_str, "hash")
+            assert (
+                await collector.get_metadata_for_date(location, camera, date_str)
+                is not None
+            )
+
+        cache = collector._metadata_cache[loc_cam]
+        assert len(cache) == 3
+        # Only the 3 most-recently added dates remain.
+        assert list(cache.keys()) == date_strs[-3:]
+
+        clear_s3_client_cache()

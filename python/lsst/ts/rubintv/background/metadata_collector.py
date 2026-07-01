@@ -7,7 +7,7 @@ from time import monotonic
 from typing import TYPE_CHECKING
 
 from lsst.ts.rubintv.background.metadata_streamer import MetadataStreamer
-from lsst.ts.rubintv.config import rubintv_logger
+from lsst.ts.rubintv.config import config, rubintv_logger
 from lsst.ts.rubintv.models.models import MetadataRefData, ServiceTypes
 from lsst.ts.rubintv.models.models_helpers import date_str_to_date, find_first
 
@@ -25,7 +25,10 @@ class MetadataCollector:
     prefetching, and synchronization to prevent duplicate S3 fetches.
     """
 
-    # Maximum days to cache metadata
+    # Default maximum days of metadata to cache in memory per loc_cam.
+    # The effective value is read from config in ``__init__`` (env var
+    # ``RUBINTV_METADATA_CACHE_DAYS``) and set on the instance, so this class
+    # attribute is only the fallback default.
     METADATA_CACHE_DAYS = 60
 
     def __init__(
@@ -42,6 +45,12 @@ class MetadataCollector:
         """
         self._s3_clients = s3_clients
         self._locations = locations
+
+        # Effective cache cap, sourced from config so it can be tuned via the
+        # RUBINTV_METADATA_CACHE_DAYS env var without a code change. Shadows
+        # the class-level default. Guard against a non-positive value that
+        # would otherwise evict every entry immediately.
+        self.METADATA_CACHE_DAYS = max(1, config.metadata_cache_days)
 
         # Metadata refs tracking available dates for each loc_cam
         self._metadata_refs: dict[str, set[MetadataRefData]] = {}

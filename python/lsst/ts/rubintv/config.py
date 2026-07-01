@@ -63,6 +63,14 @@ class Configuration(BaseSettings):
 
     s3_endpoint_url: str = Field(default="testing", alias="S3_ENDPOINT_URL")
 
+    metadata_cache_days: int = Field(
+        default=12,
+        validation_alias="RUBINTV_METADATA_CACHE_DAYS",
+        json_schema_extra={
+            "title": "Days of metadata to cache in memory per location/camera"
+        },
+    )
+
     model_config = SettingsConfigDict(env_prefix="SAFIR_", case_sensitive=False)
 
 
