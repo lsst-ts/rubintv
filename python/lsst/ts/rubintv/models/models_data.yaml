@@ -898,7 +898,8 @@ admin_redis_menus:
       - DANISH
       - TIE
       - REFIT_WCS
-      - AI_DONUT
+      - AI_DONUT_BINNED2
+      - AI_DONUT_UNBINNED
       - UNPAIRED_DANISH
       - TARTS_UNPAIRED
 
